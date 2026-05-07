@@ -1,0 +1,6 @@
+# AI SEO Keeper - .gitignore
+node_modules/
+vendor/
+*.log
+.DS_Store
+Thumbs.db
