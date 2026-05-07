@@ -2075,6 +2075,54 @@ JS;
                             <span class="ai-seo-keeper-field-help">Shown under the title in search results. Approve it below to go live. Max <?php echo esc_html((string) self::DESCRIPTION_MAX_LENGTH); ?> chars.</span>
                         </label>
                     </div>
+
+                    <div class="ai-seo-keeper-accordion-group">
+                        <?php if ($chat_is_enabled) : ?>
+                            <?php
+                            $ai_assistant_content =
+                                '<div class="ai-seo-keeper-chat-intro">Your AI SEO copilot — ask questions, get metadata suggestions with one-click apply, or request page content edits. AI sees your full page content, SEO data, scores, and audit results.</div>' .
+
+                                '<div class="ai-seo-keeper-assistant-tabs" style="display:flex;gap:0;border-bottom:2px solid #dcdcde;margin-bottom:12px;">' .
+                                '<button type="button" class="ai-seo-keeper-assistant-tab is-active" data-target="chat" style="padding:8px 16px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:2px solid #2271b1;margin-bottom:-2px;cursor:pointer;color:#1d2327;">💬 Chat</button>' .
+                                '<button type="button" class="ai-seo-keeper-assistant-tab" data-target="editor" style="padding:8px 16px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:#787c82;">✏ Content Editor</button>' .
+                                '<button type="button" class="ai-seo-keeper-assistant-tab" data-target="history" style="padding:8px 16px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:#787c82;">📋 History</button>' .
+                                '</div>' .
+
+                                '<div class="ai-seo-keeper-assistant-panel" data-panel="chat">' .
+                                '<textarea class="widefat ai-seo-keeper-chat-input" rows="3" placeholder="Ask about SEO issues, request metadata fixes, or ask any question about this page…"></textarea>' .
+                                '<p class="ai-seo-keeper-chat-actions"><button type="button" class="button button-secondary ai-seo-keeper-send-chat" ' . disabled(! $has_api_key, true, false) . '>Ask AI <span class="ai-seo-keeper-help-tip" title="AI sees: page content, SEO title, meta description, focus keyphrase, snippet scores, audit results, related pages, and conversation history.">&#9432;</span></button></p>' .
+                                '<div class="ai-seo-keeper-chat-shell">' . $this->render_chat_history_markup($chat_messages) . '</div>' .
+                                '</div>' .
+
+                                '<div class="ai-seo-keeper-assistant-panel" data-panel="editor" style="display:none;">' .
+                                '<p style="font-size:13px;color:#50575e;margin:0 0 10px;">Tell AI what to change — it reads the full page, proposes targeted text edits, and you review each one before anything is saved. <span class="ai-seo-keeper-help-tip" title="AI only rephrases text and fixes headings (H1-H6). It never removes buttons, images, links, forms, or any visual elements. A backup is saved before every change.">&#9432;</span></p>' .
+                                '<textarea class="widefat ai-seo-keeper-content-edit-input" rows="3" placeholder="e.g. Rephrase this page for better SEO highlighting our AI solutions and automation services…"></textarea>' .
+                                '<p class="ai-seo-keeper-chat-actions"><button type="button" class="button button-primary ai-seo-keeper-content-edit-btn" ' . disabled(! $has_api_key, true, false) . '>✏ Propose Changes</button></p>' .
+                                '<div class="ai-seo-keeper-content-review"></div>' .
+                                '</div>' .
+
+                                '<div class="ai-seo-keeper-assistant-panel" data-panel="history" style="display:none;">' .
+                                '<div class="ai-seo-keeper-history-shell">' . $this->render_history_markup($recent_suggestions) . '</div>' .
+                                '</div>';
+
+                            echo $this->render_accordion_section(
+                                $chat_accordion_id,
+                                '🤖 AI Assistant <span class="ai-seo-keeper-help-tip" title="Unified AI workspace: chat for SEO advice, edit page content, and view suggestion history — all in one place.">&#9432;</span>',
+                                $ai_assistant_content,
+                                false
+                            );
+                            ?>
+                        <?php endif; ?>
+
+                        <?php
+                        echo $this->render_accordion_section(
+                            $readiness_accordion_id,
+                            'Frontend readiness <span class="ai-seo-keeper-help-tip" title="Shows whether this page\'s SEO metadata is approved and ready to be served on the live site. All checks must pass for AI SEO Keeper to output your title and description.">&#9432;</span>',
+                            $frontend_readiness_markup,
+                            true
+                        );
+                        ?>
+                    </div>
                 </section>
 
                 <section id="<?php echo esc_attr($social_tab_id); ?>" class="ai-seo-keeper-tab-panel ai-seo-keeper-surface" role="tabpanel" hidden>
@@ -2205,54 +2253,6 @@ JS;
                         <?php echo $analysis_markup; ?>
                     </div>
                 </section>
-            </div>
-
-            <div class="ai-seo-keeper-accordion-group">
-                <?php if ($chat_is_enabled) : ?>
-                    <?php
-                    $ai_assistant_content =
-                        '<div class="ai-seo-keeper-chat-intro">Your AI SEO copilot — ask questions, get metadata suggestions with one-click apply, or request page content edits. AI sees your full page content, SEO data, scores, and audit results.</div>' .
-
-                        '<div class="ai-seo-keeper-assistant-tabs" style="display:flex;gap:0;border-bottom:2px solid #dcdcde;margin-bottom:12px;">' .
-                            '<button type="button" class="ai-seo-keeper-assistant-tab is-active" data-target="chat" style="padding:8px 16px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:2px solid #2271b1;margin-bottom:-2px;cursor:pointer;color:#1d2327;">💬 Chat</button>' .
-                            '<button type="button" class="ai-seo-keeper-assistant-tab" data-target="editor" style="padding:8px 16px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:#787c82;">✏ Content Editor</button>' .
-                            '<button type="button" class="ai-seo-keeper-assistant-tab" data-target="history" style="padding:8px 16px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:#787c82;">📋 History</button>' .
-                        '</div>' .
-
-                        '<div class="ai-seo-keeper-assistant-panel" data-panel="chat">' .
-                            '<textarea class="widefat ai-seo-keeper-chat-input" rows="3" placeholder="Ask about SEO issues, request metadata fixes, or ask any question about this page…"></textarea>' .
-                            '<p class="ai-seo-keeper-chat-actions"><button type="button" class="button button-secondary ai-seo-keeper-send-chat" ' . disabled(! $has_api_key, true, false) . '>Ask AI <span class="ai-seo-keeper-help-tip" title="AI sees: page content, SEO title, meta description, focus keyphrase, snippet scores, audit results, related pages, and conversation history.">&#9432;</span></button></p>' .
-                            '<div class="ai-seo-keeper-chat-shell">' . $this->render_chat_history_markup($chat_messages) . '</div>' .
-                        '</div>' .
-
-                        '<div class="ai-seo-keeper-assistant-panel" data-panel="editor" style="display:none;">' .
-                            '<p style="font-size:13px;color:#50575e;margin:0 0 10px;">Tell AI what to change — it reads the full page, proposes targeted text edits, and you review each one before anything is saved. <span class="ai-seo-keeper-help-tip" title="AI only rephrases text and fixes headings (H1-H6). It never removes buttons, images, links, forms, or any visual elements. A backup is saved before every change.">&#9432;</span></p>' .
-                            '<textarea class="widefat ai-seo-keeper-content-edit-input" rows="3" placeholder="e.g. Rephrase this page for better SEO highlighting our AI solutions and automation services…"></textarea>' .
-                            '<p class="ai-seo-keeper-chat-actions"><button type="button" class="button button-primary ai-seo-keeper-content-edit-btn" ' . disabled(! $has_api_key, true, false) . '>✏ Propose Changes</button></p>' .
-                            '<div class="ai-seo-keeper-content-review"></div>' .
-                        '</div>' .
-
-                        '<div class="ai-seo-keeper-assistant-panel" data-panel="history" style="display:none;">' .
-                            '<div class="ai-seo-keeper-history-shell">' . $this->render_history_markup($recent_suggestions) . '</div>' .
-                        '</div>';
-
-                    echo $this->render_accordion_section(
-                        $chat_accordion_id,
-                        '🤖 AI Assistant <span class="ai-seo-keeper-help-tip" title="Unified AI workspace: chat for SEO advice, edit page content, and view suggestion history — all in one place.">&#9432;</span>',
-                        $ai_assistant_content,
-                        false
-                    );
-                    ?>
-                <?php endif; ?>
-
-                <?php
-                echo $this->render_accordion_section(
-                    $readiness_accordion_id,
-                    'Frontend readiness <span class="ai-seo-keeper-help-tip" title="Shows whether this page\'s SEO metadata is approved and ready to be served on the live site. All checks must pass for AI SEO Keeper to output your title and description.">&#9432;</span>',
-                    $frontend_readiness_markup,
-                    true
-                );
-                ?>
             </div>
 
             <?php if (! $has_api_key) : ?>
@@ -3025,7 +3025,7 @@ HTML;
     ?>
         <div class="ai-seo-keeper-accordion-item">
             <button type="button" class="ai-seo-keeper-accordion-toggle" aria-expanded="<?php echo $open ? 'true' : 'false'; ?>" aria-controls="<?php echo esc_attr($accordion_id); ?>" data-default-open="<?php echo $open ? '1' : '0'; ?>">
-                <span><?php echo esc_html($title); ?></span>
+                <span><?php echo wp_kses($title, array('span' => array('class' => true, 'title' => true))); ?></span>
                 <span class="ai-seo-keeper-accordion-symbol"><?php echo $open ? '-' : '+'; ?></span>
             </button>
             <div id="<?php echo esc_attr($accordion_id); ?>" class="ai-seo-keeper-accordion-panel" <?php echo $open ? '' : 'hidden'; ?>>
