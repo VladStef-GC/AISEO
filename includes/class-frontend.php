@@ -41,6 +41,7 @@ class Frontend
         $this->history_store = $history_store;
 
         add_shortcode('ai_seo_keeper_breadcrumbs', array($this, 'render_breadcrumbs_shortcode'));
+        add_shortcode('ai_seo_map', array($this, 'render_map_shortcode'));
         add_action('wp_head', array($this, 'output_webmaster_verification_tags'), 0);
         add_filter('pre_get_document_title', array($this, 'filter_document_title'), 50);
         add_action('wp_head', array($this, 'output_meta_description'), 1);
@@ -49,10 +50,45 @@ class Frontend
         add_action('wp_head', array($this, 'output_twitter_cards'), 4);
         add_action('wp_head', array($this, 'output_schema'), 5);
         add_action('wp_head', array($this, 'output_robots_directives'), 6);
+        add_action('wp_head', array($this, 'output_hreflang_tags'), 7);
 
         // Apply pending AI content changes during WordPress Preview.
         add_filter('the_content', array($this, 'filter_preview_content'), 1);
         add_filter('get_post_metadata', array($this, 'filter_preview_builder_meta'), 1, 4);
+
+        // RSS Feed Optimization.
+        add_filter('the_content_feed', array($this, 'filter_rss_content'), 99);
+        add_filter('the_excerpt_rss', array($this, 'filter_rss_content'), 99);
+
+        // Crawl Budget Optimization.
+        $opts = $settings->get();
+        if (! empty($opts['crawl_disable_author_archives'])) {
+            add_action('template_redirect', array($this, 'redirect_author_archives'));
+        }
+        if (! empty($opts['crawl_disable_date_archives'])) {
+            add_action('template_redirect', array($this, 'redirect_date_archives'));
+        }
+        if (! empty($opts['crawl_disable_attachment_pages'])) {
+            add_action('template_redirect', array($this, 'redirect_attachment_pages'));
+        }
+        if (! empty($opts['crawl_disable_format_archives'])) {
+            add_action('template_redirect', array($this, 'redirect_format_archives'));
+        }
+        if (! empty($opts['crawl_remove_wp_version'])) {
+            remove_action('wp_head', 'wp_generator');
+            add_filter('the_generator', '__return_empty_string');
+        }
+        if (! empty($opts['crawl_remove_shortlink'])) {
+            remove_action('wp_head', 'wp_shortlink_wp_head', 10);
+            remove_action('template_redirect', 'wp_shortlink_header', 11);
+        }
+        if (! empty($opts['crawl_remove_rsd_link'])) {
+            remove_action('wp_head', 'rsd_link');
+        }
+        if (! empty($opts['crawl_remove_feed_links'])) {
+            remove_action('wp_head', 'feed_links', 2);
+            remove_action('wp_head', 'feed_links_extra', 3);
+        }
     }
 
     public function output_webmaster_verification_tags(): void
@@ -218,6 +254,77 @@ class Frontend
         }
 
         $this->print_meta_tag('name', 'robots', $context['robots_directives'], 'robots');
+    }
+
+    /**
+     * Output hreflang alternate tags — manual entries or auto-detected from WPML/Polylang.
+     */
+    public function output_hreflang_tags(): void
+    {
+        if (! is_singular()) {
+            return;
+        }
+
+        $post_id = get_the_ID();
+        if (! $post_id) {
+            return;
+        }
+
+        $alternates = array();
+
+        // 1) Manual hreflang entries from post meta.
+        $manual = trim((string) get_post_meta($post_id, '_ai_seo_keeper_hreflang', true));
+        if ('' !== $manual) {
+            $lines = preg_split('/[\r\n]+/', $manual);
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if ('' === $line) {
+                    continue;
+                }
+                $parts = explode('|', $line, 2);
+                if (2 === count($parts)) {
+                    $lang = sanitize_text_field(trim($parts[0]));
+                    $url = esc_url(trim($parts[1]));
+                    if ('' !== $lang && '' !== $url) {
+                        $alternates[$lang] = $url;
+                    }
+                }
+            }
+        }
+
+        // 2) Auto-detect from WPML.
+        if (empty($alternates) && function_exists('icl_get_languages')) {
+            $languages = icl_get_languages('skip_missing=0');
+            if (is_array($languages)) {
+                foreach ($languages as $lang_data) {
+                    if (! empty($lang_data['url']) && ! empty($lang_data['language_code'])) {
+                        $alternates[$lang_data['language_code']] = $lang_data['url'];
+                    }
+                }
+            }
+        }
+
+        // 3) Auto-detect from Polylang.
+        if (empty($alternates) && function_exists('pll_the_languages')) {
+            $translations = function_exists('pll_get_post_translations') ? pll_get_post_translations($post_id) : array();
+            if (! empty($translations)) {
+                foreach ($translations as $lang => $translated_id) {
+                    $url = get_permalink($translated_id);
+                    if ($url) {
+                        $alternates[$lang] = $url;
+                    }
+                }
+            }
+        }
+
+        if (empty($alternates)) {
+            return;
+        }
+
+        echo "\n<!-- AI SEO Keeper: hreflang -->\n";
+        foreach ($alternates as $lang => $url) {
+            echo '<link rel="alternate" hreflang="' . esc_attr($lang) . '" href="' . esc_url($url) . '" />' . "\n";
+        }
     }
 
     public function get_effective_suggestion_for_post(int $post_id): array
@@ -836,6 +943,14 @@ class Frontend
             $website,
             $organization,
         );
+
+        // LocalBusiness schema (only on front page when enabled).
+        if (! empty($options['local_seo_enabled']) && is_front_page()) {
+            $local_schema = $this->build_local_business_schema($options);
+            if (! empty($local_schema)) {
+                $graph[] = $local_schema;
+            }
+        }
 
         if (null !== $context['post']) {
             $graph[] = $this->build_primary_schema_entity($context);
@@ -1617,5 +1732,257 @@ class Frontend
         }
 
         return array(maybe_unserialize($modified));
+    }
+
+    /**
+     * RSS Feed Optimization — inject content before/after feed items and optional featured image.
+     */
+    public function filter_rss_content(string $content): string
+    {
+        $options = $this->settings->get();
+        $before = '';
+        $after = '';
+
+        // Featured image.
+        if (! empty($options['rss_featured_image'])) {
+            $post_id = get_the_ID();
+            if ($post_id && has_post_thumbnail($post_id)) {
+                $img = get_the_post_thumbnail($post_id, 'medium');
+                if ($img) {
+                    $before .= '<p>' . $img . '</p>';
+                }
+            }
+        }
+
+        // Before content.
+        $rss_before = trim((string) ($options['rss_before_content'] ?? ''));
+        if ('' !== $rss_before) {
+            $before .= '<p>' . $this->replace_rss_placeholders($rss_before) . '</p>';
+        }
+
+        // After content.
+        $rss_after = trim((string) ($options['rss_after_content'] ?? ''));
+        if ('' !== $rss_after) {
+            $after .= '<p>' . $this->replace_rss_placeholders($rss_after) . '</p>';
+        }
+
+        // Publication delay.
+        $delay = (int) ($options['rss_publication_delay'] ?? 0);
+        if ($delay > 0) {
+            $post_time = get_post_time('U', true);
+            if ($post_time && (time() - $post_time) < ($delay * 60)) {
+                return ''; // Still within delay window — suppress content.
+            }
+        }
+
+        return $before . $content . $after;
+    }
+
+    private function replace_rss_placeholders(string $text): string
+    {
+        $text = str_replace('%%sitename%%', esc_html(get_bloginfo('name')), $text);
+        $post_id = get_the_ID();
+        if ($post_id) {
+            $link = '<a href="' . esc_url(get_permalink($post_id)) . '">' . esc_html(get_the_title($post_id)) . '</a>';
+            $text = str_replace('%%post_link%%', $link, $text);
+        }
+        return $text;
+    }
+
+    /**
+     * Crawl Budget: Redirect author archives to homepage.
+     */
+    public function redirect_author_archives(): void
+    {
+        if (is_author()) {
+            wp_safe_redirect(home_url('/'), 301);
+            exit;
+        }
+    }
+
+    /**
+     * Crawl Budget: Redirect date archives to homepage.
+     */
+    public function redirect_date_archives(): void
+    {
+        if (is_date()) {
+            wp_safe_redirect(home_url('/'), 301);
+            exit;
+        }
+    }
+
+    /**
+     * Crawl Budget: Redirect attachment pages to parent or file.
+     */
+    public function redirect_attachment_pages(): void
+    {
+        if (is_attachment()) {
+            $parent_id = wp_get_post_parent_id(get_the_ID());
+            if ($parent_id) {
+                wp_safe_redirect(get_permalink($parent_id), 301);
+            } else {
+                $url = wp_get_attachment_url(get_the_ID());
+                if ($url) {
+                    wp_safe_redirect($url, 301);
+                } else {
+                    wp_safe_redirect(home_url('/'), 301);
+                }
+            }
+            exit;
+        }
+    }
+
+    /**
+     * Crawl Budget: Redirect post format archives to homepage.
+     */
+    public function redirect_format_archives(): void
+    {
+        if (is_tax('post_format')) {
+            wp_safe_redirect(home_url('/'), 301);
+            exit;
+        }
+    }
+
+    /**
+     * Build LocalBusiness schema entity from Local SEO settings.
+     */
+    private function build_local_business_schema(array $options): array
+    {
+        $name = trim((string) ($options['local_business_name'] ?? ''));
+        if ('' === $name) {
+            $name = (string) get_bloginfo('name');
+        }
+
+        $entity = array(
+            '@type' => $options['local_business_type'] ?? 'LocalBusiness',
+            '@id'   => home_url('/#localbusiness'),
+            'name'  => $name,
+            'url'   => home_url('/'),
+        );
+
+        // Address.
+        $street  = trim((string) ($options['local_street'] ?? ''));
+        $city    = trim((string) ($options['local_city'] ?? ''));
+        $state   = trim((string) ($options['local_state'] ?? ''));
+        $zip     = trim((string) ($options['local_zip'] ?? ''));
+        $country = trim((string) ($options['local_country'] ?? ''));
+
+        if ('' !== $street || '' !== $city) {
+            $address = array('@type' => 'PostalAddress');
+            if ('' !== $street) {
+                $address['streetAddress'] = $street;
+            }
+            if ('' !== $city) {
+                $address['addressLocality'] = $city;
+            }
+            if ('' !== $state) {
+                $address['addressRegion'] = $state;
+            }
+            if ('' !== $zip) {
+                $address['postalCode'] = $zip;
+            }
+            if ('' !== $country) {
+                $address['addressCountry'] = $country;
+            }
+            $entity['address'] = $address;
+        }
+
+        // Contact.
+        $phone = trim((string) ($options['local_phone'] ?? ''));
+        $email = trim((string) ($options['local_email'] ?? ''));
+        if ('' !== $phone) {
+            $entity['telephone'] = $phone;
+        }
+        if ('' !== $email) {
+            $entity['email'] = $email;
+        }
+
+        // Geo coordinates.
+        $lat = trim((string) ($options['local_lat'] ?? ''));
+        $lng = trim((string) ($options['local_lng'] ?? ''));
+        if ('' !== $lat && '' !== $lng) {
+            $entity['geo'] = array(
+                '@type'     => 'GeoCoordinates',
+                'latitude'  => (float) $lat,
+                'longitude' => (float) $lng,
+            );
+        }
+
+        // Price range.
+        $price_range = trim((string) ($options['local_price_range'] ?? ''));
+        if ('' !== $price_range) {
+            $entity['priceRange'] = $price_range;
+        }
+
+        // Logo.
+        $logo_id = get_theme_mod('custom_logo');
+        if ($logo_id) {
+            $logo_url = wp_get_attachment_image_url($logo_id, 'full');
+            if ($logo_url) {
+                $entity['logo'] = $logo_url;
+                $entity['image'] = $logo_url;
+            }
+        }
+
+        // Opening hours.
+        $day_map = array(
+            'mon' => 'Monday', 'tue' => 'Tuesday', 'wed' => 'Wednesday',
+            'thu' => 'Thursday', 'fri' => 'Friday', 'sat' => 'Saturday', 'sun' => 'Sunday',
+        );
+        $hours_specs = array();
+        foreach ($day_map as $dk => $dl) {
+            $hours = trim((string) ($options['local_hours_' . $dk] ?? ''));
+            if ('' !== $hours && preg_match('/^(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})$/', $hours, $m)) {
+                $hours_specs[] = array(
+                    '@type'     => 'OpeningHoursSpecification',
+                    'dayOfWeek' => $dl,
+                    'opens'     => $m[1],
+                    'closes'    => $m[2],
+                );
+            }
+        }
+        if (! empty($hours_specs)) {
+            $entity['openingHoursSpecification'] = $hours_specs;
+        }
+
+        return $entity;
+    }
+
+    /**
+     * Render [ai_seo_map] shortcode — Google Maps embed from Local SEO coordinates.
+     */
+    public function render_map_shortcode(array $atts): string
+    {
+        $options = $this->settings->get();
+        $atts = shortcode_atts(array(
+            'width'  => '100%',
+            'height' => '400',
+            'zoom'   => '15',
+        ), $atts, 'ai_seo_map');
+
+        $lat = trim((string) ($options['local_lat'] ?? ''));
+        $lng = trim((string) ($options['local_lng'] ?? ''));
+
+        if ('' === $lat || '' === $lng) {
+            // Fallback: use address for a search query.
+            $parts = array_filter(array(
+                $options['local_street'] ?? '',
+                $options['local_city'] ?? '',
+                $options['local_state'] ?? '',
+                $options['local_country'] ?? '',
+            ));
+            if (empty($parts)) {
+                return '<!-- AI SEO Keeper: No location data configured for map. -->';
+            }
+            $query = urlencode(implode(', ', $parts));
+            $src = 'https://maps.google.com/maps?q=' . $query . '&output=embed';
+        } else {
+            $src = 'https://maps.google.com/maps?q=' . urlencode($lat . ',' . $lng) . '&z=' . (int) $atts['zoom'] . '&output=embed';
+        }
+
+        $w = esc_attr($atts['width']);
+        $h = esc_attr($atts['height']);
+
+        return '<div class="ai-seo-map-wrap" style="max-width:100%;overflow:hidden;"><iframe src="' . esc_url($src) . '" width="' . $w . '" height="' . $h . '" style="border:0;max-width:100%;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>';
     }
 }

@@ -960,7 +960,8 @@ jQuery(function ($) {
             ai_seo_keeper_canonical_url: $('#ai-seo-keeper-canonical-url').val(),
             ai_seo_keeper_robots_directives: $('#ai-seo-keeper-robots-directives').val(),
             ai_seo_keeper_frontend_enabled: $('#ai-seo-keeper-frontend-enabled').is(':checked') ? 1 : 0,
-            ai_seo_keeper_cornerstone: $('#ai-seo-keeper-cornerstone').is(':checked') ? 1 : 0
+            ai_seo_keeper_cornerstone: $('#ai-seo-keeper-cornerstone').is(':checked') ? 1 : 0,
+            ai_seo_keeper_hreflang: $('#ai-seo-keeper-hreflang').val()
         })
             .done(function (response) {
                 if (response && response.success) {
@@ -1995,7 +1996,8 @@ JS;
                                         <?php if ($used_on_count > 1) : ?>
                                             <span class="ai-seo-used-toggle" style="display:inline-block;margin-left:4px;background:#2271b1;color:#fff;border-radius:10px;padding:0 7px;font-size:11px;cursor:pointer;vertical-align:middle;" title="Used on <?php echo $used_on_count; ?> pages">+<?php echo $used_on_count - 1; ?></span>
                                             <div class="ai-seo-used-list" style="display:none;margin-top:6px;">
-                                                <?php $i = 0; foreach ($used_on_pages as $pid => $ptitle) : $i++;
+                                                <?php $i = 0;
+                                                foreach ($used_on_pages as $pid => $ptitle) : $i++;
                                                     if (1 === $i) continue; ?>
                                                     <div style="margin-bottom:3px;"><a href="<?php echo esc_url(admin_url('post.php?post=' . $pid . '&action=edit')); ?>" style="font-size:12px;"><?php echo esc_html($ptitle); ?></a></div>
                                                 <?php endforeach; ?>
@@ -2388,6 +2390,7 @@ JS;
                 '_ai_seo_keeper_robots_directives',
                 '_ai_seo_keeper_frontend_enabled',
                 '_ai_seo_keeper_cornerstone',
+                '_ai_seo_keeper_hreflang',
             );
             $placeholders = implode(',', array_fill(0, count($meta_keys), '%s'));
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -2773,6 +2776,135 @@ JS;
                             <?php endif; ?>
                             <input type="hidden" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[indexnow_key]" value="<?php echo esc_attr($indexnow_key); ?>" />
                             <p class="description">On localhost, IndexNow submissions are intentionally skipped. On a public site, AI SEO Keeper will serve the verification key file automatically.</p>
+                        </td>
+                    </tr>
+                </table>
+
+                <h2 class="title" style="margin-top:32px;">Local SEO / Business Schema</h2>
+                <p class="description">Configure your business details to output LocalBusiness structured data. Use the <code>[ai_seo_map]</code> shortcode to embed a Google Map.</p>
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">Enable Local SEO</th>
+                        <td>
+                            <label><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_seo_enabled]" value="1" <?php checked(! empty($options['local_seo_enabled'])); ?> /> Output LocalBusiness schema on the front page</label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="ai-seo-local-type">Business type</label></th>
+                        <td>
+                            <?php
+                            $business_types = array('LocalBusiness','Store','Restaurant','HealthAndBeautyBusiness','LegalService','FinancialService','EducationalOrganization','LodgingBusiness','SportsActivityLocation','EntertainmentBusiness','HomeAndConstructionBusiness','AutomotiveBusiness','MedicalBusiness','ProfessionalService','RealEstateAgent');
+                            ?>
+                            <select id="ai-seo-local-type" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_business_type]">
+                                <?php foreach ($business_types as $bt) : ?>
+                                    <option value="<?php echo esc_attr($bt); ?>" <?php selected($options['local_business_type'] ?? 'LocalBusiness', $bt); ?>><?php echo esc_html($bt); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="ai-seo-local-name">Business name</label></th>
+                        <td><input id="ai-seo-local-name" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_business_name]" value="<?php echo esc_attr($options['local_business_name'] ?? ''); ?>" placeholder="<?php echo esc_attr(get_bloginfo('name')); ?>" /></td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Address</th>
+                        <td>
+                            <label style="display:block;margin-bottom:6px;">Street <input class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_street]" value="<?php echo esc_attr($options['local_street'] ?? ''); ?>" /></label>
+                            <label style="display:inline-block;margin-right:12px;">City <input class="regular-text" style="width:180px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_city]" value="<?php echo esc_attr($options['local_city'] ?? ''); ?>" /></label>
+                            <label style="display:inline-block;margin-right:12px;">State <input class="regular-text" style="width:120px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_state]" value="<?php echo esc_attr($options['local_state'] ?? ''); ?>" /></label>
+                            <label style="display:inline-block;margin-right:12px;">Zip <input class="regular-text" style="width:100px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_zip]" value="<?php echo esc_attr($options['local_zip'] ?? ''); ?>" /></label>
+                            <label style="display:inline-block;">Country <input class="regular-text" style="width:120px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_country]" value="<?php echo esc_attr($options['local_country'] ?? ''); ?>" /></label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Contact</th>
+                        <td>
+                            <label style="display:inline-block;margin-right:16px;">Phone <input class="regular-text" style="width:180px;" type="tel" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_phone]" value="<?php echo esc_attr($options['local_phone'] ?? ''); ?>" placeholder="+1-555-000-0000" /></label>
+                            <label style="display:inline-block;">Email <input class="regular-text" style="width:240px;" type="email" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_email]" value="<?php echo esc_attr($options['local_email'] ?? ''); ?>" /></label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Geo coordinates</th>
+                        <td>
+                            <label style="display:inline-block;margin-right:16px;">Latitude <input class="regular-text" style="width:150px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_lat]" value="<?php echo esc_attr($options['local_lat'] ?? ''); ?>" placeholder="44.4268" /></label>
+                            <label style="display:inline-block;">Longitude <input class="regular-text" style="width:150px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_lng]" value="<?php echo esc_attr($options['local_lng'] ?? ''); ?>" placeholder="26.1025" /></label>
+                            <p class="description">Used in schema and the <code>[ai_seo_map]</code> shortcode.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Opening hours</th>
+                        <td>
+                            <p class="description" style="margin:0 0 8px;">Format: <code>09:00-17:00</code> — leave blank for closed days. Use <code>00:00-23:59</code> for 24h.</p>
+                            <?php
+                            $days = array('mon' => 'Monday', 'tue' => 'Tuesday', 'wed' => 'Wednesday', 'thu' => 'Thursday', 'fri' => 'Friday', 'sat' => 'Saturday', 'sun' => 'Sunday');
+                            foreach ($days as $dk => $dl) : ?>
+                                <label style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                                    <span style="min-width:80px;font-size:13px;"><?php echo esc_html($dl); ?></span>
+                                    <input class="regular-text" style="width:140px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_hours_<?php echo $dk; ?>]" value="<?php echo esc_attr($options['local_hours_' . $dk] ?? ''); ?>" placeholder="09:00-17:00" />
+                                </label>
+                            <?php endforeach; ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="ai-seo-local-price">Price range</label></th>
+                        <td><input id="ai-seo-local-price" class="regular-text" style="width:100px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_price_range]" value="<?php echo esc_attr($options['local_price_range'] ?? ''); ?>" placeholder="$$" />
+                        <p class="description">Use $ signs (e.g. $, $$, $$$) to indicate price level.</p></td>
+                    </tr>
+                </table>
+
+                <h2 class="title" style="margin-top:32px;">RSS Feed Optimization</h2>
+                <p class="description">Control how your content appears in RSS feeds. Add branding, prevent scraping, and include featured images.</p>
+                <table class="form-table">
+                    <tr>
+                        <th scope="row"><label for="ai-seo-rss-before">Content before feed items</label></th>
+                        <td>
+                            <textarea id="ai-seo-rss-before" class="large-text" rows="3" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[rss_before_content]" placeholder="Originally published on %%sitename%%"><?php echo esc_textarea($options['rss_before_content'] ?? ''); ?></textarea>
+                            <p class="description">HTML allowed. Use <code>%%sitename%%</code> and <code>%%post_link%%</code> as placeholders.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="ai-seo-rss-after">Content after feed items</label></th>
+                        <td>
+                            <textarea id="ai-seo-rss-after" class="large-text" rows="3" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[rss_after_content]" placeholder='The post %%post_link%% appeared first on %%sitename%%.'><?php echo esc_textarea($options['rss_after_content'] ?? ''); ?></textarea>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Featured image in feed</th>
+                        <td><label><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[rss_featured_image]" value="1" <?php checked(! empty($options['rss_featured_image'])); ?> /> Prepend featured image to each feed item</label></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="ai-seo-rss-delay">Publication delay (minutes)</label></th>
+                        <td>
+                            <input id="ai-seo-rss-delay" type="number" min="0" max="1440" style="width:80px;" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[rss_publication_delay]" value="<?php echo (int) ($options['rss_publication_delay'] ?? 0); ?>" />
+                            <p class="description">Delay feed updates to prevent content scrapers from publishing before you. 0 = no delay.</p>
+                        </td>
+                    </tr>
+                </table>
+
+                <h2 class="title" style="margin-top:32px;">Crawl Budget Optimization</h2>
+                <p class="description">Remove unnecessary pages from search engine crawl to focus crawl budget on your most important content.</p>
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">Disable archive pages</th>
+                        <td>
+                            <fieldset>
+                                <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_author_archives]" value="1" <?php checked(! empty($options['crawl_disable_author_archives'])); ?> /> Disable author archives (redirect to homepage)</label>
+                                <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_date_archives]" value="1" <?php checked(! empty($options['crawl_disable_date_archives'])); ?> /> Disable date archives (redirect to homepage)</label>
+                                <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_format_archives]" value="1" <?php checked(! empty($options['crawl_disable_format_archives'])); ?> /> Disable post format archives</label>
+                                <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_attachment_pages]" value="1" <?php checked(! empty($options['crawl_disable_attachment_pages'])); ?> /> Disable attachment pages (redirect to parent or file)</label>
+                                <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_search_indexing]" value="1" <?php checked(! empty($options['crawl_disable_search_indexing'])); ?> /> Block search results pages from indexing</label>
+                            </fieldset>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Clean up &lt;head&gt;</th>
+                        <td>
+                            <fieldset>
+                                <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_remove_wp_version]" value="1" <?php checked(! empty($options['crawl_remove_wp_version'])); ?> /> Remove WordPress version meta tag</label>
+                                <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_remove_shortlink]" value="1" <?php checked(! empty($options['crawl_remove_shortlink'])); ?> /> Remove shortlink tag</label>
+                                <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_remove_rsd_link]" value="1" <?php checked(! empty($options['crawl_remove_rsd_link'])); ?> /> Remove RSD (Really Simple Discovery) link</label>
+                                <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_remove_feed_links]" value="1" <?php checked(! empty($options['crawl_remove_feed_links'])); ?> /> Remove RSS feed links from &lt;head&gt;</label>
+                            </fieldset>
                         </td>
                     </tr>
                 </table>
@@ -3558,6 +3690,12 @@ JS;
                                 <span>Mark this page as cornerstone content — your most important, comprehensive articles.</span>
                             </label>
                             <span class="ai-seo-keeper-field-help">Cornerstone pages get higher priority in the sitemap, are prioritized in internal linking suggestions, and receive extra audit weight.</span>
+                        </div>
+
+                        <div class="ai-seo-keeper-field">
+                            <label class="ai-seo-keeper-field-label" for="ai-seo-keeper-hreflang">Hreflang tags (multi-language)</label>
+                            <textarea id="ai-seo-keeper-hreflang" class="ai-seo-keeper-input" rows="3" name="ai_seo_keeper_hreflang" placeholder="en|https://example.com/page&#10;fr|https://example.fr/page&#10;x-default|https://example.com/page"><?php echo esc_textarea(get_post_meta($post->ID, '_ai_seo_keeper_hreflang', true)); ?></textarea>
+                            <span class="ai-seo-keeper-field-help">One entry per line: <code>lang|URL</code>. Auto-detected from WPML/Polylang if installed. Manual entries take priority.</span>
                         </div>
                     </div>
                 </section>
@@ -6691,6 +6829,14 @@ HTML;
             delete_post_meta($post_id, '_ai_seo_keeper_cornerstone');
         } else {
             update_post_meta($post_id, '_ai_seo_keeper_cornerstone', '1');
+        }
+
+        // Hreflang manual entries.
+        $hreflang = isset($raw_input['ai_seo_keeper_hreflang']) ? sanitize_textarea_field(wp_unslash($raw_input['ai_seo_keeper_hreflang'])) : '';
+        if ('' === $hreflang) {
+            delete_post_meta($post_id, '_ai_seo_keeper_hreflang');
+        } else {
+            update_post_meta($post_id, '_ai_seo_keeper_hreflang', $hreflang);
         }
 
         return array(

@@ -67,6 +67,45 @@ class Settings
             'social_youtube'      => '',
             'social_pinterest'    => '',
             'robots_txt_custom'   => '',
+
+            // Local SEO / Business Schema.
+            'local_seo_enabled'      => 0,
+            'local_business_type'    => 'LocalBusiness',
+            'local_business_name'    => '',
+            'local_street'           => '',
+            'local_city'             => '',
+            'local_state'            => '',
+            'local_zip'              => '',
+            'local_country'          => '',
+            'local_phone'            => '',
+            'local_email'            => '',
+            'local_lat'              => '',
+            'local_lng'              => '',
+            'local_hours_mon'        => '',
+            'local_hours_tue'        => '',
+            'local_hours_wed'        => '',
+            'local_hours_thu'        => '',
+            'local_hours_fri'        => '',
+            'local_hours_sat'        => '',
+            'local_hours_sun'        => '',
+            'local_price_range'      => '',
+
+            // RSS Feed Optimization.
+            'rss_before_content'     => '',
+            'rss_after_content'      => '',
+            'rss_featured_image'     => 0,
+            'rss_publication_delay'  => 0,
+
+            // Crawl Budget Optimization.
+            'crawl_disable_author_archives'  => 0,
+            'crawl_disable_date_archives'    => 0,
+            'crawl_disable_attachment_pages' => 0,
+            'crawl_disable_search_indexing'  => 0,
+            'crawl_disable_format_archives'  => 0,
+            'crawl_remove_wp_version'        => 0,
+            'crawl_remove_shortlink'         => 0,
+            'crawl_remove_rsd_link'          => 0,
+            'crawl_remove_feed_links'        => 0,
         );
 
         foreach (self::FEATURE_FLAGS as $feature_key => $label) {
@@ -139,6 +178,30 @@ class Settings
 
         // Robots.txt custom rules.
         $output['robots_txt_custom'] = isset($input['robots_txt_custom']) ? sanitize_textarea_field($input['robots_txt_custom']) : $current['robots_txt_custom'];
+
+        // Local SEO / Business Schema.
+        $output['local_seo_enabled'] = empty($input['local_seo_enabled']) ? 0 : 1;
+        $valid_business_types = array('LocalBusiness','Store','Restaurant','HealthAndBeautyBusiness','LegalService','FinancialService','EducationalOrganization','LodgingBusiness','SportsActivityLocation','EntertainmentBusiness','HomeAndConstructionBusiness','AutomotiveBusiness','MedicalBusiness','ProfessionalService','RealEstateAgent');
+        $output['local_business_type'] = isset($input['local_business_type']) && in_array($input['local_business_type'], $valid_business_types, true) ? $input['local_business_type'] : $current['local_business_type'];
+        foreach (array('local_business_name','local_street','local_city','local_state','local_zip','local_country','local_phone','local_email','local_price_range') as $lk) {
+            $output[$lk] = isset($input[$lk]) ? sanitize_text_field(wp_unslash($input[$lk])) : $current[$lk];
+        }
+        $output['local_lat'] = isset($input['local_lat']) ? sanitize_text_field($input['local_lat']) : $current['local_lat'];
+        $output['local_lng'] = isset($input['local_lng']) ? sanitize_text_field($input['local_lng']) : $current['local_lng'];
+        foreach (array('local_hours_mon','local_hours_tue','local_hours_wed','local_hours_thu','local_hours_fri','local_hours_sat','local_hours_sun') as $hk) {
+            $output[$hk] = isset($input[$hk]) ? sanitize_text_field($input[$hk]) : $current[$hk];
+        }
+
+        // RSS Feed Optimization.
+        $output['rss_before_content'] = isset($input['rss_before_content']) ? wp_kses_post($input['rss_before_content']) : $current['rss_before_content'];
+        $output['rss_after_content'] = isset($input['rss_after_content']) ? wp_kses_post($input['rss_after_content']) : $current['rss_after_content'];
+        $output['rss_featured_image'] = empty($input['rss_featured_image']) ? 0 : 1;
+        $output['rss_publication_delay'] = isset($input['rss_publication_delay']) ? max(0, (int) $input['rss_publication_delay']) : $current['rss_publication_delay'];
+
+        // Crawl Budget Optimization.
+        foreach (array('crawl_disable_author_archives','crawl_disable_date_archives','crawl_disable_attachment_pages','crawl_disable_search_indexing','crawl_disable_format_archives','crawl_remove_wp_version','crawl_remove_shortlink','crawl_remove_rsd_link','crawl_remove_feed_links') as $ck) {
+            $output[$ck] = empty($input[$ck]) ? 0 : 1;
+        }
 
         foreach (self::FEATURE_FLAGS as $feature_key => $label) {
             $output['feature_' . $feature_key] = empty($input['feature_' . $feature_key]) ? 0 : 1;

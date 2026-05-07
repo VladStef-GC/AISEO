@@ -33,6 +33,8 @@ class Sitemap
 
         add_rewrite_rule('^sitemap_index\.xml$', 'index.php?' . self::QUERY_VAR . '=index', 'top');
         add_rewrite_rule('^([a-z_]+)-sitemap\.xml$', 'index.php?' . self::QUERY_VAR . '=$matches[1]', 'top');
+        add_rewrite_rule('^news-sitemap\.xml$', 'index.php?' . self::QUERY_VAR . '=news', 'top');
+        add_rewrite_rule('^video-sitemap\.xml$', 'index.php?' . self::QUERY_VAR . '=video', 'top');
         add_rewrite_rule('^sitemap-xsl\.xml$', 'index.php?' . self::QUERY_VAR . '=xsl', 'top');
     }
 
@@ -78,6 +80,10 @@ class Sitemap
 
         if ('index' === $sitemap_type) {
             echo $this->build_sitemap_index($options);
+        } elseif ('news' === $sitemap_type) {
+            echo $this->build_news_sitemap($options);
+        } elseif ('video' === $sitemap_type) {
+            echo $this->build_video_sitemap();
         } else {
             echo $this->build_sitemap($sitemap_type, $options);
         }
@@ -204,6 +210,20 @@ class Sitemap
             );
         }
 
+        // News sitemap — always present when sitemap is enabled and there are recent posts.
+        if (! empty($options['sitemap_include_posts'])) {
+            $entries[] = array(
+                'loc' => home_url('/news-sitemap.xml'),
+                'lastmod' => $this->get_latest_modified_date('post'),
+            );
+        }
+
+        // Video sitemap.
+        $entries[] = array(
+            'loc' => home_url('/video-sitemap.xml'),
+            'lastmod' => '',
+        );
+
         return $entries;
     }
 
@@ -322,6 +342,183 @@ class Sitemap
         }
 
         return gmdate('Y-m-d\TH:i:s+00:00', strtotime($date));
+    }
+
+    /**
+     * Build Google News sitemap (last 48 hours of published posts).
+     */
+    private function build_news_sitemap(array $options): string
+    {
+        $publication_name = esc_html(wp_specialchars_decode((string) get_bloginfo('name'), ENT_QUOTES));
+        $language = substr(get_locale(), 0, 2);
+
+        $since = gmdate('Y-m-d H:i:s', time() - (48 * 3600));
+
+        $posts = get_posts(array(
+            'post_type'      => 'post',
+            'post_status'    => 'publish',
+            'posts_per_page' => 1000,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'date_query'     => array(
+                array(
+                    'after'     => $since,
+                    'inclusive' => true,
+                    'column'    => 'post_date_gmt',
+                ),
+            ),
+            'no_found_rows'           => true,
+            'update_post_meta_cache'  => false,
+            'update_post_term_cache'  => true,
+        ));
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">' . "\n";
+
+        foreach ($posts as $post) {
+            if (! $post instanceof \WP_Post) {
+                continue;
+            }
+
+            $permalink = get_permalink($post);
+            if (! $permalink) {
+                continue;
+            }
+
+            $pub_date = get_post_time('Y-m-d\TH:i:sP', true, $post);
+
+            // Get categories for keywords.
+            $cats = get_the_category($post->ID);
+            $keywords = array();
+            if (is_array($cats)) {
+                foreach ($cats as $cat) {
+                    $keywords[] = $cat->name;
+                }
+            }
+
+            $xml .= '<url>' . "\n";
+            $xml .= '  <loc>' . esc_url($permalink) . '</loc>' . "\n";
+            $xml .= '  <news:news>' . "\n";
+            $xml .= '    <news:publication>' . "\n";
+            $xml .= '      <news:name>' . $publication_name . '</news:name>' . "\n";
+            $xml .= '      <news:language>' . esc_html($language) . '</news:language>' . "\n";
+            $xml .= '    </news:publication>' . "\n";
+            $xml .= '    <news:publication_date>' . esc_html($pub_date) . '</news:publication_date>' . "\n";
+            $xml .= '    <news:title>' . esc_html($post->post_title) . '</news:title>' . "\n";
+            if (! empty($keywords)) {
+                $xml .= '    <news:keywords>' . esc_html(implode(', ', $keywords)) . '</news:keywords>' . "\n";
+            }
+            $xml .= '  </news:news>' . "\n";
+            $xml .= '</url>' . "\n";
+        }
+
+        $xml .= '</urlset>';
+        return $xml;
+    }
+
+    /**
+     * Build Video sitemap by detecting YouTube/Vimeo embeds in published content.
+     */
+    private function build_video_sitemap(): string
+    {
+        global $wpdb;
+
+        // Find posts with YouTube or Vimeo embeds.
+        $rows = $wpdb->get_results(
+            "SELECT ID, post_title, post_content, post_modified_gmt
+            FROM {$wpdb->posts}
+            WHERE post_status = 'publish'
+            AND post_type IN ('post','page')
+            AND (post_content LIKE '%youtube.com%' OR post_content LIKE '%youtu.be%' OR post_content LIKE '%vimeo.com%')
+            ORDER BY post_modified_gmt DESC
+            LIMIT 1000",
+            ARRAY_A
+        );
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">' . "\n";
+
+        if (! empty($rows)) {
+            foreach ($rows as $row) {
+                $videos = $this->extract_video_embeds($row['post_content']);
+                if (empty($videos)) {
+                    continue;
+                }
+
+                $permalink = get_permalink((int) $row['ID']);
+                if (! $permalink) {
+                    continue;
+                }
+
+                // Get post thumbnail as video thumbnail fallback.
+                $thumb_url = get_the_post_thumbnail_url((int) $row['ID'], 'medium');
+                $post_title = $row['post_title'];
+                $description = wp_trim_words(wp_strip_all_tags($row['post_content']), 30, '…');
+
+                foreach ($videos as $video) {
+                    $xml .= '<url>' . "\n";
+                    $xml .= '  <loc>' . esc_url($permalink) . '</loc>' . "\n";
+                    $xml .= '  <video:video>' . "\n";
+                    $xml .= '    <video:thumbnail_loc>' . esc_url($video['thumbnail'] ?: ($thumb_url ?: '')) . '</video:thumbnail_loc>' . "\n";
+                    $xml .= '    <video:title>' . esc_html($post_title) . '</video:title>' . "\n";
+                    $xml .= '    <video:description>' . esc_html($description) . '</video:description>' . "\n";
+
+                    if ('youtube' === $video['provider']) {
+                        $xml .= '    <video:player_loc>' . esc_url('https://www.youtube.com/embed/' . $video['id']) . '</video:player_loc>' . "\n";
+                    } elseif ('vimeo' === $video['provider']) {
+                        $xml .= '    <video:player_loc>' . esc_url('https://player.vimeo.com/video/' . $video['id']) . '</video:player_loc>' . "\n";
+                    }
+
+                    $xml .= '  </video:video>' . "\n";
+                    $xml .= '</url>' . "\n";
+                }
+            }
+        }
+
+        $xml .= '</urlset>';
+        return $xml;
+    }
+
+    /**
+     * Extract YouTube and Vimeo video IDs from post content.
+     */
+    private function extract_video_embeds(string $content): array
+    {
+        $videos = array();
+
+        // YouTube: various URL formats and iframe embeds.
+        if (preg_match_all('/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/', $content, $yt_matches)) {
+            $seen = array();
+            foreach ($yt_matches[1] as $yt_id) {
+                if (isset($seen[$yt_id])) {
+                    continue;
+                }
+                $seen[$yt_id] = true;
+                $videos[] = array(
+                    'provider'  => 'youtube',
+                    'id'        => $yt_id,
+                    'thumbnail' => 'https://img.youtube.com/vi/' . $yt_id . '/hqdefault.jpg',
+                );
+            }
+        }
+
+        // Vimeo: various URL formats and iframe embeds.
+        if (preg_match_all('/vimeo\.com\/(?:video\/)?(\d{6,11})/', $content, $vm_matches)) {
+            $seen = array();
+            foreach ($vm_matches[1] as $vm_id) {
+                if (isset($seen[$vm_id])) {
+                    continue;
+                }
+                $seen[$vm_id] = true;
+                $videos[] = array(
+                    'provider'  => 'vimeo',
+                    'id'        => $vm_id,
+                    'thumbnail' => '', // Vimeo thumbnails require API call — use post thumbnail as fallback.
+                );
+            }
+        }
+
+        return $videos;
     }
 
     private function get_xsl_url(): string
@@ -452,6 +649,6 @@ class Sitemap
             return true;
         }
 
-        return ! isset($rules['^sitemap_index\.xml$']);
+        return ! isset($rules['^sitemap_index\.xml$']) || ! isset($rules['^news-sitemap\\.xml$']);
     }
 }
