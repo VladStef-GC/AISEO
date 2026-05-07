@@ -486,7 +486,7 @@ jQuery(function ($) {
                 $analyzer.find('[data-snippet-metric="description-length"]'),
                 'is-neutral',
                 '0 chars',
-                'Add a meta description draft to score it.'
+                'Add a meta description to score it.'
             );
         } else if (descriptionLength < descriptionMin) {
             setSnippetMetricState(
@@ -1091,6 +1091,54 @@ jQuery(function ($) {
         div.appendChild(document.createTextNode(str));
         return div.innerHTML;
     }
+
+    // ── AI Assistant sub-tab switching ────────────────────────────────
+    $(document).on('click', '.ai-seo-keeper-assistant-tab', function () {
+        var $tab = $(this);
+        var target = $tab.data('target');
+        var $group = $tab.closest('.ai-seo-keeper-accordion-panel');
+
+        $group.find('.ai-seo-keeper-assistant-tab').removeClass('is-active').css({'border-bottom-color': 'transparent', 'color': '#787c82'});
+        $tab.addClass('is-active').css({'border-bottom-color': '#2271b1', 'color': '#1d2327'});
+
+        $group.find('.ai-seo-keeper-assistant-panel').hide();
+        $group.find('.ai-seo-keeper-assistant-panel[data-panel="' + target + '"]').show();
+    });
+
+    // ── Run AI Page Audit from editor ─────────────────────────────────
+    $(document).on('click', '.ai-seo-keeper-run-page-audit', function () {
+        var $btn = $(this);
+        var $status = $btn.closest('div').find('.ai-seo-keeper-audit-status');
+        var postId = $('#post_ID').val();
+
+        $btn.prop('disabled', true);
+        $status.text('Running AI audit…').css('color', 'inherit');
+
+        $.post(aiSeoKeeperEditor.ajaxUrl, {
+            action: 'ai_seo_keeper_page_audit',
+            nonce: $('#ai_seo_keeper_editor_nonce').val(),
+            post_id: postId
+        })
+        .done(function (response) {
+            if (response && response.success && response.data) {
+                var d = response.data;
+                var scoreColor = d.score >= 70 ? '#00a32a' : (d.score >= 40 ? '#dba617' : '#d63638');
+                $status.html('Score: <strong style="color:' + scoreColor + ';">' + d.score + '/100</strong> — ' + (d.issues ? d.issues.length : 0) + ' issue(s). Reload page to see full details.').css('color', '#1d2327');
+            } else {
+                $status.text('Audit failed.').css('color', '#8a2424');
+            }
+        })
+        .fail(function (xhr) {
+            var msg = 'Audit failed.';
+            if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
+                msg = xhr.responseJSON.data.message;
+            }
+            $status.text(msg).css('color', '#8a2424');
+        })
+        .always(function () {
+            $btn.prop('disabled', false);
+        });
+    });
 
     $(document).on('input', '#ai-seo-keeper-focus-keyphrase, #ai-seo-keeper-meta-title, #ai-seo-keeper-meta-description, #ai-seo-keeper-social-title, #ai-seo-keeper-social-description', function () {
         refreshSeoDraftFeedback($(this).closest('.ai-seo-keeper-editor-panel'));
@@ -1853,6 +1901,8 @@ JS;
         $search_appearance_auto_enabled = ! empty($options['search_appearance_auto_enabled']);
         $frontend_conflict = $this->has_conflicting_seo_plugin();
         $analysis_markup = $this->render_focus_keyphrase_checks_markup($post, $focus_keyphrase, $seo_title, $seo_description);
+        $page_audit_data = get_post_meta($post->ID, '_ai_seo_keeper_page_audit', true);
+        $page_audit_score = is_array($page_audit_data) && isset($page_audit_data['score']) ? (int) $page_audit_data['score'] : null;
         $preview_title = '' !== $seo_title ? $seo_title : (string) get_the_title($post->ID);
         $preview_description = '' !== $seo_description ? $seo_description : wp_trim_words(wp_strip_all_tags((string) ($post->post_excerpt ?: Content_Helper::get_content($post))), 24, '...');
         $preview_url = (string) get_permalink($post->ID);
@@ -1947,8 +1997,8 @@ JS;
                     <div class="ai-seo-keeper-snippet-analyzer is-neutral">
                         <div class="ai-seo-keeper-snippet-header">
                             <div>
-                                <strong>Live SEO snippet analysis</strong>
-                                <p class="ai-seo-keeper-panel-note">See title length, description length, and focus-keyphrase coverage update instantly while you type.</p>
+                                <strong>Live SEO snippet analysis <span class="ai-seo-keeper-help-tip" title="These scores update instantly as you type. They measure title length, description length, and focus keyphrase coverage — the basic signals search engines use.">&#9432;</span></strong>
+                                <p class="ai-seo-keeper-panel-note">Title length, description length, and focus-keyphrase coverage update instantly while you type.</p>
                             </div>
                             <div class="ai-seo-keeper-snippet-score is-neutral">
                                 <span class="ai-seo-keeper-snippet-score-number">0</span>
@@ -1960,6 +2010,20 @@ JS;
                         <div class="ai-seo-keeper-snippet-score-track" aria-hidden="true">
                             <span class="ai-seo-keeper-snippet-score-fill" style="width:0%;"></span>
                         </div>
+
+                        <?php if (null !== $page_audit_score) : ?>
+                            <div style="display:flex;align-items:center;gap:12px;margin:10px 0;padding:8px 12px;background:#f6f7f7;border-radius:4px;">
+                                <span style="font-size:13px;">Last AI audit score: <strong style="color:<?php echo $page_audit_score >= 70 ? '#00a32a' : ($page_audit_score >= 40 ? '#dba617' : '#d63638'); ?>;"><?php echo esc_html((string) $page_audit_score); ?>/100</strong></span>
+                                <button type="button" class="button button-small ai-seo-keeper-run-page-audit" <?php disabled(! $has_api_key); ?>>🔄 Re-run AI Audit <span class="ai-seo-keeper-help-tip" title="Runs a full AI-powered SEO audit of this page. Use this after making changes to see your updated score.">&#9432;</span></button>
+                                <span class="ai-seo-keeper-audit-status" style="font-size:12px;color:#787c82;"></span>
+                            </div>
+                        <?php else : ?>
+                            <div style="display:flex;align-items:center;gap:12px;margin:10px 0;padding:8px 12px;background:#fef8ee;border-radius:4px;border:1px solid #f0c33c;">
+                                <span style="font-size:13px;">No AI audit has been run on this page yet.</span>
+                                <button type="button" class="button button-small button-primary ai-seo-keeper-run-page-audit" <?php disabled(! $has_api_key); ?>>▶ Run AI Audit</button>
+                                <span class="ai-seo-keeper-audit-status" style="font-size:12px;color:#787c82;"></span>
+                            </div>
+                        <?php endif; ?>
 
                         <p class="ai-seo-keeper-snippet-summary-text">Length and focus-keyphrase signals update as you type.</p>
 
@@ -1973,7 +2037,7 @@ JS;
                             <div class="ai-seo-keeper-snippet-metric is-neutral" data-snippet-metric="description-length">
                                 <span class="ai-seo-keeper-snippet-metric-label">Description length</span>
                                 <strong class="ai-seo-keeper-snippet-metric-value">0 chars</strong>
-                                <span class="ai-seo-keeper-snippet-metric-helper">Add a meta description draft to score it.</span>
+                                <span class="ai-seo-keeper-snippet-metric-helper">Add a meta description to score it.</span>
                             </div>
 
                             <div class="ai-seo-keeper-snippet-metric is-neutral" data-snippet-metric="keyphrase-title">
@@ -1994,21 +2058,21 @@ JS;
                         <label class="ai-seo-keeper-field">
                             <span class="ai-seo-keeper-field-label">Focus keyphrase</span>
                             <input id="ai-seo-keeper-focus-keyphrase" type="text" name="ai_seo_keeper_focus_keyphrase" value="<?php echo esc_attr($focus_keyphrase); ?>" />
-                            <span class="ai-seo-keeper-field-help">Guide AI drafts and page checks, similar to Yoast's focus keyphrase workflow.</span>
+                            <span class="ai-seo-keeper-field-help">The main keyword or phrase this page should rank for. AI uses it to optimize your title, description, and content.</span>
                         </label>
 
                         <label class="ai-seo-keeper-field ai-seo-keeper-field-textarea-wide">
-                            <span class="ai-seo-keeper-field-label">SEO title draft</span>
+                            <span class="ai-seo-keeper-field-label">SEO title <span class="ai-seo-keeper-help-tip" title="This is the title search engines display in results. It becomes live once approved and the frontend gate is enabled. AI can generate or edit it for you.">&#9432;</span></span>
                             <input id="ai-seo-keeper-meta-title" type="text" name="ai_seo_keeper_meta_title" value="<?php echo esc_attr($seo_title); ?>" maxlength="<?php echo esc_attr((string) self::TITLE_MAX_LENGTH); ?>" />
                             <?php echo $this->render_field_counter('ai-seo-keeper-meta-title', $seo_title, self::TITLE_MAX_LENGTH); ?>
-                            <span class="ai-seo-keeper-field-help">Saved as the working draft. It only becomes live after approval and when the frontend output gates allow it. Maximum: <?php echo esc_html((string) self::TITLE_MAX_LENGTH); ?> characters.</span>
+                            <span class="ai-seo-keeper-field-help">This is the title shown in Google search results. Approve it via the readiness section below to make it live. Max <?php echo esc_html((string) self::TITLE_MAX_LENGTH); ?> chars.</span>
                         </label>
 
                         <label class="ai-seo-keeper-field ai-seo-keeper-field-textarea-wide">
-                            <span class="ai-seo-keeper-field-label">Meta description draft</span>
+                            <span class="ai-seo-keeper-field-label">Meta description <span class="ai-seo-keeper-help-tip" title="This description appears below the title in search results. Approve it via the readiness section to make it live. AI can generate or edit it for you.">&#9432;</span></span>
                             <textarea id="ai-seo-keeper-meta-description" rows="5" name="ai_seo_keeper_meta_description" maxlength="<?php echo esc_attr((string) self::DESCRIPTION_MAX_LENGTH); ?>"><?php echo esc_textarea($seo_description); ?></textarea>
                             <?php echo $this->render_field_counter('ai-seo-keeper-meta-description', $seo_description, self::DESCRIPTION_MAX_LENGTH); ?>
-                            <span class="ai-seo-keeper-field-help">Use this as the working draft until a suggestion is approved and made eligible for frontend output. Maximum: <?php echo esc_html((string) self::DESCRIPTION_MAX_LENGTH); ?> characters.</span>
+                            <span class="ai-seo-keeper-field-help">Shown under the title in search results. Approve it below to go live. Max <?php echo esc_html((string) self::DESCRIPTION_MAX_LENGTH); ?> chars.</span>
                         </label>
                     </div>
                 </section>
@@ -2146,23 +2210,36 @@ JS;
             <div class="ai-seo-keeper-accordion-group">
                 <?php if ($chat_is_enabled) : ?>
                     <?php
-                    echo $this->render_accordion_section(
-                        $chat_accordion_id,
-                        'Recent AI assistant conversation',
-                        '<div class="ai-seo-keeper-chat-intro">Ask for page-specific SEO advice, positioning help, or metadata guidance grounded in this page and its related indexed content.</div>' .
-                            '<textarea class="widefat ai-seo-keeper-chat-input" rows="3" placeholder="Ask the AI assistant about this page\'s SEO, positioning, or metadata..."></textarea>' .
-                            '<p class="ai-seo-keeper-chat-actions"><button type="button" class="button button-secondary ai-seo-keeper-send-chat" ' . disabled(! $has_api_key, true, false) . '>Ask AI Assistant</button></p>' .
-                            '<div class="ai-seo-keeper-chat-shell">' . $this->render_chat_history_markup($chat_messages) . '</div>',
-                        false
-                    );
+                    $ai_assistant_content =
+                        '<div class="ai-seo-keeper-chat-intro">Your AI SEO copilot — ask questions, get metadata suggestions with one-click apply, or request page content edits. AI sees your full page content, SEO data, scores, and audit results.</div>' .
 
-                    echo $this->render_accordion_section(
-                        'ai-seo-keeper-content-editor-' . $post->ID,
-                        '✏ AI Content Editor',
-                        '<div class="ai-seo-keeper-chat-intro">Ask AI to rephrase text, fix heading hierarchy, or optimize content for your focus keyphrase. AI reads the full page, proposes targeted changes — you review and approve each one before anything is saved.</div>' .
+                        '<div class="ai-seo-keeper-assistant-tabs" style="display:flex;gap:0;border-bottom:2px solid #dcdcde;margin-bottom:12px;">' .
+                            '<button type="button" class="ai-seo-keeper-assistant-tab is-active" data-target="chat" style="padding:8px 16px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:2px solid #2271b1;margin-bottom:-2px;cursor:pointer;color:#1d2327;">💬 Chat</button>' .
+                            '<button type="button" class="ai-seo-keeper-assistant-tab" data-target="editor" style="padding:8px 16px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:#787c82;">✏ Content Editor</button>' .
+                            '<button type="button" class="ai-seo-keeper-assistant-tab" data-target="history" style="padding:8px 16px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:#787c82;">📋 History</button>' .
+                        '</div>' .
+
+                        '<div class="ai-seo-keeper-assistant-panel" data-panel="chat">' .
+                            '<textarea class="widefat ai-seo-keeper-chat-input" rows="3" placeholder="Ask about SEO issues, request metadata fixes, or ask any question about this page…"></textarea>' .
+                            '<p class="ai-seo-keeper-chat-actions"><button type="button" class="button button-secondary ai-seo-keeper-send-chat" ' . disabled(! $has_api_key, true, false) . '>Ask AI <span class="ai-seo-keeper-help-tip" title="AI sees: page content, SEO title, meta description, focus keyphrase, snippet scores, audit results, related pages, and conversation history.">&#9432;</span></button></p>' .
+                            '<div class="ai-seo-keeper-chat-shell">' . $this->render_chat_history_markup($chat_messages) . '</div>' .
+                        '</div>' .
+
+                        '<div class="ai-seo-keeper-assistant-panel" data-panel="editor" style="display:none;">' .
+                            '<p style="font-size:13px;color:#50575e;margin:0 0 10px;">Tell AI what to change — it reads the full page, proposes targeted text edits, and you review each one before anything is saved. <span class="ai-seo-keeper-help-tip" title="AI only rephrases text and fixes headings (H1-H6). It never removes buttons, images, links, forms, or any visual elements. A backup is saved before every change.">&#9432;</span></p>' .
                             '<textarea class="widefat ai-seo-keeper-content-edit-input" rows="3" placeholder="e.g. Rephrase this page for better SEO highlighting our AI solutions and automation services…"></textarea>' .
                             '<p class="ai-seo-keeper-chat-actions"><button type="button" class="button button-primary ai-seo-keeper-content-edit-btn" ' . disabled(! $has_api_key, true, false) . '>✏ Propose Changes</button></p>' .
-                            '<div class="ai-seo-keeper-content-review"></div>',
+                            '<div class="ai-seo-keeper-content-review"></div>' .
+                        '</div>' .
+
+                        '<div class="ai-seo-keeper-assistant-panel" data-panel="history" style="display:none;">' .
+                            '<div class="ai-seo-keeper-history-shell">' . $this->render_history_markup($recent_suggestions) . '</div>' .
+                        '</div>';
+
+                    echo $this->render_accordion_section(
+                        $chat_accordion_id,
+                        '🤖 AI Assistant <span class="ai-seo-keeper-help-tip" title="Unified AI workspace: chat for SEO advice, edit page content, and view suggestion history — all in one place.">&#9432;</span>',
+                        $ai_assistant_content,
                         false
                     );
                     ?>
@@ -2170,15 +2247,8 @@ JS;
 
                 <?php
                 echo $this->render_accordion_section(
-                    $history_accordion_id,
-                    'Recent AI suggestion history',
-                    '<div class="ai-seo-keeper-history-shell">' . $this->render_history_markup($recent_suggestions) . '</div>',
-                    false
-                );
-
-                echo $this->render_accordion_section(
                     $readiness_accordion_id,
-                    'Frontend readiness',
+                    'Frontend readiness <span class="ai-seo-keeper-help-tip" title="Shows whether this page\'s SEO metadata is approved and ready to be served on the live site. All checks must pass for AI SEO Keeper to output your title and description.">&#9432;</span>',
                     $frontend_readiness_markup,
                     true
                 );
@@ -2793,6 +2863,33 @@ JS;
     font-size: 12px;
 }
 
+.ai-seo-keeper-help-tip {
+    display: inline-block;
+    cursor: help;
+    color: #2271b1;
+    font-weight: 400;
+    font-size: 14px;
+    position: relative;
+}
+
+.ai-seo-keeper-help-tip:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    background: #1d2327;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.4;
+    width: 260px;
+    z-index: 100;
+    box-shadow: 0 2px 6px rgba(0,0,0,.15);
+    pointer-events: none;
+}
+
 .ai-seo-keeper-readiness-grid,
 .ai-seo-keeper-status-grid {
     display: grid;
@@ -3334,10 +3431,11 @@ HTML;
 
         $existing_title = trim((string) get_post_meta($post_id, self::META_TITLE_KEY, true));
         $existing_desc = trim((string) get_post_meta($post_id, self::META_DESCRIPTION_KEY, true));
+        $existing_keyphrase = trim((string) get_post_meta($post_id, self::FOCUS_KEYPHRASE_META_KEY, true));
 
-        if ('' !== $existing_title && '' !== $existing_desc) {
+        if ('' !== $existing_title && '' !== $existing_desc && '' !== $existing_keyphrase) {
             wp_send_json_success(array(
-                'message' => 'Already has metadata, skipped.',
+                'message' => 'Already has all metadata, skipped.',
                 'skipped' => true,
                 'post_id' => $post_id,
                 'title' => $post->post_title,
@@ -3364,8 +3462,15 @@ HTML;
             ))
         );
 
-        update_post_meta($post_id, self::META_TITLE_KEY, $suggestion['seo_title']);
-        update_post_meta($post_id, self::META_DESCRIPTION_KEY, $suggestion['meta_description']);
+        if ('' === $existing_title) {
+            update_post_meta($post_id, self::META_TITLE_KEY, $suggestion['seo_title']);
+        }
+        if ('' === $existing_desc) {
+            update_post_meta($post_id, self::META_DESCRIPTION_KEY, $suggestion['meta_description']);
+        }
+        if ('' === $existing_keyphrase && ! empty($suggestion['focus_keyphrase'])) {
+            update_post_meta($post_id, self::FOCUS_KEYPHRASE_META_KEY, $suggestion['focus_keyphrase']);
+        }
 
         try {
             $this->history_store->log_generation(
@@ -3397,6 +3502,7 @@ HTML;
             'title' => $post->post_title,
             'seo_title' => $suggestion['seo_title'],
             'meta_description' => $suggestion['meta_description'],
+            'focus_keyphrase' => $suggestion['focus_keyphrase'] ?? '',
             'notes' => $suggestion['notes'],
         ));
     }
@@ -5157,14 +5263,14 @@ HTML;
                 'label' => 'SEO title length',
                 'passed' => $title_length >= self::TITLE_MIN_LENGTH && $title_length <= self::TITLE_MAX_LENGTH,
                 'message' => '' === $seo_title
-                    ? 'Add a saved SEO title draft.'
+                    ? 'Add an SEO title.'
                     : sprintf('Current length: %d characters. Target roughly %d to %d, with a maximum of %d.', $title_length, self::TITLE_MIN_LENGTH, self::TITLE_MAX_LENGTH, self::TITLE_MAX_LENGTH),
             ),
             array(
                 'label' => 'Meta description length',
                 'passed' => $description_length >= self::DESCRIPTION_MIN_LENGTH && $description_length <= self::DESCRIPTION_MAX_LENGTH,
                 'message' => '' === $seo_description
-                    ? 'Add a saved meta description draft.'
+                    ? 'Add a meta description.'
                     : sprintf('Current length: %d characters. Target roughly %d to %d, with a maximum of %d.', $description_length, self::DESCRIPTION_MIN_LENGTH, self::DESCRIPTION_MAX_LENGTH, self::DESCRIPTION_MAX_LENGTH),
             ),
             array(
@@ -5277,12 +5383,12 @@ HTML;
             $checks[] = array(
                 'label' => 'Focus keyphrase in SEO title',
                 'passed' => '' !== $normalized_keyphrase && false !== strpos($this->normalize_text_for_match($seo_title), $normalized_keyphrase),
-                'message' => 'Use the focus keyphrase naturally in the saved SEO title draft.',
+                'message' => 'Use the focus keyphrase naturally in the SEO title.',
             );
             $checks[] = array(
                 'label' => 'Focus keyphrase in meta description',
                 'passed' => '' !== $normalized_keyphrase && false !== strpos($this->normalize_text_for_match($seo_description), $normalized_keyphrase),
-                'message' => 'Use the focus keyphrase naturally in the saved meta description draft.',
+                'message' => 'Use the focus keyphrase naturally in the meta description.',
             );
             $checks[] = array(
                 'label' => 'Focus keyphrase in URL',

@@ -48,6 +48,7 @@ class AI_Generator
 
         $seo_title = isset($payload['seo_title']) ? sanitize_text_field((string) $payload['seo_title']) : '';
         $meta_description = isset($payload['meta_description']) ? sanitize_textarea_field((string) $payload['meta_description']) : '';
+        $focus_keyphrase = isset($payload['focus_keyphrase']) ? sanitize_text_field((string) $payload['focus_keyphrase']) : '';
         $notes = isset($payload['notes']) ? sanitize_textarea_field((string) $payload['notes']) : '';
 
         if ('' === $seo_title || '' === $meta_description) {
@@ -57,6 +58,7 @@ class AI_Generator
         return array(
             'seo_title' => $seo_title,
             'meta_description' => $meta_description,
+            'focus_keyphrase' => $focus_keyphrase,
             'notes' => $notes,
             'provider' => $provider,
             'model' => $model,
@@ -285,8 +287,8 @@ class AI_Generator
             "\n\n",
             array(
                 'Task: Generate a draft SEO title and meta description for the current WordPress page.',
-                'Output format: {"seo_title":"...","meta_description":"...","notes":"..."}',
-                'Requirements: Make the draft clearly differentiated from the related pages. Keep seo_title at or under 60 characters and meta_description at or under 155 characters. Do not invent services, guarantees, or facts not present on the page. When a focus keyphrase is provided, use it naturally without keyword stuffing. Notes should be one or two short sentences explaining the positioning choice.',
+                'Output format: {"seo_title":"...","meta_description":"...","focus_keyphrase":"...","notes":"..."}',
+                'Requirements: Make the draft clearly differentiated from the related pages. Keep seo_title at or under 60 characters and meta_description at or under 155 characters. Do not invent services, guarantees, or facts not present on the page. The focus_keyphrase should be the single most important 2-4 word phrase this page should rank for. When a focus keyphrase is already provided, keep it in your output unless it is clearly wrong. Notes should be one or two short sentences explaining the positioning choice.',
                 'Site: ' . get_bloginfo('name'),
                 'Page type: ' . $post->post_type,
                 'Current page title: ' . (string) $post->post_title,
