@@ -3520,7 +3520,12 @@ HTML;
 
     public function handle_ajax_page_audit(): void
     {
-        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+        // Accept both editor nonce and wizard nonce since this is called from both contexts.
+        if (! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? '')), 'ai_seo_keeper_save_editor_meta')
+            && ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? '')), 'ai_seo_keeper_setup_wizard')
+        ) {
+            wp_send_json_error(array('message' => 'Security check failed.'), 403);
+        }
 
         if (! current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Permission denied.'), 403);
