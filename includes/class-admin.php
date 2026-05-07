@@ -570,15 +570,15 @@ jQuery(function ($) {
         if (! titleLength && ! descriptionLength) {
             scoreState = 'is-neutral';
             scoreLabel = 'Start writing';
-            scoreSummary = 'Begin with a title and description draft, then tune the length and phrase coverage.';
+            scoreSummary = 'Add a title and description, then tune length and keyphrase coverage.';
         } else if (score >= 75) {
             scoreState = 'is-good';
             scoreLabel = 'Strong';
-            scoreSummary = 'This draft is in a strong range for snippet length and focus-keyphrase coverage.';
+            scoreSummary = 'Title and description are well-sized and contain your focus keyphrase.';
         } else if (score >= 50) {
             scoreState = 'is-neutral';
             scoreLabel = 'Fair';
-            scoreSummary = 'This draft is close, but one or two snippet signals still need adjustment.';
+            scoreSummary = 'Almost there — adjust title/description length or add your focus keyphrase.';
         }
 
         $analyzer.removeClass('is-good is-warning is-neutral').addClass(scoreState);
@@ -2005,12 +2005,12 @@ JS;
                     <div class="ai-seo-keeper-snippet-analyzer is-neutral">
                         <div class="ai-seo-keeper-snippet-header">
                             <div>
-                                <strong>Live SEO snippet analysis <span class="ai-seo-keeper-help-tip" data-tip="These scores update instantly as you type. They measure title length, description length, and focus keyphrase coverage — the basic signals search engines use.">&#9432;</span></strong>
+                                <strong>Live snippet health <span class="ai-seo-keeper-help-tip" data-tip="Checks ONLY whether your title and description have correct length and contain the focus keyphrase. This is NOT an overall SEO score — it tracks metadata formatting only. Use the AI audit below for a full SEO analysis.">&#9432;</span></strong>
                                 <p class="ai-seo-keeper-panel-note">Title length, description length, and focus-keyphrase coverage update instantly while you type.</p>
                             </div>
                             <div class="ai-seo-keeper-snippet-score is-neutral">
                                 <span class="ai-seo-keeper-snippet-score-number">0</span>
-                                <span class="ai-seo-keeper-snippet-score-caption">Snippet score</span>
+                                <span class="ai-seo-keeper-snippet-score-caption">Metadata fit</span>
                                 <span class="ai-seo-keeper-snippet-score-label">Start writing</span>
                             </div>
                         </div>
@@ -2021,13 +2021,13 @@ JS;
 
                         <?php if (null !== $page_audit_score) : ?>
                             <div style="display:flex;align-items:center;gap:12px;margin:10px 0;padding:8px 12px;background:#f6f7f7;border-radius:4px;">
-                                <span style="font-size:13px;">Last AI audit score: <strong style="color:<?php echo $page_audit_score >= 70 ? '#00a32a' : ($page_audit_score >= 40 ? '#dba617' : '#d63638'); ?>;"><?php echo esc_html((string) $page_audit_score); ?>/100</strong></span>
-                                <button type="button" class="button button-small ai-seo-keeper-run-page-audit" <?php disabled(! $has_api_key); ?>>🔄 Re-run AI Audit <span class="ai-seo-keeper-help-tip" data-tip="Runs a full AI-powered SEO audit of this page. Use this after making changes to see your updated score.">&#9432;</span></button>
+                                <span style="font-size:13px;">AI SEO Score: <strong style="color:<?php echo $page_audit_score >= 70 ? '#00a32a' : ($page_audit_score >= 40 ? '#dba617' : '#d63638'); ?>;"><?php echo esc_html((string) $page_audit_score); ?>/100</strong> <span class="ai-seo-keeper-help-tip" data-tip="Full AI-powered SEO audit of this page. Unlike the metadata fit score above, this analyzes content quality, heading structure, word count, image alt tags, readability, and more.">&#9432;</span></span>
+                                <button type="button" class="button button-small ai-seo-keeper-run-page-audit" <?php disabled(! $has_api_key); ?>>🔄 Re-run AI Audit</button>
                                 <span class="ai-seo-keeper-audit-status" style="font-size:12px;color:#787c82;"></span>
                             </div>
                         <?php else : ?>
                             <div style="display:flex;align-items:center;gap:12px;margin:10px 0;padding:8px 12px;background:#fef8ee;border-radius:4px;border:1px solid #f0c33c;">
-                                <span style="font-size:13px;">No AI audit has been run on this page yet.</span>
+                                <span style="font-size:13px;">No AI SEO audit has been run on this page yet.</span>
                                 <button type="button" class="button button-small button-primary ai-seo-keeper-run-page-audit" <?php disabled(! $has_api_key); ?>>▶ Run AI Audit</button>
                                 <span class="ai-seo-keeper-audit-status" style="font-size:12px;color:#787c82;"></span>
                             </div>
