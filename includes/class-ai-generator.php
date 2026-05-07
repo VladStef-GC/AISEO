@@ -150,6 +150,7 @@ class AI_Generator
         $reply = isset($payload['reply']) ? sanitize_textarea_field((string) $payload['reply']) : '';
         $suggested_title = isset($payload['suggested_title']) ? sanitize_text_field((string) $payload['suggested_title']) : '';
         $suggested_description = isset($payload['suggested_description']) ? sanitize_textarea_field((string) $payload['suggested_description']) : '';
+        $wants_edits = ! empty($payload['wants_edits']);
         $notes = isset($payload['notes']) ? sanitize_textarea_field((string) $payload['notes']) : '';
 
         if ('' === $reply) {
@@ -160,6 +161,7 @@ class AI_Generator
             'reply' => $reply,
             'suggested_title' => $suggested_title,
             'suggested_description' => $suggested_description,
+            'wants_edits' => $wants_edits,
             'notes' => $notes,
             'provider' => $provider,
             'model' => $model,
@@ -200,15 +202,16 @@ class AI_Generator
 
         return trim(
             $base_prompt . "\n\n" .
-                'Return only valid JSON with exactly these keys: reply, suggested_title, suggested_description, notes. ' .
+                'Return only valid JSON with exactly these keys: reply, suggested_title, suggested_description, wants_edits, notes. ' .
                 'reply should answer the user directly and briefly. ' .
                 'Only fill suggested_title and suggested_description when the user is EXPLICITLY asking for metadata changes or new suggestions. ' .
+                'wants_edits must be true when the user is asking you to edit, fix, improve, rewrite, or change the actual page content (headings, paragraphs, text). Set it false for questions, advice, or metadata-only requests. ' .
                 'CRITICAL ANTI-BIAS RULES: ' .
                 '1. If the current SEO title and meta description are already strong (metadata fit score ≥ 75 or audit score ≥ 70), do NOT suggest replacements unless the user explicitly asks you to rewrite them. ' .
                 '2. When asked "what improvements to make", focus on page CONTENT issues (headings, word count, missing alt tags, internal links) — not on replacing metadata that is already good. ' .
                 '3. Never change metadata just for the sake of changing it. If the current title and description are effective, say so. ' .
                 '4. If the user asks about audit results, report the actual issues and suggestions from the audit data — do not invent new ones. ' .
-                '5. When page content changes are needed, suggest the user request page edits using the "Propose Page Edits" button rather than manually rewriting. ' .
+                '5. When the user asks for content changes, set wants_edits to true — the system will automatically generate page edit proposals for review. ' .
                 'When you provide suggested_title, keep it at or under 60 characters. ' .
                 'When you provide suggested_description, keep it at or under 155 characters. ' .
                 'Do not invent facts that are not supported by the page content or site context.'
@@ -650,7 +653,7 @@ class AI_Generator
         );
     }
 
-    public function generate_content_changes(int $post_id, string $instruction): array
+    public function generate_content_changes(int $post_id, string $instruction, array $recent_messages = array()): array
     {
         $post = get_post($post_id);
 
@@ -667,7 +670,7 @@ class AI_Generator
         $provider = (string) $options['provider'];
         $model = trim((string) $options['model']);
         $system_prompt = $this->build_content_edit_system_prompt((string) $options['system_prompt']);
-        $user_prompt = $this->build_content_edit_user_prompt($post, $instruction);
+        $user_prompt = $this->build_content_edit_user_prompt($post, $instruction, $recent_messages);
 
         if ('openai' === $provider) {
             $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt);
@@ -731,26 +734,48 @@ class AI_Generator
         );
     }
 
-    private function build_content_edit_user_prompt(\WP_Post $post, string $instruction): string
+    private function build_content_edit_user_prompt(\WP_Post $post, string $instruction, array $recent_messages = array()): string
     {
         $ctx = $this->get_seo_context($post);
         $page_content_raw = Content_Helper::get_content($post);
         $page_content = $this->truncate_text($page_content_raw, 30000);
 
-        return implode(
-            "\n\n",
-            array(
-                'Task: Analyze the page content and propose specific text changes to improve SEO.',
-                'Output format: {"changes":[{"section":"...","old":"...","new":"...","reason":"...","tag_change":"..."}],"summary":"..."}',
-                'Site: ' . get_bloginfo('name'),
-                'Page type: ' . $post->post_type,
-                'Page title: ' . (string) $post->post_title,
-                'Page URL: ' . (string) get_permalink($post),
-                $this->format_seo_context_lines($ctx),
-                'User instruction: ' . $instruction,
-                "Full page content:\n" . ('' !== $page_content ? $page_content : 'No body content is available.'),
-            )
+        $conversation_lines = array();
+        foreach ($recent_messages as $recent_message) {
+            if (! is_array($recent_message)) {
+                continue;
+            }
+
+            $role = isset($recent_message['role']) ? (string) $recent_message['role'] : '';
+            $content = 'user' === $role
+                ? (string) ($recent_message['message'] ?? '')
+                : (string) ($recent_message['reply'] ?? '');
+
+            if ('' === trim($content)) {
+                continue;
+            }
+
+            $conversation_lines[] = strtoupper($role) . ': ' . $this->truncate_text($content, 400);
+        }
+
+        $parts = array(
+            'Task: Analyze the page content and propose specific text changes to improve SEO.',
+            'Output format: {"changes":[{"section":"...","old":"...","new":"...","reason":"...","tag_change":"..."}],"summary":"..."}',
+            'Site: ' . get_bloginfo('name'),
+            'Page type: ' . $post->post_type,
+            'Page title: ' . (string) $post->post_title,
+            'Page URL: ' . (string) get_permalink($post),
+            $this->format_seo_context_lines($ctx),
         );
+
+        if (! empty($conversation_lines)) {
+            $parts[] = "Recent conversation context:\n" . implode("\n", $conversation_lines);
+        }
+
+        $parts[] = 'User instruction: ' . $instruction;
+        $parts[] = "Full page content:\n" . ('' !== $page_content ? $page_content : 'No body content is available.');
+
+        return implode("\n\n", $parts);
     }
 
     private function build_page_audit_system_prompt(string $custom_prompt): string

@@ -845,7 +845,8 @@ jQuery(function ($) {
 
         var $button = $(this);
         var $panel = $button.closest('.ai-seo-keeper-editor-panel');
-        var $status = $panel.find('.ai-seo-keeper-save-status');
+        var $chatStatus = $button.closest('.ai-seo-keeper-assistant-panel').find('.ai-seo-keeper-chat-status');
+        var $status = $chatStatus.length ? $chatStatus : $panel.find('.ai-seo-keeper-save-status');
         var $input = $panel.find('.ai-seo-keeper-chat-input');
         var postId = $('#post_ID').val();
         var message = $.trim($input.val());
@@ -880,7 +881,45 @@ jQuery(function ($) {
                     }
 
                     $input.val('');
-                    $status.text(response.data.message || aiSeoKeeperEditor.chatReplyText).css('color', '#135e16');
+
+                    // If AI triggered content edit proposals, render diff cards.
+                    var $review = $panel.find('.ai-seo-keeper-content-review');
+                    if (response.data.changes && response.data.changes.length) {
+                        var changes = response.data.changes;
+                        var html = '<div class="ai-seo-keeper-diff-review">';
+                        html += '<p style="margin:0 0 12px;font-size:13px;color:#50575e;">' + escHtml(response.data.summary || '') + '</p>';
+                        html += '<p style="margin:0 0 8px;font-size:13px;font-weight:600;">' + changes.length + ' proposed change(s) — review and accept individually:</p>';
+
+                        for (var i = 0; i < changes.length; i++) {
+                            var ch = changes[i];
+                            html += '<div class="ai-seo-keeper-diff-card" data-idx="' + i + '" style="border:1px solid #dcdcde;border-radius:4px;padding:12px;margin-bottom:10px;background:#fff;">';
+                            html += '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">';
+                            html += '<strong style="font-size:13px;">' + escHtml(ch.section) + '</strong>';
+                            if (ch.tag_change) html += ' <span style="font-size:11px;background:#e5f5fa;color:#0a4b78;padding:1px 6px;border-radius:3px;">' + escHtml(ch.tag_change) + '</span>';
+                            html += '</div>';
+                            html += '<div style="display:flex;gap:12px;margin-bottom:8px;">';
+                            html += '<div style="flex:1;"><span style="font-size:11px;color:#8a2424;font-weight:600;">BEFORE</span><div style="font-size:13px;background:#fef0f0;padding:6px 8px;border-radius:3px;word-break:break-word;">' + escHtml(ch.old) + '</div></div>';
+                            html += '<div style="flex:1;"><span style="font-size:11px;color:#135e16;font-weight:600;">AFTER</span><div style="font-size:13px;background:#eef8ee;padding:6px 8px;border-radius:3px;word-break:break-word;">' + escHtml(ch.new) + '</div></div>';
+                            html += '</div>';
+                            if (ch.reason) html += '<p style="font-size:12px;color:#787c82;margin:0 0 8px;font-style:italic;">' + escHtml(ch.reason) + '</p>';
+                            html += '<label style="font-size:13px;cursor:pointer;"><input type="checkbox" class="ai-seo-keeper-diff-accept" data-idx="' + i + '" checked /> Accept this change</label>';
+                            html += '</div>';
+                        }
+
+                        html += '<div style="margin-top:12px;display:flex;gap:10px;align-items:center;">';
+                        html += '<button type="button" class="button button-primary ai-seo-keeper-apply-content-changes">Apply Accepted Changes</button>';
+                        html += '<button type="button" class="button ai-seo-keeper-discard-changes">Discard All</button>';
+                        html += '<span class="ai-seo-keeper-apply-status" style="font-size:13px;"></span>';
+                        html += '</div>';
+                        html += '</div>';
+
+                        $review.html(html);
+                        $review.data('proposedChanges', changes);
+                        $status.text('Review the proposed changes below.').css('color', '#135e16');
+                    } else {
+                        $review.empty();
+                        $status.text(response.data.message || aiSeoKeeperEditor.chatReplyText).css('color', '#135e16');
+                    }
                     return;
                 }
 
@@ -935,83 +974,6 @@ jQuery(function ($) {
         })
         .fail(function () {
             $btn.text('Failed').css('color', '#8a2424');
-        });
-    });
-
-    // ── AI Content Editor ─────────────────────────────────────────────
-    $(document).on('click', '.ai-seo-keeper-content-edit-btn', function (event) {
-        event.preventDefault();
-        var $btn = $(this);
-        var $panel = $btn.closest('.ai-seo-keeper-editor-panel');
-        var $status = $btn.closest('.ai-seo-keeper-assistant-panel').find('.ai-seo-keeper-chat-status');
-        if (! $status.length) $status = $panel.find('.ai-seo-keeper-save-status');
-        var $input = $panel.find('.ai-seo-keeper-chat-input');
-        var postId = $('#post_ID').val();
-        var instruction = $.trim($input.val());
-
-        if (! instruction) {
-            $status.text('Enter editing instructions first.').css('color', '#8a2424');
-            return;
-        }
-
-        $btn.prop('disabled', true).text('AI is analyzing…');
-        $status.text('Generating content change proposals…').css('color', 'inherit');
-        var $review = $panel.find('.ai-seo-keeper-content-review');
-        $review.empty();
-
-        $.post(aiSeoKeeperEditor.ajaxUrl, {
-            action: 'ai_seo_keeper_content_edit',
-            nonce: $('#ai_seo_keeper_editor_nonce').val(),
-            post_id: postId,
-            instruction: instruction
-        })
-        .done(function (response) {
-            if (response && response.success && response.data && response.data.changes) {
-                var changes = response.data.changes;
-                var html = '<div class="ai-seo-keeper-diff-review">';
-                html += '<p style="margin:0 0 12px;font-size:13px;color:#50575e;">' + escHtml(response.data.summary || '') + '</p>';
-                html += '<p style="margin:0 0 8px;font-size:13px;font-weight:600;">' + changes.length + ' proposed change(s) — review and accept individually:</p>';
-
-                for (var i = 0; i < changes.length; i++) {
-                    var ch = changes[i];
-                    html += '<div class="ai-seo-keeper-diff-card" data-idx="' + i + '" style="border:1px solid #dcdcde;border-radius:4px;padding:12px;margin-bottom:10px;background:#fff;">';
-                    html += '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">';
-                    html += '<strong style="font-size:13px;">' + escHtml(ch.section) + '</strong>';
-                    if (ch.tag_change) html += ' <span style="font-size:11px;background:#e5f5fa;color:#0a4b78;padding:1px 6px;border-radius:3px;">' + escHtml(ch.tag_change) + '</span>';
-                    html += '</div>';
-                    html += '<div style="display:flex;gap:12px;margin-bottom:8px;">';
-                    html += '<div style="flex:1;"><span style="font-size:11px;color:#8a2424;font-weight:600;">BEFORE</span><div style="font-size:13px;background:#fef0f0;padding:6px 8px;border-radius:3px;word-break:break-word;">' + escHtml(ch.old) + '</div></div>';
-                    html += '<div style="flex:1;"><span style="font-size:11px;color:#135e16;font-weight:600;">AFTER</span><div style="font-size:13px;background:#eef8ee;padding:6px 8px;border-radius:3px;word-break:break-word;">' + escHtml(ch.new) + '</div></div>';
-                    html += '</div>';
-                    if (ch.reason) html += '<p style="font-size:12px;color:#787c82;margin:0 0 8px;font-style:italic;">' + escHtml(ch.reason) + '</p>';
-                    html += '<label style="font-size:13px;cursor:pointer;"><input type="checkbox" class="ai-seo-keeper-diff-accept" data-idx="' + i + '" checked /> Accept this change</label>';
-                    html += '</div>';
-                }
-
-                html += '<div style="margin-top:12px;display:flex;gap:10px;align-items:center;">';
-                html += '<button type="button" class="button button-primary ai-seo-keeper-apply-content-changes">Apply Accepted Changes</button>';
-                html += '<button type="button" class="button ai-seo-keeper-discard-changes">Discard All</button>';
-                html += '<span class="ai-seo-keeper-apply-status" style="font-size:13px;"></span>';
-                html += '</div>';
-                html += '</div>';
-
-                $review.html(html);
-                $review.data('proposedChanges', changes);
-                $status.text('Review the proposed changes below.').css('color', '#135e16');
-            } else {
-                var msg = (response && response.data && response.data.message) ? response.data.message : 'No changes proposed.';
-                $status.text(msg).css('color', '#8a2424');
-            }
-        })
-        .fail(function (xhr) {
-            var msg = 'Content analysis failed.';
-            if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
-                msg = xhr.responseJSON.data.message;
-            }
-            $status.text(msg).css('color', '#8a2424');
-        })
-        .always(function () {
-            $btn.prop('disabled', false).text('✏ Propose Changes');
         });
     });
 
@@ -2150,10 +2112,9 @@ JS;
                                 '</div>' .
 
                                 '<div class="ai-seo-keeper-assistant-panel" data-panel="chat">' .
-                                '<textarea class="widefat ai-seo-keeper-chat-input" rows="3" placeholder="Ask about SEO issues, request metadata fixes, or ask for page content edits — all in one conversation…"></textarea>' .
+                                '<textarea class="widefat ai-seo-keeper-chat-input" rows="3" placeholder="Ask about SEO, request content edits, or follow up on previous advice — AI handles it all in one conversation…"></textarea>' .
                                 '<p class="ai-seo-keeper-chat-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' .
-                                '<button type="button" class="button button-secondary ai-seo-keeper-send-chat" ' . disabled(! $has_api_key, true, false) . '>💬 Ask AI</button>' .
-                                '<button type="button" class="button button-primary ai-seo-keeper-content-edit-btn" ' . disabled(! $has_api_key, true, false) . '>✏ Propose Page Edits <span class="ai-seo-keeper-help-tip" data-tip="Sends your message as a page-edit instruction. AI reads the full page content, proposes targeted text changes with BEFORE/AFTER diffs — you review and accept each one before anything is saved.">&#9432;</span></button>' .
+                                '<button type="button" class="button button-primary ai-seo-keeper-send-chat" ' . disabled(! $has_api_key, true, false) . '>Send <span class="ai-seo-keeper-help-tip" data-tip="AI reads your full page content, SEO data, audit results, and conversation history. Ask questions, request metadata changes, or ask for page content edits — AI decides what to do automatically. When edits are needed, you get BEFORE/AFTER diffs to review before anything is saved.">&#9432;</span></button>' .
                                 '<button type="button" class="button ai-seo-keeper-clear-chat" style="margin-left:auto;color:#8a2424;" ' . disabled(empty($chat_messages), true, false) . '>🗑 Clear</button>' .
                                 '</p>' .
                                 '<span class="ai-seo-keeper-chat-status" aria-live="polite" style="display:block;font-size:13px;margin:4px 0 8px;"></span>' .
@@ -3436,19 +3397,43 @@ HTML;
                     'model' => $reply['model'],
                 )
             );
+
+            // If AI decided content edits are needed, auto-generate proposals.
+            $content_changes = null;
+            $content_summary = '';
+            $content_builder = '';
+            if (! empty($reply['wants_edits'])) {
+                try {
+                    $all_messages = $this->history_store->get_recent_chat_messages($post_id, 12);
+                    $edit_result = $this->ai_generator->generate_content_changes($post_id, $message, $all_messages);
+                    $content_changes = $edit_result['changes'];
+                    $content_summary = $edit_result['summary'];
+                    $content_builder = Content_Writer::detect_builder($post_id);
+                } catch (\Throwable $edit_err) {
+                    // Content edit failed; chat reply still goes through.
+                    $content_changes = null;
+                    $content_summary = 'Content edit proposals could not be generated: ' . $edit_err->getMessage();
+                }
+            }
         } catch (\Throwable $throwable) {
             wp_send_json_error(array('message' => $throwable->getMessage()), 500);
         }
 
         $chat_messages = $this->history_store->get_recent_chat_messages($post_id, 12);
 
-        wp_send_json_success(
-            array(
-                'message' => 'AI assistant replied.',
-                'notes' => $reply['notes'],
-                'chatHtml' => $this->render_chat_history_markup($chat_messages),
-            )
+        $response_data = array(
+            'message' => 'AI assistant replied.',
+            'notes' => $reply['notes'],
+            'chatHtml' => $this->render_chat_history_markup($chat_messages),
         );
+
+        if (null !== $content_changes) {
+            $response_data['changes'] = $content_changes;
+            $response_data['summary'] = $content_summary;
+            $response_data['builder'] = $content_builder;
+        }
+
+        wp_send_json_success($response_data);
     }
 
     public function handle_ajax_setup_index(): void
