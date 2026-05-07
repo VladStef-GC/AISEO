@@ -1092,6 +1092,14 @@ jQuery(function ($) {
         return div.innerHTML;
     }
 
+    // ── Help-tip tooltip positioning ──────────────────────────────────
+    $(document).on('mouseenter', '.ai-seo-keeper-help-tip', function () {
+        var rect = this.getBoundingClientRect();
+        var style = document.documentElement.style;
+        style.setProperty('--tip-top', Math.max(0, rect.top - 4) + 'px');
+        style.setProperty('--tip-left', Math.min(rect.left, window.innerWidth - 320) + 'px');
+    });
+
     // ── AI Assistant sub-tab switching ────────────────────────────────
     $(document).on('click', '.ai-seo-keeper-assistant-tab', function () {
         var $tab = $(this);
@@ -2869,25 +2877,28 @@ JS;
     color: #2271b1;
     font-weight: 400;
     font-size: 14px;
-    position: relative;
+    position: static;
 }
 
 .ai-seo-keeper-help-tip:hover::after {
     content: attr(data-tip);
-    position: absolute;
-    bottom: 100%;
-    left: 0;
+    position: fixed;
+    top: var(--tip-top, 0);
+    left: var(--tip-left, 0);
+    transform: translateY(-100%);
     background: #1d2327;
     color: #fff;
-    padding: 6px 10px;
+    padding: 8px 12px;
     border-radius: 4px;
     font-size: 12px;
     font-weight: 400;
     line-height: 1.4;
-    width: 260px;
-    z-index: 100;
-    box-shadow: 0 2px 6px rgba(0,0,0,.15);
+    max-width: 300px;
+    width: max-content;
+    z-index: 999999;
+    box-shadow: 0 4px 12px rgba(0,0,0,.25);
     pointer-events: none;
+    white-space: normal;
 }
 
 .ai-seo-keeper-readiness-grid,
