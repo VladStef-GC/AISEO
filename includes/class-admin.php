@@ -156,6 +156,7 @@ class Admin
         add_action('wp_ajax_' . self::AJAX_APPLY_SUGGESTION_ACTION, array($this, 'handle_ajax_apply_suggestion'));
         add_action('wp_ajax_' . self::AJAX_RESTORE_BACKUP_ACTION, array($this, 'handle_ajax_restore_backup'));
         add_action('wp_ajax_' . self::AJAX_CLEAR_CHAT_ACTION, array($this, 'handle_ajax_clear_chat'));
+        add_action('wp_ajax_ai_seo_keeper_delete_edit_plan', array($this, 'handle_ajax_delete_edit_plan'));
     }
 
     private function is_supported_post_type(string $post_type): bool
@@ -1104,6 +1105,46 @@ jQuery(function ($) {
         })
         .fail(function () {
             $btn.text('Restore failed').css('color', '#8a2424');
+        });
+    });
+
+    // ── Toggle content edit plan details in History ───────────────────
+    $(document).on('click', '.ai-seo-keeper-toggle-edit-details', function () {
+        var $details = $(this).closest('.ai-seo-keeper-history-item').find('.ai-seo-keeper-edit-details');
+        if ($details.is(':visible')) {
+            $details.slideUp(200);
+            $(this).html($(this).html().replace('▾', '▸'));
+        } else {
+            $details.slideDown(200);
+            $(this).html($(this).html().replace('▸', '▾'));
+        }
+    });
+
+    // ── Delete content edit plan from History ─────────────────────────
+    $(document).on('click', '.ai-seo-keeper-delete-edit-plan', function () {
+        var $btn = $(this);
+        var editId = $btn.data('editId');
+        var postId = $('#post_ID').val();
+
+        if (! confirm('Remove this content edit plan from history?')) return;
+
+        $btn.prop('disabled', true);
+
+        $.post(aiSeoKeeperEditor.ajaxUrl, {
+            action: 'ai_seo_keeper_delete_edit_plan',
+            nonce: $('#ai_seo_keeper_editor_nonce').val(),
+            post_id: postId,
+            edit_id: editId
+        })
+        .done(function (response) {
+            if (response && response.success) {
+                $btn.closest('.ai-seo-keeper-history-item').slideUp(200, function () {
+                    $(this).remove();
+                });
+            }
+        })
+        .always(function () {
+            $btn.prop('disabled', false);
         });
     });
 
@@ -3972,6 +4013,26 @@ HTML;
         wp_send_json_success(array('message' => $deleted . ' message(s) cleared.', 'deleted' => $deleted));
     }
 
+    public function handle_ajax_delete_edit_plan(): void
+    {
+        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
+        $edit_id = isset($_POST['edit_id']) ? (int) $_POST['edit_id'] : 0;
+
+        if (! $post_id || ! $edit_id) {
+            wp_send_json_error(array('message' => 'Missing parameters.'), 400);
+        }
+
+        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
+
+        if (! current_user_can('edit_post', $post_id)) {
+            wp_send_json_error(array('message' => 'Permission denied.'), 403);
+        }
+
+        $this->history_store->delete_content_edit_plan($edit_id);
+
+        wp_send_json_success(array('message' => 'Plan removed from history.'));
+    }
+
     public function render_setup_wizard_page(): void
     {
         if (! current_user_can('manage_options')) {
@@ -5127,10 +5188,12 @@ HTML;
         // Apply any pending AI content changes on Update/Publish.
         $pending = Content_Writer::get_pending_changes($post_id);
         if (! empty($pending)) {
-            Content_Writer::apply_pending_changes($post_id);
+            $result = Content_Writer::apply_pending_changes($post_id);
 
-            // Update the most recent content_edit history entry status to 'published'.
-            $this->history_store->update_content_edit_status($post_id, 'published');
+            // Only mark as published if at least one change was actually applied.
+            if (! empty($result) && $result['applied'] > 0) {
+                $this->history_store->update_content_edit_status($post_id, 'published');
+            }
         }
     }
 
@@ -5844,24 +5907,46 @@ HTML;
                 <?php if (! empty($content_edits)) : ?>
                     <h4 style="margin:0 0 8px;font-size:13px;color:#50575e;border-bottom:1px solid #dcdcde;padding-bottom:6px;">Content Edit Plans</h4>
                     <?php foreach ($content_edits as $edit) : ?>
-                        <div class="ai-seo-keeper-history-item" style="border-left:3px solid <?php echo 'published' === $edit['status'] ? '#00a32a' : '#ffb300'; ?>;padding-left:10px;">
+                        <div class="ai-seo-keeper-history-item" style="border-left:3px solid <?php echo 'published' === $edit['status'] ? '#00a32a' : '#ffb300'; ?>;padding-left:10px;" data-edit-id="<?php echo esc_attr((string) $edit['id']); ?>">
                             <p style="margin:0 0 6px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
-                                <strong><?php echo esc_html($edit['change_count']); ?> content change(s)</strong>
-                                <?php if ('published' === $edit['status']) : ?>
-                                    <span class="ai-seo-keeper-check-pill is-pass" style="background:#00a32a;color:#fff;font-size:11px;padding:2px 8px;border-radius:3px;">Approved | Published</span>
-                                <?php else : ?>
-                                    <span class="ai-seo-keeper-check-pill" style="background:#ffb300;color:#fff;font-size:11px;padding:2px 8px;border-radius:3px;">Approved | Not Published</span>
-                                <?php endif; ?>
+                                <strong style="cursor:pointer;" class="ai-seo-keeper-toggle-edit-details"><?php echo esc_html($edit['change_count']); ?> content change(s) ▸</strong>
+                                <span style="display:flex;gap:6px;align-items:center;">
+                                    <?php if ('published' === $edit['status']) : ?>
+                                        <span class="ai-seo-keeper-check-pill is-pass" style="background:#00a32a;color:#fff;font-size:11px;padding:2px 8px;border-radius:3px;white-space:nowrap;">Approved | Published</span>
+                                    <?php else : ?>
+                                        <span class="ai-seo-keeper-check-pill" style="background:#ffb300;color:#fff;font-size:11px;padding:2px 8px;border-radius:3px;white-space:nowrap;">Approved | Not Published</span>
+                                    <?php endif; ?>
+                                    <button type="button" class="button button-small ai-seo-keeper-delete-edit-plan" data-edit-id="<?php echo esc_attr((string) $edit['id']); ?>" style="color:#8a2424;font-size:11px;padding:0 6px;line-height:1.8;" title="Remove this plan from history">✕</button>
+                                </span>
                             </p>
                             <?php if ('' !== ($edit['summary'] ?? '')) : ?>
                                 <p style="margin:0 0 6px;font-size:13px;"><em><?php echo esc_html($edit['summary']); ?></em></p>
                             <?php endif; ?>
-                            <p class="ai-seo-keeper-history-meta" style="margin:0;font-size:12px;color:#787c82;">
+                            <p class="ai-seo-keeper-history-meta" style="margin:0 0 6px;font-size:12px;color:#787c82;">
                                 <?php echo esc_html($edit['created_at'] ?? ''); ?>
                                 <?php if ('published' === $edit['status'] && '' !== ($edit['published_at'] ?? '')) : ?>
                                     <?php echo ' | Published: ' . esc_html($edit['published_at']); ?>
                                 <?php endif; ?>
                             </p>
+                            <?php if (! empty($edit['changes'])) : ?>
+                                <div class="ai-seo-keeper-edit-details" style="display:none;margin-top:8px;">
+                                    <?php foreach ($edit['changes'] as $idx => $ch) : ?>
+                                        <div style="border:1px solid #dcdcde;border-radius:4px;padding:8px;margin-bottom:6px;background:#fff;font-size:12px;">
+                                            <strong><?php echo esc_html($ch['section'] ?? ('Change ' . ($idx + 1))); ?></strong>
+                                            <?php if (! empty($ch['tag_change'])) : ?>
+                                                <span style="font-size:11px;background:#e5f5fa;color:#0a4b78;padding:1px 4px;border-radius:3px;margin-left:6px;"><?php echo esc_html($ch['tag_change']); ?></span>
+                                            <?php endif; ?>
+                                            <div style="display:flex;gap:8px;margin-top:4px;">
+                                                <div style="flex:1;"><span style="font-size:10px;color:#8a2424;font-weight:600;">BEFORE</span><div style="background:#fef0f0;padding:4px 6px;border-radius:3px;word-break:break-word;"><?php echo esc_html($ch['old'] ?? ''); ?></div></div>
+                                                <div style="flex:1;"><span style="font-size:10px;color:#135e16;font-weight:600;">AFTER</span><div style="background:#eef8ee;padding:4px 6px;border-radius:3px;word-break:break-word;"><?php echo esc_html($ch['new'] ?? ''); ?></div></div>
+                                            </div>
+                                            <?php if (! empty($ch['reason'])) : ?>
+                                                <p style="font-size:11px;color:#787c82;margin:4px 0 0;font-style:italic;"><?php echo esc_html($ch['reason']); ?></p>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -5871,34 +5956,34 @@ HTML;
                         <h4 style="margin:12px 0 8px;font-size:13px;color:#50575e;border-bottom:1px solid #dcdcde;padding-bottom:6px;">Metadata Suggestions</h4>
                     <?php endif; ?>
                     <?php foreach ($recent_suggestions as $entry) : ?>
-                    <div class="ai-seo-keeper-history-item">
-                        <p style="margin:0 0 8px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
-                            <strong><?php echo esc_html($entry['seo_title']); ?></strong>
-                            <?php if (! empty($entry['is_approved'])) : ?>
-                                <span class="ai-seo-keeper-check-pill is-pass">Approved</span>
+                        <div class="ai-seo-keeper-history-item">
+                            <p style="margin:0 0 8px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
+                                <strong><?php echo esc_html($entry['seo_title']); ?></strong>
+                                <?php if (! empty($entry['is_approved'])) : ?>
+                                    <span class="ai-seo-keeper-check-pill is-pass">Approved</span>
+                                <?php endif; ?>
+                            </p>
+                            <p style="margin:0 0 8px;"><?php echo esc_html($entry['meta_description']); ?></p>
+                            <?php if ('' !== $entry['notes']) : ?>
+                                <p style="margin:0 0 8px;"><em><?php echo esc_html($entry['notes']); ?></em></p>
                             <?php endif; ?>
-                        </p>
-                        <p style="margin:0 0 8px;"><?php echo esc_html($entry['meta_description']); ?></p>
-                        <?php if ('' !== $entry['notes']) : ?>
-                            <p style="margin:0 0 8px;"><em><?php echo esc_html($entry['notes']); ?></em></p>
-                        <?php endif; ?>
-                        <p class="ai-seo-keeper-history-meta" style="margin:0;">
-                            <?php echo esc_html(strtoupper($entry['provider'])); ?>
-                            <?php if ('' !== $entry['model']) : ?>
-                                <?php echo ' | ' . esc_html($entry['model']); ?>
-                            <?php endif; ?>
-                            <?php if ('' !== $entry['created_at']) : ?>
-                                <?php echo ' | ' . esc_html($entry['created_at']); ?>
-                            <?php endif; ?>
-                        </p>
-                        <p style="margin:12px 0 0;">
-                            <?php if (! empty($entry['is_approved'])) : ?>
-                                <button type="button" class="button button-small" disabled>Approved for future output</button>
-                            <?php else : ?>
-                                <button type="button" class="button button-small ai-seo-keeper-approve-suggestion" data-message-id="<?php echo esc_attr((string) $entry['id']); ?>">Approve for future output</button>
-                            <?php endif; ?>
-                        </p>
-                    </div>
+                            <p class="ai-seo-keeper-history-meta" style="margin:0;">
+                                <?php echo esc_html(strtoupper($entry['provider'])); ?>
+                                <?php if ('' !== $entry['model']) : ?>
+                                    <?php echo ' | ' . esc_html($entry['model']); ?>
+                                <?php endif; ?>
+                                <?php if ('' !== $entry['created_at']) : ?>
+                                    <?php echo ' | ' . esc_html($entry['created_at']); ?>
+                                <?php endif; ?>
+                            </p>
+                            <p style="margin:12px 0 0;">
+                                <?php if (! empty($entry['is_approved'])) : ?>
+                                    <button type="button" class="button button-small" disabled>Approved for future output</button>
+                                <?php else : ?>
+                                    <button type="button" class="button button-small ai-seo-keeper-approve-suggestion" data-message-id="<?php echo esc_attr((string) $entry['id']); ?>">Approve for future output</button>
+                                <?php endif; ?>
+                            </p>
+                        </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>

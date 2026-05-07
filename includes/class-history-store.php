@@ -501,4 +501,53 @@ class History_Store
 
         return $entries;
     }
+
+    /**
+     * Delete a content edit plan message from history.
+     *
+     * @param int $message_id The message ID to delete.
+     */
+    public function delete_content_edit_plan(int $message_id): void
+    {
+        global $wpdb;
+
+        $messages_table = $wpdb->prefix . 'ai_seo_keeper_messages';
+
+        // Delete the assistant message and its paired user message (previous row).
+        $conversation_id = $wpdb->get_var(
+            $wpdb->prepare("SELECT conversation_id FROM {$messages_table} WHERE id = %d AND role = 'assistant'", $message_id)
+        );
+
+        if (! $conversation_id) {
+            return;
+        }
+
+        // Delete this specific assistant message.
+        $wpdb->delete($messages_table, array('id' => $message_id), array('%d'));
+
+        // Delete the paired user message (the one just before it in the same conversation).
+        $user_message_id = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT id FROM {$messages_table}
+                 WHERE conversation_id = %d AND role = 'user' AND id < %d
+                 ORDER BY id DESC LIMIT 1",
+                $conversation_id,
+                $message_id
+            )
+        );
+
+        if ($user_message_id) {
+            $wpdb->delete($messages_table, array('id' => (int) $user_message_id), array('%d'));
+        }
+
+        // If conversation is now empty, delete it too.
+        $remaining = $wpdb->get_var(
+            $wpdb->prepare("SELECT COUNT(*) FROM {$messages_table} WHERE conversation_id = %d", $conversation_id)
+        );
+
+        if (0 === (int) $remaining) {
+            $conversations_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
+            $wpdb->delete($conversations_table, array('id' => (int) $conversation_id), array('%d'));
+        }
+    }
 }

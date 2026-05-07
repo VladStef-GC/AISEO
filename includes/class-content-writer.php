@@ -180,52 +180,59 @@ class Content_Writer
             }
 
             $raw = get_post_meta($post_id, $meta_key, true);
-            $content = is_string($raw) ? $raw : maybe_serialize($raw);
 
-            foreach ($changes as $change) {
-                $old = (string) ($change['old'] ?? '');
-                $new = (string) ($change['new'] ?? '');
-                if ('' === $old) {
-                    $failed++;
-                    $details[] = 'Empty search string — skipped.';
-                    continue;
-                }
-                if (false === mb_strpos($content, $old)) {
-                    $failed++;
-                    $details[] = 'Text not found in builder data: "' . mb_substr($old, 0, 60) . '…"';
-                    continue;
-                }
-                $pos = mb_strpos($content, $old);
-                $content = mb_substr($content, 0, $pos) . $new . mb_substr($content, $pos + mb_strlen($old));
-                $applied++;
-                $details[] = 'Applied: "' . mb_substr($old, 0, 40) . '…" → "' . mb_substr($new, 0, 40) . '…"';
-            }
-
-            // For serialized arrays (BeTheme), we need to update the serialized string.
-            // Since we did str_replace on the serialized/JSON string, update as raw string.
             if (is_array($raw)) {
-                // BeTheme and similar: re-serialize after replacing in the serialized string.
-                // This only works if the replacement doesn't change string lengths in serialized format.
-                // Safer: unserialize, walk, replace, re-serialize.
-                $unserialized = maybe_unserialize($content);
-                if (is_array($unserialized)) {
-                    update_post_meta($post_id, $meta_key, $unserialized);
-                } else {
-                    // Fallback: delete old, insert new raw value.
-                    delete_post_meta($post_id, $meta_key);
-                    $GLOBALS['wpdb']->insert(
-                        $GLOBALS['wpdb']->postmeta,
-                        array(
-                            'post_id' => $post_id,
-                            'meta_key' => $meta_key,
-                            'meta_value' => $content,
-                        ),
-                        array('%d', '%s', '%s')
-                    );
-                    wp_cache_delete($post_id, 'post_meta');
+                // Serialized array storage (BeTheme, etc.): walk the array recursively
+                // and replace text within individual string values. This avoids breaking
+                // serialization length headers.
+                $data = $raw;
+                foreach ($changes as $change) {
+                    $old = (string) ($change['old'] ?? '');
+                    $new = (string) ($change['new'] ?? '');
+                    if ('' === $old) {
+                        $failed++;
+                        $details[] = 'Empty search string — skipped.';
+                        continue;
+                    }
+                    $found = false;
+                    $data = self::walk_replace($data, $old, $new, $found);
+                    if ($found) {
+                        $applied++;
+                        $details[] = 'Applied: "' . mb_substr($old, 0, 40) . '…" → "' . mb_substr($new, 0, 40) . '…"';
+                    } else {
+                        $failed++;
+                        $details[] = 'Text not found in builder data: "' . mb_substr($old, 0, 60) . '…"';
+                    }
+                }
+
+                if ($applied > 0) {
+                    update_post_meta($post_id, $meta_key, $data);
                 }
             } else {
-                update_post_meta($post_id, $meta_key, $content);
+                // String storage (JSON, shortcodes, etc.): direct str_replace.
+                $content = is_string($raw) ? $raw : '';
+                foreach ($changes as $change) {
+                    $old = (string) ($change['old'] ?? '');
+                    $new = (string) ($change['new'] ?? '');
+                    if ('' === $old) {
+                        $failed++;
+                        $details[] = 'Empty search string — skipped.';
+                        continue;
+                    }
+                    if (false === mb_strpos($content, $old)) {
+                        $failed++;
+                        $details[] = 'Text not found in builder data: "' . mb_substr($old, 0, 60) . '…"';
+                        continue;
+                    }
+                    $pos = mb_strpos($content, $old);
+                    $content = mb_substr($content, 0, $pos) . $new . mb_substr($content, $pos + mb_strlen($old));
+                    $applied++;
+                    $details[] = 'Applied: "' . mb_substr($old, 0, 40) . '…" → "' . mb_substr($new, 0, 40) . '…"';
+                }
+
+                if ($applied > 0) {
+                    update_post_meta($post_id, $meta_key, $content);
+                }
             }
         }
 
@@ -237,6 +244,56 @@ class Content_Writer
             'failed' => $failed,
             'details' => $details,
         );
+    }
+
+    /**
+     * Recursively walk an array/object and replace the first occurrence of
+     * a text string within any string value. Safe for serialized PHP arrays
+     * (BeTheme, Beaver Builder draft data, etc.) because it operates on the
+     * deserialized structure, not the serialized string.
+     *
+     * @param mixed  $data   The data structure to walk.
+     * @param string $old    Text to find.
+     * @param string $new    Replacement text.
+     * @param bool   &$found Set to true if a replacement was made.
+     * @return mixed The modified data structure.
+     */
+    private static function walk_replace($data, string $old, string $new, bool &$found)
+    {
+        if ($found) {
+            return $data; // Only replace the first occurrence.
+        }
+
+        if (is_string($data)) {
+            $pos = mb_strpos($data, $old);
+            if (false !== $pos) {
+                $data = mb_substr($data, 0, $pos) . $new . mb_substr($data, $pos + mb_strlen($old));
+                $found = true;
+            }
+            return $data;
+        }
+
+        if (is_array($data)) {
+            foreach ($data as $key => $value) {
+                $data[$key] = self::walk_replace($value, $old, $new, $found);
+                if ($found) {
+                    break;
+                }
+            }
+            return $data;
+        }
+
+        if (is_object($data)) {
+            foreach (get_object_vars($data) as $prop => $value) {
+                $data->$prop = self::walk_replace($value, $old, $new, $found);
+                if ($found) {
+                    break;
+                }
+            }
+            return $data;
+        }
+
+        return $data;
     }
 
     /**
