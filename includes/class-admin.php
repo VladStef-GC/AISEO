@@ -1997,7 +1997,7 @@ JS;
                     <div class="ai-seo-keeper-snippet-analyzer is-neutral">
                         <div class="ai-seo-keeper-snippet-header">
                             <div>
-                                <strong>Live SEO snippet analysis <span class="ai-seo-keeper-help-tip" title="These scores update instantly as you type. They measure title length, description length, and focus keyphrase coverage — the basic signals search engines use.">&#9432;</span></strong>
+                                <strong>Live SEO snippet analysis <span class="ai-seo-keeper-help-tip" data-tip="These scores update instantly as you type. They measure title length, description length, and focus keyphrase coverage — the basic signals search engines use.">&#9432;</span></strong>
                                 <p class="ai-seo-keeper-panel-note">Title length, description length, and focus-keyphrase coverage update instantly while you type.</p>
                             </div>
                             <div class="ai-seo-keeper-snippet-score is-neutral">
@@ -2014,7 +2014,7 @@ JS;
                         <?php if (null !== $page_audit_score) : ?>
                             <div style="display:flex;align-items:center;gap:12px;margin:10px 0;padding:8px 12px;background:#f6f7f7;border-radius:4px;">
                                 <span style="font-size:13px;">Last AI audit score: <strong style="color:<?php echo $page_audit_score >= 70 ? '#00a32a' : ($page_audit_score >= 40 ? '#dba617' : '#d63638'); ?>;"><?php echo esc_html((string) $page_audit_score); ?>/100</strong></span>
-                                <button type="button" class="button button-small ai-seo-keeper-run-page-audit" <?php disabled(! $has_api_key); ?>>🔄 Re-run AI Audit <span class="ai-seo-keeper-help-tip" title="Runs a full AI-powered SEO audit of this page. Use this after making changes to see your updated score.">&#9432;</span></button>
+                                <button type="button" class="button button-small ai-seo-keeper-run-page-audit" <?php disabled(! $has_api_key); ?>>🔄 Re-run AI Audit <span class="ai-seo-keeper-help-tip" data-tip="Runs a full AI-powered SEO audit of this page. Use this after making changes to see your updated score.">&#9432;</span></button>
                                 <span class="ai-seo-keeper-audit-status" style="font-size:12px;color:#787c82;"></span>
                             </div>
                         <?php else : ?>
@@ -2062,14 +2062,14 @@ JS;
                         </label>
 
                         <label class="ai-seo-keeper-field ai-seo-keeper-field-textarea-wide">
-                            <span class="ai-seo-keeper-field-label">SEO title <span class="ai-seo-keeper-help-tip" title="This is the title search engines display in results. It becomes live once approved and the frontend gate is enabled. AI can generate or edit it for you.">&#9432;</span></span>
+                            <span class="ai-seo-keeper-field-label">SEO title <span class="ai-seo-keeper-help-tip" data-tip="This is the title search engines display in results. It becomes live once approved and the frontend gate is enabled. AI can generate or edit it for you.">&#9432;</span></span>
                             <input id="ai-seo-keeper-meta-title" type="text" name="ai_seo_keeper_meta_title" value="<?php echo esc_attr($seo_title); ?>" maxlength="<?php echo esc_attr((string) self::TITLE_MAX_LENGTH); ?>" />
                             <?php echo $this->render_field_counter('ai-seo-keeper-meta-title', $seo_title, self::TITLE_MAX_LENGTH); ?>
                             <span class="ai-seo-keeper-field-help">This is the title shown in Google search results. Approve it via the readiness section below to make it live. Max <?php echo esc_html((string) self::TITLE_MAX_LENGTH); ?> chars.</span>
                         </label>
 
                         <label class="ai-seo-keeper-field ai-seo-keeper-field-textarea-wide">
-                            <span class="ai-seo-keeper-field-label">Meta description <span class="ai-seo-keeper-help-tip" title="This description appears below the title in search results. Approve it via the readiness section to make it live. AI can generate or edit it for you.">&#9432;</span></span>
+                            <span class="ai-seo-keeper-field-label">Meta description <span class="ai-seo-keeper-help-tip" data-tip="This description appears below the title in search results. Approve it via the readiness section to make it live. AI can generate or edit it for you.">&#9432;</span></span>
                             <textarea id="ai-seo-keeper-meta-description" rows="5" name="ai_seo_keeper_meta_description" maxlength="<?php echo esc_attr((string) self::DESCRIPTION_MAX_LENGTH); ?>"><?php echo esc_textarea($seo_description); ?></textarea>
                             <?php echo $this->render_field_counter('ai-seo-keeper-meta-description', $seo_description, self::DESCRIPTION_MAX_LENGTH); ?>
                             <span class="ai-seo-keeper-field-help">Shown under the title in search results. Approve it below to go live. Max <?php echo esc_html((string) self::DESCRIPTION_MAX_LENGTH); ?> chars.</span>
@@ -2090,12 +2090,12 @@ JS;
 
                                 '<div class="ai-seo-keeper-assistant-panel" data-panel="chat">' .
                                 '<textarea class="widefat ai-seo-keeper-chat-input" rows="3" placeholder="Ask about SEO issues, request metadata fixes, or ask any question about this page…"></textarea>' .
-                                '<p class="ai-seo-keeper-chat-actions"><button type="button" class="button button-secondary ai-seo-keeper-send-chat" ' . disabled(! $has_api_key, true, false) . '>Ask AI <span class="ai-seo-keeper-help-tip" title="AI sees: page content, SEO title, meta description, focus keyphrase, snippet scores, audit results, related pages, and conversation history.">&#9432;</span></button></p>' .
+                                '<p class="ai-seo-keeper-chat-actions"><button type="button" class="button button-secondary ai-seo-keeper-send-chat" ' . disabled(! $has_api_key, true, false) . '>Ask AI <span class="ai-seo-keeper-help-tip" data-tip="AI sees: page content, SEO title, meta description, focus keyphrase, snippet scores, audit results, related pages, and conversation history.">&#9432;</span></button></p>' .
                                 '<div class="ai-seo-keeper-chat-shell">' . $this->render_chat_history_markup($chat_messages) . '</div>' .
                                 '</div>' .
 
                                 '<div class="ai-seo-keeper-assistant-panel" data-panel="editor" style="display:none;">' .
-                                '<p style="font-size:13px;color:#50575e;margin:0 0 10px;">Tell AI what to change — it reads the full page, proposes targeted text edits, and you review each one before anything is saved. <span class="ai-seo-keeper-help-tip" title="AI only rephrases text and fixes headings (H1-H6). It never removes buttons, images, links, forms, or any visual elements. A backup is saved before every change.">&#9432;</span></p>' .
+                                '<p style="font-size:13px;color:#50575e;margin:0 0 10px;">Tell AI what to change — it reads the full page, proposes targeted text edits, and you review each one before anything is saved. <span class="ai-seo-keeper-help-tip" data-tip="AI only rephrases text and fixes headings (H1-H6). It never removes buttons, images, links, forms, or any visual elements. A backup is saved before every change.">&#9432;</span></p>' .
                                 '<textarea class="widefat ai-seo-keeper-content-edit-input" rows="3" placeholder="e.g. Rephrase this page for better SEO highlighting our AI solutions and automation services…"></textarea>' .
                                 '<p class="ai-seo-keeper-chat-actions"><button type="button" class="button button-primary ai-seo-keeper-content-edit-btn" ' . disabled(! $has_api_key, true, false) . '>✏ Propose Changes</button></p>' .
                                 '<div class="ai-seo-keeper-content-review"></div>' .
@@ -2107,7 +2107,7 @@ JS;
 
                             echo $this->render_accordion_section(
                                 $chat_accordion_id,
-                                '🤖 AI Assistant <span class="ai-seo-keeper-help-tip" title="Unified AI workspace: chat for SEO advice, edit page content, and view suggestion history — all in one place.">&#9432;</span>',
+                                '🤖 AI Assistant <span class="ai-seo-keeper-help-tip" data-tip="Unified AI workspace: chat for SEO advice, edit page content, and view suggestion history — all in one place.">&#9432;</span>',
                                 $ai_assistant_content,
                                 false
                             );
@@ -2117,7 +2117,7 @@ JS;
                         <?php
                         echo $this->render_accordion_section(
                             $readiness_accordion_id,
-                            'Frontend readiness <span class="ai-seo-keeper-help-tip" title="Shows whether this page\'s SEO metadata is approved and ready to be served on the live site. All checks must pass for AI SEO Keeper to output your title and description.">&#9432;</span>',
+                            'Frontend readiness <span class="ai-seo-keeper-help-tip" data-tip="Shows whether this page\'s SEO metadata is approved and ready to be served on the live site. All checks must pass for AI SEO Keeper to output your title and description.">&#9432;</span>',
                             $frontend_readiness_markup,
                             true
                         );
@@ -2873,7 +2873,7 @@ JS;
 }
 
 .ai-seo-keeper-help-tip:hover::after {
-    content: attr(title);
+    content: attr(data-tip);
     position: absolute;
     bottom: 100%;
     left: 0;
@@ -3025,7 +3025,7 @@ HTML;
     ?>
         <div class="ai-seo-keeper-accordion-item">
             <button type="button" class="ai-seo-keeper-accordion-toggle" aria-expanded="<?php echo $open ? 'true' : 'false'; ?>" aria-controls="<?php echo esc_attr($accordion_id); ?>" data-default-open="<?php echo $open ? '1' : '0'; ?>">
-                <span><?php echo wp_kses($title, array('span' => array('class' => true, 'title' => true))); ?></span>
+                <span><?php echo wp_kses($title, array('span' => array('class' => true, 'data-tip' => true))); ?></span>
                 <span class="ai-seo-keeper-accordion-symbol"><?php echo $open ? '-' : '+'; ?></span>
             </button>
             <div id="<?php echo esc_attr($accordion_id); ?>" class="ai-seo-keeper-accordion-panel" <?php echo $open ? '' : 'hidden'; ?>>
