@@ -139,12 +139,142 @@ The working model is hybrid by design:
 
 ## Current priorities
 
-1. ~~Extend automatic search appearance beyond singular content~~ — DONE: archives, taxonomies, author, date, search, posts page, 404.
-2. ~~XML Sitemap~~ — DONE: sitemap index, per-type sitemaps, XSL stylesheet, robots.txt directive, core sitemap replacement.
-3. Expand schema enrichment from trusted site fields such as price, SKU, and business/contact details where those values are available consistently.
-4. Build the AI site-structure assistant: dedicated admin page where AI can see the full sitemap, propose URL restructuring, rename slugs, and manage redirects.
-5. Add taxonomy-level SEO fields (title/description per category/tag) beyond the template-based defaults.
-6. Keep prioritizing standalone replacement features over convenience import features.
+### Phase 1 — Yoast Parity Core (Critical)
+
+These are features Yoast Free ships that we must match:
+
+1. **Redirect Manager (301/302/307 + 404 monitor)**
+   - New class: `class-redirects.php`
+   - Database table: `ai_seo_keeper_redirects` (source, target, type, hits, created_at)
+   - Admin page under AI SEO Keeper menu: list redirects, add/edit/delete
+   - 404 logging: hook `template_redirect`, log 404 URLs with timestamps/referrer
+   - One-click "create redirect" from 404 log entries
+   - Regex redirect support (optional, Phase 2)
+
+2. **Robots.txt Editor**
+   - Settings tab with textarea editor for custom robots.txt rules
+   - Preview of effective robots.txt content
+   - Validation: block dangerous directives that would deindex everything
+
+3. **Keyword Density / Keyphrase Analysis**
+   - Count keyphrase occurrences in: first paragraph, content body, subheadings, image alt tags, URL slug
+   - Keyphrase density percentage with recommended range (0.5%–2.5%)
+   - Related keyphrase suggestions (AI-powered)
+   - Add to Basic SEO checks tab in editor
+
+4. **Social Profiles for Organization Schema**
+   - Settings fields: Facebook URL, Twitter/X URL, Instagram, LinkedIn, YouTube, Pinterest
+   - Output as `sameAs` array in Organization schema JSON-LD
+   - Also used for `og:see_also` tags
+
+5. **Taxonomy-Level SEO Fields**
+   - Per-category / per-tag: custom SEO title, meta description, canonical, noindex override
+   - Add fields to category/tag edit screens
+   - Frontend uses these before falling back to templates
+
+6. **Bulk Editor for Titles/Descriptions**
+   - Admin page: spreadsheet-style table of all posts/pages
+   - Inline editing of SEO title + meta description
+   - Filter by: post type, status (has metadata / missing / AI-generated)
+   - Bulk AI generate selected rows
+
+### Phase 2 — Professional-Grade (Competitive Edge)
+
+Features that put us ahead of Yoast Free:
+
+7. **Orphaned Content Detection**
+   - Scan for posts/pages with zero internal inbound links
+   - Report in audit dashboard with link suggestion
+   - AI can suggest which pages to link from
+
+8. **Internal Linking Suggestions (Dedicated Tool)**
+   - Analyze content index to find related pages
+   - Suggest contextual link placements within content
+   - Show suggestions in editor sidebar
+   - Track internal link graph (pages → pages)
+
+9. **Cornerstone Content Marking**
+   - Per-page checkbox in editor: "This is cornerstone content"
+   - Cornerstone pages get priority in: internal link suggestions, sitemap priority, AI audit weight
+   - Dashboard widget showing cornerstone coverage
+
+10. **Image SEO Dashboard**
+    - List all images across the site with alt tag status
+    - Bulk edit alt tags
+    - AI-powered alt tag generation from image context + page content
+    - Missing alt tag report per page
+
+11. **Keyword Tracking / Content Insights**
+    - Track which keyphrases are used across all pages (prevent cannibalization)
+    - Content gap analysis: which keyphrases have no dedicated page
+    - Density heatmap per page
+
+12. **Export/Import Settings & Data**
+    - Export: all plugin settings, redirect rules, per-page SEO data as JSON
+    - Import: from JSON, from RankMath, from SEOPress (in addition to existing Yoast import)
+    - Migration wizard for switching from competitor plugins
+
+### Phase 3 — Advanced (Pro-Level)
+
+13. **Local SEO / Business Schema UI**
+    - Settings: business name, address, phone, hours, geo coordinates
+    - Outputs LocalBusiness / Organization schema with full contact info
+    - Google Maps embed shortcode
+
+14. **News Sitemap**
+    - `/news-sitemap.xml` for Google News eligible posts
+    - Filter by category, publication date (last 48 hours)
+
+15. **Video Sitemap**
+    - Detect embedded YouTube/Vimeo videos in content
+    - Generate `/video-sitemap.xml` with video:title, video:description, video:thumbnail_loc
+
+16. **Hreflang / Multi-Language**
+    - Integration hooks for WPML, Polylang, TranslatePress
+    - Manual hreflang tag configuration per page
+    - Output `<link rel="alternate" hreflang="x">` tags
+
+17. **RSS Feed Optimization**
+    - Add content before/after RSS feed items (branding, backlinks)
+    - Option to include featured image in feed
+    - Delay feed publication (prevent scraping)
+
+18. **Crawl Budget Optimization**
+    - Remove unnecessary archive URLs from crawl (author, date, format, attachment pages)
+    - Disable attachment pages entirely
+    - Control search results page indexing
+    - Optional: disable RSS feeds, remove WP version, remove shortlink
+
+## Feature Comparison: AI SEO Keeper vs Yoast Free
+
+| Feature | Yoast Free | AI SEO Keeper | Gap |
+|---------|-----------|---------------|-----|
+| SEO title / meta description | ✅ | ✅ | — |
+| Focus keyphrase analysis | ✅ Full | ⚠️ Partial | Phase 1.3 |
+| Readability analysis | ✅ | ✅ | — |
+| Search appearance templates | ✅ | ✅ | — |
+| Open Graph / Twitter | ✅ | ✅ | — |
+| Schema / JSON-LD | ✅ Basic | ✅ Rich | Ahead |
+| XML Sitemap | ✅ | ✅ | — |
+| Breadcrumbs | ✅ | ✅ | — |
+| Canonical URLs | ✅ | ✅ | — |
+| Robots directives | ✅ | ✅ | — |
+| Redirect manager | ✅ Premium | ❌ | Phase 1.1 |
+| Internal linking | ✅ Premium | ❌ | Phase 2.8 |
+| Orphaned content | ✅ Premium | ❌ | Phase 2.7 |
+| Cornerstone content | ✅ | ❌ | Phase 2.9 |
+| Social profiles schema | ✅ | ❌ | Phase 1.4 |
+| Taxonomy SEO fields | ✅ | ❌ | Phase 1.5 |
+| Robots.txt editor | ❌ | ❌ | Phase 1.2 |
+| Bulk editor | ❌ | ❌ | Phase 1.6 |
+| AI page assistant | ❌ | ✅ | Ahead |
+| AI content editor | ❌ | ✅ | Ahead |
+| AI site audit | ❌ | ✅ | Ahead |
+| Multi-builder support | ❌ | ✅ | Ahead |
+| LLM discovery docs | ❌ | ✅ | Ahead |
+| IndexNow auto-submit | ❌ | ✅ | Ahead |
+| Image alt audit | ❌ | ✅ | Ahead |
+| Pending changes + preview | ❌ | ✅ | Ahead |
 
 ## AI discovery notes
 

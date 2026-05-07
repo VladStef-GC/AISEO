@@ -1535,8 +1535,10 @@ class Frontend
                 }
 
                 // Heading tag changes.
-                if (preg_match('/^<(h[1-6])>(.*)<\/\1>$/is', trim($old), $old_m)
-                    && preg_match('/^<(h[1-6])>(.*)<\/\1>$/is', trim($new), $new_m)) {
+                if (
+                    preg_match('/^<(h[1-6])>(.*)<\/\1>$/is', trim($old), $old_m)
+                    && preg_match('/^<(h[1-6])>(.*)<\/\1>$/is', trim($new), $new_m)
+                ) {
                     Content_Writer::betheme_heading_replace_public($data, strtolower($old_m[1]), $old_m[2], strtolower($new_m[1]), $new_m[2]);
                     continue;
                 }

@@ -207,8 +207,10 @@ class Content_Writer
 
                     // Detect heading tag changes (e.g., <h6>text</h6> → <h4>text</h4>).
                     $tag_change_applied = false;
-                    if ($is_betheme && preg_match('/^<(h[1-6])>(.*)<\/\1>$/is', trim($old), $old_m)
-                        && preg_match('/^<(h[1-6])>(.*)<\/\1>$/is', trim($new), $new_m)) {
+                    if (
+                        $is_betheme && preg_match('/^<(h[1-6])>(.*)<\/\1>$/is', trim($old), $old_m)
+                        && preg_match('/^<(h[1-6])>(.*)<\/\1>$/is', trim($new), $new_m)
+                    ) {
                         $old_tag = strtolower($old_m[1]);
                         $new_tag = strtolower($new_m[1]);
                         $old_text = $old_m[2];

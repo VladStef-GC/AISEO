@@ -387,6 +387,21 @@ class Content_Helper
                 }
             }
 
+            // Image items: reconstruct <img> tag so alt-text audit works.
+            if ('image' === $type && isset($item['attr']['src']) && '' !== trim((string) $item['attr']['src'])) {
+                $src = (string) $item['attr']['src'];
+
+                // BeTheme appends #attachment_id to the URL — extract it for WP alt lookup.
+                $alt = '';
+                if (preg_match('/#(\d+)$/', $src, $id_match)) {
+                    $attachment_id = (int) $id_match[1];
+                    $alt = trim((string) get_post_meta($attachment_id, '_wp_attachment_image_alt', true));
+                    $src = preg_replace('/#\d+$/', '', $src);
+                }
+
+                $texts[] = '<img src="' . esc_attr($src) . '"' . ('' !== $alt ? ' alt="' . esc_attr($alt) . '"' : '') . ' />';
+            }
+
             // Recurse into nested structures (sections → wraps → items).
             foreach (array('wraps', 'items', 'fields') as $child_key) {
                 if (isset($item[$child_key]) && is_array($item[$child_key])) {
@@ -445,6 +460,34 @@ class Content_Helper
         );
 
         $texts = array();
+
+        // Check for image widgets/elements (Elementor, Beaver, Bricks, etc.).
+        // These store image data in keys like 'image', 'url', 'src' with optional 'alt'.
+        $widget_type = strtolower((string) ($data['widgetType'] ?? $data['elType'] ?? $data['type'] ?? ''));
+        if (in_array($widget_type, array('image', 'photo', 'image-module', 'wp-image'), true)) {
+            $img_url = '';
+            $img_alt = '';
+
+            // Elementor: settings.image.url / settings.image.alt
+            if (isset($data['settings']['image']['url'])) {
+                $img_url = (string) $data['settings']['image']['url'];
+                $img_alt = (string) ($data['settings']['image']['alt'] ?? '');
+            }
+            // Beaver Builder: photo_src / alt
+            if ('' === $img_url && isset($data['photo_src'])) {
+                $img_url = (string) $data['photo_src'];
+                $img_alt = (string) ($data['alt'] ?? '');
+            }
+            // Generic: src / url + alt
+            if ('' === $img_url) {
+                $img_url = (string) ($data['src'] ?? $data['url'] ?? '');
+                $img_alt = (string) ($data['alt'] ?? '');
+            }
+
+            if ('' !== $img_url) {
+                $texts[] = '<img src="' . esc_attr($img_url) . '"' . ('' !== $img_alt ? ' alt="' . esc_attr($img_alt) . '"' : '') . ' />';
+            }
+        }
 
         foreach ($data as $key => $value) {
             if (is_string($value) && in_array(strtolower((string) $key), $text_keys, true)) {
