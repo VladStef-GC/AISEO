@@ -1823,7 +1823,11 @@ JS;
             $published_image_ids = array(0);
         }
 
-        // Build a lookup: attachment_id => post that uses it (featured image or parent).
+        // Build a lookup: attachment_id => array of posts using it.
+        // Sources: post_parent, featured image (_thumbnail_id), content embeds (wp-image-{id} class).
+        $used_on_map = array();
+
+        // 1) Featured image reverse lookup.
         $featured_lookup = $wpdb->get_results(
             "SELECT pm.meta_value AS att_id, p.ID AS post_id, p.post_title
             FROM {$wpdb->postmeta} pm
@@ -1831,9 +1835,35 @@ JS;
             WHERE pm.meta_key = '_thumbnail_id'",
             ARRAY_A
         );
-        $used_on_map = array();
         foreach ($featured_lookup as $fl) {
-            $used_on_map[(int) $fl['att_id']] = array('id' => (int) $fl['post_id'], 'title' => $fl['post_title']);
+            $aid = (int) $fl['att_id'];
+            $used_on_map[$aid][(int) $fl['post_id']] = $fl['post_title'];
+        }
+
+        // 2) Content embeds: scan post_content for wp-image-{id} CSS class (WordPress default).
+        // Also scan for ?attachment_id={id} and wp-att-{id} patterns.
+        if (! empty($published_image_ids) && ! (1 === count($published_image_ids) && 0 === $published_image_ids[0])) {
+            // Build a REGEXP pattern: wp-image-(id1|id2|...) — only practical for reasonable counts.
+            $id_group = implode('|', $published_image_ids);
+            $content_matches = $wpdb->get_results(
+                "SELECT p.ID AS post_id, p.post_title, p.post_content
+                FROM {$wpdb->posts} p
+                WHERE p.post_status = 'publish'
+                AND p.post_type NOT IN ('attachment','revision','nav_menu_item')
+                AND (p.post_content LIKE '%wp-image-%' OR p.post_content LIKE '%wp-att-%')",
+                ARRAY_A
+            );
+            foreach ($content_matches as $cm) {
+                // Find all wp-image-NNN and wp-att-NNN references.
+                if (preg_match_all('/wp-(?:image|att)-(\d+)/', $cm['post_content'], $m)) {
+                    foreach ($m[1] as $found_id) {
+                        $found_id = (int) $found_id;
+                        if (in_array($found_id, $published_image_ids, true)) {
+                            $used_on_map[$found_id][(int) $cm['post_id']] = $cm['post_title'];
+                        }
+                    }
+                }
+            }
         }
 
         // Query only published images.
@@ -1932,16 +1962,18 @@ JS;
                             $filename = basename(get_attached_file($att_id));
                             $alt = get_post_meta($att_id, '_wp_attachment_image_alt', true);
                             $parent_id = wp_get_post_parent_id($att_id);
-                            // Determine "Used on": parent post or featured image lookup.
-                            $used_on_title = '';
-                            $used_on_link = '';
+                            // Determine "Used on": collect all pages using this image.
+                            $used_on_pages = array();
                             if ($parent_id && 'publish' === get_post_status($parent_id)) {
-                                $used_on_title = get_the_title($parent_id);
-                                $used_on_link = admin_url('post.php?post=' . $parent_id . '&action=edit');
-                            } elseif (isset($used_on_map[$att_id])) {
-                                $used_on_title = $used_on_map[$att_id]['title'];
-                                $used_on_link = admin_url('post.php?post=' . $used_on_map[$att_id]['id'] . '&action=edit');
+                                $used_on_pages[$parent_id] = get_the_title($parent_id);
                             }
+                            if (isset($used_on_map[$att_id])) {
+                                foreach ($used_on_map[$att_id] as $pid => $ptitle) {
+                                    $used_on_pages[$pid] = $ptitle;
+                                }
+                            }
+                            $used_on_count = count($used_on_pages);
+                            $used_on_first_title = $used_on_count > 0 ? reset($used_on_pages) : '';
                         ?>
                             <tr data-att-id="<?php echo (int) $att_id; ?>">
                                 <td>
@@ -1956,9 +1988,19 @@ JS;
                                 <td data-sort-value="<?php echo esc_attr(strtolower($alt)); ?>">
                                     <input type="text" class="large-text ai-seo-img-alt" value="<?php echo esc_attr($alt); ?>" data-original="<?php echo esc_attr($alt); ?>" placeholder="Enter alt text…" />
                                 </td>
-                                <td data-sort-value="<?php echo esc_attr(strtolower($used_on_title)); ?>">
-                                    <?php if ($used_on_link) : ?>
-                                        <a href="<?php echo esc_url($used_on_link); ?>" style="font-size:12px;"><?php echo esc_html($used_on_title); ?></a>
+                                <td data-sort-value="<?php echo esc_attr(strtolower($used_on_first_title)); ?>">
+                                    <?php if ($used_on_count > 0) : ?>
+                                        <?php $first_pid = array_key_first($used_on_pages); ?>
+                                        <a href="<?php echo esc_url(admin_url('post.php?post=' . $first_pid . '&action=edit')); ?>" style="font-size:12px;"><?php echo esc_html($used_on_pages[$first_pid]); ?></a>
+                                        <?php if ($used_on_count > 1) : ?>
+                                            <span class="ai-seo-used-toggle" style="display:inline-block;margin-left:4px;background:#2271b1;color:#fff;border-radius:10px;padding:0 7px;font-size:11px;cursor:pointer;vertical-align:middle;" title="Used on <?php echo $used_on_count; ?> pages">+<?php echo $used_on_count - 1; ?></span>
+                                            <div class="ai-seo-used-list" style="display:none;margin-top:6px;">
+                                                <?php $i = 0; foreach ($used_on_pages as $pid => $ptitle) : $i++;
+                                                    if (1 === $i) continue; ?>
+                                                    <div style="margin-bottom:3px;"><a href="<?php echo esc_url(admin_url('post.php?post=' . $pid . '&action=edit')); ?>" style="font-size:12px;"><?php echo esc_html($ptitle); ?></a></div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        <?php endif; ?>
                                     <?php else : ?>
                                         <span style="color:#50575e;font-size:12px;">Unattached</span>
                                     <?php endif; ?>
@@ -2021,6 +2063,11 @@ JS;
                     $.each(rows, function(i, row) {
                         tbody.append(row);
                     });
+                });
+
+                // Toggle "Used on" expanded list.
+                $('#ai-seo-image-table').on('click', '.ai-seo-used-toggle', function() {
+                    $(this).siblings('.ai-seo-used-list').slideToggle(150);
                 });
 
                 $('#ai-seo-image-table').on('input', '.ai-seo-img-alt', function() {
@@ -2208,9 +2255,9 @@ JS;
                                         <td data-sort-value="<?php echo esc_attr(strtolower($group['keyphrase'])); ?>"><strong><?php echo esc_html($group['keyphrase']); ?></strong></td>
                                         <td data-sort-value="<?php echo esc_attr(strtolower($p['title'])); ?>"><a href="<?php echo esc_url(admin_url('post.php?post=' . $p['id'] . '&action=edit')); ?>"><?php echo esc_html($p['title']); ?></a></td>
                                         <td data-sort-value="<?php echo esc_attr($p['post_type']); ?>"><?php echo esc_html($p['post_type']); ?></td>
-                                    </tr>
+                                        </tr>
+                                    <?php endforeach; ?>
                                 <?php endforeach; ?>
-                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
