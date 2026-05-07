@@ -49,6 +49,7 @@ class Admin
     private const AJAX_APPLY_SUGGESTION_ACTION = 'ai_seo_keeper_apply_suggestion';
 
     private const AJAX_RESTORE_BACKUP_ACTION = 'ai_seo_keeper_restore_backup';
+    private const AJAX_CLEAR_CHAT_ACTION = 'ai_seo_keeper_clear_chat';
 
     private const CHAT_OBJECT_TYPE = 'post_chat';
 
@@ -154,6 +155,7 @@ class Admin
         add_action('wp_ajax_' . self::AJAX_APPLY_CHANGES_ACTION, array($this, 'handle_ajax_apply_changes'));
         add_action('wp_ajax_' . self::AJAX_APPLY_SUGGESTION_ACTION, array($this, 'handle_ajax_apply_suggestion'));
         add_action('wp_ajax_' . self::AJAX_RESTORE_BACKUP_ACTION, array($this, 'handle_ajax_restore_backup'));
+        add_action('wp_ajax_' . self::AJAX_CLEAR_CHAT_ACTION, array($this, 'handle_ajax_clear_chat'));
     }
 
     private function is_supported_post_type(string $post_type): bool
@@ -942,7 +944,7 @@ jQuery(function ($) {
         var $btn = $(this);
         var $panel = $btn.closest('.ai-seo-keeper-editor-panel');
         var $status = $panel.find('.ai-seo-keeper-save-status');
-        var $input = $panel.find('.ai-seo-keeper-content-edit-input');
+        var $input = $panel.find('.ai-seo-keeper-chat-input');
         var postId = $('#post_ID').val();
         var instruction = $.trim($input.val());
 
@@ -1063,6 +1065,32 @@ jQuery(function ($) {
         $(this).closest('.ai-seo-keeper-content-review').empty();
     });
 
+    // ── Clear chat conversation ───────────────────────────────────────
+    $(document).on('click', '.ai-seo-keeper-clear-chat', function () {
+        var $btn = $(this);
+        var $panel = $btn.closest('.ai-seo-keeper-editor-panel');
+        var postId = $('#post_ID').val();
+
+        if (! confirm('Clear all chat messages for this page? This cannot be undone.')) return;
+
+        $btn.prop('disabled', true);
+
+        $.post(aiSeoKeeperEditor.ajaxUrl, {
+            action: 'ai_seo_keeper_clear_chat',
+            nonce: $('#ai_seo_keeper_editor_nonce').val(),
+            post_id: postId
+        })
+        .done(function (response) {
+            if (response && response.success) {
+                $panel.find('.ai-seo-keeper-chat-shell').empty();
+                $panel.find('.ai-seo-keeper-content-review').empty();
+            }
+        })
+        .always(function () {
+            $btn.prop('disabled', false);
+        });
+    });
+
     $(document).on('click', '.ai-seo-keeper-restore-backup', function () {
         var $btn = $(this);
         var postId = $('#post_ID').val();
@@ -1131,7 +1159,32 @@ jQuery(function ($) {
             if (response && response.success && response.data) {
                 var d = response.data;
                 var scoreColor = d.score >= 70 ? '#00a32a' : (d.score >= 40 ? '#dba617' : '#d63638');
-                $status.html('Score: <strong style="color:' + scoreColor + ';">' + d.score + '/100</strong> — ' + (d.issues ? d.issues.length : 0) + ' issue(s). Reload page to see full details.').css('color', '#1d2327');
+                var html = 'AI SEO Score: <strong style="color:' + scoreColor + ';">' + d.score + '/100</strong>';
+
+                if (d.issues && d.issues.length > 0) {
+                    html += ' — ' + d.issues.length + ' issue(s):';
+                    html += '<ul style="margin:6px 0 0 18px;font-size:12px;color:#50575e;">';
+                    for (var i = 0; i < d.issues.length; i++) {
+                        html += '<li>' + escHtml(d.issues[i]) + '</li>';
+                    }
+                    html += '</ul>';
+                } else {
+                    html += ' — No issues found.';
+                }
+
+                if (d.suggestions && d.suggestions.length > 0) {
+                    html += '<div style="margin-top:6px;font-size:12px;color:#135e16;"><strong>Suggestions:</strong><ul style="margin:4px 0 0 18px;">';
+                    for (var j = 0; j < d.suggestions.length; j++) {
+                        html += '<li>' + escHtml(d.suggestions[j]) + '</li>';
+                    }
+                    html += '</ul></div>';
+                }
+
+                $status.html(html).css('color', '#1d2327');
+
+                // Update the score badge inline.
+                var $scoreEl = $btn.closest('.ai-seo-keeper-snippet-analyzer').find('.ai-seo-keeper-snippet-score-number');
+                // No — that's the metadata fit score, don't overwrite it.
             } else {
                 $status.text('Audit failed.').css('color', '#8a2424');
             }
@@ -2088,24 +2141,21 @@ JS;
                         <?php if ($chat_is_enabled) : ?>
                             <?php
                             $ai_assistant_content =
-                                '<div class="ai-seo-keeper-chat-intro">Your AI SEO copilot — ask questions, get metadata suggestions with one-click apply, or request page content edits. AI sees your full page content, SEO data, scores, and audit results.</div>' .
+                                '<div class="ai-seo-keeper-chat-intro">Your AI SEO copilot — ask questions, get metadata suggestions, or request page content edits. Everything happens in one conversation. <span class="ai-seo-keeper-help-tip" data-tip="AI sees your full page content, SEO title, meta description, focus keyphrase, snippet scores, audit results, related pages, and the full conversation history.">&#9432;</span></div>' .
 
                                 '<div class="ai-seo-keeper-assistant-tabs" style="display:flex;gap:0;border-bottom:2px solid #dcdcde;margin-bottom:12px;">' .
                                 '<button type="button" class="ai-seo-keeper-assistant-tab is-active" data-target="chat" style="padding:8px 16px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:2px solid #2271b1;margin-bottom:-2px;cursor:pointer;color:#1d2327;">💬 Chat</button>' .
-                                '<button type="button" class="ai-seo-keeper-assistant-tab" data-target="editor" style="padding:8px 16px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:#787c82;">✏ Content Editor</button>' .
                                 '<button type="button" class="ai-seo-keeper-assistant-tab" data-target="history" style="padding:8px 16px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:#787c82;">📋 History</button>' .
                                 '</div>' .
 
                                 '<div class="ai-seo-keeper-assistant-panel" data-panel="chat">' .
-                                '<textarea class="widefat ai-seo-keeper-chat-input" rows="3" placeholder="Ask about SEO issues, request metadata fixes, or ask any question about this page…"></textarea>' .
-                                '<p class="ai-seo-keeper-chat-actions"><button type="button" class="button button-secondary ai-seo-keeper-send-chat" ' . disabled(! $has_api_key, true, false) . '>Ask AI <span class="ai-seo-keeper-help-tip" data-tip="AI sees: page content, SEO title, meta description, focus keyphrase, snippet scores, audit results, related pages, and conversation history.">&#9432;</span></button></p>' .
+                                '<textarea class="widefat ai-seo-keeper-chat-input" rows="3" placeholder="Ask about SEO issues, request metadata fixes, or ask for page content edits — all in one conversation…"></textarea>' .
+                                '<p class="ai-seo-keeper-chat-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' .
+                                    '<button type="button" class="button button-secondary ai-seo-keeper-send-chat" ' . disabled(! $has_api_key, true, false) . '>💬 Ask AI</button>' .
+                                    '<button type="button" class="button button-primary ai-seo-keeper-content-edit-btn" ' . disabled(! $has_api_key, true, false) . '>✏ Propose Page Edits <span class="ai-seo-keeper-help-tip" data-tip="Sends your message as a page-edit instruction. AI reads the full page content, proposes targeted text changes with BEFORE/AFTER diffs — you review and accept each one before anything is saved.">&#9432;</span></button>' .
+                                    '<button type="button" class="button ai-seo-keeper-clear-chat" style="margin-left:auto;color:#8a2424;" ' . disabled(empty($chat_messages), true, false) . '>🗑 Clear</button>' .
+                                '</p>' .
                                 '<div class="ai-seo-keeper-chat-shell">' . $this->render_chat_history_markup($chat_messages) . '</div>' .
-                                '</div>' .
-
-                                '<div class="ai-seo-keeper-assistant-panel" data-panel="editor" style="display:none;">' .
-                                '<p style="font-size:13px;color:#50575e;margin:0 0 10px;">Tell AI what to change — it reads the full page, proposes targeted text edits, and you review each one before anything is saved. <span class="ai-seo-keeper-help-tip" data-tip="AI only rephrases text and fixes headings (H1-H6). It never removes buttons, images, links, forms, or any visual elements. A backup is saved before every change.">&#9432;</span></p>' .
-                                '<textarea class="widefat ai-seo-keeper-content-edit-input" rows="3" placeholder="e.g. Rephrase this page for better SEO highlighting our AI solutions and automation services…"></textarea>' .
-                                '<p class="ai-seo-keeper-chat-actions"><button type="button" class="button button-primary ai-seo-keeper-content-edit-btn" ' . disabled(! $has_api_key, true, false) . '>✏ Propose Changes</button></p>' .
                                 '<div class="ai-seo-keeper-content-review"></div>' .
                                 '</div>' .
 
@@ -3521,7 +3571,8 @@ HTML;
     public function handle_ajax_page_audit(): void
     {
         // Accept both editor nonce and wizard nonce since this is called from both contexts.
-        if (! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? '')), 'ai_seo_keeper_save_editor_meta')
+        if (
+            ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? '')), 'ai_seo_keeper_save_editor_meta')
             && ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? '')), 'ai_seo_keeper_setup_wizard')
         ) {
             wp_send_json_error(array('message' => 'Security check failed.'), 403);
@@ -3845,6 +3896,25 @@ HTML;
         }
 
         wp_send_json_success(array('message' => 'Content restored to the version before AI edits.'));
+    }
+
+    public function handle_ajax_clear_chat(): void
+    {
+        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
+
+        if (! $post_id) {
+            wp_send_json_error(array('message' => 'Missing post id.'), 400);
+        }
+
+        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
+
+        if (! current_user_can('edit_post', $post_id)) {
+            wp_send_json_error(array('message' => 'Permission denied.'), 403);
+        }
+
+        $deleted = $this->history_store->clear_chat_messages($post_id);
+
+        wp_send_json_success(array('message' => $deleted . ' message(s) cleared.', 'deleted' => $deleted));
     }
 
     public function render_setup_wizard_page(): void

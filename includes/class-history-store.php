@@ -356,4 +356,30 @@ class History_Store
             array('%d')
         );
     }
+
+    public function clear_chat_messages(int $object_id): int
+    {
+        global $wpdb;
+
+        $conversations_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
+        $messages_table = $wpdb->prefix . 'ai_seo_keeper_messages';
+
+        $conversation_ids = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT id FROM {$conversations_table} WHERE object_type = %s AND object_id = %d",
+                self::CHAT_OBJECT_TYPE,
+                $object_id
+            )
+        );
+
+        if (empty($conversation_ids)) {
+            return 0;
+        }
+
+        $ids_in = implode(',', array_map('intval', $conversation_ids));
+        $deleted = (int) $wpdb->query("DELETE FROM {$messages_table} WHERE conversation_id IN ({$ids_in})");
+        $wpdb->query("DELETE FROM {$conversations_table} WHERE id IN ({$ids_in})");
+
+        return $deleted;
+    }
 }

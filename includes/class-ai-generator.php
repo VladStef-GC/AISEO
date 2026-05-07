@@ -202,7 +202,13 @@ class AI_Generator
             $base_prompt . "\n\n" .
                 'Return only valid JSON with exactly these keys: reply, suggested_title, suggested_description, notes. ' .
                 'reply should answer the user directly and briefly. ' .
-                'Only fill suggested_title and suggested_description when the user is asking for metadata help. ' .
+                'Only fill suggested_title and suggested_description when the user is EXPLICITLY asking for metadata changes or new suggestions. ' .
+                'CRITICAL ANTI-BIAS RULES: ' .
+                '1. If the current SEO title and meta description are already strong (metadata fit score ≥ 75 or audit score ≥ 70), do NOT suggest replacements unless the user explicitly asks you to rewrite them. ' .
+                '2. When asked "what improvements to make", focus on page CONTENT issues (headings, word count, missing alt tags, internal links) — not on replacing metadata that is already good. ' .
+                '3. Never change metadata just for the sake of changing it. If the current title and description are effective, say so. ' .
+                '4. If the user asks about audit results, report the actual issues and suggestions from the audit data — do not invent new ones. ' .
+                '5. When page content changes are needed, suggest the user request page edits using the "Propose Page Edits" button rather than manually rewriting. ' .
                 'When you provide suggested_title, keep it at or under 60 characters. ' .
                 'When you provide suggested_description, keep it at or under 155 characters. ' .
                 'Do not invent facts that are not supported by the page content or site context.'
