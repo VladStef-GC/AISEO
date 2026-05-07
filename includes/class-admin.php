@@ -1497,30 +1497,30 @@ JS;
                 <?php if (empty($audit_rows)) : ?>
                     <p style="margin:0;">No indexed content is available yet. Run a site sync first.</p>
                 <?php else : ?>
-                    <table class="widefat striped" style="margin-top:12px;">
+                    <table class="widefat striped ai-seo-sortable" id="ai-seo-audit-table" style="margin-top:12px;">
                         <thead>
                             <tr>
-                                <th>Content</th>
-                                <th>Type / Status</th>
-                                <th>Drafts</th>
-                                <th>Approval</th>
-                                <th>Frontend</th>
+                                <th style="cursor:pointer;" class="ai-seo-sort" data-col="0">Content <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                                <th style="cursor:pointer;" class="ai-seo-sort" data-col="1">Type / Status <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                                <th style="cursor:pointer;" class="ai-seo-sort" data-col="2">Drafts <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                                <th style="cursor:pointer;" class="ai-seo-sort" data-col="3">Approval <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                                <th style="cursor:pointer;" class="ai-seo-sort" data-col="4">Frontend <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($audit_rows as $row) : ?>
                                 <tr>
-                                    <td>
+                                    <td data-sort-value="<?php echo esc_attr(strtolower($row['title'])); ?>">
                                         <a href="<?php echo esc_url(admin_url('post.php?post=' . (int) $row['object_id'] . '&action=edit')); ?>"><?php echo esc_html($row['title']); ?></a>
                                         <div style="margin-top:4px;"><a href="<?php echo esc_url($row['permalink']); ?>" target="_blank" rel="noopener noreferrer">View page</a></div>
                                     </td>
-                                    <td><?php echo esc_html($row['post_type']); ?> / <?php echo esc_html($row['status']); ?></td>
-                                    <td>
+                                    <td data-sort-value="<?php echo esc_attr($row['post_type'] . ' ' . $row['status']); ?>"><?php echo esc_html($row['post_type']); ?> / <?php echo esc_html($row['status']); ?></td>
+                                    <td data-sort-value="<?php echo $row['has_title_draft'] ? 'yes' : 'no'; ?>">
                                         Title: <?php echo $row['has_title_draft'] ? 'Yes' : 'No'; ?><br />
                                         <p class="description">Global instructions applied to page generation, page chat, and site audit requests.</p>
                                     </td>
-                                    <td><?php echo $row['has_approved_suggestion'] ? 'Approved' : 'Pending'; ?></td>
-                                    <td>
+                                    <td data-sort-value="<?php echo $row['has_approved_suggestion'] ? 'approved' : 'pending'; ?>"><?php echo $row['has_approved_suggestion'] ? 'Approved' : 'Pending'; ?></td>
+                                    <td data-sort-value="<?php echo ($row['frontend_enabled'] ? '1' : '0') . ($row['frontend_ready'] ? '1' : '0'); ?>">
                                         Page gate: <?php echo $row['frontend_enabled'] ? 'On' : 'Off'; ?><br />
                                         Ready: <?php echo $row['frontend_ready'] ? 'Yes' : 'No'; ?>
                                     </td>
@@ -1540,6 +1540,35 @@ JS;
                 </ul>
             </div>
         </div>
+
+        <script>
+            (function($) {
+                $('.ai-seo-sortable').on('click', '.ai-seo-sort', function() {
+                    var th = $(this);
+                    var table = th.closest('table');
+                    var colIdx = parseInt(th.data('col'), 10);
+                    var tbody = table.find('tbody');
+                    var rows = tbody.find('tr').get();
+                    var asc = th.data('sort-dir') !== 'asc';
+                    th.data('sort-dir', asc ? 'asc' : 'desc');
+
+                    table.find('.ai-seo-sort-icon').removeClass('dashicons-arrow-up dashicons-arrow-down').addClass('dashicons-sort');
+                    th.find('.ai-seo-sort-icon').removeClass('dashicons-sort').addClass(asc ? 'dashicons-arrow-up' : 'dashicons-arrow-down');
+
+                    rows.sort(function(a, b) {
+                        var aVal = $(a).find('td').eq(colIdx).attr('data-sort-value') || $(a).find('td').eq(colIdx).text().trim().toLowerCase();
+                        var bVal = $(b).find('td').eq(colIdx).attr('data-sort-value') || $(b).find('td').eq(colIdx).text().trim().toLowerCase();
+                        if (aVal < bVal) return asc ? -1 : 1;
+                        if (aVal > bVal) return asc ? 1 : -1;
+                        return 0;
+                    });
+
+                    $.each(rows, function(i, row) {
+                        tbody.append(row);
+                    });
+                });
+            })(jQuery);
+        </script>
     <?php
     }
 
@@ -1609,28 +1638,31 @@ JS;
             </form>
 
             <?php if ($query->have_posts()) : ?>
-                <table class="widefat striped" id="ai-seo-bulk-table">
+                <table class="widefat striped ai-seo-sortable" id="ai-seo-bulk-table">
                     <thead>
                         <tr>
-                            <th style="width:30%;">Title</th>
-                            <th style="width:35%;">SEO Title</th>
-                            <th style="width:30%;">Meta Description</th>
+                            <th style="width:30%;cursor:pointer;" class="ai-seo-sort" data-col="0">Title <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                            <th style="width:35%;cursor:pointer;" class="ai-seo-sort" data-col="1">SEO Title <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                            <th style="width:30%;cursor:pointer;" class="ai-seo-sort" data-col="2">Meta Description <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
                             <th style="width:5%;"></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php while ($query->have_posts()) : $query->the_post();
-                            $post_id = get_the_ID(); ?>
+                            $post_id = get_the_ID();
+                            $seo_title_val = get_post_meta($post_id, self::META_TITLE_KEY, true);
+                            $seo_desc_val = get_post_meta($post_id, self::META_DESCRIPTION_KEY, true);
+                        ?>
                             <tr data-post-id="<?php echo (int) $post_id; ?>">
-                                <td>
+                                <td data-sort-value="<?php echo esc_attr(strtolower(get_the_title())); ?>">
                                     <strong><a href="<?php echo esc_url(get_edit_post_link($post_id)); ?>"><?php the_title(); ?></a></strong>
                                     <div class="row-actions"><span><a href="<?php echo esc_url(get_permalink($post_id)); ?>" target="_blank">View</a></span></div>
                                 </td>
-                                <td>
-                                    <input type="text" class="large-text ai-seo-bulk-title" value="<?php echo esc_attr(get_post_meta($post_id, self::META_TITLE_KEY, true)); ?>" data-original="<?php echo esc_attr(get_post_meta($post_id, self::META_TITLE_KEY, true)); ?>" />
+                                <td data-sort-value="<?php echo esc_attr(strtolower($seo_title_val)); ?>">
+                                    <input type="text" class="large-text ai-seo-bulk-title" value="<?php echo esc_attr($seo_title_val); ?>" data-original="<?php echo esc_attr($seo_title_val); ?>" />
                                 </td>
-                                <td>
-                                    <textarea class="large-text ai-seo-bulk-desc" rows="2" data-original="<?php echo esc_attr(get_post_meta($post_id, self::META_DESCRIPTION_KEY, true)); ?>"><?php echo esc_textarea(get_post_meta($post_id, self::META_DESCRIPTION_KEY, true)); ?></textarea>
+                                <td data-sort-value="<?php echo esc_attr(strtolower($seo_desc_val)); ?>">
+                                    <textarea class="large-text ai-seo-bulk-desc" rows="2" data-original="<?php echo esc_attr($seo_desc_val); ?>"><?php echo esc_textarea($seo_desc_val); ?></textarea>
                                 </td>
                                 <td>
                                     <button type="button" class="button button-small ai-seo-bulk-save" disabled>Save</button>
@@ -1664,6 +1696,32 @@ JS;
         <script>
             (function($) {
                 var nonce = '<?php echo esc_js($nonce); ?>';
+
+                // Sortable headers.
+                $('.ai-seo-sortable').on('click', '.ai-seo-sort', function() {
+                    var th = $(this);
+                    var table = th.closest('table');
+                    var colIdx = parseInt(th.data('col'), 10);
+                    var tbody = table.find('tbody');
+                    var rows = tbody.find('tr').get();
+                    var asc = th.data('sort-dir') !== 'asc';
+                    th.data('sort-dir', asc ? 'asc' : 'desc');
+
+                    table.find('.ai-seo-sort-icon').removeClass('dashicons-arrow-up dashicons-arrow-down').addClass('dashicons-sort');
+                    th.find('.ai-seo-sort-icon').removeClass('dashicons-sort').addClass(asc ? 'dashicons-arrow-up' : 'dashicons-arrow-down');
+
+                    rows.sort(function(a, b) {
+                        var aVal = $(a).find('td').eq(colIdx).attr('data-sort-value') || $(a).find('td').eq(colIdx).text().trim().toLowerCase();
+                        var bVal = $(b).find('td').eq(colIdx).attr('data-sort-value') || $(b).find('td').eq(colIdx).text().trim().toLowerCase();
+                        if (aVal < bVal) return asc ? -1 : 1;
+                        if (aVal > bVal) return asc ? 1 : -1;
+                        return 0;
+                    });
+
+                    $.each(rows, function(i, row) {
+                        tbody.append(row);
+                    });
+                });
 
                 // Enable save button when content changes.
                 $('#ai-seo-bulk-table').on('input', '.ai-seo-bulk-title, .ai-seo-bulk-desc', function() {
@@ -1743,15 +1801,51 @@ JS;
         $per_page = 40;
         $filter = isset($_GET['filter']) ? sanitize_key($_GET['filter']) : 'all';
 
-        // Query media library images.
+        global $wpdb;
+
+        // Only count images attached to published content OR used as featured image on published posts.
+        $published_image_ids_sql = "
+            SELECT DISTINCT a.ID FROM {$wpdb->posts} a
+            INNER JOIN {$wpdb->posts} parent ON a.post_parent = parent.ID AND parent.post_status = 'publish'
+            WHERE a.post_type = 'attachment' AND a.post_mime_type LIKE 'image/%'
+            UNION
+            SELECT DISTINCT pm.meta_value FROM {$wpdb->postmeta} pm
+            INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id AND p.post_status = 'publish'
+            INNER JOIN {$wpdb->posts} a ON a.ID = pm.meta_value AND a.post_type = 'attachment' AND a.post_mime_type LIKE 'image/%'
+            WHERE pm.meta_key = '_thumbnail_id'
+        ";
+
+        // Get all published image IDs.
+        $published_image_ids = $wpdb->get_col($published_image_ids_sql); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $published_image_ids = array_map('intval', $published_image_ids);
+
+        if (empty($published_image_ids)) {
+            $published_image_ids = array(0);
+        }
+
+        // Build a lookup: attachment_id => post that uses it (featured image or parent).
+        $featured_lookup = $wpdb->get_results(
+            "SELECT pm.meta_value AS att_id, p.ID AS post_id, p.post_title
+            FROM {$wpdb->postmeta} pm
+            INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id AND p.post_status = 'publish'
+            WHERE pm.meta_key = '_thumbnail_id'",
+            ARRAY_A
+        );
+        $used_on_map = array();
+        foreach ($featured_lookup as $fl) {
+            $used_on_map[(int) $fl['att_id']] = array('id' => (int) $fl['post_id'], 'title' => $fl['post_title']);
+        }
+
+        // Query only published images.
         $args = array(
             'post_type'      => 'attachment',
             'post_mime_type' => 'image',
             'post_status'    => 'inherit',
             'posts_per_page' => $per_page,
             'paged'          => $paged,
-            'orderby'        => 'date',
-            'order'          => 'DESC',
+            'orderby'        => 'title',
+            'order'          => 'ASC',
+            'post__in'       => $published_image_ids,
         );
 
         // Filter: missing alt only.
@@ -1767,26 +1861,37 @@ JS;
                     'value' => '',
                 ),
             );
+        } elseif ('with_alt' === $filter) {
+            $args['meta_query'] = array(
+                array(
+                    'key'     => '_wp_attachment_image_alt',
+                    'value'   => '',
+                    'compare' => '!=',
+                ),
+            );
         }
 
         $query = new \WP_Query($args);
         $total_pages = $query->max_num_pages;
 
-        // Get totals for stats.
-        global $wpdb;
-        $total_images = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_mime_type LIKE 'image/%'");
+        // Get totals for stats (published images only).
+        $total_images = count($published_image_ids);
+        if (1 === $total_images && 0 === $published_image_ids[0]) {
+            $total_images = 0;
+        }
+        $id_list = implode(',', $published_image_ids);
         $total_with_alt = (int) $wpdb->get_var(
             "SELECT COUNT(DISTINCT p.ID) FROM {$wpdb->posts} p
             INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_wp_attachment_image_alt' AND pm.meta_value != ''
-            WHERE p.post_type = 'attachment' AND p.post_mime_type LIKE 'image/%'"
+            WHERE p.ID IN ({$id_list})" // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
         );
         $total_missing_alt = $total_images - $total_with_alt;
 
         $nonce = wp_create_nonce('ai_seo_keeper_nonce');
-        ?>
+    ?>
         <div class="wrap">
             <h1>Image SEO</h1>
-            <p class="description">Manage alt text across all your media library images. Alt text helps search engines understand your images and improves accessibility.</p>
+            <p class="description">Manage alt text across your published images. Only images attached to or used as featured image on published content are shown.</p>
 
             <div style="display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:16px;max-width:700px;margin:20px 0;">
                 <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
@@ -1804,18 +1909,19 @@ JS;
             </div>
 
             <div style="margin:16px 0;">
-                <a href="<?php echo esc_url(add_query_arg('filter', 'all', remove_query_arg('paged'))); ?>" class="button <?php echo 'all' === $filter ? 'button-primary' : ''; ?>">All images</a>
+                <a href="<?php echo esc_url(add_query_arg('filter', 'all', remove_query_arg('paged'))); ?>" class="button <?php echo 'all' === $filter ? 'button-primary' : ''; ?>">All images (<?php echo $total_images; ?>)</a>
                 <a href="<?php echo esc_url(add_query_arg('filter', 'missing_alt', remove_query_arg('paged'))); ?>" class="button <?php echo 'missing_alt' === $filter ? 'button-primary' : ''; ?>">Missing alt (<?php echo $total_missing_alt; ?>)</a>
+                <a href="<?php echo esc_url(add_query_arg('filter', 'with_alt', remove_query_arg('paged'))); ?>" class="button <?php echo 'with_alt' === $filter ? 'button-primary' : ''; ?>">With alt (<?php echo $total_with_alt; ?>)</a>
             </div>
 
             <?php if ($query->have_posts()) : ?>
-                <table class="widefat striped" id="ai-seo-image-table">
+                <table class="widefat striped ai-seo-sortable" id="ai-seo-image-table">
                     <thead>
                         <tr>
                             <th style="width:80px;">Image</th>
-                            <th style="width:25%;">File</th>
-                            <th style="width:40%;">Alt text</th>
-                            <th style="width:20%;">Used on</th>
+                            <th style="width:25%;cursor:pointer;" class="ai-seo-sort" data-col="1">File <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                            <th style="width:40%;cursor:pointer;" class="ai-seo-sort" data-col="2">Alt text <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                            <th style="width:20%;cursor:pointer;" class="ai-seo-sort" data-col="3">Used on <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
                             <th style="width:5%;"></th>
                         </tr>
                     </thead>
@@ -1826,6 +1932,16 @@ JS;
                             $filename = basename(get_attached_file($att_id));
                             $alt = get_post_meta($att_id, '_wp_attachment_image_alt', true);
                             $parent_id = wp_get_post_parent_id($att_id);
+                            // Determine "Used on": parent post or featured image lookup.
+                            $used_on_title = '';
+                            $used_on_link = '';
+                            if ($parent_id && 'publish' === get_post_status($parent_id)) {
+                                $used_on_title = get_the_title($parent_id);
+                                $used_on_link = admin_url('post.php?post=' . $parent_id . '&action=edit');
+                            } elseif (isset($used_on_map[$att_id])) {
+                                $used_on_title = $used_on_map[$att_id]['title'];
+                                $used_on_link = admin_url('post.php?post=' . $used_on_map[$att_id]['id'] . '&action=edit');
+                            }
                         ?>
                             <tr data-att-id="<?php echo (int) $att_id; ?>">
                                 <td>
@@ -1833,16 +1949,16 @@ JS;
                                         <img src="<?php echo esc_url($thumb); ?>" alt="" style="width:60px;height:60px;object-fit:cover;border-radius:4px;" />
                                     <?php endif; ?>
                                 </td>
-                                <td>
+                                <td data-sort-value="<?php echo esc_attr(strtolower($filename)); ?>">
                                     <strong><?php echo esc_html($filename); ?></strong>
                                     <div style="margin-top:2px;"><a href="<?php echo esc_url(admin_url('upload.php?item=' . $att_id)); ?>" style="font-size:12px;color:#50575e;">Edit in Media</a></div>
                                 </td>
-                                <td>
+                                <td data-sort-value="<?php echo esc_attr(strtolower($alt)); ?>">
                                     <input type="text" class="large-text ai-seo-img-alt" value="<?php echo esc_attr($alt); ?>" data-original="<?php echo esc_attr($alt); ?>" placeholder="Enter alt text…" />
                                 </td>
-                                <td>
-                                    <?php if ($parent_id) : ?>
-                                        <a href="<?php echo esc_url(admin_url('post.php?post=' . $parent_id . '&action=edit')); ?>" style="font-size:12px;"><?php echo esc_html(get_the_title($parent_id)); ?></a>
+                                <td data-sort-value="<?php echo esc_attr(strtolower($used_on_title)); ?>">
+                                    <?php if ($used_on_link) : ?>
+                                        <a href="<?php echo esc_url($used_on_link); ?>" style="font-size:12px;"><?php echo esc_html($used_on_title); ?></a>
                                     <?php else : ?>
                                         <span style="color:#50575e;font-size:12px;">Unattached</span>
                                     <?php endif; ?>
@@ -1851,7 +1967,8 @@ JS;
                                     <button type="button" class="button button-small ai-seo-img-save" disabled>Save</button>
                                 </td>
                             </tr>
-                        <?php endwhile; wp_reset_postdata(); ?>
+                        <?php endwhile;
+                        wp_reset_postdata(); ?>
                     </tbody>
                 </table>
 
@@ -1871,43 +1988,72 @@ JS;
                     </div>
                 <?php endif; ?>
             <?php else : ?>
-                <p><?php echo 'missing_alt' === $filter ? 'All images have alt text — great!' : 'No images found in the media library.'; ?></p>
+                <p><?php echo 'missing_alt' === $filter ? 'All images have alt text — great!' : ('with_alt' === $filter ? 'No images have alt text yet.' : 'No published images found.'); ?></p>
             <?php endif; ?>
         </div>
 
         <script>
-        (function($) {
-            var nonce = '<?php echo esc_js($nonce); ?>';
+            (function($) {
+                var nonce = '<?php echo esc_js($nonce); ?>';
 
-            $('#ai-seo-image-table').on('input', '.ai-seo-img-alt', function() {
-                var row = $(this).closest('tr');
-                var changed = $(this).val() !== $(this).data('original');
-                row.find('.ai-seo-img-save').prop('disabled', !changed);
-            });
+                // Sortable headers.
+                $('.ai-seo-sortable').on('click', '.ai-seo-sort', function() {
+                    var th = $(this);
+                    var table = th.closest('table');
+                    var colIdx = parseInt(th.data('col'), 10);
+                    var tbody = table.find('tbody');
+                    var rows = tbody.find('tr').get();
+                    var asc = th.data('sort-dir') !== 'asc';
+                    th.data('sort-dir', asc ? 'asc' : 'desc');
 
-            $('#ai-seo-image-table').on('click', '.ai-seo-img-save', function() {
-                var btn = $(this);
-                var row = btn.closest('tr');
-                btn.prop('disabled', true).text('Saving…');
+                    // Reset all sort icons in this table.
+                    table.find('.ai-seo-sort-icon').removeClass('dashicons-arrow-up dashicons-arrow-down').addClass('dashicons-sort');
+                    th.find('.ai-seo-sort-icon').removeClass('dashicons-sort').addClass(asc ? 'dashicons-arrow-up' : 'dashicons-arrow-down');
 
-                $.post(ajaxurl, {
-                    action: 'ai_seo_keeper_save_image_alt',
-                    _nonce: nonce,
-                    attachment_id: row.data('att-id'),
-                    alt_text: row.find('.ai-seo-img-alt').val()
-                }, function(resp) {
-                    if (resp.success) {
-                        btn.text('Saved ✓');
-                        row.find('.ai-seo-img-alt').data('original', row.find('.ai-seo-img-alt').val());
-                        setTimeout(function() { btn.text('Save'); }, 1500);
-                    } else {
-                        btn.text('Error').prop('disabled', false);
-                    }
+                    rows.sort(function(a, b) {
+                        var aVal = $(a).find('td').eq(colIdx).attr('data-sort-value') || $(a).find('td').eq(colIdx).text().trim().toLowerCase();
+                        var bVal = $(b).find('td').eq(colIdx).attr('data-sort-value') || $(b).find('td').eq(colIdx).text().trim().toLowerCase();
+                        if (aVal < bVal) return asc ? -1 : 1;
+                        if (aVal > bVal) return asc ? 1 : -1;
+                        return 0;
+                    });
+
+                    $.each(rows, function(i, row) {
+                        tbody.append(row);
+                    });
                 });
-            });
-        })(jQuery);
+
+                $('#ai-seo-image-table').on('input', '.ai-seo-img-alt', function() {
+                    var row = $(this).closest('tr');
+                    var changed = $(this).val() !== $(this).data('original');
+                    row.find('.ai-seo-img-save').prop('disabled', !changed);
+                });
+
+                $('#ai-seo-image-table').on('click', '.ai-seo-img-save', function() {
+                    var btn = $(this);
+                    var row = btn.closest('tr');
+                    btn.prop('disabled', true).text('Saving…');
+
+                    $.post(ajaxurl, {
+                        action: 'ai_seo_keeper_save_image_alt',
+                        _nonce: nonce,
+                        attachment_id: row.data('att-id'),
+                        alt_text: row.find('.ai-seo-img-alt').val()
+                    }, function(resp) {
+                        if (resp.success) {
+                            btn.text('Saved ✓');
+                            row.find('.ai-seo-img-alt').data('original', row.find('.ai-seo-img-alt').val());
+                            setTimeout(function() {
+                                btn.text('Save');
+                            }, 1500);
+                        } else {
+                            btn.text('Error').prop('disabled', false);
+                        }
+                    });
+                });
+            })(jQuery);
         </script>
-        <?php
+    <?php
     }
 
     /**
@@ -1990,7 +2136,7 @@ JS;
             "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status = 'publish' AND post_type IN ('post','page') AND post_type != 'attachment'"
         );
         $without_keyphrase = $total_published - $total_with_keyphrase;
-        ?>
+    ?>
         <div class="wrap">
             <h1>Keyword Tracking</h1>
             <p class="description">See which focus keyphrases are used across your site and detect keyword cannibalization (same keyphrase targeting multiple pages).</p>
@@ -2020,7 +2166,10 @@ JS;
                     <p style="margin:0 0 12px;color:#856404;">These keyphrases target multiple pages. Consider consolidating content or differentiating the focus keyphrase for each page.</p>
                     <table class="widefat striped">
                         <thead>
-                            <tr><th>Keyphrase</th><th>Pages targeting it</th></tr>
+                            <tr>
+                                <th>Keyphrase</th>
+                                <th>Pages targeting it</th>
+                            </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($cannibalized as $group) : ?>
@@ -2044,19 +2193,21 @@ JS;
             <?php if (! empty($keyphrase_map)) : ?>
                 <div style="background:#fff;border:1px solid #dcdcde;padding:16px;max-width:1120px;">
                     <h2 style="margin-top:0;">All Focus Keyphrases</h2>
-                    <table class="widefat striped">
+                    <table class="widefat striped ai-seo-sortable" id="ai-seo-keywords-table">
                         <thead>
-                            <tr><th>Keyphrase</th><th>Page</th><th>Type</th></tr>
+                            <tr>
+                                <th style="cursor:pointer;" class="ai-seo-sort" data-col="0">Keyphrase <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                                <th style="cursor:pointer;" class="ai-seo-sort" data-col="1">Page <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                                <th style="cursor:pointer;" class="ai-seo-sort" data-col="2">Type <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                            </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($keyphrase_map as $group) : ?>
-                                <?php foreach ($group['pages'] as $idx => $p) : ?>
+                                <?php foreach ($group['pages'] as $p) : ?>
                                     <tr<?php echo count($group['pages']) > 1 ? ' style="background:#fff3cd;"' : ''; ?>>
-                                        <?php if (0 === $idx) : ?>
-                                            <td rowspan="<?php echo count($group['pages']); ?>" style="vertical-align:top;"><strong><?php echo esc_html($group['keyphrase']); ?></strong></td>
-                                        <?php endif; ?>
-                                        <td><a href="<?php echo esc_url(admin_url('post.php?post=' . $p['id'] . '&action=edit')); ?>"><?php echo esc_html($p['title']); ?></a></td>
-                                        <td><?php echo esc_html($p['post_type']); ?></td>
+                                        <td data-sort-value="<?php echo esc_attr(strtolower($group['keyphrase'])); ?>"><strong><?php echo esc_html($group['keyphrase']); ?></strong></td>
+                                        <td data-sort-value="<?php echo esc_attr(strtolower($p['title'])); ?>"><a href="<?php echo esc_url(admin_url('post.php?post=' . $p['id'] . '&action=edit')); ?>"><?php echo esc_html($p['title']); ?></a></td>
+                                        <td data-sort-value="<?php echo esc_attr($p['post_type']); ?>"><?php echo esc_html($p['post_type']); ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endforeach; ?>
@@ -2067,7 +2218,36 @@ JS;
                 <p>No focus keyphrases have been set yet. Add keyphrases in the editor's SEO tab.</p>
             <?php endif; ?>
         </div>
-        <?php
+
+        <script>
+            (function($) {
+                $('.ai-seo-sortable').on('click', '.ai-seo-sort', function() {
+                    var th = $(this);
+                    var table = th.closest('table');
+                    var colIdx = parseInt(th.data('col'), 10);
+                    var tbody = table.find('tbody');
+                    var rows = tbody.find('tr').get();
+                    var asc = th.data('sort-dir') !== 'asc';
+                    th.data('sort-dir', asc ? 'asc' : 'desc');
+
+                    table.find('.ai-seo-sort-icon').removeClass('dashicons-arrow-up dashicons-arrow-down').addClass('dashicons-sort');
+                    th.find('.ai-seo-sort-icon').removeClass('dashicons-sort').addClass(asc ? 'dashicons-arrow-up' : 'dashicons-arrow-down');
+
+                    rows.sort(function(a, b) {
+                        var aVal = $(a).find('td').eq(colIdx).attr('data-sort-value') || $(a).find('td').eq(colIdx).text().trim().toLowerCase();
+                        var bVal = $(b).find('td').eq(colIdx).attr('data-sort-value') || $(b).find('td').eq(colIdx).text().trim().toLowerCase();
+                        if (aVal < bVal) return asc ? -1 : 1;
+                        if (aVal > bVal) return asc ? 1 : -1;
+                        return 0;
+                    });
+
+                    $.each(rows, function(i, row) {
+                        tbody.append(row);
+                    });
+                });
+            })(jQuery);
+        </script>
+    <?php
     }
 
     /**
@@ -2081,7 +2261,7 @@ JS;
 
         $import_status = isset($_GET['import_status']) ? sanitize_key($_GET['import_status']) : '';
         $import_msg = isset($_GET['import_msg']) ? sanitize_text_field(wp_unslash($_GET['import_msg'])) : '';
-        ?>
+    ?>
         <div class="wrap">
             <h1>Export / Import</h1>
 
@@ -2119,7 +2299,7 @@ JS;
                 </div>
             </div>
         </div>
-        <?php
+    <?php
     }
 
     /**
@@ -3462,7 +3642,7 @@ JS;
         }
 
         ob_start();
-        ?>
+    ?>
         <div class="ai-seo-keeper-links-tab">
             <div style="margin-bottom:16px;">
                 <strong>Outbound internal links (<?php echo count($outbound); ?>)</strong>
@@ -3513,21 +3693,23 @@ JS;
             <?php endif; ?>
         </div>
         <script>
-        (function($) {
-            $(document).on('click', '.ai-seo-keeper-copy-link', function() {
-                var url = $(this).data('url');
-                var title = $(this).data('title');
-                var html = '<a href="' + url + '">' + title + '</a>';
-                if (navigator.clipboard) {
-                    navigator.clipboard.writeText(html).then(function() {});
-                }
-                var btn = $(this);
-                btn.text('Copied!');
-                setTimeout(function() { btn.text('Copy link'); }, 1500);
-            });
-        })(jQuery);
+            (function($) {
+                $(document).on('click', '.ai-seo-keeper-copy-link', function() {
+                    var url = $(this).data('url');
+                    var title = $(this).data('title');
+                    var html = '<a href="' + url + '">' + title + '</a>';
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(html).then(function() {});
+                    }
+                    var btn = $(this);
+                    btn.text('Copied!');
+                    setTimeout(function() {
+                        btn.text('Copy link');
+                    }, 1500);
+                });
+            })(jQuery);
         </script>
-        <?php
+    <?php
         return ob_get_clean();
     }
 
