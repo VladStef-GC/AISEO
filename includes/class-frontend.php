@@ -1462,7 +1462,7 @@ class Frontend
 
         // Only intercept known builder meta keys.
         static $builder_meta_keys = array(
-            'mfn-page-items-seo',
+            'mfn-page-items',
             '_elementor_data',
             '_fl_builder_data',
             '_bricks_page_content_2',
@@ -1489,7 +1489,7 @@ class Frontend
 
         // Map builder name to meta key.
         static $builder_map = array(
-            'betheme' => 'mfn-page-items-seo',
+            'betheme' => 'mfn-page-items',
             'elementor' => '_elementor_data',
             'beaver' => '_fl_builder_data',
             'bricks' => '_bricks_page_content_2',
@@ -1513,6 +1513,41 @@ class Frontend
 
         if (empty($raw)) {
             return $value;
+        }
+
+        // BeTheme: base64-encoded serialized array — needs special handling.
+        if ('betheme' === $pending_builder && is_string($raw)) {
+            $decoded_b64 = base64_decode($raw, true);
+            if (false === $decoded_b64) {
+                return $value;
+            }
+            $data = @unserialize($decoded_b64);
+            if (! is_array($data)) {
+                return $value;
+            }
+
+            $changes = $pending['changes'] ?? array();
+            foreach ($changes as $change) {
+                $old = (string) ($change['old'] ?? '');
+                $new = (string) ($change['new'] ?? '');
+                if ('' === $old) {
+                    continue;
+                }
+
+                // Heading tag changes.
+                if (preg_match('/^<(h[1-6])>(.*)<\/\1>$/is', trim($old), $old_m)
+                    && preg_match('/^<(h[1-6])>(.*)<\/\1>$/is', trim($new), $new_m)) {
+                    Content_Writer::betheme_heading_replace_public($data, strtolower($old_m[1]), $old_m[2], strtolower($new_m[1]), $new_m[2]);
+                    continue;
+                }
+
+                // Standard text replacement.
+                $found = false;
+                $data = Content_Writer::walk_replace_public($data, $old, $new, $found);
+            }
+
+            $modified = base64_encode(serialize($data));
+            return $single ? array($modified) : array($modified);
         }
 
         $content = is_string($raw) ? $raw : maybe_serialize($raw);

@@ -12,7 +12,7 @@ namespace AI_SEO_Keeper;
 class Content_Writer
 {
     private static array $builder_meta_keys = array(
-        'betheme' => 'mfn-page-items-seo',
+        'betheme' => 'mfn-page-items',
         'elementor' => '_elementor_data',
         'beaver' => '_fl_builder_data',
         'bricks' => '_bricks_page_content_2',
@@ -181,11 +181,21 @@ class Content_Writer
 
             $raw = get_post_meta($post_id, $meta_key, true);
 
-            if (is_array($raw)) {
-                // Serialized array storage (BeTheme, etc.): walk the array recursively
-                // and replace text within individual string values. This avoids breaking
-                // serialization length headers.
+            // BeTheme stores base64-encoded serialized arrays.
+            $is_betheme = ('betheme' === $builder);
+            $data = null;
+
+            if ($is_betheme && is_string($raw)) {
+                $decoded_b64 = base64_decode($raw, true);
+                if (false !== $decoded_b64) {
+                    $data = @unserialize($decoded_b64);
+                }
+            } elseif (is_array($raw)) {
                 $data = $raw;
+            }
+
+            if (is_array($data)) {
+                // Array storage: walk recursively to replace text.
                 foreach ($changes as $change) {
                     $old = (string) ($change['old'] ?? '');
                     $new = (string) ($change['new'] ?? '');
@@ -194,19 +204,45 @@ class Content_Writer
                         $details[] = 'Empty search string — skipped.';
                         continue;
                     }
-                    $found = false;
-                    $data = self::walk_replace($data, $old, $new, $found);
-                    if ($found) {
+
+                    // Detect heading tag changes (e.g., <h6>text</h6> → <h4>text</h4>).
+                    $tag_change_applied = false;
+                    if ($is_betheme && preg_match('/^<(h[1-6])>(.*)<\/\1>$/is', trim($old), $old_m)
+                        && preg_match('/^<(h[1-6])>(.*)<\/\1>$/is', trim($new), $new_m)) {
+                        $old_tag = strtolower($old_m[1]);
+                        $new_tag = strtolower($new_m[1]);
+                        $old_text = $old_m[2];
+                        $new_text = $new_m[2];
+
+                        // Try to find and update the heading item in the BeTheme structure.
+                        $tag_change_applied = self::betheme_heading_replace($data, $old_tag, $old_text, $new_tag, $new_text);
+                    }
+
+                    if ($tag_change_applied) {
                         $applied++;
-                        $details[] = 'Applied: "' . mb_substr($old, 0, 40) . '…" → "' . mb_substr($new, 0, 40) . '…"';
+                        $details[] = 'Applied tag change: <' . ($old_m[1] ?? '') . '> → <' . ($new_m[1] ?? '') . '>';
                     } else {
-                        $failed++;
-                        $details[] = 'Text not found in builder data: "' . mb_substr($old, 0, 60) . '…"';
+                        // Standard text replacement via walk.
+                        $found = false;
+                        $data = self::walk_replace($data, $old, $new, $found);
+                        if ($found) {
+                            $applied++;
+                            $details[] = 'Applied: "' . mb_substr($old, 0, 40) . '…" → "' . mb_substr($new, 0, 40) . '…"';
+                        } else {
+                            $failed++;
+                            $details[] = 'Text not found in builder data: "' . mb_substr($old, 0, 60) . '…"';
+                        }
                     }
                 }
 
                 if ($applied > 0) {
-                    update_post_meta($post_id, $meta_key, $data);
+                    if ($is_betheme) {
+                        // Re-serialize and base64 encode for BeTheme.
+                        $serialized = serialize($data);
+                        update_post_meta($post_id, $meta_key, base64_encode($serialized));
+                    } else {
+                        update_post_meta($post_id, $meta_key, $data);
+                    }
                 }
             } else {
                 // String storage (JSON, shortcodes, etc.): direct str_replace.
@@ -244,6 +280,87 @@ class Content_Writer
             'failed' => $failed,
             'details' => $details,
         );
+    }
+
+    /**
+     * Public wrapper for betheme_heading_replace (used by Frontend preview).
+     */
+    public static function betheme_heading_replace_public(array &$data, string $old_tag, string $old_text, string $new_tag, string $new_text): bool
+    {
+        return self::betheme_heading_replace($data, $old_tag, $old_text, $new_tag, $new_text);
+    }
+
+    /**
+     * Public wrapper for walk_replace (used by Frontend preview).
+     *
+     * @param mixed  $data   The data structure to walk.
+     * @param string $old    Text to find.
+     * @param string $new    Replacement text.
+     * @param bool   &$found Set to true if a replacement was made.
+     * @return mixed The modified data structure.
+     */
+    public static function walk_replace_public($data, string $old, string $new, bool &$found)
+    {
+        return self::walk_replace($data, $old, $new, $found);
+    }
+
+    /**
+     * Handle heading tag changes in BeTheme's structure.
+     *
+     * BeTheme heading items store the tag in attr['header_tag'] and text in
+     * attr['title'] separately. This method finds the matching heading and
+     * updates both the tag and the title content.
+     *
+     * @param array  &$data     The deserialized BeTheme items array.
+     * @param string $old_tag   The current tag (e.g., 'h6').
+     * @param string $old_text  The current heading text/HTML content.
+     * @param string $new_tag   The desired new tag (e.g., 'h4').
+     * @param string $new_text  The desired new text content.
+     * @return bool True if a matching heading was found and updated.
+     */
+    private static function betheme_heading_replace(array &$data, string $old_tag, string $old_text, string $new_tag, string $new_text): bool
+    {
+        foreach ($data as &$item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $type = $item['type'] ?? '';
+
+            if ('heading' === $type && isset($item['attr']['header_tag'], $item['attr']['title'])) {
+                $item_tag = strtolower((string) $item['attr']['header_tag']);
+                $item_title = (string) $item['attr']['title'];
+
+                // Match by tag AND text content (strip_tags for comparison since title may have <br/> etc).
+                $old_text_clean = trim(strip_tags($old_text));
+                $item_title_clean = trim(strip_tags($item_title));
+
+                if ($item_tag === $old_tag && $item_title_clean === $old_text_clean) {
+                    // Update tag.
+                    $item['attr']['header_tag'] = $new_tag;
+
+                    // Update text content if it also changed.
+                    if (trim(strip_tags($new_text)) !== $old_text_clean) {
+                        // Preserve any existing inline HTML (like <br/>) if only adding new text.
+                        $item['attr']['title'] = $new_text;
+                    }
+
+                    return true;
+                }
+            }
+
+            // Recurse into nested structures (sections → wraps → items).
+            foreach (array('wraps', 'items', 'fields') as $child_key) {
+                if (isset($item[$child_key]) && is_array($item[$child_key])) {
+                    if (self::betheme_heading_replace($item[$child_key], $old_tag, $old_text, $new_tag, $new_text)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        unset($item);
+
+        return false;
     }
 
     /**
@@ -359,6 +476,14 @@ class Content_Writer
 
         if ('beaver' === $builder) {
             delete_post_meta($post_id, '_fl_builder_draft');
+        }
+
+        if ('betheme' === $builder) {
+            // Regenerate BeTheme's SEO helper text from the updated builder data.
+            // This ensures the mfn-page-items-seo field stays in sync.
+            // BeTheme's own save hooks will also regenerate this on the next page save,
+            // but we update it here for immediate consistency in the admin.
+            delete_post_meta($post_id, 'mfn-page-items-seo');
         }
     }
 

@@ -5937,8 +5937,12 @@ HTML;
                                                 <span style="font-size:11px;background:#e5f5fa;color:#0a4b78;padding:1px 4px;border-radius:3px;margin-left:6px;"><?php echo esc_html($ch['tag_change']); ?></span>
                                             <?php endif; ?>
                                             <div style="display:flex;gap:8px;margin-top:4px;">
-                                                <div style="flex:1;"><span style="font-size:10px;color:#8a2424;font-weight:600;">BEFORE</span><div style="background:#fef0f0;padding:4px 6px;border-radius:3px;word-break:break-word;"><?php echo esc_html($ch['old'] ?? ''); ?></div></div>
-                                                <div style="flex:1;"><span style="font-size:10px;color:#135e16;font-weight:600;">AFTER</span><div style="background:#eef8ee;padding:4px 6px;border-radius:3px;word-break:break-word;"><?php echo esc_html($ch['new'] ?? ''); ?></div></div>
+                                                <div style="flex:1;"><span style="font-size:10px;color:#8a2424;font-weight:600;">BEFORE</span>
+                                                    <div style="background:#fef0f0;padding:4px 6px;border-radius:3px;word-break:break-word;"><?php echo esc_html($ch['old'] ?? ''); ?></div>
+                                                </div>
+                                                <div style="flex:1;"><span style="font-size:10px;color:#135e16;font-weight:600;">AFTER</span>
+                                                    <div style="background:#eef8ee;padding:4px 6px;border-radius:3px;word-break:break-word;"><?php echo esc_html($ch['new'] ?? ''); ?></div>
+                                                </div>
                                             </div>
                                             <?php if (! empty($ch['reason'])) : ?>
                                                 <p style="font-size:11px;color:#787c82;margin:4px 0 0;font-style:italic;"><?php echo esc_html($ch['reason']); ?></p>

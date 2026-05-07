@@ -135,8 +135,8 @@ class Content_Helper
     {
         // --- Plain HTML / text fields (cheapest to read) ----------------
 
-        // BeTheme / Muffin Builder – pre-rendered SEO text.
-        $result = self::try_string_meta($post_id, 'mfn-page-items-seo');
+        // BeTheme / Muffin Builder – parse actual builder data for correct heading tags.
+        $result = self::extract_betheme_content($post_id);
         if ('' !== $result) {
             return $result;
         }
@@ -303,6 +303,102 @@ class Content_Helper
         }
 
         return false;
+    }
+
+    // ------------------------------------------------------------------
+    //  BeTheme / Muffin Builder parser
+    // ------------------------------------------------------------------
+
+    /**
+     * Parse BeTheme's mfn-page-items (base64-encoded serialized array)
+     * and reconstruct HTML with CORRECT heading tags.
+     *
+     * BeTheme stores heading levels in attr['header_tag'] for heading items,
+     * and inline HTML (with correct tags) in attr['content'] for column items.
+     * The mfn-page-items-seo field is unreliable for heading levels.
+     */
+    private static function extract_betheme_content(int $post_id): string
+    {
+        $raw = get_post_meta($post_id, 'mfn-page-items', true);
+
+        if (! is_string($raw) || '' === trim($raw)) {
+            return '';
+        }
+
+        // BeTheme stores base64-encoded serialized PHP arrays.
+        $decoded = base64_decode($raw, true);
+        if (false === $decoded) {
+            return '';
+        }
+
+        $items = @unserialize($decoded);
+        if (! is_array($items)) {
+            return '';
+        }
+
+        $texts = array();
+        self::walk_betheme_items($items, $texts);
+
+        $content = implode("\n", $texts);
+
+        return self::is_meaningful($content) ? $content : '';
+    }
+
+    /**
+     * Recursively walk BeTheme builder items and collect content with correct tags.
+     */
+    private static function walk_betheme_items(array $data, array &$texts, int $depth = 0): void
+    {
+        if ($depth > 15) {
+            return;
+        }
+
+        foreach ($data as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $type = $item['type'] ?? '';
+
+            // Heading items: use attr['header_tag'] and attr['title'].
+            if ('heading' === $type && isset($item['attr']['title'])) {
+                $tag = $item['attr']['header_tag'] ?? 'div';
+                $title = $item['attr']['title'];
+
+                // Skip empty titles.
+                if ('' === trim(strip_tags($title))) {
+                    continue;
+                }
+
+                // Skip paragraph-type headings that are just decorative.
+                if ('p' === $tag) {
+                    $texts[] = '<p>' . $title . '</p>';
+                } else {
+                    $texts[] = '<' . $tag . '>' . $title . '</' . $tag . '>';
+                }
+                continue;
+            }
+
+            // Column / content items: include raw HTML (already has correct inline tags).
+            if (isset($item['attr']['content'])) {
+                $content = $item['attr']['content'];
+                if ('' !== trim(strip_tags($content))) {
+                    $texts[] = $content;
+                }
+            }
+
+            // Recurse into nested structures (sections → wraps → items).
+            foreach (array('wraps', 'items', 'fields') as $child_key) {
+                if (isset($item[$child_key]) && is_array($item[$child_key])) {
+                    self::walk_betheme_items($item[$child_key], $texts, $depth + 1);
+                }
+            }
+
+            // Also recurse into numerically-indexed sub-arrays.
+            if (! isset($item['type']) && ! isset($item['attr'])) {
+                self::walk_betheme_items($item, $texts, $depth + 1);
+            }
+        }
     }
 
     // ------------------------------------------------------------------
