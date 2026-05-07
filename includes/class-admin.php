@@ -906,15 +906,17 @@ jQuery(function ($) {
                             html += '</div>';
                         }
 
-                        html += '<div style="margin-top:12px;display:flex;gap:10px;align-items:center;">';
-                        html += '<button type="button" class="button button-primary ai-seo-keeper-apply-content-changes">Apply Accepted Changes</button>';
-                        html += '<button type="button" class="button ai-seo-keeper-discard-changes">Discard All</button>';
+                        html += '<div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">';
+                        html += '<button type="button" class="button ai-seo-keeper-toggle-all-changes" style="font-size:12px;">Deselect All</button>';
+                        html += '<button type="button" class="button button-primary ai-seo-keeper-apply-content-changes">Approve Selected</button>';
+                        html += '<button type="button" class="button ai-seo-keeper-discard-changes">Disregard</button>';
                         html += '<span class="ai-seo-keeper-apply-status" style="font-size:13px;"></span>';
                         html += '</div>';
                         html += '</div>';
 
                         $review.html(html);
                         $review.data('proposedChanges', changes);
+                        $review.data('changeSummary', response.data.summary || '');
                         $status.text('Review the proposed changes below.').css('color', '#135e16');
                     } else {
                         $review.empty();
@@ -977,19 +979,21 @@ jQuery(function ($) {
         });
     });
 
-    // Apply accepted content changes.
+    // Approve selected content changes (stored as pending — applied on Update/Publish).
     $(document).on('click', '.ai-seo-keeper-apply-content-changes', function () {
         var $btn = $(this);
+        var $contentReview = $btn.closest('.ai-seo-keeper-content-review');
         var $review = $btn.closest('.ai-seo-keeper-diff-review');
         var $statusEl = $review.find('.ai-seo-keeper-apply-status');
-        var allChanges = $btn.closest('.ai-seo-keeper-content-review').data('proposedChanges');
+        var allChanges = $contentReview.data('proposedChanges');
+        var summary = $contentReview.data('changeSummary') || '';
         var postId = $('#post_ID').val();
 
         var accepted = [];
         $review.find('.ai-seo-keeper-diff-accept:checked').each(function () {
             var idx = parseInt($(this).data('idx'), 10);
             if (allChanges[idx]) {
-                accepted.push({ old: allChanges[idx].old, 'new': allChanges[idx]['new'] });
+                accepted.push({ old: allChanges[idx].old, 'new': allChanges[idx]['new'], section: allChanges[idx].section || '' });
             }
         });
 
@@ -998,34 +1002,61 @@ jQuery(function ($) {
             return;
         }
 
-        $btn.prop('disabled', true).text('Applying…');
+        $btn.prop('disabled', true).text('Approving…');
 
         $.post(aiSeoKeeperEditor.ajaxUrl, {
             action: 'ai_seo_keeper_apply_changes',
             nonce: $('#ai_seo_keeper_editor_nonce').val(),
             post_id: postId,
-            changes: JSON.stringify(accepted)
+            changes: JSON.stringify(accepted),
+            summary: summary
         })
         .done(function (response) {
             if (response && response.success && response.data) {
                 var d = response.data;
-                $statusEl.text('✓ ' + d.applied + ' change(s) applied, ' + d.failed + ' failed. Backup saved.').css('color', '#135e16');
-                $btn.text('✓ Applied');
-                $review.append('<div style="margin-top:10px;"><button type="button" class="button ai-seo-keeper-restore-backup">↩ Undo AI edits (restore backup)</button></div>');
+                $statusEl.text('✓ ' + d.applied + ' change(s) approved — click Update/Publish to make them live.').css('color', '#135e16');
+                $btn.text('✓ Approved').prop('disabled', true);
+                $review.find('.ai-seo-keeper-discard-changes, .ai-seo-keeper-toggle-all-changes').hide();
+                $review.find('.ai-seo-keeper-diff-accept').prop('disabled', true);
+                // Show pending notice at the top of the panel.
+                var $panel = $btn.closest('.ai-seo-keeper-editor-panel');
+                if (! $panel.find('.ai-seo-keeper-pending-notice').length) {
+                    $panel.find('.ai-seo-keeper-toolbar').after(
+                        '<div class="ai-seo-keeper-pending-notice" style="background:#fff8e1;border-left:4px solid #ffb300;padding:8px 12px;margin:8px 0;font-size:13px;">' +
+                        '⏳ <strong>' + d.applied + ' AI content change(s) pending</strong> — Preview the page, then click <strong>Update</strong> to publish them.' +
+                        '</div>'
+                    );
+                }
             } else {
-                $statusEl.text('Apply failed.').css('color', '#8a2424');
+                $statusEl.text('Approval failed.').css('color', '#8a2424');
             }
         })
         .fail(function () {
-            $statusEl.text('Apply failed.').css('color', '#8a2424');
+            $statusEl.text('Approval failed.').css('color', '#8a2424');
         })
         .always(function () {
-            $btn.prop('disabled', false);
+            if ($btn.text() !== '✓ Approved') $btn.prop('disabled', false);
         });
     });
 
+    // Toggle select/deselect all checkboxes.
+    $(document).on('click', '.ai-seo-keeper-toggle-all-changes', function () {
+        var $btn = $(this);
+        var $review = $btn.closest('.ai-seo-keeper-diff-review');
+        var $boxes = $review.find('.ai-seo-keeper-diff-accept');
+        var allChecked = $boxes.length === $boxes.filter(':checked').length;
+        $boxes.prop('checked', ! allChecked);
+        $btn.text(allChecked ? 'Select All' : 'Deselect All');
+    });
+
+    // Disregard — collapse the diff review but keep it recoverable via chat context.
     $(document).on('click', '.ai-seo-keeper-discard-changes', function () {
-        $(this).closest('.ai-seo-keeper-content-review').empty();
+        var $review = $(this).closest('.ai-seo-keeper-content-review');
+        $review.find('.ai-seo-keeper-diff-review').slideUp(200);
+        var $chatStatus = $review.closest('.ai-seo-keeper-assistant-panel').find('.ai-seo-keeper-chat-status');
+        if ($chatStatus.length) {
+            $chatStatus.text('Changes disregarded. You can ask AI for a different plan.').css('color', '#787c82');
+        }
     });
 
     // ── Clear chat conversation ───────────────────────────────────────
@@ -1916,6 +1947,7 @@ JS;
         $robots_directives = (string) get_post_meta($post->ID, self::ROBOTS_DIRECTIVES_META_KEY, true);
         $frontend_post_enabled = '1' === (string) get_post_meta($post->ID, self::FRONTEND_ENABLE_META_KEY, true);
         $recent_suggestions = $this->history_store->get_recent_suggestions((int) $post->ID, 'post', 3);
+        $recent_content_edits = $this->history_store->get_recent_content_edits((int) $post->ID, 5);
         $approved_suggestion = $this->history_store->get_approved_suggestion((int) $post->ID, 'post');
         $has_api_key      = ! empty($options['api_key']);
         $chat_is_enabled  = ! empty($options['editor_chat_enabled']);
@@ -1927,6 +1959,7 @@ JS;
         $analysis_markup = $this->render_focus_keyphrase_checks_markup($post, $focus_keyphrase, $seo_title, $seo_description);
         $page_audit_data = get_post_meta($post->ID, '_ai_seo_keeper_page_audit', true);
         $page_audit_score = is_array($page_audit_data) && isset($page_audit_data['score']) ? (int) $page_audit_data['score'] : null;
+        $pending_changes = Content_Writer::get_pending_changes((int) $post->ID);
         $preview_title = '' !== $seo_title ? $seo_title : (string) get_the_title($post->ID);
         $preview_description = '' !== $seo_description ? $seo_description : wp_trim_words(wp_strip_all_tags((string) ($post->post_excerpt ?: Content_Helper::get_content($post))), 24, '...');
         $preview_url = (string) get_permalink($post->ID);
@@ -1985,6 +2018,15 @@ JS;
                 <span class="ai-seo-keeper-save-status" aria-live="polite"></span>
             </div>
             <p class="ai-seo-keeper-toolbar-note">Generate fills the draft fields only. Save SEO draft persists them without publishing or updating the main page content.</p>
+
+            <?php if (! empty($pending_changes['changes'])) : ?>
+                <div class="ai-seo-keeper-pending-notice" style="background:#fff8e1;border-left:4px solid #ffb300;padding:8px 12px;margin:8px 0;font-size:13px;">
+                    ⏳ <strong><?php echo esc_html(count($pending_changes['changes'])); ?> AI content change(s) pending</strong> — Preview the page, then click <strong>Update</strong> to publish them.
+                    <?php if ('' !== ($pending_changes['summary'] ?? '')) : ?>
+                        <br><em style="color:#50575e;"><?php echo esc_html($pending_changes['summary']); ?></em>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
 
             <div class="ai-seo-keeper-ai-notes-shell ai-seo-keeper-surface ai-seo-keeper-notes-surface">
                 <strong>AI notes</strong>
@@ -2123,7 +2165,7 @@ JS;
                                 '</div>' .
 
                                 '<div class="ai-seo-keeper-assistant-panel" data-panel="history" style="display:none;">' .
-                                '<div class="ai-seo-keeper-history-shell">' . $this->render_history_markup($recent_suggestions) . '</div>' .
+                                '<div class="ai-seo-keeper-history-shell">' . $this->render_history_markup($recent_suggestions, $recent_content_edits) . '</div>' .
                                 '</div>';
 
                             echo $this->render_accordion_section(
@@ -3284,7 +3326,7 @@ HTML;
                 'notes' => $suggestion['notes'],
                 'provider' => $suggestion['provider'],
                 'model' => $suggestion['model'],
-                'historyHtml' => $this->render_history_markup($recent_suggestions),
+                'historyHtml' => $this->render_history_markup($recent_suggestions, $this->history_store->get_recent_content_edits($post_id, 5)),
                 'analysisHtml' => $post instanceof \WP_Post
                     ? $this->render_focus_keyphrase_checks_markup($post, $focus_keyphrase, $suggestion['seo_title'], $suggestion['meta_description'])
                     : '',
@@ -3339,7 +3381,7 @@ HTML;
                 'seoTitle' => $approved['seo_title'],
                 'metaDescription' => $approved['meta_description'],
                 'notes' => $approved['notes'],
-                'historyHtml' => $this->render_history_markup($recent_suggestions),
+                'historyHtml' => $this->render_history_markup($recent_suggestions, $this->history_store->get_recent_content_edits($post_id, 5)),
                 'analysisHtml' => $post instanceof \WP_Post
                     ? $this->render_focus_keyphrase_checks_markup($post, $focus_keyphrase, $approved['seo_title'], $approved['meta_description'])
                     : '',
@@ -3805,6 +3847,7 @@ HTML;
     {
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
         $changes_json = isset($_POST['changes']) ? wp_unslash($_POST['changes']) : '';
+        $summary = isset($_POST['summary']) ? sanitize_textarea_field(wp_unslash($_POST['summary'])) : '';
 
         if (! $post_id) {
             wp_send_json_error(array('message' => 'Missing post id.'), 400);
@@ -3821,9 +3864,34 @@ HTML;
             wp_send_json_error(array('message' => 'No changes to apply.'), 400);
         }
 
-        $result = Content_Writer::apply_changes($post_id, $changes);
+        // Store as pending — changes will be applied when the user clicks Update/Publish.
+        Content_Writer::store_pending_changes($post_id, $changes, $summary);
 
-        wp_send_json_success($result);
+        // Log to history as a content edit plan.
+        $this->history_store->log_generation(
+            $post_id,
+            'content_edit',
+            get_the_title($post_id) . ' — content edit plan',
+            array('instruction' => $summary),
+            array(
+                'content_edit_summary' => $summary,
+                'content_edit_count' => count($changes),
+                'content_edit_status' => 'pending',
+                'changes' => $changes,
+                'provider' => 'ai',
+                'model' => '',
+            )
+        );
+
+        wp_send_json_success(array(
+            'applied' => count($changes),
+            'failed' => 0,
+            'details' => array(),
+            'message' => sprintf(
+                '%d change(s) approved. Preview the page, then click Update to publish them.',
+                count($changes)
+            ),
+        ));
     }
 
     public function handle_ajax_apply_suggestion(): void
@@ -5055,6 +5123,15 @@ HTML;
         }
 
         $this->persist_editor_meta($post_id, $_POST);
+
+        // Apply any pending AI content changes on Update/Publish.
+        $pending = Content_Writer::get_pending_changes($post_id);
+        if (! empty($pending)) {
+            Content_Writer::apply_pending_changes($post_id);
+
+            // Update the most recent content_edit history entry status to 'published'.
+            $this->history_store->update_content_edit_status($post_id, 'published');
+        }
     }
 
     private function persist_editor_meta(int $post_id, array $raw_input): array
@@ -5756,15 +5833,44 @@ HTML;
         return false;
     }
 
-    private function render_history_markup(array $recent_suggestions): string
+    private function render_history_markup(array $recent_suggestions, array $content_edits = array()): string
     {
         ob_start();
     ?>
-        <?php if (empty($recent_suggestions)) : ?>
+        <?php if (empty($recent_suggestions) && empty($content_edits)) : ?>
             <p class="ai-seo-keeper-empty-state ai-seo-keeper-history-empty">No AI suggestions have been saved for this page yet.</p>
         <?php else : ?>
             <div class="ai-seo-keeper-history-list ai-seo-keeper-stack">
-                <?php foreach ($recent_suggestions as $entry) : ?>
+                <?php if (! empty($content_edits)) : ?>
+                    <h4 style="margin:0 0 8px;font-size:13px;color:#50575e;border-bottom:1px solid #dcdcde;padding-bottom:6px;">Content Edit Plans</h4>
+                    <?php foreach ($content_edits as $edit) : ?>
+                        <div class="ai-seo-keeper-history-item" style="border-left:3px solid <?php echo 'published' === $edit['status'] ? '#00a32a' : '#ffb300'; ?>;padding-left:10px;">
+                            <p style="margin:0 0 6px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
+                                <strong><?php echo esc_html($edit['change_count']); ?> content change(s)</strong>
+                                <?php if ('published' === $edit['status']) : ?>
+                                    <span class="ai-seo-keeper-check-pill is-pass" style="background:#00a32a;color:#fff;font-size:11px;padding:2px 8px;border-radius:3px;">Approved | Published</span>
+                                <?php else : ?>
+                                    <span class="ai-seo-keeper-check-pill" style="background:#ffb300;color:#fff;font-size:11px;padding:2px 8px;border-radius:3px;">Approved | Not Published</span>
+                                <?php endif; ?>
+                            </p>
+                            <?php if ('' !== ($edit['summary'] ?? '')) : ?>
+                                <p style="margin:0 0 6px;font-size:13px;"><em><?php echo esc_html($edit['summary']); ?></em></p>
+                            <?php endif; ?>
+                            <p class="ai-seo-keeper-history-meta" style="margin:0;font-size:12px;color:#787c82;">
+                                <?php echo esc_html($edit['created_at'] ?? ''); ?>
+                                <?php if ('published' === $edit['status'] && '' !== ($edit['published_at'] ?? '')) : ?>
+                                    <?php echo ' | Published: ' . esc_html($edit['published_at']); ?>
+                                <?php endif; ?>
+                            </p>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+
+                <?php if (! empty($recent_suggestions)) : ?>
+                    <?php if (! empty($content_edits)) : ?>
+                        <h4 style="margin:12px 0 8px;font-size:13px;color:#50575e;border-bottom:1px solid #dcdcde;padding-bottom:6px;">Metadata Suggestions</h4>
+                    <?php endif; ?>
+                    <?php foreach ($recent_suggestions as $entry) : ?>
                     <div class="ai-seo-keeper-history-item">
                         <p style="margin:0 0 8px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
                             <strong><?php echo esc_html($entry['seo_title']); ?></strong>
@@ -5793,7 +5899,8 @@ HTML;
                             <?php endif; ?>
                         </p>
                     </div>
-                <?php endforeach; ?>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
     <?php

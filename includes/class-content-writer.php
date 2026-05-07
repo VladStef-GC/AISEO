@@ -24,6 +24,104 @@ class Content_Writer
         'tatsu' => 'tatsu_sections',
     );
 
+    private const PENDING_META_KEY = '_ai_seo_keeper_pending_content_changes';
+
+    /**
+     * Store approved changes as pending — they will be applied on the next
+     * WordPress Update / Publish action instead of immediately.
+     *
+     * @param int    $post_id  The post to store pending changes for.
+     * @param array  $changes  Array of ['old' => string, 'new' => string, ...].
+     * @param string $summary  AI-generated summary of the changes.
+     * @return void
+     */
+    public static function store_pending_changes(int $post_id, array $changes, string $summary = ''): void
+    {
+        $pending = array(
+            'changes' => $changes,
+            'summary' => $summary,
+            'builder' => self::detect_builder($post_id),
+            'approved_at' => current_time('mysql'),
+        );
+
+        update_post_meta($post_id, self::PENDING_META_KEY, $pending);
+    }
+
+    /**
+     * Retrieve any pending content changes for a post.
+     *
+     * @return array{changes: array, summary: string, builder: string, approved_at: string}|array Empty if none.
+     */
+    public static function get_pending_changes(int $post_id): array
+    {
+        $pending = get_post_meta($post_id, self::PENDING_META_KEY, true);
+
+        if (! is_array($pending) || empty($pending['changes'])) {
+            return array();
+        }
+
+        return $pending;
+    }
+
+    /**
+     * Apply stored pending changes to the actual post content.
+     * Called on WordPress Update / Publish via save_post hook.
+     *
+     * @return array{applied: int, failed: int, details: array}|array Empty if nothing pending.
+     */
+    public static function apply_pending_changes(int $post_id): array
+    {
+        $pending = self::get_pending_changes($post_id);
+
+        if (empty($pending)) {
+            return array();
+        }
+
+        $result = self::apply_changes($post_id, $pending['changes']);
+
+        // Clear the pending meta after applying.
+        delete_post_meta($post_id, self::PENDING_META_KEY);
+
+        return $result;
+    }
+
+    /**
+     * Clear pending changes without applying them.
+     */
+    public static function clear_pending_changes(int $post_id): void
+    {
+        delete_post_meta($post_id, self::PENDING_META_KEY);
+    }
+
+    /**
+     * Apply text changes to the given content string without writing to DB.
+     * Used for preview rendering.
+     *
+     * @param string $content  The content to transform.
+     * @param array  $changes  Array of ['old' => string, 'new' => string].
+     * @return string Modified content.
+     */
+    public static function apply_changes_to_string(string $content, array $changes): string
+    {
+        foreach ($changes as $change) {
+            $old = (string) ($change['old'] ?? '');
+            $new = (string) ($change['new'] ?? '');
+
+            if ('' === $old) {
+                continue;
+            }
+
+            $pos = mb_strpos($content, $old);
+            if (false === $pos) {
+                continue;
+            }
+
+            $content = mb_substr($content, 0, $pos) . $new . mb_substr($content, $pos + mb_strlen($old));
+        }
+
+        return $content;
+    }
+
     /**
      * Apply an array of text changes to a post.
      *

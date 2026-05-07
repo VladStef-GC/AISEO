@@ -382,4 +382,123 @@ class History_Store
 
         return $deleted;
     }
+
+    /**
+     * Update the status of the most recent content_edit plan for a post.
+     *
+     * @param int    $object_id The post ID.
+     * @param string $status    New status: 'pending' or 'published'.
+     */
+    public function update_content_edit_status(int $object_id, string $status): void
+    {
+        global $wpdb;
+
+        $conversations_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
+        $messages_table = $wpdb->prefix . 'ai_seo_keeper_messages';
+
+        // Find the most recent content_edit conversation for this post.
+        $conversation_id = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT id FROM {$conversations_table}
+                 WHERE object_type = 'content_edit' AND object_id = %d
+                 ORDER BY updated_at DESC LIMIT 1",
+                $object_id
+            )
+        );
+
+        if (! $conversation_id) {
+            return;
+        }
+
+        // Find the most recent assistant message in that conversation.
+        $message_id = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT id FROM {$messages_table}
+                 WHERE conversation_id = %d AND role = 'assistant'
+                 ORDER BY id DESC LIMIT 1",
+                $conversation_id
+            )
+        );
+
+        if (! $message_id) {
+            return;
+        }
+
+        $raw = $wpdb->get_var(
+            $wpdb->prepare("SELECT content FROM {$messages_table} WHERE id = %d", $message_id)
+        );
+
+        $payload = json_decode((string) $raw, true);
+        if (! is_array($payload)) {
+            return;
+        }
+
+        $payload['content_edit_status'] = $status;
+        if ('published' === $status) {
+            $payload['published_at'] = current_time('mysql');
+        }
+
+        $wpdb->update(
+            $messages_table,
+            array('content' => wp_json_encode($payload)),
+            array('id' => (int) $message_id),
+            array('%s'),
+            array('%d')
+        );
+    }
+
+    /**
+     * Get recent content edit plans for a post.
+     *
+     * @param int $object_id The post ID.
+     * @param int $limit     Maximum entries to return.
+     * @return array
+     */
+    public function get_recent_content_edits(int $object_id, int $limit = 5): array
+    {
+        global $wpdb;
+
+        $conversations_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
+        $messages_table = $wpdb->prefix . 'ai_seo_keeper_messages';
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT m.id, m.content, m.created_at
+                 FROM {$messages_table} m
+                 JOIN {$conversations_table} c ON c.id = m.conversation_id
+                 WHERE c.object_type = 'content_edit'
+                   AND c.object_id = %d
+                   AND m.role = 'assistant'
+                 ORDER BY m.id DESC
+                 LIMIT %d",
+                $object_id,
+                $limit
+            ),
+            ARRAY_A
+        );
+
+        if (empty($rows)) {
+            return array();
+        }
+
+        $entries = array();
+        foreach ($rows as $row) {
+            $payload = json_decode((string) $row['content'], true);
+            if (! is_array($payload)) {
+                continue;
+            }
+
+            $entries[] = array(
+                'id' => (int) $row['id'],
+                'summary' => $payload['content_edit_summary'] ?? '',
+                'change_count' => (int) ($payload['content_edit_count'] ?? 0),
+                'status' => $payload['content_edit_status'] ?? 'pending',
+                'published_at' => $payload['published_at'] ?? '',
+                'created_at' => $row['created_at'] ?? '',
+                'changes' => $payload['changes'] ?? array(),
+            );
+        }
+
+        return $entries;
+    }
 }

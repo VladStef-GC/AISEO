@@ -49,6 +49,10 @@ class Frontend
         add_action('wp_head', array($this, 'output_twitter_cards'), 4);
         add_action('wp_head', array($this, 'output_schema'), 5);
         add_action('wp_head', array($this, 'output_robots_directives'), 6);
+
+        // Apply pending AI content changes during WordPress Preview.
+        add_filter('the_content', array($this, 'filter_preview_content'), 1);
+        add_filter('get_post_metadata', array($this, 'filter_preview_builder_meta'), 1, 4);
     }
 
     public function output_webmaster_verification_tags(): void
@@ -1411,5 +1415,115 @@ class Frontend
         }
 
         echo "\n" . '<meta ' . esc_attr($attribute) . '="' . esc_attr($key) . '" content="' . esc_attr($content) . '" data-ai-seo-keeper="approved" data-ai-seo-feature="' . esc_attr($feature) . '" />' . "\n";
+    }
+
+    /**
+     * During WordPress Preview, apply pending AI content changes to post_content.
+     * Works with any theme using the_content (Classic, Gutenberg, WPBakery, Divi, etc.).
+     *
+     * @param string $content The post content.
+     * @return string Modified content with pending changes applied, or original.
+     */
+    public function filter_preview_content(string $content): string
+    {
+        if (! is_preview() || ! is_singular()) {
+            return $content;
+        }
+
+        $post = get_queried_object();
+        if (! $post instanceof \WP_Post) {
+            return $content;
+        }
+
+        $pending = Content_Writer::get_pending_changes((int) $post->ID);
+        if (empty($pending) || 'post_content' !== ($pending['builder'] ?? 'post_content')) {
+            return $content;
+        }
+
+        return Content_Writer::apply_changes_to_string($content, $pending['changes']);
+    }
+
+    /**
+     * During WordPress Preview, apply pending AI content changes to page builder meta.
+     * Works with BeTheme, Elementor, Beaver Builder, Bricks, and all other builders
+     * by intercepting their meta reads.
+     *
+     * @param mixed  $value     The value to return (null = let WordPress handle it).
+     * @param int    $object_id The post ID.
+     * @param string $meta_key  The meta key being read.
+     * @param bool   $single    Whether to return a single value.
+     * @return mixed Modified meta value or null.
+     */
+    public function filter_preview_builder_meta($value, int $object_id, string $meta_key, bool $single)
+    {
+        if (! is_preview() || ! is_singular()) {
+            return $value;
+        }
+
+        // Only intercept known builder meta keys.
+        static $builder_meta_keys = array(
+            'mfn-page-items-seo',
+            '_elementor_data',
+            '_fl_builder_data',
+            '_bricks_page_content_2',
+            '_themify_builder_settings_json',
+            'ct_builder_shortcodes',
+            'tve_updated_post',
+            'brizy-post-editor-data',
+            '_seedprod_page',
+            'tatsu_sections',
+        );
+
+        if (! in_array($meta_key, $builder_meta_keys, true)) {
+            return $value;
+        }
+
+        $pending = Content_Writer::get_pending_changes($object_id);
+        if (empty($pending)) {
+            return $value;
+        }
+
+        // Only apply if the pending changes target this builder.
+        $pending_builder = $pending['builder'] ?? 'post_content';
+        $target_key = '';
+
+        // Map builder name to meta key.
+        static $builder_map = array(
+            'betheme' => 'mfn-page-items-seo',
+            'elementor' => '_elementor_data',
+            'beaver' => '_fl_builder_data',
+            'bricks' => '_bricks_page_content_2',
+            'themify' => '_themify_builder_settings_json',
+            'oxygen' => 'ct_builder_shortcodes',
+            'thrive' => 'tve_updated_post',
+            'brizy' => 'brizy-post-editor-data',
+            'seedprod' => '_seedprod_page',
+            'tatsu' => 'tatsu_sections',
+        );
+
+        $target_key = $builder_map[$pending_builder] ?? '';
+        if ($meta_key !== $target_key) {
+            return $value;
+        }
+
+        // Remove this filter temporarily to prevent infinite loop when reading the actual meta.
+        remove_filter('get_post_metadata', array($this, 'filter_preview_builder_meta'), 1);
+        $raw = get_post_meta($object_id, $meta_key, $single);
+        add_filter('get_post_metadata', array($this, 'filter_preview_builder_meta'), 1, 4);
+
+        if (empty($raw)) {
+            return $value;
+        }
+
+        $content = is_string($raw) ? $raw : maybe_serialize($raw);
+        $modified = Content_Writer::apply_changes_to_string($content, $pending['changes']);
+
+        // Return in the format WordPress expects.
+        if ($single) {
+            $unserialized = maybe_unserialize($modified);
+            return array($unserialized);
+        }
+
+        return array(maybe_unserialize($modified));
     }
 }
