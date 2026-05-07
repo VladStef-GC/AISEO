@@ -34,6 +34,7 @@ class Audit_Engine
             'duplicate_post_titles' => $this->get_duplicate_post_titles(6),
             'duplicate_ai_titles' => $this->get_duplicate_ai_titles(6),
             'thin_content_rows' => $this->get_thin_content_rows(8),
+            'orphaned_content' => $this->get_orphaned_content(12),
         );
     }
 
@@ -320,5 +321,150 @@ class Audit_Engine
             },
             $rows
         );
+    }
+
+    /**
+     * Build the internal link graph and return orphaned content (pages with zero inbound internal links).
+     *
+     * @return array{orphans: array, link_graph: array<int, int>}
+     */
+    public function get_orphaned_content(int $limit = 12): array
+    {
+        $link_graph = $this->build_internal_link_graph();
+        $orphans = array();
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+
+        // Get all published posts from the index.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $all_posts = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT object_id, title, permalink, post_type
+                FROM {$table_name}
+                WHERE object_type = %s AND status = %s
+                ORDER BY title ASC",
+                'post',
+                'publish'
+            ),
+            ARRAY_A
+        );
+
+        if (! is_array($all_posts)) {
+            return array('orphans' => array(), 'total_orphans' => 0, 'total_pages' => 0);
+        }
+
+        // Homepage is never orphaned.
+        $home_id = (int) get_option('page_on_front', 0);
+        $blog_id = (int) get_option('page_for_posts', 0);
+
+        foreach ($all_posts as $row) {
+            $post_id = (int) $row['object_id'];
+
+            // Skip home page / blog page — these are linked from the site structure itself.
+            if ($post_id === $home_id || $post_id === $blog_id) {
+                continue;
+            }
+
+            $inbound_count = $link_graph[$post_id] ?? 0;
+
+            if (0 === $inbound_count) {
+                $orphans[] = array(
+                    'object_id' => $post_id,
+                    'title' => (string) $row['title'],
+                    'permalink' => (string) $row['permalink'],
+                    'post_type' => (string) $row['post_type'],
+                    'inbound_links' => 0,
+                );
+            }
+        }
+
+        $total_orphans = count($orphans);
+
+        return array(
+            'orphans' => array_slice($orphans, 0, $limit),
+            'total_orphans' => $total_orphans,
+            'total_pages' => count($all_posts),
+        );
+    }
+
+    /**
+     * Build a map of post_id → inbound internal link count by scanning all published content.
+     *
+     * @return array<int, int>  Map of target_post_id → count of inbound links.
+     */
+    public function build_internal_link_graph(): array
+    {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $posts = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT object_id FROM {$table_name} WHERE object_type = %s AND status = %s",
+                'post',
+                'publish'
+            )
+        );
+
+        if (! is_array($posts) || empty($posts)) {
+            return array();
+        }
+
+        $site_host = wp_parse_url(home_url(), PHP_URL_HOST);
+        $site_path = rtrim((string) wp_parse_url(home_url(), PHP_URL_PATH), '/');
+        $inbound_map = array(); // target_id → count
+
+        foreach ($posts as $source_id) {
+            $source_id = (int) $source_id;
+            $post = get_post($source_id);
+
+            if (! $post instanceof \WP_Post) {
+                continue;
+            }
+
+            $content = Content_Helper::get_content($post);
+
+            // Extract all href values from links.
+            if (! preg_match_all('/<a\s[^>]*href=("|\')(.*?)\1/is', $content, $matches)) {
+                continue;
+            }
+
+            foreach ($matches[2] as $href) {
+                $href = trim($href);
+
+                if ('' === $href || '#' === $href[0]) {
+                    continue;
+                }
+
+                // Resolve relative URLs.
+                if ('/' === $href[0]) {
+                    $href = home_url($href);
+                }
+
+                $parsed = wp_parse_url($href);
+
+                if (! is_array($parsed) || empty($parsed['host'])) {
+                    continue;
+                }
+
+                // Only internal links.
+                if (strtolower($parsed['host']) !== strtolower((string) $site_host)) {
+                    continue;
+                }
+
+                // url_to_postid is expensive but accurate.
+                $target_id = url_to_postid($href);
+
+                if ($target_id > 0 && $target_id !== $source_id) {
+                    if (! isset($inbound_map[$target_id])) {
+                        $inbound_map[$target_id] = 0;
+                    }
+                    $inbound_map[$target_id]++;
+                }
+            }
+        }
+
+        return $inbound_map;
     }
 }

@@ -532,6 +532,11 @@ class Frontend
             if (! empty($options['noindex_categories'])) {
                 $robots = 'noindex,follow';
             }
+            // Term-level SEO overrides.
+            $title       = $this->apply_term_seo_overrides_title($term->term_id, $title);
+            $description = $this->apply_term_seo_overrides_description($term->term_id, $description);
+            $canonical_url = $this->apply_term_seo_overrides_canonical($term->term_id, $canonical_url);
+            $robots      = $this->apply_term_seo_overrides_noindex($term->term_id, $robots);
         } elseif (is_tag()) {
             $context_type = 'tag';
             $term = get_queried_object();
@@ -546,6 +551,11 @@ class Frontend
             if (! empty($options['noindex_tags'])) {
                 $robots = 'noindex,follow';
             }
+            // Term-level SEO overrides.
+            $title       = $this->apply_term_seo_overrides_title($term->term_id, $title);
+            $description = $this->apply_term_seo_overrides_description($term->term_id, $description);
+            $canonical_url = $this->apply_term_seo_overrides_canonical($term->term_id, $canonical_url);
+            $robots      = $this->apply_term_seo_overrides_noindex($term->term_id, $robots);
         } elseif (is_tax()) {
             $context_type = 'taxonomy';
             $term = get_queried_object();
@@ -557,6 +567,11 @@ class Frontend
             $title = $this->render_non_singular_template($template, $separator, $site_name, array('%%archive_title%%' => $term->name, '%%term_title%%' => $term->name));
             $description = trim(wp_strip_all_tags((string) term_description($term->term_id, $term->taxonomy)));
             $canonical_url = (string) get_term_link($term);
+            // Term-level SEO overrides.
+            $title       = $this->apply_term_seo_overrides_title($term->term_id, $title);
+            $description = $this->apply_term_seo_overrides_description($term->term_id, $description);
+            $canonical_url = $this->apply_term_seo_overrides_canonical($term->term_id, $canonical_url);
+            $robots      = $this->apply_term_seo_overrides_noindex($term->term_id, $robots);
         } elseif (is_post_type_archive()) {
             $context_type = 'post_type_archive';
             $post_type_obj = get_queried_object();
@@ -693,6 +708,33 @@ class Frontend
         return is_string($rendered) ? trim($rendered) : '';
     }
 
+    /**
+     * Term-level SEO override helpers — read from term meta.
+     */
+    private function apply_term_seo_overrides_title(int $term_id, string $default): string
+    {
+        $custom = get_term_meta($term_id, '_ai_seo_keeper_seo_title', true);
+        return (is_string($custom) && '' !== $custom) ? $custom : $default;
+    }
+
+    private function apply_term_seo_overrides_description(int $term_id, string $default): string
+    {
+        $custom = get_term_meta($term_id, '_ai_seo_keeper_meta_description', true);
+        return (is_string($custom) && '' !== $custom) ? $custom : $default;
+    }
+
+    private function apply_term_seo_overrides_canonical(int $term_id, string $default): string
+    {
+        $custom = get_term_meta($term_id, '_ai_seo_keeper_canonical', true);
+        return (is_string($custom) && '' !== $custom) ? $custom : $default;
+    }
+
+    private function apply_term_seo_overrides_noindex(int $term_id, string $default): string
+    {
+        $noindex = get_term_meta($term_id, '_ai_seo_keeper_noindex', true);
+        return '1' === $noindex ? 'noindex,follow' : $default;
+    }
+
     private function get_non_singular_cache_key(): string
     {
         if (is_category()) {
@@ -775,6 +817,19 @@ class Frontend
                 '@type' => 'ImageObject',
                 'url' => $context['site_logo_url'],
             );
+        }
+
+        // Social profiles from settings → sameAs array.
+        $options = $this->settings->get();
+        $same_as = array();
+        foreach (array('social_facebook', 'social_twitter', 'social_instagram', 'social_linkedin', 'social_youtube', 'social_pinterest') as $social_key) {
+            $url = trim((string) ($options[$social_key] ?? ''));
+            if ('' !== $url) {
+                $same_as[] = $url;
+            }
+        }
+        if (! empty($same_as)) {
+            $organization['sameAs'] = $same_as;
         }
 
         $graph = array(

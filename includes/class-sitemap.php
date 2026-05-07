@@ -244,12 +244,24 @@ class Sitemap
 
             $is_front = ($post->ID === $front_page_id);
             $modified = get_post_modified_time('Y-m-d\TH:i:sP', true, $post);
+            $is_cornerstone = ! empty(get_post_meta($post->ID, '_ai_seo_keeper_cornerstone', true));
+
+            // Cornerstone content gets boosted priority (0.9).
+            if ($is_front) {
+                $priority = '1.0';
+            } elseif ($is_cornerstone) {
+                $priority = '0.9';
+            } elseif ('page' === $post_type) {
+                $priority = '0.8';
+            } else {
+                $priority = '0.6';
+            }
 
             $urls[] = array(
                 'loc' => $permalink,
                 'lastmod' => is_string($modified) ? $modified : '',
                 'changefreq' => $is_front ? 'daily' : ('page' === $post_type ? 'weekly' : 'weekly'),
-                'priority' => $is_front ? '1.0' : ('page' === $post_type ? '0.8' : '0.6'),
+                'priority' => $priority,
             );
         }
 
@@ -402,7 +414,8 @@ class Sitemap
         $options = $this->settings->get();
 
         if (empty($options['sitemap_enabled']) || ! $public) {
-            return $output;
+            // Still apply custom rules even if sitemap is off.
+            return $this->append_custom_robots_rules($output, $options);
         }
 
         $sitemap_url = $this->get_sitemap_url();
@@ -410,6 +423,23 @@ class Sitemap
         if (false === strpos($output, $sitemap_url)) {
             $output .= "\nSitemap: " . $sitemap_url . "\n";
         }
+
+        return $this->append_custom_robots_rules($output, $options);
+    }
+
+    /**
+     * Append custom robots.txt rules from settings if present.
+     */
+    private function append_custom_robots_rules(string $output, array $options): string
+    {
+        $custom = trim((string) ($options['robots_txt_custom'] ?? ''));
+
+        if ('' === $custom) {
+            return $output;
+        }
+
+        // Append custom rules after a blank line.
+        $output = rtrim($output) . "\n\n# AI SEO Keeper custom rules\n" . $custom . "\n";
 
         return $output;
     }

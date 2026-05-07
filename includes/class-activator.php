@@ -59,6 +59,21 @@ class Activator
 			KEY conversation_id (conversation_id)
 		) {$charset_collate};";
 
+		$redirects_table = $wpdb->prefix . 'ai_seo_keeper_redirects';
+		$sql .= "\n\n		CREATE TABLE {$redirects_table} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			source_url varchar(2048) NOT NULL,
+			target_url varchar(2048) NOT NULL DEFAULT '',
+			status_code smallint(3) NOT NULL DEFAULT 301,
+			type varchar(20) NOT NULL DEFAULT 'redirect',
+			hit_count bigint(20) unsigned NOT NULL DEFAULT 0,
+			last_hit datetime NULL,
+			created_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			KEY source_url (source_url(191)),
+			KEY type (type)
+		) {$charset_collate};";
+
 		dbDelta($sql);
 
 		$options = get_option(Settings::OPTION_NAME, array());

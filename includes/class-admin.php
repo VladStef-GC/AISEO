@@ -157,6 +157,13 @@ class Admin
         add_action('wp_ajax_' . self::AJAX_RESTORE_BACKUP_ACTION, array($this, 'handle_ajax_restore_backup'));
         add_action('wp_ajax_' . self::AJAX_CLEAR_CHAT_ACTION, array($this, 'handle_ajax_clear_chat'));
         add_action('wp_ajax_ai_seo_keeper_delete_edit_plan', array($this, 'handle_ajax_delete_edit_plan'));
+        add_action('wp_ajax_ai_seo_keeper_bulk_save_seo', array($this, 'handle_ajax_bulk_save_seo'));
+        add_action('wp_ajax_ai_seo_keeper_save_image_alt', array($this, 'handle_ajax_save_image_alt'));
+        add_action('admin_post_ai_seo_keeper_export', array($this, 'handle_export'));
+        add_action('admin_post_ai_seo_keeper_import', array($this, 'handle_import'));
+
+        // Taxonomy SEO fields for all public taxonomies.
+        add_action('admin_init', array($this, 'register_taxonomy_seo_fields'));
     }
 
     private function is_supported_post_type(string $post_type): bool
@@ -171,6 +178,100 @@ class Admin
         unset($supported_post_types['attachment']);
 
         return isset($supported_post_types[$post_type]);
+    }
+
+    /**
+     * Register SEO fields on all public taxonomy term edit screens.
+     */
+    public function register_taxonomy_seo_fields(): void
+    {
+        $taxonomies = get_taxonomies(array('public' => true), 'names');
+        foreach ($taxonomies as $taxonomy) {
+            add_action("{$taxonomy}_edit_form_fields", array($this, 'render_term_seo_fields'), 10, 2);
+            add_action("edited_{$taxonomy}", array($this, 'save_term_seo_fields'), 10, 2);
+        }
+    }
+
+    /**
+     * Render SEO fields on term edit screen.
+     */
+    public function render_term_seo_fields(\WP_Term $term, string $taxonomy): void
+    {
+        $seo_title       = get_term_meta($term->term_id, '_ai_seo_keeper_seo_title', true);
+        $meta_description = get_term_meta($term->term_id, '_ai_seo_keeper_meta_description', true);
+        $canonical       = get_term_meta($term->term_id, '_ai_seo_keeper_canonical', true);
+        $noindex         = get_term_meta($term->term_id, '_ai_seo_keeper_noindex', true);
+        wp_nonce_field('ai_seo_keeper_term_seo', '_ai_seo_keeper_term_nonce');
+?>
+        <tr class="form-field">
+            <th scope="row" colspan="2">
+                <h2 style="margin:0;">AI SEO Keeper</h2>
+            </th>
+        </tr>
+        <tr class="form-field">
+            <th scope="row"><label for="ai-seo-keeper-term-seo-title">SEO Title</label></th>
+            <td>
+                <input id="ai-seo-keeper-term-seo-title" type="text" name="ai_seo_keeper_seo_title" value="<?php echo esc_attr($seo_title); ?>" class="large-text" />
+                <p class="description">Override the default title tag. Leave blank to use the WordPress default.</p>
+            </td>
+        </tr>
+        <tr class="form-field">
+            <th scope="row"><label for="ai-seo-keeper-term-meta-desc">Meta description</label></th>
+            <td>
+                <textarea id="ai-seo-keeper-term-meta-desc" name="ai_seo_keeper_meta_description" rows="3" class="large-text"><?php echo esc_textarea($meta_description); ?></textarea>
+            </td>
+        </tr>
+        <tr class="form-field">
+            <th scope="row"><label for="ai-seo-keeper-term-canonical">Canonical URL</label></th>
+            <td>
+                <input id="ai-seo-keeper-term-canonical" type="url" name="ai_seo_keeper_canonical" value="<?php echo esc_attr($canonical); ?>" class="large-text" placeholder="https://" />
+                <p class="description">Leave blank for the default canonical URL.</p>
+            </td>
+        </tr>
+        <tr class="form-field">
+            <th scope="row">Noindex</th>
+            <td>
+                <label><input type="checkbox" name="ai_seo_keeper_noindex" value="1" <?php checked($noindex, '1'); ?> /> Prevent search engines from indexing this taxonomy archive</label>
+            </td>
+        </tr>
+    <?php
+    }
+
+    /**
+     * Save taxonomy term SEO fields.
+     */
+    public function save_term_seo_fields(int $term_id, int $tt_id): void
+    {
+        if (! isset($_POST['_ai_seo_keeper_term_nonce']) || ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_ai_seo_keeper_term_nonce'])), 'ai_seo_keeper_term_seo')) {
+            return;
+        }
+        if (! current_user_can('manage_categories')) {
+            return;
+        }
+
+        $fields = array(
+            'ai_seo_keeper_seo_title'        => '_ai_seo_keeper_seo_title',
+            'ai_seo_keeper_meta_description'  => '_ai_seo_keeper_meta_description',
+            'ai_seo_keeper_canonical'         => '_ai_seo_keeper_canonical',
+        );
+        foreach ($fields as $input_key => $meta_key) {
+            $value = isset($_POST[$input_key]) ? sanitize_text_field(wp_unslash($_POST[$input_key])) : '';
+            if ('_ai_seo_keeper_canonical' === $meta_key) {
+                $value = esc_url_raw($value);
+            }
+            if ('' !== $value) {
+                update_term_meta($term_id, $meta_key, $value);
+            } else {
+                delete_term_meta($term_id, $meta_key);
+            }
+        }
+
+        $noindex = isset($_POST['ai_seo_keeper_noindex']) ? '1' : '';
+        if ('' !== $noindex) {
+            update_term_meta($term_id, '_ai_seo_keeper_noindex', '1');
+        } else {
+            delete_term_meta($term_id, '_ai_seo_keeper_noindex');
+        }
     }
 
     public function register_menu(): void
@@ -210,6 +311,51 @@ class Admin
             'manage_options',
             'ai-seo-keeper-settings',
             array($this, 'render_settings_page')
+        );
+
+        add_submenu_page(
+            'ai-seo-keeper',
+            'Redirects &amp; 404 Monitor',
+            'Redirects',
+            'manage_options',
+            'ai-seo-keeper-redirects',
+            array($this, 'render_redirects_page')
+        );
+
+        add_submenu_page(
+            'ai-seo-keeper',
+            'Bulk SEO Editor',
+            'Bulk Editor',
+            'manage_options',
+            'ai-seo-keeper-bulk-editor',
+            array($this, 'render_bulk_editor_page')
+        );
+
+        add_submenu_page(
+            'ai-seo-keeper',
+            'Image SEO',
+            'Image SEO',
+            'manage_options',
+            'ai-seo-keeper-images',
+            array($this, 'render_image_seo_page')
+        );
+
+        add_submenu_page(
+            'ai-seo-keeper',
+            'Keyword Tracking',
+            'Keywords',
+            'manage_options',
+            'ai-seo-keeper-keywords',
+            array($this, 'render_keyword_tracking_page')
+        );
+
+        add_submenu_page(
+            'ai-seo-keeper',
+            'Export / Import',
+            'Export / Import',
+            'manage_options',
+            'ai-seo-keeper-export-import',
+            array($this, 'render_export_import_page')
         );
     }
 
@@ -813,7 +959,8 @@ jQuery(function ($) {
             ai_seo_keeper_schema_type: $('#ai-seo-keeper-schema-type').val(),
             ai_seo_keeper_canonical_url: $('#ai-seo-keeper-canonical-url').val(),
             ai_seo_keeper_robots_directives: $('#ai-seo-keeper-robots-directives').val(),
-            ai_seo_keeper_frontend_enabled: $('#ai-seo-keeper-frontend-enabled').is(':checked') ? 1 : 0
+            ai_seo_keeper_frontend_enabled: $('#ai-seo-keeper-frontend-enabled').is(':checked') ? 1 : 0,
+            ai_seo_keeper_cornerstone: $('#ai-seo-keeper-cornerstone').is(':checked') ? 1 : 0
         })
             .done(function (response) {
                 if (response && response.success) {
@@ -1280,7 +1427,7 @@ JS;
         $llms_url = home_url('/llms.txt');
         $llms_full_url = home_url('/llms-full.txt');
         $sitemap_url = $frontend_conflict ? home_url('/sitemap_index.xml') : home_url('/wp-sitemap.xml');
-?>
+    ?>
         <div class="wrap">
             <h1>AI SEO Keeper</h1>
             <p>AI SEO Keeper now covers AI-assisted metadata workflows, saved page-level SEO overrides, audit workflows, discovery documents, richer schema, and refresh signaling without silently fighting the existing SEO stack.</p>
@@ -1394,6 +1541,760 @@ JS;
             </div>
         </div>
     <?php
+    }
+
+    /**
+     * Render the Redirects & 404 Monitor sub-page (delegates to Redirects class).
+     */
+    public function render_redirects_page(): void
+    {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
+        $redirects_instance = Plugin::instance()->get_redirects();
+
+        if ($redirects_instance instanceof Redirects) {
+            $redirects_instance->render_admin_page();
+        } else {
+            echo '<div class="wrap"><h1>Redirects</h1><p>Redirects module not available. Please deactivate and reactivate the plugin.</p></div>';
+        }
+    }
+
+    /**
+     * Render the Bulk SEO Editor page — spreadsheet-style table for editing SEO titles and descriptions.
+     */
+    public function render_bulk_editor_page(): void
+    {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
+        $post_type_filter = isset($_GET['pt']) ? sanitize_key($_GET['pt']) : 'page';
+        $paged = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
+        $per_page = 30;
+
+        $post_types = get_post_types(array('public' => true), 'objects');
+        unset($post_types['attachment']);
+
+        // Validate the selected post type exists.
+        if (! isset($post_types[$post_type_filter])) {
+            $post_type_filter = 'page';
+        }
+
+        $query = new \WP_Query(array(
+            'post_type'      => $post_type_filter,
+            'post_status'    => array('publish', 'draft', 'pending'),
+            'posts_per_page' => $per_page,
+            'paged'          => $paged,
+            'orderby'        => 'title',
+            'order'          => 'ASC',
+        ));
+
+        $total_pages = $query->max_num_pages;
+        $nonce = wp_create_nonce('ai_seo_keeper_nonce');
+    ?>
+        <div class="wrap">
+            <h1>Bulk SEO Editor</h1>
+            <p class="description">Edit SEO titles and meta descriptions across all your content. Changes are saved via AJAX — no page reload needed.</p>
+
+            <form method="get" style="margin:16px 0;">
+                <input type="hidden" name="page" value="ai-seo-keeper-bulk-editor" />
+                <label for="ai-seo-bulk-pt"><strong>Post type:</strong></label>
+                <select name="pt" id="ai-seo-bulk-pt" onchange="this.form.submit()">
+                    <?php foreach ($post_types as $pt) : ?>
+                        <option value="<?php echo esc_attr($pt->name); ?>" <?php selected($post_type_filter, $pt->name); ?>><?php echo esc_html($pt->labels->name); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </form>
+
+            <?php if ($query->have_posts()) : ?>
+                <table class="widefat striped" id="ai-seo-bulk-table">
+                    <thead>
+                        <tr>
+                            <th style="width:30%;">Title</th>
+                            <th style="width:35%;">SEO Title</th>
+                            <th style="width:30%;">Meta Description</th>
+                            <th style="width:5%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php while ($query->have_posts()) : $query->the_post();
+                            $post_id = get_the_ID(); ?>
+                            <tr data-post-id="<?php echo (int) $post_id; ?>">
+                                <td>
+                                    <strong><a href="<?php echo esc_url(get_edit_post_link($post_id)); ?>"><?php the_title(); ?></a></strong>
+                                    <div class="row-actions"><span><a href="<?php echo esc_url(get_permalink($post_id)); ?>" target="_blank">View</a></span></div>
+                                </td>
+                                <td>
+                                    <input type="text" class="large-text ai-seo-bulk-title" value="<?php echo esc_attr(get_post_meta($post_id, self::META_TITLE_KEY, true)); ?>" data-original="<?php echo esc_attr(get_post_meta($post_id, self::META_TITLE_KEY, true)); ?>" />
+                                </td>
+                                <td>
+                                    <textarea class="large-text ai-seo-bulk-desc" rows="2" data-original="<?php echo esc_attr(get_post_meta($post_id, self::META_DESCRIPTION_KEY, true)); ?>"><?php echo esc_textarea(get_post_meta($post_id, self::META_DESCRIPTION_KEY, true)); ?></textarea>
+                                </td>
+                                <td>
+                                    <button type="button" class="button button-small ai-seo-bulk-save" disabled>Save</button>
+                                </td>
+                            </tr>
+                        <?php endwhile;
+                        wp_reset_postdata(); ?>
+                    </tbody>
+                </table>
+
+                <?php if ($total_pages > 1) : ?>
+                    <div class="tablenav bottom" style="margin-top:12px;">
+                        <div class="tablenav-pages">
+                            <?php
+                            echo paginate_links(array(
+                                'base'    => add_query_arg('paged', '%#%'),
+                                'format'  => '',
+                                'current' => $paged,
+                                'total'   => $total_pages,
+                                'type'    => 'plain',
+                            ));
+                            ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            <?php else : ?>
+                <p>No posts found for this post type.</p>
+            <?php endif; ?>
+        </div>
+
+        <script>
+            (function($) {
+                var nonce = '<?php echo esc_js($nonce); ?>';
+
+                // Enable save button when content changes.
+                $('#ai-seo-bulk-table').on('input', '.ai-seo-bulk-title, .ai-seo-bulk-desc', function() {
+                    var row = $(this).closest('tr');
+                    var titleChanged = row.find('.ai-seo-bulk-title').val() !== row.find('.ai-seo-bulk-title').data('original');
+                    var descChanged = row.find('.ai-seo-bulk-desc').val() !== row.find('.ai-seo-bulk-desc').data('original');
+                    row.find('.ai-seo-bulk-save').prop('disabled', !(titleChanged || descChanged));
+                });
+
+                // Save individual row.
+                $('#ai-seo-bulk-table').on('click', '.ai-seo-bulk-save', function() {
+                    var btn = $(this);
+                    var row = btn.closest('tr');
+                    var postId = row.data('post-id');
+                    btn.prop('disabled', true).text('Saving…');
+
+                    $.post(ajaxurl, {
+                        action: 'ai_seo_keeper_bulk_save_seo',
+                        _nonce: nonce,
+                        post_id: postId,
+                        seo_title: row.find('.ai-seo-bulk-title').val(),
+                        seo_description: row.find('.ai-seo-bulk-desc').val()
+                    }, function(resp) {
+                        if (resp.success) {
+                            btn.text('Saved ✓');
+                            row.find('.ai-seo-bulk-title').data('original', row.find('.ai-seo-bulk-title').val());
+                            row.find('.ai-seo-bulk-desc').data('original', row.find('.ai-seo-bulk-desc').val());
+                            setTimeout(function() {
+                                btn.text('Save');
+                            }, 1500);
+                        } else {
+                            btn.text('Error').prop('disabled', false);
+                            alert(resp.data || 'Error saving.');
+                        }
+                    });
+                });
+            })(jQuery);
+        </script>
+    <?php
+    }
+
+    /**
+     * AJAX handler for bulk saving SEO meta.
+     */
+    public function handle_ajax_bulk_save_seo(): void
+    {
+        check_ajax_referer('ai_seo_keeper_nonce', '_nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized');
+        }
+
+        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
+        if ($post_id <= 0 || ! get_post($post_id)) {
+            wp_send_json_error('Invalid post ID.');
+        }
+
+        $seo_title = isset($_POST['seo_title']) ? sanitize_text_field(wp_unslash($_POST['seo_title'])) : '';
+        $seo_description = isset($_POST['seo_description']) ? sanitize_textarea_field(wp_unslash($_POST['seo_description'])) : '';
+
+        update_post_meta($post_id, self::META_TITLE_KEY, $seo_title);
+        update_post_meta($post_id, self::META_DESCRIPTION_KEY, $seo_description);
+
+        wp_send_json_success(array('message' => 'Saved.'));
+    }
+
+    /**
+     * Render the Image SEO dashboard — site-wide image inventory with alt tag status and editing.
+     */
+    public function render_image_seo_page(): void
+    {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
+        $paged = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
+        $per_page = 40;
+        $filter = isset($_GET['filter']) ? sanitize_key($_GET['filter']) : 'all';
+
+        // Query media library images.
+        $args = array(
+            'post_type'      => 'attachment',
+            'post_mime_type' => 'image',
+            'post_status'    => 'inherit',
+            'posts_per_page' => $per_page,
+            'paged'          => $paged,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+        );
+
+        // Filter: missing alt only.
+        if ('missing_alt' === $filter) {
+            $args['meta_query'] = array(
+                'relation' => 'OR',
+                array(
+                    'key'     => '_wp_attachment_image_alt',
+                    'compare' => 'NOT EXISTS',
+                ),
+                array(
+                    'key'   => '_wp_attachment_image_alt',
+                    'value' => '',
+                ),
+            );
+        }
+
+        $query = new \WP_Query($args);
+        $total_pages = $query->max_num_pages;
+
+        // Get totals for stats.
+        global $wpdb;
+        $total_images = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_mime_type LIKE 'image/%'");
+        $total_with_alt = (int) $wpdb->get_var(
+            "SELECT COUNT(DISTINCT p.ID) FROM {$wpdb->posts} p
+            INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_wp_attachment_image_alt' AND pm.meta_value != ''
+            WHERE p.post_type = 'attachment' AND p.post_mime_type LIKE 'image/%'"
+        );
+        $total_missing_alt = $total_images - $total_with_alt;
+
+        $nonce = wp_create_nonce('ai_seo_keeper_nonce');
+        ?>
+        <div class="wrap">
+            <h1>Image SEO</h1>
+            <p class="description">Manage alt text across all your media library images. Alt text helps search engines understand your images and improves accessibility.</p>
+
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:16px;max-width:700px;margin:20px 0;">
+                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
+                    <p style="font-size:28px;margin:0;font-weight:600;"><?php echo $total_images; ?></p>
+                    <p style="margin:4px 0 0;color:#50575e;">Total images</p>
+                </div>
+                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
+                    <p style="font-size:28px;margin:0;font-weight:600;color:#00a32a;"><?php echo $total_with_alt; ?></p>
+                    <p style="margin:4px 0 0;color:#50575e;">With alt text</p>
+                </div>
+                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
+                    <p style="font-size:28px;margin:0;font-weight:600;color:<?php echo $total_missing_alt > 0 ? '#d63638' : '#00a32a'; ?>;"><?php echo $total_missing_alt; ?></p>
+                    <p style="margin:4px 0 0;color:#50575e;">Missing alt text</p>
+                </div>
+            </div>
+
+            <div style="margin:16px 0;">
+                <a href="<?php echo esc_url(add_query_arg('filter', 'all', remove_query_arg('paged'))); ?>" class="button <?php echo 'all' === $filter ? 'button-primary' : ''; ?>">All images</a>
+                <a href="<?php echo esc_url(add_query_arg('filter', 'missing_alt', remove_query_arg('paged'))); ?>" class="button <?php echo 'missing_alt' === $filter ? 'button-primary' : ''; ?>">Missing alt (<?php echo $total_missing_alt; ?>)</a>
+            </div>
+
+            <?php if ($query->have_posts()) : ?>
+                <table class="widefat striped" id="ai-seo-image-table">
+                    <thead>
+                        <tr>
+                            <th style="width:80px;">Image</th>
+                            <th style="width:25%;">File</th>
+                            <th style="width:40%;">Alt text</th>
+                            <th style="width:20%;">Used on</th>
+                            <th style="width:5%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php while ($query->have_posts()) : $query->the_post();
+                            $att_id = get_the_ID();
+                            $thumb = wp_get_attachment_image_url($att_id, 'thumbnail');
+                            $filename = basename(get_attached_file($att_id));
+                            $alt = get_post_meta($att_id, '_wp_attachment_image_alt', true);
+                            $parent_id = wp_get_post_parent_id($att_id);
+                        ?>
+                            <tr data-att-id="<?php echo (int) $att_id; ?>">
+                                <td>
+                                    <?php if ($thumb) : ?>
+                                        <img src="<?php echo esc_url($thumb); ?>" alt="" style="width:60px;height:60px;object-fit:cover;border-radius:4px;" />
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <strong><?php echo esc_html($filename); ?></strong>
+                                    <div style="margin-top:2px;"><a href="<?php echo esc_url(admin_url('upload.php?item=' . $att_id)); ?>" style="font-size:12px;color:#50575e;">Edit in Media</a></div>
+                                </td>
+                                <td>
+                                    <input type="text" class="large-text ai-seo-img-alt" value="<?php echo esc_attr($alt); ?>" data-original="<?php echo esc_attr($alt); ?>" placeholder="Enter alt text…" />
+                                </td>
+                                <td>
+                                    <?php if ($parent_id) : ?>
+                                        <a href="<?php echo esc_url(admin_url('post.php?post=' . $parent_id . '&action=edit')); ?>" style="font-size:12px;"><?php echo esc_html(get_the_title($parent_id)); ?></a>
+                                    <?php else : ?>
+                                        <span style="color:#50575e;font-size:12px;">Unattached</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <button type="button" class="button button-small ai-seo-img-save" disabled>Save</button>
+                                </td>
+                            </tr>
+                        <?php endwhile; wp_reset_postdata(); ?>
+                    </tbody>
+                </table>
+
+                <?php if ($total_pages > 1) : ?>
+                    <div class="tablenav bottom" style="margin-top:12px;">
+                        <div class="tablenav-pages">
+                            <?php
+                            echo paginate_links(array(
+                                'base'    => add_query_arg('paged', '%#%'),
+                                'format'  => '',
+                                'current' => $paged,
+                                'total'   => $total_pages,
+                                'type'    => 'plain',
+                            ));
+                            ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            <?php else : ?>
+                <p><?php echo 'missing_alt' === $filter ? 'All images have alt text — great!' : 'No images found in the media library.'; ?></p>
+            <?php endif; ?>
+        </div>
+
+        <script>
+        (function($) {
+            var nonce = '<?php echo esc_js($nonce); ?>';
+
+            $('#ai-seo-image-table').on('input', '.ai-seo-img-alt', function() {
+                var row = $(this).closest('tr');
+                var changed = $(this).val() !== $(this).data('original');
+                row.find('.ai-seo-img-save').prop('disabled', !changed);
+            });
+
+            $('#ai-seo-image-table').on('click', '.ai-seo-img-save', function() {
+                var btn = $(this);
+                var row = btn.closest('tr');
+                btn.prop('disabled', true).text('Saving…');
+
+                $.post(ajaxurl, {
+                    action: 'ai_seo_keeper_save_image_alt',
+                    _nonce: nonce,
+                    attachment_id: row.data('att-id'),
+                    alt_text: row.find('.ai-seo-img-alt').val()
+                }, function(resp) {
+                    if (resp.success) {
+                        btn.text('Saved ✓');
+                        row.find('.ai-seo-img-alt').data('original', row.find('.ai-seo-img-alt').val());
+                        setTimeout(function() { btn.text('Save'); }, 1500);
+                    } else {
+                        btn.text('Error').prop('disabled', false);
+                    }
+                });
+            });
+        })(jQuery);
+        </script>
+        <?php
+    }
+
+    /**
+     * AJAX handler for saving image alt text.
+     */
+    public function handle_ajax_save_image_alt(): void
+    {
+        check_ajax_referer('ai_seo_keeper_nonce', '_nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized');
+        }
+
+        $attachment_id = isset($_POST['attachment_id']) ? (int) $_POST['attachment_id'] : 0;
+        if ($attachment_id <= 0 || 'attachment' !== get_post_type($attachment_id)) {
+            wp_send_json_error('Invalid attachment.');
+        }
+
+        $alt_text = isset($_POST['alt_text']) ? sanitize_text_field(wp_unslash($_POST['alt_text'])) : '';
+        update_post_meta($attachment_id, '_wp_attachment_image_alt', $alt_text);
+
+        wp_send_json_success(array('message' => 'Alt text saved.'));
+    }
+
+    /**
+     * Render the keyword tracking page — cross-page keyphrase map and cannibalization detection.
+     */
+    public function render_keyword_tracking_page(): void
+    {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
+        global $wpdb;
+
+        // Get all focus keyphrases across all published posts.
+        $keyphrase_rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT pm.post_id, pm.meta_value AS keyphrase, p.post_title, p.post_type
+                FROM {$wpdb->postmeta} pm
+                INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+                WHERE pm.meta_key = %s
+                    AND pm.meta_value != ''
+                    AND p.post_status = 'publish'
+                ORDER BY LOWER(pm.meta_value) ASC, p.post_title ASC",
+                '_ai_seo_keeper_focus_keyphrase'
+            ),
+            ARRAY_A
+        );
+
+        // Group by keyphrase (case-insensitive).
+        $keyphrase_map = array();
+        $total_with_keyphrase = 0;
+        foreach ($keyphrase_rows as $row) {
+            $key = strtolower(trim($row['keyphrase']));
+            if ('' === $key) {
+                continue;
+            }
+            $total_with_keyphrase++;
+            if (! isset($keyphrase_map[$key])) {
+                $keyphrase_map[$key] = array(
+                    'keyphrase' => $row['keyphrase'],
+                    'pages' => array(),
+                );
+            }
+            $keyphrase_map[$key]['pages'][] = array(
+                'id' => (int) $row['post_id'],
+                'title' => $row['post_title'],
+                'post_type' => $row['post_type'],
+            );
+        }
+
+        // Identify cannibalization (same keyphrase on 2+ pages).
+        $cannibalized = array_filter($keyphrase_map, static function ($group) {
+            return count($group['pages']) > 1;
+        });
+
+        // Pages without a keyphrase.
+        $total_published = (int) $wpdb->get_var(
+            "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status = 'publish' AND post_type IN ('post','page') AND post_type != 'attachment'"
+        );
+        $without_keyphrase = $total_published - $total_with_keyphrase;
+        ?>
+        <div class="wrap">
+            <h1>Keyword Tracking</h1>
+            <p class="description">See which focus keyphrases are used across your site and detect keyword cannibalization (same keyphrase targeting multiple pages).</p>
+
+            <div style="display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:16px;max-width:900px;margin:20px 0;">
+                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
+                    <p style="font-size:28px;margin:0;font-weight:600;"><?php echo count($keyphrase_map); ?></p>
+                    <p style="margin:4px 0 0;color:#50575e;">Unique keyphrases</p>
+                </div>
+                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
+                    <p style="font-size:28px;margin:0;font-weight:600;"><?php echo $total_with_keyphrase; ?></p>
+                    <p style="margin:4px 0 0;color:#50575e;">Pages with keyphrase</p>
+                </div>
+                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
+                    <p style="font-size:28px;margin:0;font-weight:600;color:<?php echo $without_keyphrase > 0 ? '#dba617' : '#00a32a'; ?>;"><?php echo $without_keyphrase; ?></p>
+                    <p style="margin:4px 0 0;color:#50575e;">Without keyphrase</p>
+                </div>
+                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
+                    <p style="font-size:28px;margin:0;font-weight:600;color:<?php echo count($cannibalized) > 0 ? '#d63638' : '#00a32a'; ?>;"><?php echo count($cannibalized); ?></p>
+                    <p style="margin:4px 0 0;color:#50575e;">Cannibalization risks</p>
+                </div>
+            </div>
+
+            <?php if (! empty($cannibalized)) : ?>
+                <div style="background:#fff3cd;border:1px solid #ffc107;padding:16px;max-width:1120px;margin-bottom:20px;">
+                    <h2 style="margin-top:0;color:#856404;">Keyword Cannibalization</h2>
+                    <p style="margin:0 0 12px;color:#856404;">These keyphrases target multiple pages. Consider consolidating content or differentiating the focus keyphrase for each page.</p>
+                    <table class="widefat striped">
+                        <thead>
+                            <tr><th>Keyphrase</th><th>Pages targeting it</th></tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($cannibalized as $group) : ?>
+                                <tr>
+                                    <td><strong><?php echo esc_html($group['keyphrase']); ?></strong></td>
+                                    <td>
+                                        <?php foreach ($group['pages'] as $p) : ?>
+                                            <div style="margin-bottom:4px;">
+                                                <a href="<?php echo esc_url(admin_url('post.php?post=' . $p['id'] . '&action=edit')); ?>"><?php echo esc_html($p['title']); ?></a>
+                                                <span style="color:#50575e;font-size:12px;">(<?php echo esc_html($p['post_type']); ?>)</span>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+
+            <?php if (! empty($keyphrase_map)) : ?>
+                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;max-width:1120px;">
+                    <h2 style="margin-top:0;">All Focus Keyphrases</h2>
+                    <table class="widefat striped">
+                        <thead>
+                            <tr><th>Keyphrase</th><th>Page</th><th>Type</th></tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($keyphrase_map as $group) : ?>
+                                <?php foreach ($group['pages'] as $idx => $p) : ?>
+                                    <tr<?php echo count($group['pages']) > 1 ? ' style="background:#fff3cd;"' : ''; ?>>
+                                        <?php if (0 === $idx) : ?>
+                                            <td rowspan="<?php echo count($group['pages']); ?>" style="vertical-align:top;"><strong><?php echo esc_html($group['keyphrase']); ?></strong></td>
+                                        <?php endif; ?>
+                                        <td><a href="<?php echo esc_url(admin_url('post.php?post=' . $p['id'] . '&action=edit')); ?>"><?php echo esc_html($p['title']); ?></a></td>
+                                        <td><?php echo esc_html($p['post_type']); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else : ?>
+                <p>No focus keyphrases have been set yet. Add keyphrases in the editor's SEO tab.</p>
+            <?php endif; ?>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render the Export / Import page.
+     */
+    public function render_export_import_page(): void
+    {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
+        $import_status = isset($_GET['import_status']) ? sanitize_key($_GET['import_status']) : '';
+        $import_msg = isset($_GET['import_msg']) ? sanitize_text_field(wp_unslash($_GET['import_msg'])) : '';
+        ?>
+        <div class="wrap">
+            <h1>Export / Import</h1>
+
+            <?php if ('' !== $import_msg) : ?>
+                <div class="notice <?php echo 'success' === $import_status ? 'notice-success' : 'notice-error'; ?> is-dismissible">
+                    <p><?php echo esc_html($import_msg); ?></p>
+                </div>
+            <?php endif; ?>
+
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(320px,1fr));gap:24px;max-width:1120px;margin-top:20px;">
+                <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
+                    <h2 style="margin-top:0;">Export</h2>
+                    <p>Download a JSON file with all AI SEO Keeper settings, per-page SEO metadata, redirect rules, and cornerstone flags.</p>
+                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                        <?php wp_nonce_field('ai_seo_keeper_export'); ?>
+                        <input type="hidden" name="action" value="ai_seo_keeper_export" />
+                        <p>
+                            <label><input type="checkbox" name="export_settings" value="1" checked /> Plugin settings</label><br />
+                            <label><input type="checkbox" name="export_seo_meta" value="1" checked /> Per-page SEO metadata (titles, descriptions, keyphrases, overrides)</label><br />
+                            <label><input type="checkbox" name="export_redirects" value="1" checked /> Redirect rules</label>
+                        </p>
+                        <button type="submit" class="button button-primary">Download export</button>
+                    </form>
+                </div>
+
+                <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
+                    <h2 style="margin-top:0;">Import</h2>
+                    <p>Upload a previously exported JSON file to restore settings and SEO metadata. Existing values will be overwritten.</p>
+                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
+                        <?php wp_nonce_field('ai_seo_keeper_import'); ?>
+                        <input type="hidden" name="action" value="ai_seo_keeper_import" />
+                        <p><input type="file" name="import_file" accept=".json" required /></p>
+                        <button type="submit" class="button button-primary">Upload &amp; import</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * Handle JSON export download.
+     */
+    public function handle_export(): void
+    {
+        if (! current_user_can('manage_options')) {
+            wp_die('Unauthorized');
+        }
+        check_admin_referer('ai_seo_keeper_export');
+
+        $data = array(
+            'plugin' => 'ai-seo-keeper',
+            'version' => defined('AI_SEO_KEEPER_VERSION') ? AI_SEO_KEEPER_VERSION : '1.0.0',
+            'exported_at' => gmdate('c'),
+            'site_url' => home_url('/'),
+        );
+
+        // Settings.
+        if (! empty($_POST['export_settings'])) {
+            $data['settings'] = $this->settings->get();
+            // Never export API keys.
+            unset($data['settings']['api_key'], $data['settings']['google_api_key']);
+        }
+
+        // Per-page SEO metadata.
+        if (! empty($_POST['export_seo_meta'])) {
+            global $wpdb;
+            $meta_keys = array(
+                '_ai_seo_keeper_meta_title',
+                '_ai_seo_keeper_meta_description',
+                '_ai_seo_keeper_focus_keyphrase',
+                '_ai_seo_keeper_social_title',
+                '_ai_seo_keeper_social_description',
+                '_ai_seo_keeper_social_image',
+                '_ai_seo_keeper_schema_type',
+                '_ai_seo_keeper_canonical_url',
+                '_ai_seo_keeper_robots_directives',
+                '_ai_seo_keeper_frontend_enabled',
+                '_ai_seo_keeper_cornerstone',
+            );
+            $placeholders = implode(',', array_fill(0, count($meta_keys), '%s'));
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $rows = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT p.ID, p.post_title, p.post_name, pm.meta_key, pm.meta_value
+                    FROM {$wpdb->postmeta} pm
+                    INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+                    WHERE pm.meta_key IN ({$placeholders})
+                        AND pm.meta_value != ''
+                    ORDER BY p.ID ASC",
+                    ...$meta_keys
+                ),
+                ARRAY_A
+            );
+
+            $seo_meta = array();
+            foreach ($rows as $row) {
+                $pid = (int) $row['ID'];
+                if (! isset($seo_meta[$pid])) {
+                    $seo_meta[$pid] = array(
+                        'post_id' => $pid,
+                        'post_title' => $row['post_title'],
+                        'post_slug' => $row['post_name'],
+                        'meta' => array(),
+                    );
+                }
+                $seo_meta[$pid]['meta'][$row['meta_key']] = $row['meta_value'];
+            }
+            $data['seo_meta'] = array_values($seo_meta);
+        }
+
+        // Redirects.
+        if (! empty($_POST['export_redirects'])) {
+            global $wpdb;
+            $redirects_table = $wpdb->prefix . 'ai_seo_keeper_redirects';
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+            $redirects = $wpdb->get_results(
+                "SELECT source_url, target_url, status_code, type FROM {$redirects_table} WHERE type = 'redirect' ORDER BY source_url ASC",
+                ARRAY_A
+            );
+            $data['redirects'] = is_array($redirects) ? $redirects : array();
+        }
+
+        $json = wp_json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+        header('Content-Type: application/json; charset=utf-8');
+        header('Content-Disposition: attachment; filename="ai-seo-keeper-export-' . gmdate('Y-m-d') . '.json"');
+        header('Content-Length: ' . strlen($json));
+        echo $json;
+        exit;
+    }
+
+    /**
+     * Handle JSON import upload.
+     */
+    public function handle_import(): void
+    {
+        if (! current_user_can('manage_options')) {
+            wp_die('Unauthorized');
+        }
+        check_admin_referer('ai_seo_keeper_import');
+
+        $redirect_url = admin_url('admin.php?page=ai-seo-keeper-export-import');
+
+        if (empty($_FILES['import_file']['tmp_name']) || 0 !== (int) $_FILES['import_file']['error']) {
+            wp_redirect(add_query_arg(array('import_status' => 'error', 'import_msg' => 'No file uploaded or upload error.'), $redirect_url));
+            exit;
+        }
+
+        $json = file_get_contents($_FILES['import_file']['tmp_name']); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+        $data = json_decode($json, true);
+
+        if (! is_array($data) || 'ai-seo-keeper' !== ($data['plugin'] ?? '')) {
+            wp_redirect(add_query_arg(array('import_status' => 'error', 'import_msg' => 'Invalid import file. Must be an AI SEO Keeper export.'), $redirect_url));
+            exit;
+        }
+
+        $imported = array();
+
+        // Import settings.
+        if (! empty($data['settings']) && is_array($data['settings'])) {
+            $current = $this->settings->get();
+            // Preserve existing API keys — never import them.
+            $data['settings']['api_key'] = $current['api_key'] ?? '';
+            $data['settings']['google_api_key'] = $current['google_api_key'] ?? '';
+            update_option(Settings::OPTION_NAME, wp_parse_args($data['settings'], $current));
+            $imported[] = 'settings';
+        }
+
+        // Import SEO metadata.
+        if (! empty($data['seo_meta']) && is_array($data['seo_meta'])) {
+            $meta_count = 0;
+            foreach ($data['seo_meta'] as $entry) {
+                $post_id = (int) ($entry['post_id'] ?? 0);
+                if ($post_id <= 0 || ! get_post($post_id)) {
+                    continue;
+                }
+                if (! empty($entry['meta']) && is_array($entry['meta'])) {
+                    foreach ($entry['meta'] as $key => $value) {
+                        // Only allow known meta keys.
+                        if (0 !== strpos($key, '_ai_seo_keeper_')) {
+                            continue;
+                        }
+                        update_post_meta($post_id, sanitize_key($key), sanitize_text_field($value));
+                    }
+                    $meta_count++;
+                }
+            }
+            $imported[] = "{$meta_count} pages SEO data";
+        }
+
+        // Import redirects.
+        if (! empty($data['redirects']) && is_array($data['redirects'])) {
+            $redir_instance = Plugin::instance()->get_redirects();
+            $redir_count = 0;
+            if ($redir_instance) {
+                foreach ($data['redirects'] as $r) {
+                    if (! empty($r['source_url']) && ! empty($r['target_url'])) {
+                        $redir_instance->add_redirect(
+                            sanitize_text_field($r['source_url']),
+                            esc_url_raw($r['target_url']),
+                            (int) ($r['status_code'] ?? 301)
+                        );
+                        $redir_count++;
+                    }
+                }
+            }
+            $imported[] = "{$redir_count} redirects";
+        }
+
+        $msg = empty($imported) ? 'Nothing to import.' : 'Imported: ' . implode(', ', $imported) . '.';
+        wp_redirect(add_query_arg(array('import_status' => 'success', 'import_msg' => $msg), $redirect_url));
+        exit;
     }
 
     public function render_settings_page(): void
@@ -1601,6 +2502,34 @@ JS;
                         <td><input id="ai-seo-bing-code" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[bing_tracking_code]" value="<?php echo esc_attr($options['bing_tracking_code']); ?>" /></td>
                     </tr>
                     <tr>
+                        <th scope="row">Social profiles</th>
+                        <td>
+                            <p class="description" style="margin:0 0 8px;">Used in Organization schema <code>sameAs</code> and for social discovery. Enter full URLs.</p>
+                            <?php
+                            $social_fields = array(
+                                'social_facebook'  => 'Facebook',
+                                'social_twitter'   => 'Twitter / X',
+                                'social_instagram' => 'Instagram',
+                                'social_linkedin'  => 'LinkedIn',
+                                'social_youtube'   => 'YouTube',
+                                'social_pinterest' => 'Pinterest',
+                            );
+                            foreach ($social_fields as $field_key => $label) : ?>
+                                <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                                    <span style="min-width:80px;font-size:13px;"><?php echo esc_html($label); ?></span>
+                                    <input class="regular-text" type="url" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[<?php echo esc_attr($field_key); ?>]" value="<?php echo esc_attr($options[$field_key] ?? ''); ?>" placeholder="https://" />
+                                </label>
+                            <?php endforeach; ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="ai-seo-robots-txt">Robots.txt custom rules</label></th>
+                        <td>
+                            <textarea id="ai-seo-robots-txt" class="large-text code" rows="6" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[robots_txt_custom]" placeholder="Disallow: /private-folder/&#10;Allow: /public/"><?php echo esc_textarea($options['robots_txt_custom'] ?? ''); ?></textarea>
+                            <p class="description">Custom rules appended to the WordPress-generated robots.txt. Use standard robots.txt syntax. Preview: <a href="<?php echo esc_url(home_url('/robots.txt')); ?>" target="_blank" rel="noopener noreferrer">robots.txt</a></p>
+                        </td>
+                    </tr>
+                    <tr>
                         <th scope="row"><label for="ai-seo-indexnow-enabled">IndexNow</label></th>
                         <td>
                             <label style="display:block;margin-bottom:8px;">
@@ -1696,7 +2625,14 @@ JS;
                     <p style="margin:0 0 8px;">Missing AI title drafts: <strong><?php echo esc_html((string) $summary['missing_title_drafts']); ?></strong></p>
                     <p style="margin:0 0 8px;">Missing AI description drafts: <strong><?php echo esc_html((string) $summary['missing_description_drafts']); ?></strong></p>
                     <p style="margin:0 0 8px;">Frontend opt-in pages: <strong><?php echo esc_html((string) $summary['frontend_enabled_items']); ?></strong></p>
-                    <p style="margin:0;">Frontend-ready pages: <strong><?php echo esc_html((string) $summary['frontend_ready_items']); ?></strong></p>
+                    <p style="margin:0 0 8px;">Frontend-ready pages: <strong><?php echo esc_html((string) $summary['frontend_ready_items']); ?></strong></p>
+                    <?php
+                    global $wpdb;
+                    $cornerstone_count = (int) $wpdb->get_var(
+                        "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = '_ai_seo_keeper_cornerstone' AND meta_value = '1'"
+                    );
+                    ?>
+                    <p style="margin:0;">Cornerstone pages: <strong><?php echo $cornerstone_count; ?></strong></p>
                 </div>
                 <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
                     <h2 style="margin-top:0;">What This Score Means</h2>
@@ -1949,6 +2885,42 @@ JS;
                     <?php endif; ?>
                 </div>
             </div>
+
+            <?php
+            $orphaned = $report['orphaned_content'] ?? array('orphans' => array(), 'total_orphans' => 0, 'total_pages' => 0);
+            ?>
+            <div style="background:#fff;border:1px solid #dcdcde;padding:20px;max-width:1120px;margin-top:24px;">
+                <h2 style="margin-top:0;">Orphaned Content <span style="font-weight:normal;color:#50575e;font-size:14px;">(<?php echo (int) $orphaned['total_orphans']; ?> of <?php echo (int) $orphaned['total_pages']; ?> pages)</span></h2>
+                <p style="margin:0 0 12px;color:#50575e;">Pages with zero inbound internal links. These are invisible to crawlers that follow links and may never get indexed.</p>
+                <?php if (empty($orphaned['orphans'])) : ?>
+                    <p style="margin:0;color:#00a32a;"><strong>No orphaned content detected.</strong> Every indexed page has at least one internal link pointing to it.</p>
+                <?php else : ?>
+                    <table class="widefat striped" style="margin-top:8px;">
+                        <thead>
+                            <tr>
+                                <th>Page</th>
+                                <th>Type</th>
+                                <th>Inbound links</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($orphaned['orphans'] as $row) : ?>
+                                <tr>
+                                    <td>
+                                        <a href="<?php echo esc_url(admin_url('post.php?post=' . (int) $row['object_id'] . '&action=edit')); ?>"><?php echo esc_html($row['title']); ?></a>
+                                        <div style="margin-top:2px;"><a href="<?php echo esc_url($row['permalink']); ?>" target="_blank" rel="noopener" style="color:#50575e;font-size:12px;">View</a></div>
+                                    </td>
+                                    <td><?php echo esc_html($row['post_type']); ?></td>
+                                    <td style="color:#d63638;"><strong>0</strong></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    <?php if ($orphaned['total_orphans'] > count($orphaned['orphans'])) : ?>
+                        <p style="margin:8px 0 0;color:#50575e;">Showing <?php echo count($orphaned['orphans']); ?> of <?php echo (int) $orphaned['total_orphans']; ?> orphaned pages.</p>
+                    <?php endif; ?>
+                <?php endif; ?>
+            </div>
         </div>
     <?php
     }
@@ -2027,6 +2999,7 @@ JS;
         $schema_tab_id = $panel_id_prefix . '-tab-schema';
         $advanced_tab_id = $panel_id_prefix . '-tab-advanced';
         $checks_tab_id = $panel_id_prefix . '-tab-checks';
+        $links_tab_id = $panel_id_prefix . '-tab-links';
         $chat_accordion_id = $panel_id_prefix . '-accordion-chat';
         $history_accordion_id = $panel_id_prefix . '-accordion-history';
         $readiness_accordion_id = $panel_id_prefix . '-accordion-readiness';
@@ -2080,6 +3053,7 @@ JS;
                 <button type="button" class="ai-seo-keeper-tab-button" role="tab" aria-selected="false" data-tab-target="<?php echo esc_attr($schema_tab_id); ?>">Schema</button>
                 <button type="button" class="ai-seo-keeper-tab-button" role="tab" aria-selected="false" data-tab-target="<?php echo esc_attr($advanced_tab_id); ?>">Advanced</button>
                 <button type="button" class="ai-seo-keeper-tab-button" role="tab" aria-selected="false" data-tab-target="<?php echo esc_attr($checks_tab_id); ?>">Basic SEO checks</button>
+                <button type="button" class="ai-seo-keeper-tab-button" role="tab" aria-selected="false" data-tab-target="<?php echo esc_attr($links_tab_id); ?>">Links</button>
             </div>
 
             <div class="ai-seo-keeper-tab-panels">
@@ -2349,6 +3323,15 @@ JS;
                             </label>
                             <span class="ai-seo-keeper-field-help">This is still useful when automatic search appearance is turned off, or when you want this page explicitly managed with page-level SEO data.</span>
                         </div>
+
+                        <div class="ai-seo-keeper-field ai-seo-keeper-toggle-field">
+                            <span class="ai-seo-keeper-field-label">Cornerstone content</span>
+                            <label class="ai-seo-keeper-checkbox-row">
+                                <input id="ai-seo-keeper-cornerstone" type="checkbox" name="ai_seo_keeper_cornerstone" value="1" <?php checked(! empty(get_post_meta($post->ID, '_ai_seo_keeper_cornerstone', true))); ?> />
+                                <span>Mark this page as cornerstone content — your most important, comprehensive articles.</span>
+                            </label>
+                            <span class="ai-seo-keeper-field-help">Cornerstone pages get higher priority in the sitemap, are prioritized in internal linking suggestions, and receive extra audit weight.</span>
+                        </div>
                     </div>
                 </section>
 
@@ -2357,6 +3340,10 @@ JS;
                         <?php echo $analysis_markup; ?>
                     </div>
                 </section>
+
+                <section id="<?php echo esc_attr($links_tab_id); ?>" class="ai-seo-keeper-tab-panel ai-seo-keeper-surface" role="tabpanel" hidden>
+                    <?php echo $this->render_internal_links_tab($post); ?>
+                </section>
             </div>
 
             <?php if (! $has_api_key) : ?>
@@ -2364,6 +3351,184 @@ JS;
             <?php endif; ?>
         </div>
     <?php
+    }
+
+    /**
+     * Render the internal links tab for the editor metabox.
+     */
+    private function render_internal_links_tab(\WP_Post $post): string
+    {
+        $content = Content_Helper::get_content($post);
+        $site_host = wp_parse_url(home_url(), PHP_URL_HOST);
+
+        // 1. Outbound internal links from this page.
+        $outbound = array();
+        if (preg_match_all('/<a\s[^>]*href=("|\')(.*?)\1[^>]*>(.*?)<\/a>/is', $content, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $m) {
+                $href = trim($m[2]);
+                if ('' === $href || '#' === $href[0]) {
+                    continue;
+                }
+                if ('/' === $href[0]) {
+                    $href = home_url($href);
+                }
+                $parsed = wp_parse_url($href);
+                if (! is_array($parsed) || empty($parsed['host'])) {
+                    continue;
+                }
+                if (strtolower($parsed['host']) !== strtolower((string) $site_host)) {
+                    continue;
+                }
+                $target_id = url_to_postid($href);
+                if ($target_id > 0 && $target_id !== $post->ID) {
+                    $anchor = trim(wp_strip_all_tags($m[3]));
+                    $outbound[$target_id] = array(
+                        'id' => $target_id,
+                        'title' => get_the_title($target_id),
+                        'url' => get_permalink($target_id),
+                        'anchor' => '' !== $anchor ? $anchor : '(no text)',
+                    );
+                }
+            }
+        }
+
+        // 2. Inbound internal links to this page (scan other published pages).
+        $inbound = array();
+        $this_permalink = get_permalink($post->ID);
+        $this_path = trailingslashit((string) wp_parse_url($this_permalink, PHP_URL_PATH));
+
+        global $wpdb;
+        $index_table = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $other_ids = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT object_id FROM {$index_table} WHERE object_type = %s AND status = %s AND object_id != %d",
+                'post',
+                'publish',
+                $post->ID
+            )
+        );
+
+        if (is_array($other_ids)) {
+            foreach ($other_ids as $other_id) {
+                $other_post = get_post((int) $other_id);
+                if (! $other_post instanceof \WP_Post) {
+                    continue;
+                }
+                $other_content = Content_Helper::get_content($other_post);
+                if (preg_match_all('/<a\s[^>]*href=("|\')(.*?)\1/is', $other_content, $link_matches)) {
+                    foreach ($link_matches[2] as $href) {
+                        $href = trim($href);
+                        if ('/' === ($href[0] ?? '')) {
+                            $href = home_url($href);
+                        }
+                        $linked_id = url_to_postid($href);
+                        if ($linked_id === $post->ID) {
+                            $inbound[(int) $other_id] = array(
+                                'id' => (int) $other_id,
+                                'title' => $other_post->post_title,
+                                'url' => get_permalink($other_id),
+                            );
+                            break; // Only count each source page once.
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. Linking suggestions — related pages NOT already linked from this page.
+        $suggestions = array();
+        $already_linked = array_keys($outbound);
+        $already_linked[] = $post->ID;
+        $related = $this->content_indexer->get_related_entries(
+            $post->ID,
+            $post->post_type,
+            (int) $post->post_parent,
+            10
+        );
+        foreach ($related as $r) {
+            $rid = (int) $r['object_id'];
+            if (in_array($rid, $already_linked, true)) {
+                continue;
+            }
+            if ('publish' !== $r['status']) {
+                continue;
+            }
+            $suggestions[] = array(
+                'id' => $rid,
+                'title' => $r['title'],
+                'url' => $r['permalink'],
+            );
+        }
+
+        ob_start();
+        ?>
+        <div class="ai-seo-keeper-links-tab">
+            <div style="margin-bottom:16px;">
+                <strong>Outbound internal links (<?php echo count($outbound); ?>)</strong>
+                <p class="ai-seo-keeper-muted" style="margin:4px 0 8px;">Pages this post links to.</p>
+                <?php if (empty($outbound)) : ?>
+                    <p style="color:#d63638;margin:0;">This page has no outbound internal links. Adding internal links helps search engines discover and understand your site structure.</p>
+                <?php else : ?>
+                    <ul style="margin:0;padding-left:20px;">
+                        <?php foreach ($outbound as $link) : ?>
+                            <li style="margin-bottom:4px;">
+                                <a href="<?php echo esc_url($link['url']); ?>" target="_blank" rel="noopener"><?php echo esc_html($link['title']); ?></a>
+                                <span style="color:#50575e;font-size:12px;"> — anchor: "<?php echo esc_html($link['anchor']); ?>"</span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <strong>Inbound internal links (<?php echo count($inbound); ?>)</strong>
+                <p class="ai-seo-keeper-muted" style="margin:4px 0 8px;">Pages that link to this post.</p>
+                <?php if (empty($inbound)) : ?>
+                    <p style="color:#d63638;margin:0;">No other pages link to this post. It may be orphaned and harder for search engines to discover.</p>
+                <?php else : ?>
+                    <ul style="margin:0;padding-left:20px;">
+                        <?php foreach ($inbound as $link) : ?>
+                            <li style="margin-bottom:4px;">
+                                <a href="<?php echo esc_url(admin_url('post.php?post=' . $link['id'] . '&action=edit')); ?>"><?php echo esc_html($link['title']); ?></a>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </div>
+
+            <?php if (! empty($suggestions)) : ?>
+                <div>
+                    <strong>Suggested pages to link to</strong>
+                    <p class="ai-seo-keeper-muted" style="margin:4px 0 8px;">Related pages you could link from this post to improve site structure.</p>
+                    <ul style="margin:0;padding-left:20px;">
+                        <?php foreach ($suggestions as $s) : ?>
+                            <li style="margin-bottom:4px;">
+                                <a href="<?php echo esc_url($s['url']); ?>" target="_blank" rel="noopener"><?php echo esc_html($s['title']); ?></a>
+                                <button type="button" class="button button-small ai-seo-keeper-copy-link" data-url="<?php echo esc_attr($s['url']); ?>" data-title="<?php echo esc_attr($s['title']); ?>" style="margin-left:6px;font-size:11px;">Copy link</button>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+        </div>
+        <script>
+        (function($) {
+            $(document).on('click', '.ai-seo-keeper-copy-link', function() {
+                var url = $(this).data('url');
+                var title = $(this).data('title');
+                var html = '<a href="' + url + '">' + title + '</a>';
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(html).then(function() {});
+                }
+                var btn = $(this);
+                btn.text('Copied!');
+                setTimeout(function() { btn.text('Copy link'); }, 1500);
+            });
+        })(jQuery);
+        </script>
+        <?php
+        return ob_get_clean();
     }
 
     private function render_editor_panel_styles(): string
@@ -5209,6 +6374,7 @@ HTML;
         $canonical_url = isset($raw_input['ai_seo_keeper_canonical_url']) ? esc_url_raw(wp_unslash($raw_input['ai_seo_keeper_canonical_url'])) : '';
         $robots_directives = isset($raw_input['ai_seo_keeper_robots_directives']) ? sanitize_text_field(wp_unslash($raw_input['ai_seo_keeper_robots_directives'])) : '';
         $frontend_enabled = empty($raw_input['ai_seo_keeper_frontend_enabled']) ? '' : '1';
+        $cornerstone = empty($raw_input['ai_seo_keeper_cornerstone']) ? '' : '1';
 
         $limited_fields = $this->apply_editor_text_limits(
             array(
@@ -5290,6 +6456,12 @@ HTML;
             delete_post_meta($post_id, self::FRONTEND_ENABLE_META_KEY);
         } else {
             update_post_meta($post_id, self::FRONTEND_ENABLE_META_KEY, '1');
+        }
+
+        if ('' === $cornerstone) {
+            delete_post_meta($post_id, '_ai_seo_keeper_cornerstone');
+        } else {
+            update_post_meta($post_id, '_ai_seo_keeper_cornerstone', '1');
         }
 
         return array(
@@ -5613,6 +6785,83 @@ HTML;
                 'passed' => '' !== $normalized_keyphrase && false !== strpos($this->normalize_text_for_match($content), $normalized_keyphrase),
                 'message' => 'The real page content should reinforce the target phrase, not just the metadata.',
             );
+
+            // Keyphrase density.
+            if ($content_word_count > 0 && '' !== $normalized_keyphrase) {
+                $keyphrase_word_count = count(preg_split('/\s+/', $normalized_keyphrase));
+                $keyphrase_occurrences = mb_substr_count($this->normalize_text_for_match($content), $normalized_keyphrase);
+                $density = ($keyphrase_occurrences * $keyphrase_word_count / $content_word_count) * 100;
+                $density_rounded = round($density, 1);
+                $density_ok = $density >= 0.3 && $density <= 3.0;
+
+                $checks[] = array(
+                    'label' => 'Focus keyphrase density',
+                    'passed' => $density_ok,
+                    'message' => sprintf(
+                        'Found %d occurrence%s (%.1f%% density). Aim for 0.5%%–2.5%% for a natural feel — too low means weak signal, too high risks keyword stuffing.',
+                        $keyphrase_occurrences,
+                        1 === $keyphrase_occurrences ? '' : 's',
+                        $density_rounded
+                    ),
+                );
+            }
+
+            // Keyphrase in first paragraph.
+            if ('' !== $normalized_keyphrase) {
+                $first_paragraph = '';
+                if (preg_match('/<p[^>]*>(.*?)<\/p>/is', $raw_content, $fp_match)) {
+                    $first_paragraph = $this->normalize_text_for_match(wp_strip_all_tags($fp_match[1]));
+                } elseif (! empty($sentences)) {
+                    // Fallback: first 2 sentences.
+                    $first_paragraph = $this->normalize_text_for_match(implode(' ', array_slice($sentences, 0, 2)));
+                }
+                $kw_in_intro = '' !== $first_paragraph && false !== strpos($first_paragraph, $normalized_keyphrase);
+                $checks[] = array(
+                    'label' => 'Focus keyphrase in introduction',
+                    'passed' => $kw_in_intro,
+                    'message' => $kw_in_intro
+                        ? 'The keyphrase appears in the opening paragraph — good for early relevance signal.'
+                        : 'Try to include the focus keyphrase in the first paragraph so search engines see it early.',
+                );
+            }
+
+            // Keyphrase in subheadings (H2-H6).
+            if ('' !== $normalized_keyphrase && $subheading_count > 0) {
+                $subheading_kw_count = 0;
+                $subheading_texts = array();
+                preg_match_all('/<h[2-6][^>]*>(.*?)<\/h[2-6]>/is', $raw_content, $sub_matches);
+                foreach ($sub_matches[1] as $sub_text) {
+                    if (false !== strpos($this->normalize_text_for_match(wp_strip_all_tags($sub_text)), $normalized_keyphrase)) {
+                        $subheading_kw_count++;
+                    }
+                }
+                $checks[] = array(
+                    'label' => 'Focus keyphrase in subheadings',
+                    'passed' => $subheading_kw_count >= 1,
+                    'message' => $subheading_kw_count >= 1
+                        ? sprintf('The keyphrase appears in %d of %d subheading%s.', $subheading_kw_count, $subheading_count, $subheading_count > 1 ? 's' : '')
+                        : 'Consider adding the keyphrase to at least one H2 or H3 subheading to reinforce topical relevance.',
+                );
+            }
+
+            // Keyphrase in image alt attributes.
+            if ('' !== $normalized_keyphrase && count($image_matches[0]) > 0) {
+                $img_alt_kw_count = 0;
+                foreach ($image_matches[0] as $img_tag) {
+                    if (preg_match('/\balt=("|\')(.*?)\1/i', $img_tag, $alt_match)) {
+                        if (false !== strpos($this->normalize_text_for_match($alt_match[2]), $normalized_keyphrase)) {
+                            $img_alt_kw_count++;
+                        }
+                    }
+                }
+                $checks[] = array(
+                    'label' => 'Focus keyphrase in image alt tags',
+                    'passed' => $img_alt_kw_count >= 1,
+                    'message' => $img_alt_kw_count >= 1
+                        ? sprintf('The keyphrase appears in %d image alt tag%s.', $img_alt_kw_count, $img_alt_kw_count > 1 ? 's' : '')
+                        : 'Add the focus keyphrase to at least one image alt attribute — helps image search and reinforces page relevance.',
+                );
+            }
         }
 
         ob_start();

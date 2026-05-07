@@ -10,6 +10,7 @@ require_once __DIR__ . '/class-indexnow.php';
 require_once __DIR__ . '/class-frontend.php';
 require_once __DIR__ . '/class-discovery.php';
 require_once __DIR__ . '/class-sitemap.php';
+require_once __DIR__ . '/class-redirects.php';
 require_once __DIR__ . '/class-admin.php';
 
 final class Plugin
@@ -32,6 +33,8 @@ final class Plugin
 
     private ?Sitemap $sitemap = null;
 
+    private ?Redirects $redirects = null;
+
     private ?Admin $admin = null;
 
     public static function instance(): Plugin
@@ -50,6 +53,7 @@ final class Plugin
         $this->indexnow        = new IndexNow($this->settings);
         $this->discovery       = new Discovery();
         $this->sitemap         = new Sitemap($this->settings);
+        $this->redirects       = new Redirects($this->settings);
 
         if ($this->sitemap->needs_flush()) {
             add_action('init', 'flush_rewrite_rules', 99);
@@ -63,5 +67,13 @@ final class Plugin
         }
 
         $this->frontend = new Frontend($this->settings, $this->history_store);
+    }
+
+    /**
+     * Get the Redirects instance.
+     */
+    public function get_redirects(): ?Redirects
+    {
+        return $this->redirects;
     }
 }

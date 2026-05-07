@@ -60,6 +60,13 @@ class Settings
             'indexnow_auto_submit' => 1,
             'indexnow_key' => '',
             'audit_skip_patterns' => '',
+            'social_facebook'     => '',
+            'social_twitter'      => '',
+            'social_instagram'    => '',
+            'social_linkedin'     => '',
+            'social_youtube'      => '',
+            'social_pinterest'    => '',
+            'robots_txt_custom'   => '',
         );
 
         foreach (self::FEATURE_FLAGS as $feature_key => $label) {
@@ -124,6 +131,14 @@ class Settings
         $output['indexnow_auto_submit'] = empty($input['indexnow_auto_submit']) ? 0 : 1;
         $output['indexnow_key'] = isset($input['indexnow_key']) ? preg_replace('/[^a-zA-Z0-9]/', '', (string) $input['indexnow_key']) : $current['indexnow_key'];
         $output['audit_skip_patterns'] = isset($input['audit_skip_patterns']) ? sanitize_textarea_field($input['audit_skip_patterns']) : $current['audit_skip_patterns'];
+
+        // Social profiles — sanitize as URLs.
+        foreach (array('social_facebook', 'social_twitter', 'social_instagram', 'social_linkedin', 'social_youtube', 'social_pinterest') as $social_key) {
+            $output[$social_key] = isset($input[$social_key]) ? esc_url_raw(trim((string) $input[$social_key])) : $current[$social_key];
+        }
+
+        // Robots.txt custom rules.
+        $output['robots_txt_custom'] = isset($input['robots_txt_custom']) ? sanitize_textarea_field($input['robots_txt_custom']) : $current['robots_txt_custom'];
 
         foreach (self::FEATURE_FLAGS as $feature_key => $label) {
             $output['feature_' . $feature_key] = empty($input['feature_' . $feature_key]) ? 0 : 1;
