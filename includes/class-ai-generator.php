@@ -207,9 +207,62 @@ class AI_Generator
         );
     }
 
-    private function build_user_prompt(\WP_Post $post): string
+    private function get_seo_context(\WP_Post $post): array
     {
         $focus_keyphrase = trim(wp_strip_all_tags((string) get_post_meta($post->ID, '_ai_seo_keeper_focus_keyphrase', true)));
+        $seo_title_draft = trim((string) get_post_meta($post->ID, '_ai_seo_keeper_meta_title', true));
+        $meta_desc_draft = trim((string) get_post_meta($post->ID, '_ai_seo_keeper_meta_description', true));
+
+        // Snippet score metrics.
+        $title_len = mb_strlen($seo_title_draft);
+        $desc_len = mb_strlen($meta_desc_draft);
+        $kw_in_title = '' !== $focus_keyphrase && '' !== $seo_title_draft && false !== mb_stripos($seo_title_draft, $focus_keyphrase);
+        $kw_in_desc = '' !== $focus_keyphrase && '' !== $meta_desc_draft && false !== mb_stripos($meta_desc_draft, $focus_keyphrase);
+
+        // Page audit data (if previously audited).
+        $audit_raw = get_post_meta($post->ID, '_ai_seo_keeper_page_audit', true);
+        $audit_data = is_array($audit_raw) ? $audit_raw : array();
+
+        return array(
+            'focus_keyphrase' => $focus_keyphrase,
+            'seo_title_draft' => $seo_title_draft,
+            'meta_desc_draft' => $meta_desc_draft,
+            'title_length' => $title_len,
+            'desc_length' => $desc_len,
+            'keyphrase_in_title' => $kw_in_title,
+            'keyphrase_in_desc' => $kw_in_desc,
+            'audit_score' => isset($audit_data['score']) ? (int) $audit_data['score'] : null,
+            'audit_issues' => isset($audit_data['issues']) ? $audit_data['issues'] : array(),
+            'audit_suggestions' => isset($audit_data['suggestions']) ? $audit_data['suggestions'] : array(),
+            'audit_summary' => isset($audit_data['summary']) ? (string) $audit_data['summary'] : '',
+        );
+    }
+
+    private function format_seo_context_lines(array $ctx): string
+    {
+        $lines = array();
+        $lines[] = 'Current SEO title draft: ' . ('' !== $ctx['seo_title_draft'] ? $ctx['seo_title_draft'] . ' (' . $ctx['title_length'] . ' chars)' : 'Empty — not yet written');
+        $lines[] = 'Current meta description draft: ' . ('' !== $ctx['meta_desc_draft'] ? $ctx['meta_desc_draft'] . ' (' . $ctx['desc_length'] . ' chars)' : 'Empty — not yet written');
+        $lines[] = 'Focus keyphrase: ' . ('' !== $ctx['focus_keyphrase'] ? $ctx['focus_keyphrase'] : 'None specified');
+        $lines[] = 'Keyphrase in title: ' . ($ctx['keyphrase_in_title'] ? 'Found' : 'Missing');
+        $lines[] = 'Keyphrase in description: ' . ($ctx['keyphrase_in_desc'] ? 'Found' : 'Missing');
+
+        if (null !== $ctx['audit_score']) {
+            $lines[] = 'Last audit score: ' . $ctx['audit_score'] . '/100';
+            if (! empty($ctx['audit_issues'])) {
+                $lines[] = 'Audit issues: ' . implode('; ', array_slice($ctx['audit_issues'], 0, 5));
+            }
+            if ('' !== $ctx['audit_summary']) {
+                $lines[] = 'Audit summary: ' . $ctx['audit_summary'];
+            }
+        }
+
+        return implode("\n", $lines);
+    }
+
+    private function build_user_prompt(\WP_Post $post): string
+    {
+        $ctx = $this->get_seo_context($post);
         $page_content = $this->truncate_text($this->normalize_text(Content_Helper::get_content($post)), 5000);
         $page_excerpt = $this->truncate_text($this->normalize_text((string) $post->post_excerpt), 400);
         $related_pages = $this->content_indexer->get_related_entries((int) $post->ID, (string) $post->post_type, (int) $post->post_parent, 5);
@@ -238,8 +291,8 @@ class AI_Generator
                 'Page type: ' . $post->post_type,
                 'Current page title: ' . (string) $post->post_title,
                 'Page URL: ' . (string) get_permalink($post),
-                'Preferred focus keyphrase: ' . ('' !== $focus_keyphrase ? $focus_keyphrase : 'None specified'),
                 'Existing excerpt: ' . ('' !== $page_excerpt ? $page_excerpt : 'None'),
+                $this->format_seo_context_lines($ctx),
                 'Main page content: ' . ('' !== $page_content ? $page_content : 'No body content is available.'),
                 "Related pages to avoid overlapping with:\n" . implode("\n", $related_lines),
             )
@@ -291,8 +344,8 @@ class AI_Generator
 
     private function build_chat_user_prompt(\WP_Post $post, string $message, array $recent_messages): string
     {
-        $focus_keyphrase = trim(wp_strip_all_tags((string) get_post_meta($post->ID, '_ai_seo_keeper_focus_keyphrase', true)));
-        $page_content = $this->truncate_text($this->normalize_text(Content_Helper::get_content($post)), 3500);
+        $ctx = $this->get_seo_context($post);
+        $page_content = $this->truncate_text($this->normalize_text(Content_Helper::get_content($post)), 6000);
         $page_excerpt = $this->truncate_text($this->normalize_text((string) $post->post_excerpt), 300);
         $related_pages = $this->content_indexer->get_related_entries((int) $post->ID, (string) $post->post_type, (int) $post->post_parent, 5);
         $related_lines = array();
@@ -337,12 +390,12 @@ class AI_Generator
             array(
                 'Task: Answer the editor user as an SEO copilot for the current WordPress page.',
                 'Output format: {"reply":"...","suggested_title":"...","suggested_description":"...","notes":"..."}',
-                'Requirements: Ground advice in the real page content, related pages, and the current user question. Be concise and specific. When the user is not explicitly asking for metadata, keep suggested_title and suggested_description empty.',
+                'Requirements: Ground advice in the real page content, related pages, and the current user question. Be concise and specific. When the user is not explicitly asking for metadata, keep suggested_title and suggested_description empty. You have FULL access to the page SEO data below — reference it precisely when the user asks about scores, issues, or metadata.',
                 'Site: ' . get_bloginfo('name'),
                 'Page type: ' . $post->post_type,
                 'Current page title: ' . (string) $post->post_title,
                 'Page URL: ' . (string) get_permalink($post),
-                'Preferred focus keyphrase: ' . ('' !== $focus_keyphrase ? $focus_keyphrase : 'None specified'),
+                $this->format_seo_context_lines($ctx),
                 'Existing excerpt: ' . ('' !== $page_excerpt ? $page_excerpt : 'None'),
                 'Main page content: ' . ('' !== $page_content ? $page_content : 'No body content is available.'),
                 "Related pages to avoid overlapping with:\n" . implode("\n", $related_lines),
@@ -586,6 +639,109 @@ class AI_Generator
             'summary' => isset($payload['summary']) ? sanitize_textarea_field((string) $payload['summary']) : '',
             'provider' => $provider,
             'model' => $model,
+        );
+    }
+
+    public function generate_content_changes(int $post_id, string $instruction): array
+    {
+        $post = get_post($post_id);
+
+        if (! $post instanceof \WP_Post) {
+            throw new \RuntimeException('The requested page could not be loaded.');
+        }
+
+        $options = $this->settings->get();
+
+        if (empty($options['api_key'])) {
+            throw new \RuntimeException('Add an API key in AI SEO Keeper Settings before requesting content changes.');
+        }
+
+        $provider = (string) $options['provider'];
+        $model = trim((string) $options['model']);
+        $system_prompt = $this->build_content_edit_system_prompt((string) $options['system_prompt']);
+        $user_prompt = $this->build_content_edit_user_prompt($post, $instruction);
+
+        if ('openai' === $provider) {
+            $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt);
+        } elseif ('google' === $provider) {
+            $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt);
+        } else {
+            throw new \RuntimeException('Unsupported AI provider configured.');
+        }
+
+        $payload = $this->decode_json_payload($raw_response);
+
+        $changes = array();
+        $raw_changes = isset($payload['changes']) && is_array($payload['changes']) ? $payload['changes'] : array();
+        foreach ($raw_changes as $idx => $ch) {
+            if (! is_array($ch) || empty($ch['old']) || empty($ch['new'])) {
+                continue;
+            }
+            $changes[] = array(
+                'id' => $idx,
+                'section' => isset($ch['section']) ? sanitize_text_field((string) $ch['section']) : 'Section ' . ($idx + 1),
+                'old' => (string) $ch['old'],
+                'new' => (string) $ch['new'],
+                'reason' => isset($ch['reason']) ? sanitize_text_field((string) $ch['reason']) : '',
+                'tag_change' => isset($ch['tag_change']) ? sanitize_text_field((string) $ch['tag_change']) : '',
+            );
+        }
+
+        $summary = isset($payload['summary']) ? sanitize_textarea_field((string) $payload['summary']) : '';
+
+        if (empty($changes)) {
+            throw new \RuntimeException('The AI did not propose any content changes. The page may already be well optimized.');
+        }
+
+        return array(
+            'changes' => $changes,
+            'summary' => $summary,
+            'provider' => $provider,
+            'model' => $model,
+        );
+    }
+
+    private function build_content_edit_system_prompt(string $custom_prompt): string
+    {
+        $base_prompt = trim($custom_prompt);
+
+        return trim(
+            $base_prompt . "\n\n" .
+                'You are an SEO content editor. Return only valid JSON with exactly these keys: changes, summary. ' .
+                'changes is an array of objects, each with: section (string label), old (exact original text), new (replacement text), reason (why this improves SEO), tag_change (e.g. "h3→h2" or empty string). ' .
+                'CRITICAL RULES: ' .
+                '1. The "old" field must contain the EXACT original text as it appears in the page content — character for character. ' .
+                '2. Only rephrase text and fix heading hierarchy (H tags). ' .
+                '3. NEVER remove or add buttons, images, forms, iframes, scripts, shortcodes, or widgets. ' .
+                '4. NEVER change href URLs — you may rephrase anchor text only. ' .
+                '5. Preserve all HTML attributes: classes, IDs, styles, data-* attributes. ' .
+                '6. Keep HTML tags (bold, italic, links) in the output — only change the text content inside them. ' .
+                '7. Each change must have a clear SEO reason. ' .
+                '8. Maximum 30 changes per request. ' .
+                '9. summary is 1-2 sentences about what was improved overall. ' .
+                'Do not use markdown fences.'
+        );
+    }
+
+    private function build_content_edit_user_prompt(\WP_Post $post, string $instruction): string
+    {
+        $ctx = $this->get_seo_context($post);
+        $page_content_raw = Content_Helper::get_content($post);
+        $page_content = $this->truncate_text($page_content_raw, 30000);
+
+        return implode(
+            "\n\n",
+            array(
+                'Task: Analyze the page content and propose specific text changes to improve SEO.',
+                'Output format: {"changes":[{"section":"...","old":"...","new":"...","reason":"...","tag_change":"..."}],"summary":"..."}',
+                'Site: ' . get_bloginfo('name'),
+                'Page type: ' . $post->post_type,
+                'Page title: ' . (string) $post->post_title,
+                'Page URL: ' . (string) get_permalink($post),
+                $this->format_seo_context_lines($ctx),
+                'User instruction: ' . $instruction,
+                "Full page content:\n" . ('' !== $page_content ? $page_content : 'No body content is available.'),
+            )
         );
     }
 

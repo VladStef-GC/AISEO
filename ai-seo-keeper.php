@@ -21,6 +21,7 @@ define('AI_SEO_KEEPER_URL', plugin_dir_url(__FILE__));
 
 require_once AI_SEO_KEEPER_PATH . 'includes/class-activator.php';
 require_once AI_SEO_KEEPER_PATH . 'includes/class-content-helper.php';
+require_once AI_SEO_KEEPER_PATH . 'includes/class-content-writer.php';
 require_once AI_SEO_KEEPER_PATH . 'includes/class-settings.php';
 require_once AI_SEO_KEEPER_PATH . 'includes/class-content-indexer.php';
 require_once AI_SEO_KEEPER_PATH . 'includes/class-ai-generator.php';

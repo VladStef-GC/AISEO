@@ -42,6 +42,14 @@ class Admin
 
     private const AJAX_SAVE_SKIP_PATTERNS_ACTION = 'ai_seo_keeper_save_skip_patterns';
 
+    private const AJAX_CONTENT_EDIT_ACTION = 'ai_seo_keeper_content_edit';
+
+    private const AJAX_APPLY_CHANGES_ACTION = 'ai_seo_keeper_apply_changes';
+
+    private const AJAX_APPLY_SUGGESTION_ACTION = 'ai_seo_keeper_apply_suggestion';
+
+    private const AJAX_RESTORE_BACKUP_ACTION = 'ai_seo_keeper_restore_backup';
+
     private const CHAT_OBJECT_TYPE = 'post_chat';
 
     private const META_TITLE_KEY = '_ai_seo_keeper_meta_title';
@@ -142,6 +150,10 @@ class Admin
         add_action('wp_ajax_' . self::AJAX_SETUP_INDEX_ACTION, array($this, 'handle_ajax_setup_index'));
         add_action('wp_ajax_' . self::AJAX_TOGGLE_AUDIT_SKIP_ACTION, array($this, 'handle_ajax_toggle_audit_skip'));
         add_action('wp_ajax_' . self::AJAX_SAVE_SKIP_PATTERNS_ACTION, array($this, 'handle_ajax_save_skip_patterns'));
+        add_action('wp_ajax_' . self::AJAX_CONTENT_EDIT_ACTION, array($this, 'handle_ajax_content_edit'));
+        add_action('wp_ajax_' . self::AJAX_APPLY_CHANGES_ACTION, array($this, 'handle_ajax_apply_changes'));
+        add_action('wp_ajax_' . self::AJAX_APPLY_SUGGESTION_ACTION, array($this, 'handle_ajax_apply_suggestion'));
+        add_action('wp_ajax_' . self::AJAX_RESTORE_BACKUP_ACTION, array($this, 'handle_ajax_restore_backup'));
     }
 
     private function is_supported_post_type(string $post_type): bool
@@ -885,6 +897,200 @@ jQuery(function ($) {
                 $button.prop('disabled', false);
             });
     });
+
+    // ── Apply suggestion button (title / description from chat) ──────
+    $(document).on('click', '.ai-seo-keeper-apply-suggestion', function (event) {
+        event.preventDefault();
+        var $btn = $(this);
+        var field = $btn.data('field');
+        var value = $btn.data('value');
+        var postId = $('#post_ID').val();
+        var $panel = $btn.closest('.ai-seo-keeper-editor-panel');
+
+        $btn.prop('disabled', true).text('Applying…');
+
+        $.post(aiSeoKeeperEditor.ajaxUrl, {
+            action: 'ai_seo_keeper_apply_suggestion',
+            nonce: $('#ai_seo_keeper_editor_nonce').val(),
+            post_id: postId,
+            field: field,
+            value: value
+        })
+        .done(function (response) {
+            if (response && response.success) {
+                if (field === 'meta_title') {
+                    $('#ai-seo-keeper-meta-title').val(value).trigger('input');
+                } else if (field === 'meta_description') {
+                    $('#ai-seo-keeper-meta-description').val(value).trigger('input');
+                }
+                $btn.text('✓ Applied').css('color', '#135e16');
+                if ($panel.length) {
+                    refreshSeoDraftFeedback($panel);
+                }
+            } else {
+                $btn.text('Failed').css('color', '#8a2424');
+            }
+        })
+        .fail(function () {
+            $btn.text('Failed').css('color', '#8a2424');
+        });
+    });
+
+    // ── AI Content Editor ─────────────────────────────────────────────
+    $(document).on('click', '.ai-seo-keeper-content-edit-btn', function (event) {
+        event.preventDefault();
+        var $btn = $(this);
+        var $panel = $btn.closest('.ai-seo-keeper-editor-panel');
+        var $status = $panel.find('.ai-seo-keeper-save-status');
+        var $input = $panel.find('.ai-seo-keeper-content-edit-input');
+        var postId = $('#post_ID').val();
+        var instruction = $.trim($input.val());
+
+        if (! instruction) {
+            $status.text('Enter editing instructions first.').css('color', '#8a2424');
+            return;
+        }
+
+        $btn.prop('disabled', true).text('AI is analyzing…');
+        $status.text('Generating content change proposals…').css('color', 'inherit');
+        var $review = $panel.find('.ai-seo-keeper-content-review');
+        $review.empty();
+
+        $.post(aiSeoKeeperEditor.ajaxUrl, {
+            action: 'ai_seo_keeper_content_edit',
+            nonce: $('#ai_seo_keeper_editor_nonce').val(),
+            post_id: postId,
+            instruction: instruction
+        })
+        .done(function (response) {
+            if (response && response.success && response.data && response.data.changes) {
+                var changes = response.data.changes;
+                var html = '<div class="ai-seo-keeper-diff-review">';
+                html += '<p style="margin:0 0 12px;font-size:13px;color:#50575e;">' + escHtml(response.data.summary || '') + '</p>';
+                html += '<p style="margin:0 0 8px;font-size:13px;font-weight:600;">' + changes.length + ' proposed change(s) — review and accept individually:</p>';
+
+                for (var i = 0; i < changes.length; i++) {
+                    var ch = changes[i];
+                    html += '<div class="ai-seo-keeper-diff-card" data-idx="' + i + '" style="border:1px solid #dcdcde;border-radius:4px;padding:12px;margin-bottom:10px;background:#fff;">';
+                    html += '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">';
+                    html += '<strong style="font-size:13px;">' + escHtml(ch.section) + '</strong>';
+                    if (ch.tag_change) html += ' <span style="font-size:11px;background:#e5f5fa;color:#0a4b78;padding:1px 6px;border-radius:3px;">' + escHtml(ch.tag_change) + '</span>';
+                    html += '</div>';
+                    html += '<div style="display:flex;gap:12px;margin-bottom:8px;">';
+                    html += '<div style="flex:1;"><span style="font-size:11px;color:#8a2424;font-weight:600;">BEFORE</span><div style="font-size:13px;background:#fef0f0;padding:6px 8px;border-radius:3px;word-break:break-word;">' + escHtml(ch.old) + '</div></div>';
+                    html += '<div style="flex:1;"><span style="font-size:11px;color:#135e16;font-weight:600;">AFTER</span><div style="font-size:13px;background:#eef8ee;padding:6px 8px;border-radius:3px;word-break:break-word;">' + escHtml(ch.new) + '</div></div>';
+                    html += '</div>';
+                    if (ch.reason) html += '<p style="font-size:12px;color:#787c82;margin:0 0 8px;font-style:italic;">' + escHtml(ch.reason) + '</p>';
+                    html += '<label style="font-size:13px;cursor:pointer;"><input type="checkbox" class="ai-seo-keeper-diff-accept" data-idx="' + i + '" checked /> Accept this change</label>';
+                    html += '</div>';
+                }
+
+                html += '<div style="margin-top:12px;display:flex;gap:10px;align-items:center;">';
+                html += '<button type="button" class="button button-primary ai-seo-keeper-apply-content-changes">Apply Accepted Changes</button>';
+                html += '<button type="button" class="button ai-seo-keeper-discard-changes">Discard All</button>';
+                html += '<span class="ai-seo-keeper-apply-status" style="font-size:13px;"></span>';
+                html += '</div>';
+                html += '</div>';
+
+                $review.html(html);
+                $review.data('proposedChanges', changes);
+                $status.text('Review the proposed changes below.').css('color', '#135e16');
+            } else {
+                var msg = (response && response.data && response.data.message) ? response.data.message : 'No changes proposed.';
+                $status.text(msg).css('color', '#8a2424');
+            }
+        })
+        .fail(function (xhr) {
+            var msg = 'Content analysis failed.';
+            if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
+                msg = xhr.responseJSON.data.message;
+            }
+            $status.text(msg).css('color', '#8a2424');
+        })
+        .always(function () {
+            $btn.prop('disabled', false).text('✏ Propose Changes');
+        });
+    });
+
+    // Apply accepted content changes.
+    $(document).on('click', '.ai-seo-keeper-apply-content-changes', function () {
+        var $btn = $(this);
+        var $review = $btn.closest('.ai-seo-keeper-diff-review');
+        var $statusEl = $review.find('.ai-seo-keeper-apply-status');
+        var allChanges = $btn.closest('.ai-seo-keeper-content-review').data('proposedChanges');
+        var postId = $('#post_ID').val();
+
+        var accepted = [];
+        $review.find('.ai-seo-keeper-diff-accept:checked').each(function () {
+            var idx = parseInt($(this).data('idx'), 10);
+            if (allChanges[idx]) {
+                accepted.push({ old: allChanges[idx].old, 'new': allChanges[idx]['new'] });
+            }
+        });
+
+        if (accepted.length === 0) {
+            $statusEl.text('No changes selected.').css('color', '#8a2424');
+            return;
+        }
+
+        $btn.prop('disabled', true).text('Applying…');
+
+        $.post(aiSeoKeeperEditor.ajaxUrl, {
+            action: 'ai_seo_keeper_apply_changes',
+            nonce: $('#ai_seo_keeper_editor_nonce').val(),
+            post_id: postId,
+            changes: JSON.stringify(accepted)
+        })
+        .done(function (response) {
+            if (response && response.success && response.data) {
+                var d = response.data;
+                $statusEl.text('✓ ' + d.applied + ' change(s) applied, ' + d.failed + ' failed. Backup saved.').css('color', '#135e16');
+                $btn.text('✓ Applied');
+                $review.append('<div style="margin-top:10px;"><button type="button" class="button ai-seo-keeper-restore-backup">↩ Undo AI edits (restore backup)</button></div>');
+            } else {
+                $statusEl.text('Apply failed.').css('color', '#8a2424');
+            }
+        })
+        .fail(function () {
+            $statusEl.text('Apply failed.').css('color', '#8a2424');
+        })
+        .always(function () {
+            $btn.prop('disabled', false);
+        });
+    });
+
+    $(document).on('click', '.ai-seo-keeper-discard-changes', function () {
+        $(this).closest('.ai-seo-keeper-content-review').empty();
+    });
+
+    $(document).on('click', '.ai-seo-keeper-restore-backup', function () {
+        var $btn = $(this);
+        var postId = $('#post_ID').val();
+        $btn.prop('disabled', true).text('Restoring…');
+
+        $.post(aiSeoKeeperEditor.ajaxUrl, {
+            action: 'ai_seo_keeper_restore_backup',
+            nonce: $('#ai_seo_keeper_editor_nonce').val(),
+            post_id: postId
+        })
+        .done(function (response) {
+            if (response && response.success) {
+                $btn.text('✓ Restored — reload page to see changes');
+            } else {
+                $btn.text('Restore failed').css('color', '#8a2424');
+            }
+        })
+        .fail(function () {
+            $btn.text('Restore failed').css('color', '#8a2424');
+        });
+    });
+
+    function escHtml(str) {
+        if (!str) return '';
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
 
     $(document).on('input', '#ai-seo-keeper-focus-keyphrase, #ai-seo-keeper-meta-title, #ai-seo-keeper-meta-description, #ai-seo-keeper-social-title, #ai-seo-keeper-social-description', function () {
         refreshSeoDraftFeedback($(this).closest('.ai-seo-keeper-editor-panel'));
@@ -1947,6 +2153,16 @@ JS;
                             '<textarea class="widefat ai-seo-keeper-chat-input" rows="3" placeholder="Ask the AI assistant about this page\'s SEO, positioning, or metadata..."></textarea>' .
                             '<p class="ai-seo-keeper-chat-actions"><button type="button" class="button button-secondary ai-seo-keeper-send-chat" ' . disabled(! $has_api_key, true, false) . '>Ask AI Assistant</button></p>' .
                             '<div class="ai-seo-keeper-chat-shell">' . $this->render_chat_history_markup($chat_messages) . '</div>',
+                        false
+                    );
+
+                    echo $this->render_accordion_section(
+                        'ai-seo-keeper-content-editor-' . $post->ID,
+                        '✏ AI Content Editor',
+                        '<div class="ai-seo-keeper-chat-intro">Ask AI to rephrase text, fix heading hierarchy, or optimize content for your focus keyphrase. AI reads the full page, proposes targeted changes — you review and approve each one before anything is saved.</div>' .
+                            '<textarea class="widefat ai-seo-keeper-content-edit-input" rows="3" placeholder="e.g. Rephrase this page for better SEO highlighting our AI solutions and automation services…"></textarea>' .
+                            '<p class="ai-seo-keeper-chat-actions"><button type="button" class="button button-primary ai-seo-keeper-content-edit-btn" ' . disabled(! $has_api_key, true, false) . '>✏ Propose Changes</button></p>' .
+                            '<div class="ai-seo-keeper-content-review"></div>',
                         false
                     );
                     ?>
@@ -3389,6 +3605,124 @@ HTML;
         }
 
         return false;
+    }
+
+    public function handle_ajax_content_edit(): void
+    {
+        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
+        $instruction = isset($_POST['instruction']) ? sanitize_textarea_field(wp_unslash($_POST['instruction'])) : '';
+
+        if (! $post_id) {
+            wp_send_json_error(array('message' => 'Missing post id.'), 400);
+        }
+
+        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
+
+        if (! current_user_can('edit_post', $post_id)) {
+            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
+        }
+
+        if ('' === trim($instruction)) {
+            wp_send_json_error(array('message' => 'Provide an instruction for the AI content editor.'), 400);
+        }
+
+        try {
+            $result = $this->ai_generator->generate_content_changes($post_id, $instruction);
+        } catch (\Throwable $throwable) {
+            wp_send_json_error(array('message' => $throwable->getMessage()), 500);
+        }
+
+        wp_send_json_success(array(
+            'changes' => $result['changes'],
+            'summary' => $result['summary'],
+            'provider' => $result['provider'],
+            'model' => $result['model'],
+            'builder' => Content_Writer::detect_builder($post_id),
+        ));
+    }
+
+    public function handle_ajax_apply_changes(): void
+    {
+        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
+        $changes_json = isset($_POST['changes']) ? wp_unslash($_POST['changes']) : '';
+
+        if (! $post_id) {
+            wp_send_json_error(array('message' => 'Missing post id.'), 400);
+        }
+
+        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
+
+        if (! current_user_can('edit_post', $post_id)) {
+            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
+        }
+
+        $changes = json_decode($changes_json, true);
+        if (! is_array($changes) || empty($changes)) {
+            wp_send_json_error(array('message' => 'No changes to apply.'), 400);
+        }
+
+        $result = Content_Writer::apply_changes($post_id, $changes);
+
+        wp_send_json_success($result);
+    }
+
+    public function handle_ajax_apply_suggestion(): void
+    {
+        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
+        $field = isset($_POST['field']) ? sanitize_text_field(wp_unslash($_POST['field'])) : '';
+        $value = isset($_POST['value']) ? wp_unslash($_POST['value']) : '';
+
+        if (! $post_id) {
+            wp_send_json_error(array('message' => 'Missing post id.'), 400);
+        }
+
+        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
+
+        if (! current_user_can('edit_post', $post_id)) {
+            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
+        }
+
+        $allowed_fields = array(
+            'meta_title' => self::META_TITLE_KEY,
+            'meta_description' => self::META_DESCRIPTION_KEY,
+        );
+
+        if (! isset($allowed_fields[$field])) {
+            wp_send_json_error(array('message' => 'Invalid field: ' . $field), 400);
+        }
+
+        $meta_key = $allowed_fields[$field];
+        $sanitized = 'meta_title' === $field ? sanitize_text_field($value) : sanitize_textarea_field($value);
+        update_post_meta($post_id, $meta_key, $sanitized);
+
+        wp_send_json_success(array(
+            'field' => $field,
+            'value' => $sanitized,
+            'message' => ucfirst(str_replace('_', ' ', $field)) . ' updated.',
+        ));
+    }
+
+    public function handle_ajax_restore_backup(): void
+    {
+        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
+
+        if (! $post_id) {
+            wp_send_json_error(array('message' => 'Missing post id.'), 400);
+        }
+
+        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
+
+        if (! current_user_can('edit_post', $post_id)) {
+            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
+        }
+
+        $restored = Content_Writer::restore_backup($post_id);
+
+        if (! $restored) {
+            wp_send_json_error(array('message' => 'No backup found for this page.'), 404);
+        }
+
+        wp_send_json_success(array('message' => 'Content restored to the version before AI edits.'));
     }
 
     public function render_setup_wizard_page(): void
@@ -5302,10 +5636,12 @@ HTML;
                         <?php if ('assistant' === $entry['role']) : ?>
                             <p style="margin:0 0 8px;"><?php echo esc_html($entry['reply']); ?></p>
                             <?php if ('' !== $entry['suggested_title']) : ?>
-                                <p style="margin:0 0 8px;"><strong>Suggested title:</strong> <?php echo esc_html($entry['suggested_title']); ?></p>
+                                <p style="margin:0 0 4px;"><strong>Suggested title:</strong> <?php echo esc_html($entry['suggested_title']); ?></p>
+                                <button type="button" class="button button-small ai-seo-keeper-apply-suggestion" data-field="meta_title" data-value="<?php echo esc_attr($entry['suggested_title']); ?>" style="margin-bottom:8px;">Apply to title draft</button>
                             <?php endif; ?>
                             <?php if ('' !== $entry['suggested_description']) : ?>
-                                <p style="margin:0 0 8px;"><strong>Suggested description:</strong> <?php echo esc_html($entry['suggested_description']); ?></p>
+                                <p style="margin:0 0 4px;"><strong>Suggested description:</strong> <?php echo esc_html($entry['suggested_description']); ?></p>
+                                <button type="button" class="button button-small ai-seo-keeper-apply-suggestion" data-field="meta_description" data-value="<?php echo esc_attr($entry['suggested_description']); ?>" style="margin-bottom:8px;">Apply to description draft</button>
                             <?php endif; ?>
                             <?php if ('' !== $entry['notes']) : ?>
                                 <p style="margin:0 0 8px;"><em><?php echo esc_html($entry['notes']); ?></em></p>
