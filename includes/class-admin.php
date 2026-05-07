@@ -943,7 +943,8 @@ jQuery(function ($) {
         event.preventDefault();
         var $btn = $(this);
         var $panel = $btn.closest('.ai-seo-keeper-editor-panel');
-        var $status = $panel.find('.ai-seo-keeper-save-status');
+        var $status = $btn.closest('.ai-seo-keeper-assistant-panel').find('.ai-seo-keeper-chat-status');
+        if (! $status.length) $status = $panel.find('.ai-seo-keeper-save-status');
         var $input = $panel.find('.ai-seo-keeper-chat-input');
         var postId = $('#post_ID').val();
         var instruction = $.trim($input.val());
@@ -2151,10 +2152,11 @@ JS;
                                 '<div class="ai-seo-keeper-assistant-panel" data-panel="chat">' .
                                 '<textarea class="widefat ai-seo-keeper-chat-input" rows="3" placeholder="Ask about SEO issues, request metadata fixes, or ask for page content edits — all in one conversation…"></textarea>' .
                                 '<p class="ai-seo-keeper-chat-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' .
-                                    '<button type="button" class="button button-secondary ai-seo-keeper-send-chat" ' . disabled(! $has_api_key, true, false) . '>💬 Ask AI</button>' .
-                                    '<button type="button" class="button button-primary ai-seo-keeper-content-edit-btn" ' . disabled(! $has_api_key, true, false) . '>✏ Propose Page Edits <span class="ai-seo-keeper-help-tip" data-tip="Sends your message as a page-edit instruction. AI reads the full page content, proposes targeted text changes with BEFORE/AFTER diffs — you review and accept each one before anything is saved.">&#9432;</span></button>' .
-                                    '<button type="button" class="button ai-seo-keeper-clear-chat" style="margin-left:auto;color:#8a2424;" ' . disabled(empty($chat_messages), true, false) . '>🗑 Clear</button>' .
+                                '<button type="button" class="button button-secondary ai-seo-keeper-send-chat" ' . disabled(! $has_api_key, true, false) . '>💬 Ask AI</button>' .
+                                '<button type="button" class="button button-primary ai-seo-keeper-content-edit-btn" ' . disabled(! $has_api_key, true, false) . '>✏ Propose Page Edits <span class="ai-seo-keeper-help-tip" data-tip="Sends your message as a page-edit instruction. AI reads the full page content, proposes targeted text changes with BEFORE/AFTER diffs — you review and accept each one before anything is saved.">&#9432;</span></button>' .
+                                '<button type="button" class="button ai-seo-keeper-clear-chat" style="margin-left:auto;color:#8a2424;" ' . disabled(empty($chat_messages), true, false) . '>🗑 Clear</button>' .
                                 '</p>' .
+                                '<span class="ai-seo-keeper-chat-status" aria-live="polite" style="display:block;font-size:13px;margin:4px 0 8px;"></span>' .
                                 '<div class="ai-seo-keeper-chat-shell">' . $this->render_chat_history_markup($chat_messages) . '</div>' .
                                 '<div class="ai-seo-keeper-content-review"></div>' .
                                 '</div>' .
