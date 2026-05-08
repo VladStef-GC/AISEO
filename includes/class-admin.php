@@ -2793,7 +2793,7 @@ JS;
                         <th scope="row"><label for="ai-seo-local-type">Business type</label></th>
                         <td>
                             <?php
-                            $business_types = array('LocalBusiness','Store','Restaurant','HealthAndBeautyBusiness','LegalService','FinancialService','EducationalOrganization','LodgingBusiness','SportsActivityLocation','EntertainmentBusiness','HomeAndConstructionBusiness','AutomotiveBusiness','MedicalBusiness','ProfessionalService','RealEstateAgent');
+                            $business_types = array('LocalBusiness', 'Store', 'Restaurant', 'HealthAndBeautyBusiness', 'LegalService', 'FinancialService', 'EducationalOrganization', 'LodgingBusiness', 'SportsActivityLocation', 'EntertainmentBusiness', 'HomeAndConstructionBusiness', 'AutomotiveBusiness', 'MedicalBusiness', 'ProfessionalService', 'RealEstateAgent');
                             ?>
                             <select id="ai-seo-local-type" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_business_type]">
                                 <?php foreach ($business_types as $bt) : ?>
@@ -2848,7 +2848,8 @@ JS;
                     <tr>
                         <th scope="row"><label for="ai-seo-local-price">Price range</label></th>
                         <td><input id="ai-seo-local-price" class="regular-text" style="width:100px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_price_range]" value="<?php echo esc_attr($options['local_price_range'] ?? ''); ?>" placeholder="$$" />
-                        <p class="description">Use $ signs (e.g. $, $$, $$$) to indicate price level.</p></td>
+                            <p class="description">Use $ signs (e.g. $, $$, $$$) to indicate price level.</p>
+                        </td>
                     </tr>
                 </table>
 

@@ -1926,8 +1926,13 @@ class Frontend
 
         // Opening hours.
         $day_map = array(
-            'mon' => 'Monday', 'tue' => 'Tuesday', 'wed' => 'Wednesday',
-            'thu' => 'Thursday', 'fri' => 'Friday', 'sat' => 'Saturday', 'sun' => 'Sunday',
+            'mon' => 'Monday',
+            'tue' => 'Tuesday',
+            'wed' => 'Wednesday',
+            'thu' => 'Thursday',
+            'fri' => 'Friday',
+            'sat' => 'Saturday',
+            'sun' => 'Sunday',
         );
         $hours_specs = array();
         foreach ($day_map as $dk => $dl) {
