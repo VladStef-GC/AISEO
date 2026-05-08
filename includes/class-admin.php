@@ -135,6 +135,7 @@ class Admin
 
         add_action('admin_menu', array($this, 'register_menu'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_editor_assets'));
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_page_assets'));
         add_action('admin_post_ai_seo_keeper_sync_index', array($this, 'handle_sync_index'));
         add_action('admin_post_' . self::SUBMIT_INDEXNOW_ACTION, array($this, 'handle_submit_indexnow'));
         add_action('admin_post_' . self::YOAST_IMPORT_ACTION, array($this, 'handle_import_yoast_metadata'));
@@ -408,6 +409,60 @@ class Admin
         );
 
         wp_add_inline_script('jquery', $this->get_editor_script(), 'after');
+    }
+
+    /**
+     * Enqueue shared CSS/JS on any AI SEO Keeper admin page, plus page-specific assets.
+     */
+    public function enqueue_page_assets(string $hook_suffix): void
+    {
+        // Only load on our own admin pages.
+        if (false === strpos($hook_suffix, 'ai-seo-keeper')) {
+            return;
+        }
+
+        $url = AI_SEO_KEEPER_URL . 'assets/';
+        $ver = AI_SEO_KEEPER_VERSION;
+
+        // Shared styles and scripts for all plugin pages.
+        wp_enqueue_style('ai-seo-admin-common', $url . 'css/admin-common.css', array(), $ver);
+        wp_enqueue_script('ai-seo-admin-common', $url . 'js/admin-common.js', array('jquery'), $ver, true);
+
+        // Map hook suffixes to page-specific asset slugs.
+        $page_map = array(
+            'ai-seo-keeper-settings'      => 'settings',
+            'ai-seo-keeper-audit'         => 'audit',
+            'toplevel_page_ai-seo-keeper' => 'dashboard',
+            'ai-seo-keeper-bulk-editor'   => 'bulk-editor',
+            'ai-seo-keeper-images'        => 'images',
+            'ai-seo-keeper-keywords'      => 'keywords',
+            'ai-seo-keeper-redirects'     => 'redirects',
+            'ai-seo-keeper-export-import' => 'export-import',
+            'ai-seo-keeper-setup'         => 'setup-wizard',
+        );
+
+        // Determine the page slug from the hook suffix.
+        $page_slug = '';
+        foreach ($page_map as $hook_fragment => $slug) {
+            if (false !== strpos($hook_suffix, $hook_fragment)) {
+                $page_slug = $slug;
+                break;
+            }
+        }
+
+        if ('' === $page_slug) {
+            return;
+        }
+
+        $css_file = AI_SEO_KEEPER_PATH . 'assets/css/page-' . $page_slug . '.css';
+        if (file_exists($css_file)) {
+            wp_enqueue_style('ai-seo-page-' . $page_slug, $url . 'css/page-' . $page_slug . '.css', array('ai-seo-admin-common'), $ver);
+        }
+
+        $js_file = AI_SEO_KEEPER_PATH . 'assets/js/page-' . $page_slug . '.js';
+        if (file_exists($js_file)) {
+            wp_enqueue_script('ai-seo-page-' . $page_slug, $url . 'js/page-' . $page_slug . '.js', array('jquery', 'ai-seo-admin-common'), $ver, true);
+        }
     }
 
     private function get_editor_script(): string
@@ -1417,160 +1472,19 @@ JS;
             return;
         }
 
-        $summary = $this->content_indexer->get_summary();
-        $audit_summary = $this->content_indexer->get_audit_summary();
-        $audit_rows = $this->content_indexer->get_audit_rows(8);
-        $options = $this->settings->get();
-        $sync_count = isset($_GET['synced']) ? (int) $_GET['synced'] : 0;
-        $frontend_conflict = $this->has_conflicting_seo_plugin();
-        $frontend_enabled = ! empty($options['frontend_output_enabled']);
+        $summary                     = $this->content_indexer->get_summary();
+        $audit_summary               = $this->content_indexer->get_audit_summary();
+        $audit_rows                  = $this->content_indexer->get_audit_rows(8);
+        $options                     = $this->settings->get();
+        $sync_count                  = isset($_GET['synced']) ? (int) $_GET['synced'] : 0;
+        $frontend_conflict           = $this->has_conflicting_seo_plugin();
+        $frontend_enabled            = ! empty($options['frontend_output_enabled']);
         $frontend_override_conflicts = ! empty($options['frontend_override_conflicts']);
-        $llms_url = home_url('/llms.txt');
-        $llms_full_url = home_url('/llms-full.txt');
-        $sitemap_url = $frontend_conflict ? home_url('/sitemap_index.xml') : home_url('/wp-sitemap.xml');
-    ?>
-        <div class="wrap">
-            <h1>AI SEO Keeper</h1>
-            <p>AI SEO Keeper now covers AI-assisted metadata workflows, saved page-level SEO overrides, audit workflows, discovery documents, richer schema, and refresh signaling without silently fighting the existing SEO stack.</p>
+        $llms_url                    = home_url('/llms.txt');
+        $llms_full_url               = home_url('/llms-full.txt');
+        $sitemap_url                 = $frontend_conflict ? home_url('/sitemap_index.xml') : home_url('/wp-sitemap.xml');
 
-            <?php if ($sync_count > 0) : ?>
-                <div class="notice notice-success is-dismissible">
-                    <p><?php echo esc_html(sprintf('Site index synced. %d content records stored.', $sync_count)); ?></p>
-                </div>
-            <?php endif; ?>
-
-            <div style="display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:16px;max-width:1120px;margin-top:24px;">
-                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;">
-                    <h2 style="margin-top:0;">Indexed content</h2>
-                    <p style="font-size:28px;margin:0;"><?php echo esc_html((string) $summary['total_items']); ?></p>
-                </div>
-                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;">
-                    <h2 style="margin-top:0;">Provider</h2>
-                    <p style="font-size:20px;margin:0;"><?php echo esc_html(strtoupper($options['provider'])); ?></p>
-                </div>
-                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;">
-                    <h2 style="margin-top:0;">Last sync</h2>
-                    <p style="font-size:16px;margin:0;"><?php echo $summary['last_sync'] ? esc_html($summary['last_sync']) : 'Never'; ?></p>
-                </div>
-                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;">
-                    <h2 style="margin-top:0;">Published content</h2>
-                    <p style="font-size:28px;margin:0;"><?php echo esc_html((string) $audit_summary['published_items']); ?></p>
-                </div>
-                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;">
-                    <h2 style="margin-top:0;">Approved suggestions</h2>
-                    <p style="font-size:28px;margin:0;"><?php echo esc_html((string) $audit_summary['approved_items']); ?></p>
-                </div>
-                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;">
-                    <h2 style="margin-top:0;">Frontend-ready pages</h2>
-                    <p style="font-size:28px;margin:0;"><?php echo esc_html((string) $audit_summary['frontend_ready_items']); ?></p>
-                </div>
-            </div>
-
-            <div style="display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:16px;max-width:1120px;margin-top:24px;">
-                <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
-                    <h2 style="margin-top:0;">Coverage gaps</h2>
-                    <p style="margin:0 0 8px;">Missing AI title drafts: <strong><?php echo esc_html((string) $audit_summary['missing_title_drafts']); ?></strong></p>
-                    <p style="margin:0 0 8px;">Missing AI description drafts: <strong><?php echo esc_html((string) $audit_summary['missing_description_drafts']); ?></strong></p>
-                    <p style="margin:0 0 8px;">Frontend opt-in pages: <strong><?php echo esc_html((string) $audit_summary['frontend_enabled_items']); ?></strong></p>
-                    <p style="margin:0;">Yoast conflict protection: <strong><?php echo $frontend_conflict ? 'Detected' : 'Not detected'; ?></strong></p>
-                </div>
-                <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
-                    <h2 style="margin-top:0;">AI discovery surfaces</h2>
-                    <p style="margin:0 0 8px;"><a href="<?php echo esc_url($llms_url); ?>" target="_blank" rel="noopener noreferrer">llms.txt</a></p>
-                    <p style="margin:0 0 8px;"><a href="<?php echo esc_url($llms_full_url); ?>" target="_blank" rel="noopener noreferrer">llms-full.txt</a></p>
-                    <p style="margin:0 0 8px;"><a href="<?php echo esc_url($sitemap_url); ?>" target="_blank" rel="noopener noreferrer">Sitemap</a></p>
-                    <p style="margin:0;">Frontend output: <strong><?php echo $frontend_enabled ? 'Enabled' : 'Disabled'; ?></strong><?php if ($frontend_conflict) : ?>, conflict override <strong><?php echo $frontend_override_conflicts ? 'enabled' : 'off'; ?></strong><?php endif; ?></p>
-                </div>
-            </div>
-
-            <div style="background:#fff;border:1px solid #dcdcde;padding:20px;max-width:960px;margin-top:24px;">
-                <h2>Site context sync</h2>
-                <p>Build the internal site index used for AI prompts, overlap checks, discovery prioritization, and whole-site audits.</p>
-                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                    <?php wp_nonce_field('ai_seo_keeper_sync_index'); ?>
-                    <input type="hidden" name="action" value="ai_seo_keeper_sync_index" />
-                    <?php submit_button('Sync site index', 'primary', 'submit', false); ?>
-                </form>
-            </div>
-
-            <div style="background:#fff;border:1px solid #dcdcde;padding:20px;max-width:1120px;margin-top:24px;">
-                <h2>Audit snapshot</h2>
-                <?php if (empty($audit_rows)) : ?>
-                    <p style="margin:0;">No indexed content is available yet. Run a site sync first.</p>
-                <?php else : ?>
-                    <table class="widefat striped ai-seo-sortable" id="ai-seo-audit-table" style="margin-top:12px;">
-                        <thead>
-                            <tr>
-                                <th style="cursor:pointer;" class="ai-seo-sort" data-col="0">Content <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                                <th style="cursor:pointer;" class="ai-seo-sort" data-col="1">Type / Status <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                                <th style="cursor:pointer;" class="ai-seo-sort" data-col="2">Drafts <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                                <th style="cursor:pointer;" class="ai-seo-sort" data-col="3">Approval <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                                <th style="cursor:pointer;" class="ai-seo-sort" data-col="4">Frontend <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($audit_rows as $row) : ?>
-                                <tr>
-                                    <td data-sort-value="<?php echo esc_attr(strtolower($row['title'])); ?>">
-                                        <a href="<?php echo esc_url(admin_url('post.php?post=' . (int) $row['object_id'] . '&action=edit')); ?>"><?php echo esc_html($row['title']); ?></a>
-                                        <div style="margin-top:4px;"><a href="<?php echo esc_url($row['permalink']); ?>" target="_blank" rel="noopener noreferrer">View page</a></div>
-                                    </td>
-                                    <td data-sort-value="<?php echo esc_attr($row['post_type'] . ' ' . $row['status']); ?>"><?php echo esc_html($row['post_type']); ?> / <?php echo esc_html($row['status']); ?></td>
-                                    <td data-sort-value="<?php echo $row['has_title_draft'] ? 'yes' : 'no'; ?>">
-                                        Title: <?php echo $row['has_title_draft'] ? 'Yes' : 'No'; ?><br />
-                                        <p class="description">Global instructions applied to page generation, page chat, and site audit requests.</p>
-                                    </td>
-                                    <td data-sort-value="<?php echo $row['has_approved_suggestion'] ? 'approved' : 'pending'; ?>"><?php echo $row['has_approved_suggestion'] ? 'Approved' : 'Pending'; ?></td>
-                                    <td data-sort-value="<?php echo ($row['frontend_enabled'] ? '1' : '0') . ($row['frontend_ready'] ? '1' : '0'); ?>">
-                                        Page gate: <?php echo $row['frontend_enabled'] ? 'On' : 'Off'; ?><br />
-                                        Ready: <?php echo $row['frontend_ready'] ? 'Yes' : 'No'; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php endif; ?>
-            </div>
-
-            <div style="background:#fff;border:1px solid #dcdcde;padding:20px;max-width:1120px;margin-top:24px;">
-                <h2>Current rollout state</h2>
-                <ul style="list-style:disc;padding-left:20px;">
-                    <li>AI SEO Keeper metadata can render on the frontend only when global settings, conflict rules, and the page-level opt-in all allow it.</li>
-                    <li>AI discovery documents are live independently at <code>llms.txt</code> and <code>llms-full.txt</code> so they do not interfere with Yoast-managed head output.</li>
-                    <li>Structured data and IndexNow refresh signals now ride on the same approval and rollout controls, so the audit page can be used as the operational command center.</li>
-                </ul>
-            </div>
-        </div>
-
-        <script>
-            (function($) {
-                $('.ai-seo-sortable').on('click', '.ai-seo-sort', function() {
-                    var th = $(this);
-                    var table = th.closest('table');
-                    var colIdx = parseInt(th.data('col'), 10);
-                    var tbody = table.find('tbody');
-                    var rows = tbody.find('tr').get();
-                    var asc = th.data('sort-dir') !== 'asc';
-                    th.data('sort-dir', asc ? 'asc' : 'desc');
-
-                    table.find('.ai-seo-sort-icon').removeClass('dashicons-arrow-up dashicons-arrow-down').addClass('dashicons-sort');
-                    th.find('.ai-seo-sort-icon').removeClass('dashicons-sort').addClass(asc ? 'dashicons-arrow-up' : 'dashicons-arrow-down');
-
-                    rows.sort(function(a, b) {
-                        var aVal = $(a).find('td').eq(colIdx).attr('data-sort-value') || $(a).find('td').eq(colIdx).text().trim().toLowerCase();
-                        var bVal = $(b).find('td').eq(colIdx).attr('data-sort-value') || $(b).find('td').eq(colIdx).text().trim().toLowerCase();
-                        if (aVal < bVal) return asc ? -1 : 1;
-                        if (aVal > bVal) return asc ? 1 : -1;
-                        return 0;
-                    });
-
-                    $.each(rows, function(i, row) {
-                        tbody.append(row);
-                    });
-                });
-            })(jQuery);
-        </script>
-    <?php
+        require __DIR__ . '/admin/view-dashboard.php';
     }
 
     /**
@@ -1601,13 +1515,12 @@ JS;
         }
 
         $post_type_filter = isset($_GET['pt']) ? sanitize_key($_GET['pt']) : 'page';
-        $paged = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
-        $per_page = 30;
+        $paged            = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
+        $per_page         = 30;
 
         $post_types = get_post_types(array('public' => true), 'objects');
         unset($post_types['attachment']);
 
-        // Validate the selected post type exists.
         if (! isset($post_types[$post_type_filter])) {
             $post_type_filter = 'page';
         }
@@ -1621,147 +1534,17 @@ JS;
             'order'          => 'ASC',
         ));
 
-        $total_pages = $query->max_num_pages;
-        $nonce = wp_create_nonce('ai_seo_keeper_nonce');
-    ?>
-        <div class="wrap">
-            <h1>Bulk SEO Editor</h1>
-            <p class="description">Edit SEO titles and meta descriptions across all your content. Changes are saved via AJAX — no page reload needed.</p>
+        $total_pages    = $query->max_num_pages;
+        $nonce          = wp_create_nonce('ai_seo_keeper_nonce');
+        $meta_title_key = self::META_TITLE_KEY;
+        $meta_desc_key  = self::META_DESCRIPTION_KEY;
 
-            <form method="get" style="margin:16px 0;">
-                <input type="hidden" name="page" value="ai-seo-keeper-bulk-editor" />
-                <label for="ai-seo-bulk-pt"><strong>Post type:</strong></label>
-                <select name="pt" id="ai-seo-bulk-pt" onchange="this.form.submit()">
-                    <?php foreach ($post_types as $pt) : ?>
-                        <option value="<?php echo esc_attr($pt->name); ?>" <?php selected($post_type_filter, $pt->name); ?>><?php echo esc_html($pt->labels->name); ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </form>
+        // Pass nonce to external JS via wp_localize_script.
+        wp_localize_script('ai-seo-keeper-page-bulk-editor', 'aiSeoBulkEditor', array(
+            'nonce' => $nonce,
+        ));
 
-            <?php if ($query->have_posts()) : ?>
-                <table class="widefat striped ai-seo-sortable" id="ai-seo-bulk-table">
-                    <thead>
-                        <tr>
-                            <th style="width:30%;cursor:pointer;" class="ai-seo-sort" data-col="0">Title <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                            <th style="width:35%;cursor:pointer;" class="ai-seo-sort" data-col="1">SEO Title <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                            <th style="width:30%;cursor:pointer;" class="ai-seo-sort" data-col="2">Meta Description <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                            <th style="width:5%;"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php while ($query->have_posts()) : $query->the_post();
-                            $post_id = get_the_ID();
-                            $seo_title_val = get_post_meta($post_id, self::META_TITLE_KEY, true);
-                            $seo_desc_val = get_post_meta($post_id, self::META_DESCRIPTION_KEY, true);
-                        ?>
-                            <tr data-post-id="<?php echo (int) $post_id; ?>">
-                                <td data-sort-value="<?php echo esc_attr(strtolower(get_the_title())); ?>">
-                                    <strong><a href="<?php echo esc_url(get_edit_post_link($post_id)); ?>"><?php the_title(); ?></a></strong>
-                                    <div class="row-actions"><span><a href="<?php echo esc_url(get_permalink($post_id)); ?>" target="_blank">View</a></span></div>
-                                </td>
-                                <td data-sort-value="<?php echo esc_attr(strtolower($seo_title_val)); ?>">
-                                    <input type="text" class="large-text ai-seo-bulk-title" value="<?php echo esc_attr($seo_title_val); ?>" data-original="<?php echo esc_attr($seo_title_val); ?>" />
-                                </td>
-                                <td data-sort-value="<?php echo esc_attr(strtolower($seo_desc_val)); ?>">
-                                    <textarea class="large-text ai-seo-bulk-desc" rows="2" data-original="<?php echo esc_attr($seo_desc_val); ?>"><?php echo esc_textarea($seo_desc_val); ?></textarea>
-                                </td>
-                                <td>
-                                    <button type="button" class="button button-small ai-seo-bulk-save" disabled>Save</button>
-                                </td>
-                            </tr>
-                        <?php endwhile;
-                        wp_reset_postdata(); ?>
-                    </tbody>
-                </table>
-
-                <?php if ($total_pages > 1) : ?>
-                    <div class="tablenav bottom" style="margin-top:12px;">
-                        <div class="tablenav-pages">
-                            <?php
-                            echo paginate_links(array(
-                                'base'    => add_query_arg('paged', '%#%'),
-                                'format'  => '',
-                                'current' => $paged,
-                                'total'   => $total_pages,
-                                'type'    => 'plain',
-                            ));
-                            ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
-            <?php else : ?>
-                <p>No posts found for this post type.</p>
-            <?php endif; ?>
-        </div>
-
-        <script>
-            (function($) {
-                var nonce = '<?php echo esc_js($nonce); ?>';
-
-                // Sortable headers.
-                $('.ai-seo-sortable').on('click', '.ai-seo-sort', function() {
-                    var th = $(this);
-                    var table = th.closest('table');
-                    var colIdx = parseInt(th.data('col'), 10);
-                    var tbody = table.find('tbody');
-                    var rows = tbody.find('tr').get();
-                    var asc = th.data('sort-dir') !== 'asc';
-                    th.data('sort-dir', asc ? 'asc' : 'desc');
-
-                    table.find('.ai-seo-sort-icon').removeClass('dashicons-arrow-up dashicons-arrow-down').addClass('dashicons-sort');
-                    th.find('.ai-seo-sort-icon').removeClass('dashicons-sort').addClass(asc ? 'dashicons-arrow-up' : 'dashicons-arrow-down');
-
-                    rows.sort(function(a, b) {
-                        var aVal = $(a).find('td').eq(colIdx).attr('data-sort-value') || $(a).find('td').eq(colIdx).text().trim().toLowerCase();
-                        var bVal = $(b).find('td').eq(colIdx).attr('data-sort-value') || $(b).find('td').eq(colIdx).text().trim().toLowerCase();
-                        if (aVal < bVal) return asc ? -1 : 1;
-                        if (aVal > bVal) return asc ? 1 : -1;
-                        return 0;
-                    });
-
-                    $.each(rows, function(i, row) {
-                        tbody.append(row);
-                    });
-                });
-
-                // Enable save button when content changes.
-                $('#ai-seo-bulk-table').on('input', '.ai-seo-bulk-title, .ai-seo-bulk-desc', function() {
-                    var row = $(this).closest('tr');
-                    var titleChanged = row.find('.ai-seo-bulk-title').val() !== row.find('.ai-seo-bulk-title').data('original');
-                    var descChanged = row.find('.ai-seo-bulk-desc').val() !== row.find('.ai-seo-bulk-desc').data('original');
-                    row.find('.ai-seo-bulk-save').prop('disabled', !(titleChanged || descChanged));
-                });
-
-                // Save individual row.
-                $('#ai-seo-bulk-table').on('click', '.ai-seo-bulk-save', function() {
-                    var btn = $(this);
-                    var row = btn.closest('tr');
-                    var postId = row.data('post-id');
-                    btn.prop('disabled', true).text('Saving…');
-
-                    $.post(ajaxurl, {
-                        action: 'ai_seo_keeper_bulk_save_seo',
-                        _nonce: nonce,
-                        post_id: postId,
-                        seo_title: row.find('.ai-seo-bulk-title').val(),
-                        seo_description: row.find('.ai-seo-bulk-desc').val()
-                    }, function(resp) {
-                        if (resp.success) {
-                            btn.text('Saved ✓');
-                            row.find('.ai-seo-bulk-title').data('original', row.find('.ai-seo-bulk-title').val());
-                            row.find('.ai-seo-bulk-desc').data('original', row.find('.ai-seo-bulk-desc').val());
-                            setTimeout(function() {
-                                btn.text('Save');
-                            }, 1500);
-                        } else {
-                            btn.text('Error').prop('disabled', false);
-                            alert(resp.data || 'Error saving.');
-                        }
-                    });
-                });
-            })(jQuery);
-        </script>
-    <?php
+        require __DIR__ . '/admin/view-bulk-editor.php';
     }
 
     /**
@@ -1798,13 +1581,12 @@ JS;
             return;
         }
 
-        $paged = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
+        $paged    = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
         $per_page = 40;
-        $filter = isset($_GET['filter']) ? sanitize_key($_GET['filter']) : 'all';
+        $filter   = isset($_GET['filter']) ? sanitize_key($_GET['filter']) : 'all';
 
         global $wpdb;
 
-        // Only count images attached to published content OR used as featured image on published posts.
         $published_image_ids_sql = "
             SELECT DISTINCT a.ID FROM {$wpdb->posts} a
             INNER JOIN {$wpdb->posts} parent ON a.post_parent = parent.ID AND parent.post_status = 'publish'
@@ -1816,7 +1598,6 @@ JS;
             WHERE pm.meta_key = '_thumbnail_id'
         ";
 
-        // Get all published image IDs.
         $published_image_ids = $wpdb->get_col($published_image_ids_sql); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
         $published_image_ids = array_map('intval', $published_image_ids);
 
@@ -1824,11 +1605,8 @@ JS;
             $published_image_ids = array(0);
         }
 
-        // Build a lookup: attachment_id => array of posts using it.
-        // Sources: post_parent, featured image (_thumbnail_id), content embeds (wp-image-{id} class).
         $used_on_map = array();
 
-        // 1) Featured image reverse lookup.
         $featured_lookup = $wpdb->get_results(
             "SELECT pm.meta_value AS att_id, p.ID AS post_id, p.post_title
             FROM {$wpdb->postmeta} pm
@@ -1841,11 +1619,7 @@ JS;
             $used_on_map[$aid][(int) $fl['post_id']] = $fl['post_title'];
         }
 
-        // 2) Content embeds: scan post_content for wp-image-{id} CSS class (WordPress default).
-        // Also scan for ?attachment_id={id} and wp-att-{id} patterns.
         if (! empty($published_image_ids) && ! (1 === count($published_image_ids) && 0 === $published_image_ids[0])) {
-            // Build a REGEXP pattern: wp-image-(id1|id2|...) — only practical for reasonable counts.
-            $id_group = implode('|', $published_image_ids);
             $content_matches = $wpdb->get_results(
                 "SELECT p.ID AS post_id, p.post_title, p.post_content
                 FROM {$wpdb->posts} p
@@ -1855,7 +1629,6 @@ JS;
                 ARRAY_A
             );
             foreach ($content_matches as $cm) {
-                // Find all wp-image-NNN and wp-att-NNN references.
                 if (preg_match_all('/wp-(?:image|att)-(\d+)/', $cm['post_content'], $m)) {
                     foreach ($m[1] as $found_id) {
                         $found_id = (int) $found_id;
@@ -1867,7 +1640,6 @@ JS;
             }
         }
 
-        // Query only published images.
         $args = array(
             'post_type'      => 'attachment',
             'post_mime_type' => 'image',
@@ -1879,38 +1651,26 @@ JS;
             'post__in'       => $published_image_ids,
         );
 
-        // Filter: missing alt only.
         if ('missing_alt' === $filter) {
             $args['meta_query'] = array(
                 'relation' => 'OR',
-                array(
-                    'key'     => '_wp_attachment_image_alt',
-                    'compare' => 'NOT EXISTS',
-                ),
-                array(
-                    'key'   => '_wp_attachment_image_alt',
-                    'value' => '',
-                ),
+                array('key' => '_wp_attachment_image_alt', 'compare' => 'NOT EXISTS'),
+                array('key' => '_wp_attachment_image_alt', 'value' => ''),
             );
         } elseif ('with_alt' === $filter) {
             $args['meta_query'] = array(
-                array(
-                    'key'     => '_wp_attachment_image_alt',
-                    'value'   => '',
-                    'compare' => '!=',
-                ),
+                array('key' => '_wp_attachment_image_alt', 'value' => '', 'compare' => '!='),
             );
         }
 
-        $query = new \WP_Query($args);
+        $query       = new \WP_Query($args);
         $total_pages = $query->max_num_pages;
 
-        // Get totals for stats (published images only).
         $total_images = count($published_image_ids);
         if (1 === $total_images && 0 === $published_image_ids[0]) {
             $total_images = 0;
         }
-        $id_list = implode(',', $published_image_ids);
+        $id_list        = implode(',', $published_image_ids);
         $total_with_alt = (int) $wpdb->get_var(
             "SELECT COUNT(DISTINCT p.ID) FROM {$wpdb->posts} p
             INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_wp_attachment_image_alt' AND pm.meta_value != ''
@@ -1919,190 +1679,12 @@ JS;
         $total_missing_alt = $total_images - $total_with_alt;
 
         $nonce = wp_create_nonce('ai_seo_keeper_nonce');
-    ?>
-        <div class="wrap">
-            <h1>Image SEO</h1>
-            <p class="description">Manage alt text across your published images. Only images attached to or used as featured image on published content are shown.</p>
 
-            <div style="display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:16px;max-width:700px;margin:20px 0;">
-                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
-                    <p style="font-size:28px;margin:0;font-weight:600;"><?php echo $total_images; ?></p>
-                    <p style="margin:4px 0 0;color:#50575e;">Total images</p>
-                </div>
-                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
-                    <p style="font-size:28px;margin:0;font-weight:600;color:#00a32a;"><?php echo $total_with_alt; ?></p>
-                    <p style="margin:4px 0 0;color:#50575e;">With alt text</p>
-                </div>
-                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
-                    <p style="font-size:28px;margin:0;font-weight:600;color:<?php echo $total_missing_alt > 0 ? '#d63638' : '#00a32a'; ?>;"><?php echo $total_missing_alt; ?></p>
-                    <p style="margin:4px 0 0;color:#50575e;">Missing alt text</p>
-                </div>
-            </div>
+        wp_localize_script('ai-seo-keeper-page-images', 'aiSeoImages', array(
+            'nonce' => $nonce,
+        ));
 
-            <div style="margin:16px 0;">
-                <a href="<?php echo esc_url(add_query_arg('filter', 'all', remove_query_arg('paged'))); ?>" class="button <?php echo 'all' === $filter ? 'button-primary' : ''; ?>">All images (<?php echo $total_images; ?>)</a>
-                <a href="<?php echo esc_url(add_query_arg('filter', 'missing_alt', remove_query_arg('paged'))); ?>" class="button <?php echo 'missing_alt' === $filter ? 'button-primary' : ''; ?>">Missing alt (<?php echo $total_missing_alt; ?>)</a>
-                <a href="<?php echo esc_url(add_query_arg('filter', 'with_alt', remove_query_arg('paged'))); ?>" class="button <?php echo 'with_alt' === $filter ? 'button-primary' : ''; ?>">With alt (<?php echo $total_with_alt; ?>)</a>
-            </div>
-
-            <?php if ($query->have_posts()) : ?>
-                <table class="widefat striped ai-seo-sortable" id="ai-seo-image-table">
-                    <thead>
-                        <tr>
-                            <th style="width:80px;">Image</th>
-                            <th style="width:25%;cursor:pointer;" class="ai-seo-sort" data-col="1">File <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                            <th style="width:40%;cursor:pointer;" class="ai-seo-sort" data-col="2">Alt text <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                            <th style="width:20%;cursor:pointer;" class="ai-seo-sort" data-col="3">Used on <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                            <th style="width:5%;"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php while ($query->have_posts()) : $query->the_post();
-                            $att_id = get_the_ID();
-                            $thumb = wp_get_attachment_image_url($att_id, 'thumbnail');
-                            $filename = basename(get_attached_file($att_id));
-                            $alt = get_post_meta($att_id, '_wp_attachment_image_alt', true);
-                            $parent_id = wp_get_post_parent_id($att_id);
-                            // Determine "Used on": collect all pages using this image.
-                            $used_on_pages = array();
-                            if ($parent_id && 'publish' === get_post_status($parent_id)) {
-                                $used_on_pages[$parent_id] = get_the_title($parent_id);
-                            }
-                            if (isset($used_on_map[$att_id])) {
-                                foreach ($used_on_map[$att_id] as $pid => $ptitle) {
-                                    $used_on_pages[$pid] = $ptitle;
-                                }
-                            }
-                            $used_on_count = count($used_on_pages);
-                            $used_on_first_title = $used_on_count > 0 ? reset($used_on_pages) : '';
-                        ?>
-                            <tr data-att-id="<?php echo (int) $att_id; ?>">
-                                <td>
-                                    <?php if ($thumb) : ?>
-                                        <img src="<?php echo esc_url($thumb); ?>" alt="" style="width:60px;height:60px;object-fit:cover;border-radius:4px;" />
-                                    <?php endif; ?>
-                                </td>
-                                <td data-sort-value="<?php echo esc_attr(strtolower($filename)); ?>">
-                                    <strong><?php echo esc_html($filename); ?></strong>
-                                    <div style="margin-top:2px;"><a href="<?php echo esc_url(admin_url('upload.php?item=' . $att_id)); ?>" style="font-size:12px;color:#50575e;">Edit in Media</a></div>
-                                </td>
-                                <td data-sort-value="<?php echo esc_attr(strtolower($alt)); ?>">
-                                    <input type="text" class="large-text ai-seo-img-alt" value="<?php echo esc_attr($alt); ?>" data-original="<?php echo esc_attr($alt); ?>" placeholder="Enter alt text…" />
-                                </td>
-                                <td data-sort-value="<?php echo esc_attr(strtolower($used_on_first_title)); ?>">
-                                    <?php if ($used_on_count > 0) : ?>
-                                        <?php $first_pid = array_key_first($used_on_pages); ?>
-                                        <a href="<?php echo esc_url(admin_url('post.php?post=' . $first_pid . '&action=edit')); ?>" style="font-size:12px;"><?php echo esc_html($used_on_pages[$first_pid]); ?></a>
-                                        <?php if ($used_on_count > 1) : ?>
-                                            <span class="ai-seo-used-toggle" style="display:inline-block;margin-left:4px;background:#2271b1;color:#fff;border-radius:10px;padding:0 7px;font-size:11px;cursor:pointer;vertical-align:middle;" title="Used on <?php echo $used_on_count; ?> pages">+<?php echo $used_on_count - 1; ?></span>
-                                            <div class="ai-seo-used-list" style="display:none;margin-top:6px;">
-                                                <?php $i = 0;
-                                                foreach ($used_on_pages as $pid => $ptitle) : $i++;
-                                                    if (1 === $i) continue; ?>
-                                                    <div style="margin-bottom:3px;"><a href="<?php echo esc_url(admin_url('post.php?post=' . $pid . '&action=edit')); ?>" style="font-size:12px;"><?php echo esc_html($ptitle); ?></a></div>
-                                                <?php endforeach; ?>
-                                            </div>
-                                        <?php endif; ?>
-                                    <?php else : ?>
-                                        <span style="color:#50575e;font-size:12px;">Unattached</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <button type="button" class="button button-small ai-seo-img-save" disabled>Save</button>
-                                </td>
-                            </tr>
-                        <?php endwhile;
-                        wp_reset_postdata(); ?>
-                    </tbody>
-                </table>
-
-                <?php if ($total_pages > 1) : ?>
-                    <div class="tablenav bottom" style="margin-top:12px;">
-                        <div class="tablenav-pages">
-                            <?php
-                            echo paginate_links(array(
-                                'base'    => add_query_arg('paged', '%#%'),
-                                'format'  => '',
-                                'current' => $paged,
-                                'total'   => $total_pages,
-                                'type'    => 'plain',
-                            ));
-                            ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
-            <?php else : ?>
-                <p><?php echo 'missing_alt' === $filter ? 'All images have alt text — great!' : ('with_alt' === $filter ? 'No images have alt text yet.' : 'No published images found.'); ?></p>
-            <?php endif; ?>
-        </div>
-
-        <script>
-            (function($) {
-                var nonce = '<?php echo esc_js($nonce); ?>';
-
-                // Sortable headers.
-                $('.ai-seo-sortable').on('click', '.ai-seo-sort', function() {
-                    var th = $(this);
-                    var table = th.closest('table');
-                    var colIdx = parseInt(th.data('col'), 10);
-                    var tbody = table.find('tbody');
-                    var rows = tbody.find('tr').get();
-                    var asc = th.data('sort-dir') !== 'asc';
-                    th.data('sort-dir', asc ? 'asc' : 'desc');
-
-                    // Reset all sort icons in this table.
-                    table.find('.ai-seo-sort-icon').removeClass('dashicons-arrow-up dashicons-arrow-down').addClass('dashicons-sort');
-                    th.find('.ai-seo-sort-icon').removeClass('dashicons-sort').addClass(asc ? 'dashicons-arrow-up' : 'dashicons-arrow-down');
-
-                    rows.sort(function(a, b) {
-                        var aVal = $(a).find('td').eq(colIdx).attr('data-sort-value') || $(a).find('td').eq(colIdx).text().trim().toLowerCase();
-                        var bVal = $(b).find('td').eq(colIdx).attr('data-sort-value') || $(b).find('td').eq(colIdx).text().trim().toLowerCase();
-                        if (aVal < bVal) return asc ? -1 : 1;
-                        if (aVal > bVal) return asc ? 1 : -1;
-                        return 0;
-                    });
-
-                    $.each(rows, function(i, row) {
-                        tbody.append(row);
-                    });
-                });
-
-                // Toggle "Used on" expanded list.
-                $('#ai-seo-image-table').on('click', '.ai-seo-used-toggle', function() {
-                    $(this).siblings('.ai-seo-used-list').slideToggle(150);
-                });
-
-                $('#ai-seo-image-table').on('input', '.ai-seo-img-alt', function() {
-                    var row = $(this).closest('tr');
-                    var changed = $(this).val() !== $(this).data('original');
-                    row.find('.ai-seo-img-save').prop('disabled', !changed);
-                });
-
-                $('#ai-seo-image-table').on('click', '.ai-seo-img-save', function() {
-                    var btn = $(this);
-                    var row = btn.closest('tr');
-                    btn.prop('disabled', true).text('Saving…');
-
-                    $.post(ajaxurl, {
-                        action: 'ai_seo_keeper_save_image_alt',
-                        _nonce: nonce,
-                        attachment_id: row.data('att-id'),
-                        alt_text: row.find('.ai-seo-img-alt').val()
-                    }, function(resp) {
-                        if (resp.success) {
-                            btn.text('Saved ✓');
-                            row.find('.ai-seo-img-alt').data('original', row.find('.ai-seo-img-alt').val());
-                            setTimeout(function() {
-                                btn.text('Save');
-                            }, 1500);
-                        } else {
-                            btn.text('Error').prop('disabled', false);
-                        }
-                    });
-                });
-            })(jQuery);
-        </script>
-    <?php
+        require __DIR__ . '/admin/view-images.php';
     }
 
     /**
@@ -2138,7 +1720,6 @@ JS;
 
         global $wpdb;
 
-        // Get all focus keyphrases across all published posts.
         $keyphrase_rows = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT pm.post_id, pm.meta_value AS keyphrase, p.post_title, p.post_type
@@ -2153,8 +1734,7 @@ JS;
             ARRAY_A
         );
 
-        // Group by keyphrase (case-insensitive).
-        $keyphrase_map = array();
+        $keyphrase_map        = array();
         $total_with_keyphrase = 0;
         foreach ($keyphrase_rows as $row) {
             $key = strtolower(trim($row['keyphrase']));
@@ -2165,138 +1745,26 @@ JS;
             if (! isset($keyphrase_map[$key])) {
                 $keyphrase_map[$key] = array(
                     'keyphrase' => $row['keyphrase'],
-                    'pages' => array(),
+                    'pages'     => array(),
                 );
             }
             $keyphrase_map[$key]['pages'][] = array(
-                'id' => (int) $row['post_id'],
-                'title' => $row['post_title'],
+                'id'        => (int) $row['post_id'],
+                'title'     => $row['post_title'],
                 'post_type' => $row['post_type'],
             );
         }
 
-        // Identify cannibalization (same keyphrase on 2+ pages).
         $cannibalized = array_filter($keyphrase_map, static function ($group) {
             return count($group['pages']) > 1;
         });
 
-        // Pages without a keyphrase.
-        $total_published = (int) $wpdb->get_var(
+        $total_published   = (int) $wpdb->get_var(
             "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status = 'publish' AND post_type IN ('post','page') AND post_type != 'attachment'"
         );
         $without_keyphrase = $total_published - $total_with_keyphrase;
-    ?>
-        <div class="wrap">
-            <h1>Keyword Tracking</h1>
-            <p class="description">See which focus keyphrases are used across your site and detect keyword cannibalization (same keyphrase targeting multiple pages).</p>
 
-            <div style="display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:16px;max-width:900px;margin:20px 0;">
-                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
-                    <p style="font-size:28px;margin:0;font-weight:600;"><?php echo count($keyphrase_map); ?></p>
-                    <p style="margin:4px 0 0;color:#50575e;">Unique keyphrases</p>
-                </div>
-                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
-                    <p style="font-size:28px;margin:0;font-weight:600;"><?php echo $total_with_keyphrase; ?></p>
-                    <p style="margin:4px 0 0;color:#50575e;">Pages with keyphrase</p>
-                </div>
-                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
-                    <p style="font-size:28px;margin:0;font-weight:600;color:<?php echo $without_keyphrase > 0 ? '#dba617' : '#00a32a'; ?>;"><?php echo $without_keyphrase; ?></p>
-                    <p style="margin:4px 0 0;color:#50575e;">Without keyphrase</p>
-                </div>
-                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
-                    <p style="font-size:28px;margin:0;font-weight:600;color:<?php echo count($cannibalized) > 0 ? '#d63638' : '#00a32a'; ?>;"><?php echo count($cannibalized); ?></p>
-                    <p style="margin:4px 0 0;color:#50575e;">Cannibalization risks</p>
-                </div>
-            </div>
-
-            <?php if (! empty($cannibalized)) : ?>
-                <div style="background:#fff3cd;border:1px solid #ffc107;padding:16px;max-width:1120px;margin-bottom:20px;">
-                    <h2 style="margin-top:0;color:#856404;">Keyword Cannibalization</h2>
-                    <p style="margin:0 0 12px;color:#856404;">These keyphrases target multiple pages. Consider consolidating content or differentiating the focus keyphrase for each page.</p>
-                    <table class="widefat striped">
-                        <thead>
-                            <tr>
-                                <th>Keyphrase</th>
-                                <th>Pages targeting it</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($cannibalized as $group) : ?>
-                                <tr>
-                                    <td><strong><?php echo esc_html($group['keyphrase']); ?></strong></td>
-                                    <td>
-                                        <?php foreach ($group['pages'] as $p) : ?>
-                                            <div style="margin-bottom:4px;">
-                                                <a href="<?php echo esc_url(admin_url('post.php?post=' . $p['id'] . '&action=edit')); ?>"><?php echo esc_html($p['title']); ?></a>
-                                                <span style="color:#50575e;font-size:12px;">(<?php echo esc_html($p['post_type']); ?>)</span>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endif; ?>
-
-            <?php if (! empty($keyphrase_map)) : ?>
-                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;max-width:1120px;">
-                    <h2 style="margin-top:0;">All Focus Keyphrases</h2>
-                    <table class="widefat striped ai-seo-sortable" id="ai-seo-keywords-table">
-                        <thead>
-                            <tr>
-                                <th style="cursor:pointer;" class="ai-seo-sort" data-col="0">Keyphrase <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                                <th style="cursor:pointer;" class="ai-seo-sort" data-col="1">Page <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                                <th style="cursor:pointer;" class="ai-seo-sort" data-col="2">Type <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($keyphrase_map as $group) : ?>
-                                <?php foreach ($group['pages'] as $p) : ?>
-                                    <tr<?php echo count($group['pages']) > 1 ? ' style="background:#fff3cd;"' : ''; ?>>
-                                        <td data-sort-value="<?php echo esc_attr(strtolower($group['keyphrase'])); ?>"><strong><?php echo esc_html($group['keyphrase']); ?></strong></td>
-                                        <td data-sort-value="<?php echo esc_attr(strtolower($p['title'])); ?>"><a href="<?php echo esc_url(admin_url('post.php?post=' . $p['id'] . '&action=edit')); ?>"><?php echo esc_html($p['title']); ?></a></td>
-                                        <td data-sort-value="<?php echo esc_attr($p['post_type']); ?>"><?php echo esc_html($p['post_type']); ?></td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php else : ?>
-                <p>No focus keyphrases have been set yet. Add keyphrases in the editor's SEO tab.</p>
-            <?php endif; ?>
-        </div>
-
-        <script>
-            (function($) {
-                $('.ai-seo-sortable').on('click', '.ai-seo-sort', function() {
-                    var th = $(this);
-                    var table = th.closest('table');
-                    var colIdx = parseInt(th.data('col'), 10);
-                    var tbody = table.find('tbody');
-                    var rows = tbody.find('tr').get();
-                    var asc = th.data('sort-dir') !== 'asc';
-                    th.data('sort-dir', asc ? 'asc' : 'desc');
-
-                    table.find('.ai-seo-sort-icon').removeClass('dashicons-arrow-up dashicons-arrow-down').addClass('dashicons-sort');
-                    th.find('.ai-seo-sort-icon').removeClass('dashicons-sort').addClass(asc ? 'dashicons-arrow-up' : 'dashicons-arrow-down');
-
-                    rows.sort(function(a, b) {
-                        var aVal = $(a).find('td').eq(colIdx).attr('data-sort-value') || $(a).find('td').eq(colIdx).text().trim().toLowerCase();
-                        var bVal = $(b).find('td').eq(colIdx).attr('data-sort-value') || $(b).find('td').eq(colIdx).text().trim().toLowerCase();
-                        if (aVal < bVal) return asc ? -1 : 1;
-                        if (aVal > bVal) return asc ? 1 : -1;
-                        return 0;
-                    });
-
-                    $.each(rows, function(i, row) {
-                        tbody.append(row);
-                    });
-                });
-            })(jQuery);
-        </script>
-    <?php
+        require __DIR__ . '/admin/view-keywords.php';
     }
 
     /**
@@ -2309,46 +1777,9 @@ JS;
         }
 
         $import_status = isset($_GET['import_status']) ? sanitize_key($_GET['import_status']) : '';
-        $import_msg = isset($_GET['import_msg']) ? sanitize_text_field(wp_unslash($_GET['import_msg'])) : '';
-    ?>
-        <div class="wrap">
-            <h1>Export / Import</h1>
+        $import_msg    = isset($_GET['import_msg']) ? sanitize_text_field(wp_unslash($_GET['import_msg'])) : '';
 
-            <?php if ('' !== $import_msg) : ?>
-                <div class="notice <?php echo 'success' === $import_status ? 'notice-success' : 'notice-error'; ?> is-dismissible">
-                    <p><?php echo esc_html($import_msg); ?></p>
-                </div>
-            <?php endif; ?>
-
-            <div style="display:grid;grid-template-columns:repeat(2,minmax(320px,1fr));gap:24px;max-width:1120px;margin-top:20px;">
-                <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
-                    <h2 style="margin-top:0;">Export</h2>
-                    <p>Download a JSON file with all AI SEO Keeper settings, per-page SEO metadata, redirect rules, and cornerstone flags.</p>
-                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                        <?php wp_nonce_field('ai_seo_keeper_export'); ?>
-                        <input type="hidden" name="action" value="ai_seo_keeper_export" />
-                        <p>
-                            <label><input type="checkbox" name="export_settings" value="1" checked /> Plugin settings</label><br />
-                            <label><input type="checkbox" name="export_seo_meta" value="1" checked /> Per-page SEO metadata (titles, descriptions, keyphrases, overrides)</label><br />
-                            <label><input type="checkbox" name="export_redirects" value="1" checked /> Redirect rules</label>
-                        </p>
-                        <button type="submit" class="button button-primary">Download export</button>
-                    </form>
-                </div>
-
-                <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
-                    <h2 style="margin-top:0;">Import</h2>
-                    <p>Upload a previously exported JSON file to restore settings and SEO metadata. Existing values will be overwritten.</p>
-                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
-                        <?php wp_nonce_field('ai_seo_keeper_import'); ?>
-                        <input type="hidden" name="action" value="ai_seo_keeper_import" />
-                        <p><input type="file" name="import_file" accept=".json" required /></p>
-                        <button type="submit" class="button button-primary">Upload &amp; import</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    <?php
+        require __DIR__ . '/admin/view-export-import.php';
     }
 
     /**
@@ -2533,398 +1964,16 @@ JS;
             return;
         }
 
-        $options = $this->settings->get();
-        $indexnow_enabled = ! empty($options['indexnow_enabled']);
+        $options              = $this->settings->get();
+        $indexnow_enabled     = ! empty($options['indexnow_enabled']);
         $indexnow_auto_submit = ! empty($options['indexnow_auto_submit']);
-        $indexnow_key = isset($options['indexnow_key']) ? (string) $options['indexnow_key'] : '';
-        $indexnow_key_url = $this->indexnow_service ? $this->indexnow_service->get_key_url() : '';
-        $settings_status = isset($_GET['settings_status']) ? sanitize_key((string) wp_unslash($_GET['settings_status'])) : '';
-        $settings_message = isset($_GET['settings_message']) ? sanitize_text_field((string) wp_unslash($_GET['settings_message'])) : '';
-    ?>
-        <div class="wrap">
-            <h1>AI SEO Keeper Settings</h1>
-            <?php if ('' !== $settings_message) : ?>
-                <div class="notice <?php echo 'success' === $settings_status ? 'notice-success' : 'notice-error'; ?> is-dismissible">
-                    <p><?php echo esc_html($settings_message); ?></p>
-                </div>
-            <?php endif; ?>
-            <form method="post" action="options.php" style="max-width:960px;">
-                <?php settings_fields('ai_seo_keeper_settings'); ?>
-                <table class="form-table" role="presentation">
-                    <tr>
-                        <th scope="row"><label for="ai-seo-provider">AI provider</label></th>
-                        <td>
-                            <select id="ai-seo-provider" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[provider]">
-                                <option value="openai" <?php selected($options['provider'], 'openai'); ?>>OpenAI</option>
-                                <option value="google" <?php selected($options['provider'], 'google'); ?>>Google</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="ai-seo-model">Model</label></th>
-                        <td><input id="ai-seo-model" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[model]" value="<?php echo esc_attr($options['model']); ?>" /></td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="ai-seo-api-key">API key</label></th>
-                        <td><input id="ai-seo-api-key" class="regular-text" type="password" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[api_key]" value="<?php echo esc_attr($options['api_key']); ?>" autocomplete="off" /></td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="ai-seo-system-prompt">AI instructions</label></th>
-                        <td>
-                            <textarea id="ai-seo-system-prompt" class="large-text" rows="6" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[system_prompt]"><?php echo esc_textarea($options['system_prompt']); ?></textarea>
-                            <p class="description">Global instructions applied to page generation, page chat, and site audit requests.</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Features</th>
-                        <td>
-                            <fieldset>
-                                <?php foreach (Settings::FEATURE_FLAGS as $feature_key => $feature_label) : ?>
-                                    <label style="display:block;margin-bottom:8px;">
-                                        <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[feature_<?php echo esc_attr($feature_key); ?>]" value="1" <?php checked(! empty($options['feature_' . $feature_key])); ?> />
-                                        <?php echo esc_html($feature_label); ?>
-                                    </label>
-                                <?php endforeach; ?>
-                            </fieldset>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="ai-seo-editor-chat">Editor chat</label></th>
-                        <td>
-                            <label>
-                                <input id="ai-seo-editor-chat" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[editor_chat_enabled]" value="1" <?php checked(! empty($options['editor_chat_enabled'])); ?> />
-                                Enable the page-level AI assistant in the editor.
-                            </label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="ai-seo-frontend-output">Frontend output</label></th>
-                        <td>
-                            <label style="display:block;margin-bottom:8px;">
-                                <input id="ai-seo-frontend-output" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[frontend_output_enabled]" value="1" <?php checked(! empty($options['frontend_output_enabled'])); ?> />
-                                Output approved AI metadata and saved page-level SEO fields on the frontend, including title, description, canonical, social tags, and schema when those features are enabled.
-                            </label>
-                            <label style="display:block;">
-                                <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[frontend_override_conflicts]" value="1" <?php checked(! empty($options['frontend_override_conflicts'])); ?> />
-                                Allow AI SEO Keeper output even when another SEO plugin is active.
-                            </label>
-                            <p class="description">Keep the second option off unless you explicitly want AI SEO Keeper to render alongside or instead of another SEO plugin such as Yoast.</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="ai-seo-search-appearance-auto">Search appearance</label></th>
-                        <td>
-                            <label style="display:block;margin-bottom:8px;">
-                                <input id="ai-seo-search-appearance-auto" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[search_appearance_auto_enabled]" value="1" <?php checked(! empty($options['search_appearance_auto_enabled'])); ?> />
-                                Enable baseline SEO output for public singular content even when a page does not have an approved AI suggestion or page-level override yet.
-                            </label>
-                            <p class="description" style="margin:0 0 12px;">This is the standalone search-appearance mode: AI SEO Keeper will build a title from the templates below, derive a meta description from the excerpt or content, and continue to use canonical, robots, social, and schema output through the same frontend engine.</p>
-                            <p style="margin:0 0 8px;"><strong>Supported title tokens:</strong> <code>%%title%%</code>, <code>%%sitename%%</code>, <code>%%sep%%</code></p>
-                            <p style="margin:0 0 8px;">
-                                <label for="ai-seo-search-separator"><strong>Title separator</strong></label><br />
-                                <input id="ai-seo-search-separator" class="small-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[search_title_separator]" value="<?php echo esc_attr((string) $options['search_title_separator']); ?>" maxlength="3" />
-                            </p>
-                            <p style="margin:0 0 8px;">
-                                <label for="ai-seo-template-post"><strong>Post title template</strong></label><br />
-                                <input id="ai-seo-template-post" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[search_title_template_post]" value="<?php echo esc_attr((string) $options['search_title_template_post']); ?>" />
-                            </p>
-                            <p style="margin:0 0 8px;">
-                                <label for="ai-seo-template-page"><strong>Page title template</strong></label><br />
-                                <input id="ai-seo-template-page" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[search_title_template_page]" value="<?php echo esc_attr((string) $options['search_title_template_page']); ?>" />
-                            </p>
-                            <p style="margin:0;">
-                                <label for="ai-seo-template-default"><strong>Fallback title template</strong></label><br />
-                                <input id="ai-seo-template-default" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[search_title_template_default]" value="<?php echo esc_attr((string) $options['search_title_template_default']); ?>" />
-                            </p>
-                            <hr style="margin:16px 0;" />
-                            <p style="margin:0 0 8px;"><strong>Non-singular title templates</strong></p>
-                            <p class="description" style="margin:0 0 12px;">These templates control the &lt;title&gt; for archive, taxonomy, author, date, and search pages. Additional tokens: <code>%%term_title%%</code>, <code>%%author%%</code>, <code>%%date%%</code>, <code>%%searchphrase%%</code>, <code>%%archive_title%%</code></p>
-                            <p style="margin:0 0 8px;">
-                                <label for="ai-seo-template-category"><strong>Category archives</strong></label><br />
-                                <input id="ai-seo-template-category" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[search_title_template_category]" value="<?php echo esc_attr((string) $options['search_title_template_category']); ?>" />
-                            </p>
-                            <p style="margin:0 0 8px;">
-                                <label for="ai-seo-template-tag"><strong>Tag archives</strong></label><br />
-                                <input id="ai-seo-template-tag" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[search_title_template_tag]" value="<?php echo esc_attr((string) $options['search_title_template_tag']); ?>" />
-                            </p>
-                            <p style="margin:0 0 8px;">
-                                <label for="ai-seo-template-author"><strong>Author archives</strong></label><br />
-                                <input id="ai-seo-template-author" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[search_title_template_author]" value="<?php echo esc_attr((string) $options['search_title_template_author']); ?>" />
-                            </p>
-                            <p style="margin:0 0 8px;">
-                                <label for="ai-seo-template-date"><strong>Date archives</strong></label><br />
-                                <input id="ai-seo-template-date" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[search_title_template_date]" value="<?php echo esc_attr((string) $options['search_title_template_date']); ?>" />
-                            </p>
-                            <p style="margin:0 0 8px;">
-                                <label for="ai-seo-template-search"><strong>Search results</strong></label><br />
-                                <input id="ai-seo-template-search" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[search_title_template_search]" value="<?php echo esc_attr((string) $options['search_title_template_search']); ?>" />
-                            </p>
-                            <p style="margin:0 0 8px;">
-                                <label for="ai-seo-template-archive"><strong>Generic / post type archives</strong></label><br />
-                                <input id="ai-seo-template-archive" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[search_title_template_archive]" value="<?php echo esc_attr((string) $options['search_title_template_archive']); ?>" />
-                            </p>
-                            <p style="margin:0 0 8px;">
-                                <label for="ai-seo-template-404"><strong>404 page</strong></label><br />
-                                <input id="ai-seo-template-404" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[search_title_template_404]" value="<?php echo esc_attr((string) $options['search_title_template_404']); ?>" />
-                            </p>
-                            <hr style="margin:16px 0;" />
-                            <p style="margin:0 0 8px;"><strong>Indexing controls for non-singular pages</strong></p>
-                            <label style="display:block;margin-bottom:6px;">
-                                <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[noindex_categories]" value="1" <?php checked(! empty($options['noindex_categories'])); ?> />
-                                Set categories to <code>noindex</code>
-                            </label>
-                            <label style="display:block;margin-bottom:6px;">
-                                <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[noindex_tags]" value="1" <?php checked(! empty($options['noindex_tags'])); ?> />
-                                Set tags to <code>noindex</code>
-                            </label>
-                            <label style="display:block;margin-bottom:6px;">
-                                <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[noindex_author_archives]" value="1" <?php checked(! empty($options['noindex_author_archives'])); ?> />
-                                Set author archives to <code>noindex</code>
-                            </label>
-                            <label style="display:block;margin-bottom:6px;">
-                                <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[noindex_date_archives]" value="1" <?php checked(! empty($options['noindex_date_archives'])); ?> />
-                                Set date archives to <code>noindex</code>
-                            </label>
-                            <label style="display:block;margin-bottom:6px;">
-                                <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[noindex_search_results]" value="1" <?php checked(! empty($options['noindex_search_results'])); ?> />
-                                Set search results to <code>noindex</code>
-                            </label>
-                            <label style="display:block;margin-bottom:6px;">
-                                <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[noindex_format_archives]" value="1" <?php checked(! empty($options['noindex_format_archives'])); ?> />
-                                Set format/other archives to <code>noindex</code>
-                            </label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">XML Sitemap</th>
-                        <td>
-                            <label style="display:block;margin-bottom:8px;">
-                                <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_enabled]" value="1" <?php checked(! empty($options['sitemap_enabled'])); ?> />
-                                Enable AI SEO Keeper XML Sitemap (replaces WordPress core sitemaps).
-                            </label>
-                            <p class="description" style="margin:0 0 12px;">When enabled, the plugin generates a sitemap index at <code>/sitemap_index.xml</code> with separate sitemaps per content type. WordPress core sitemaps are disabled to prevent duplicates.</p>
-                            <fieldset style="margin-left:16px;">
-                                <label style="display:block;margin-bottom:6px;">
-                                    <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_include_posts]" value="1" <?php checked(! empty($options['sitemap_include_posts'])); ?> />
-                                    Include posts
-                                </label>
-                                <label style="display:block;margin-bottom:6px;">
-                                    <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_include_pages]" value="1" <?php checked(! empty($options['sitemap_include_pages'])); ?> />
-                                    Include pages
-                                </label>
-                                <label style="display:block;margin-bottom:6px;">
-                                    <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_include_categories]" value="1" <?php checked(! empty($options['sitemap_include_categories'])); ?> />
-                                    Include categories
-                                </label>
-                                <label style="display:block;margin-bottom:6px;">
-                                    <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_include_tags]" value="1" <?php checked(! empty($options['sitemap_include_tags'])); ?> />
-                                    Include tags
-                                </label>
-                            </fieldset>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="ai-seo-google-code">Google tracking or verification</label></th>
-                        <td><input id="ai-seo-google-code" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[google_tracking_code]" value="<?php echo esc_attr($options['google_tracking_code']); ?>" /></td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="ai-seo-bing-code">Bing tracking or verification</label></th>
-                        <td><input id="ai-seo-bing-code" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[bing_tracking_code]" value="<?php echo esc_attr($options['bing_tracking_code']); ?>" /></td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Social profiles</th>
-                        <td>
-                            <p class="description" style="margin:0 0 8px;">Used in Organization schema <code>sameAs</code> and for social discovery. Enter full URLs.</p>
-                            <?php
-                            $social_fields = array(
-                                'social_facebook'  => 'Facebook',
-                                'social_twitter'   => 'Twitter / X',
-                                'social_instagram' => 'Instagram',
-                                'social_linkedin'  => 'LinkedIn',
-                                'social_youtube'   => 'YouTube',
-                                'social_pinterest' => 'Pinterest',
-                            );
-                            foreach ($social_fields as $field_key => $label) : ?>
-                                <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                                    <span style="min-width:80px;font-size:13px;"><?php echo esc_html($label); ?></span>
-                                    <input class="regular-text" type="url" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[<?php echo esc_attr($field_key); ?>]" value="<?php echo esc_attr($options[$field_key] ?? ''); ?>" placeholder="https://" />
-                                </label>
-                            <?php endforeach; ?>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="ai-seo-robots-txt">Robots.txt custom rules</label></th>
-                        <td>
-                            <textarea id="ai-seo-robots-txt" class="large-text code" rows="6" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[robots_txt_custom]" placeholder="Disallow: /private-folder/&#10;Allow: /public/"><?php echo esc_textarea($options['robots_txt_custom'] ?? ''); ?></textarea>
-                            <p class="description">Custom rules appended to the WordPress-generated robots.txt. Use standard robots.txt syntax. Preview: <a href="<?php echo esc_url(home_url('/robots.txt')); ?>" target="_blank" rel="noopener noreferrer">robots.txt</a></p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="ai-seo-indexnow-enabled">IndexNow</label></th>
-                        <td>
-                            <label style="display:block;margin-bottom:8px;">
-                                <input id="ai-seo-indexnow-enabled" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[indexnow_enabled]" value="1" <?php checked($indexnow_enabled); ?> />
-                                Enable IndexNow refresh signaling for supported search engines.
-                            </label>
-                            <label style="display:block;margin-bottom:8px;">
-                                <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[indexnow_auto_submit]" value="1" <?php checked($indexnow_auto_submit); ?> />
-                                Auto-submit published supported URLs when content is saved.
-                            </label>
-                            <p style="margin:0 0 8px;"><strong>Key:</strong> <code><?php echo esc_html($indexnow_key); ?></code></p>
-                            <?php if ('' !== $indexnow_key_url) : ?>
-                                <p style="margin:0 0 8px;"><strong>Key URL:</strong> <a href="<?php echo esc_url($indexnow_key_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($indexnow_key_url); ?></a></p>
-                            <?php endif; ?>
-                            <input type="hidden" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[indexnow_key]" value="<?php echo esc_attr($indexnow_key); ?>" />
-                            <p class="description">On localhost, IndexNow submissions are intentionally skipped. On a public site, AI SEO Keeper will serve the verification key file automatically.</p>
-                        </td>
-                    </tr>
-                </table>
+        $indexnow_key         = isset($options['indexnow_key']) ? (string) $options['indexnow_key'] : '';
+        $indexnow_key_url     = $this->indexnow_service ? $this->indexnow_service->get_key_url() : '';
+        $settings_status      = isset($_GET['settings_status']) ? sanitize_key((string) wp_unslash($_GET['settings_status'])) : '';
+        $settings_message     = isset($_GET['settings_message']) ? sanitize_text_field((string) wp_unslash($_GET['settings_message'])) : '';
+        $yoast_import_action  = self::YOAST_IMPORT_ACTION;
 
-                <h2 class="title" style="margin-top:32px;">Local SEO / Business Schema</h2>
-                <p class="description">Configure your business details to output LocalBusiness structured data. Use the <code>[ai_seo_map]</code> shortcode to embed a Google Map.</p>
-                <table class="form-table">
-                    <tr>
-                        <th scope="row">Enable Local SEO</th>
-                        <td>
-                            <label><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_seo_enabled]" value="1" <?php checked(! empty($options['local_seo_enabled'])); ?> /> Output LocalBusiness schema on the front page</label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="ai-seo-local-type">Business type</label></th>
-                        <td>
-                            <?php
-                            $business_types = array('LocalBusiness', 'Store', 'Restaurant', 'HealthAndBeautyBusiness', 'LegalService', 'FinancialService', 'EducationalOrganization', 'LodgingBusiness', 'SportsActivityLocation', 'EntertainmentBusiness', 'HomeAndConstructionBusiness', 'AutomotiveBusiness', 'MedicalBusiness', 'ProfessionalService', 'RealEstateAgent');
-                            ?>
-                            <select id="ai-seo-local-type" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_business_type]">
-                                <?php foreach ($business_types as $bt) : ?>
-                                    <option value="<?php echo esc_attr($bt); ?>" <?php selected($options['local_business_type'] ?? 'LocalBusiness', $bt); ?>><?php echo esc_html($bt); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="ai-seo-local-name">Business name</label></th>
-                        <td><input id="ai-seo-local-name" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_business_name]" value="<?php echo esc_attr($options['local_business_name'] ?? ''); ?>" placeholder="<?php echo esc_attr(get_bloginfo('name')); ?>" /></td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Address</th>
-                        <td>
-                            <label style="display:block;margin-bottom:6px;">Street <input class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_street]" value="<?php echo esc_attr($options['local_street'] ?? ''); ?>" /></label>
-                            <label style="display:inline-block;margin-right:12px;">City <input class="regular-text" style="width:180px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_city]" value="<?php echo esc_attr($options['local_city'] ?? ''); ?>" /></label>
-                            <label style="display:inline-block;margin-right:12px;">State <input class="regular-text" style="width:120px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_state]" value="<?php echo esc_attr($options['local_state'] ?? ''); ?>" /></label>
-                            <label style="display:inline-block;margin-right:12px;">Zip <input class="regular-text" style="width:100px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_zip]" value="<?php echo esc_attr($options['local_zip'] ?? ''); ?>" /></label>
-                            <label style="display:inline-block;">Country <input class="regular-text" style="width:120px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_country]" value="<?php echo esc_attr($options['local_country'] ?? ''); ?>" /></label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Contact</th>
-                        <td>
-                            <label style="display:inline-block;margin-right:16px;">Phone <input class="regular-text" style="width:180px;" type="tel" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_phone]" value="<?php echo esc_attr($options['local_phone'] ?? ''); ?>" placeholder="+1-555-000-0000" /></label>
-                            <label style="display:inline-block;">Email <input class="regular-text" style="width:240px;" type="email" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_email]" value="<?php echo esc_attr($options['local_email'] ?? ''); ?>" /></label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Geo coordinates</th>
-                        <td>
-                            <label style="display:inline-block;margin-right:16px;">Latitude <input class="regular-text" style="width:150px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_lat]" value="<?php echo esc_attr($options['local_lat'] ?? ''); ?>" placeholder="44.4268" /></label>
-                            <label style="display:inline-block;">Longitude <input class="regular-text" style="width:150px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_lng]" value="<?php echo esc_attr($options['local_lng'] ?? ''); ?>" placeholder="26.1025" /></label>
-                            <p class="description">Used in schema and the <code>[ai_seo_map]</code> shortcode.</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Opening hours</th>
-                        <td>
-                            <p class="description" style="margin:0 0 8px;">Format: <code>09:00-17:00</code> — leave blank for closed days. Use <code>00:00-23:59</code> for 24h.</p>
-                            <?php
-                            $days = array('mon' => 'Monday', 'tue' => 'Tuesday', 'wed' => 'Wednesday', 'thu' => 'Thursday', 'fri' => 'Friday', 'sat' => 'Saturday', 'sun' => 'Sunday');
-                            foreach ($days as $dk => $dl) : ?>
-                                <label style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-                                    <span style="min-width:80px;font-size:13px;"><?php echo esc_html($dl); ?></span>
-                                    <input class="regular-text" style="width:140px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_hours_<?php echo $dk; ?>]" value="<?php echo esc_attr($options['local_hours_' . $dk] ?? ''); ?>" placeholder="09:00-17:00" />
-                                </label>
-                            <?php endforeach; ?>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="ai-seo-local-price">Price range</label></th>
-                        <td><input id="ai-seo-local-price" class="regular-text" style="width:100px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_price_range]" value="<?php echo esc_attr($options['local_price_range'] ?? ''); ?>" placeholder="$$" />
-                            <p class="description">Use $ signs (e.g. $, $$, $$$) to indicate price level.</p>
-                        </td>
-                    </tr>
-                </table>
-
-                <h2 class="title" style="margin-top:32px;">RSS Feed Optimization</h2>
-                <p class="description">Control how your content appears in RSS feeds. Add branding, prevent scraping, and include featured images.</p>
-                <table class="form-table">
-                    <tr>
-                        <th scope="row"><label for="ai-seo-rss-before">Content before feed items</label></th>
-                        <td>
-                            <textarea id="ai-seo-rss-before" class="large-text" rows="3" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[rss_before_content]" placeholder="Originally published on %%sitename%%"><?php echo esc_textarea($options['rss_before_content'] ?? ''); ?></textarea>
-                            <p class="description">HTML allowed. Use <code>%%sitename%%</code> and <code>%%post_link%%</code> as placeholders.</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="ai-seo-rss-after">Content after feed items</label></th>
-                        <td>
-                            <textarea id="ai-seo-rss-after" class="large-text" rows="3" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[rss_after_content]" placeholder='The post %%post_link%% appeared first on %%sitename%%.'><?php echo esc_textarea($options['rss_after_content'] ?? ''); ?></textarea>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Featured image in feed</th>
-                        <td><label><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[rss_featured_image]" value="1" <?php checked(! empty($options['rss_featured_image'])); ?> /> Prepend featured image to each feed item</label></td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="ai-seo-rss-delay">Publication delay (minutes)</label></th>
-                        <td>
-                            <input id="ai-seo-rss-delay" type="number" min="0" max="1440" style="width:80px;" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[rss_publication_delay]" value="<?php echo (int) ($options['rss_publication_delay'] ?? 0); ?>" />
-                            <p class="description">Delay feed updates to prevent content scrapers from publishing before you. 0 = no delay.</p>
-                        </td>
-                    </tr>
-                </table>
-
-                <h2 class="title" style="margin-top:32px;">Crawl Budget Optimization</h2>
-                <p class="description">Remove unnecessary pages from search engine crawl to focus crawl budget on your most important content.</p>
-                <table class="form-table">
-                    <tr>
-                        <th scope="row">Disable archive pages</th>
-                        <td>
-                            <fieldset>
-                                <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_author_archives]" value="1" <?php checked(! empty($options['crawl_disable_author_archives'])); ?> /> Disable author archives (redirect to homepage)</label>
-                                <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_date_archives]" value="1" <?php checked(! empty($options['crawl_disable_date_archives'])); ?> /> Disable date archives (redirect to homepage)</label>
-                                <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_format_archives]" value="1" <?php checked(! empty($options['crawl_disable_format_archives'])); ?> /> Disable post format archives</label>
-                                <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_attachment_pages]" value="1" <?php checked(! empty($options['crawl_disable_attachment_pages'])); ?> /> Disable attachment pages (redirect to parent or file)</label>
-                                <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_search_indexing]" value="1" <?php checked(! empty($options['crawl_disable_search_indexing'])); ?> /> Block search results pages from indexing</label>
-                            </fieldset>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Clean up &lt;head&gt;</th>
-                        <td>
-                            <fieldset>
-                                <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_remove_wp_version]" value="1" <?php checked(! empty($options['crawl_remove_wp_version'])); ?> /> Remove WordPress version meta tag</label>
-                                <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_remove_shortlink]" value="1" <?php checked(! empty($options['crawl_remove_shortlink'])); ?> /> Remove shortlink tag</label>
-                                <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_remove_rsd_link]" value="1" <?php checked(! empty($options['crawl_remove_rsd_link'])); ?> /> Remove RSD (Really Simple Discovery) link</label>
-                                <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_remove_feed_links]" value="1" <?php checked(! empty($options['crawl_remove_feed_links'])); ?> /> Remove RSS feed links from &lt;head&gt;</label>
-                            </fieldset>
-                        </td>
-                    </tr>
-                </table>
-
-                <?php submit_button('Save settings'); ?>
-            </form>
-
-            <div style="background:#fff;border:1px solid #dcdcde;padding:20px;max-width:960px;margin-top:24px;">
-                <h2>Yoast migration</h2>
-                <p style="margin:0 0 12px;">Copy existing Yoast per-page metadata into AI SEO Keeper without overwriting fields already filled here. Imported pages with usable SEO data are also opted into the page-level frontend gate so they can replace Yoast more easily once global frontend output is enabled and conflicts are clear.</p>
-                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                    <?php wp_nonce_field('ai_seo_keeper_import_yoast_metadata'); ?>
-                    <input type="hidden" name="action" value="<?php echo esc_attr(self::YOAST_IMPORT_ACTION); ?>" />
-                    <button type="submit" class="button button-secondary">Import Yoast metadata</button>
-                </form>
-                <p class="description" style="margin:12px 0 0;">Imports focus keyphrase, SEO title, meta description, unified social title and description, social image, canonical URL, and supported noindex or nofollow combinations. Existing AI SEO Keeper values are preserved.</p>
-            </div>
-        </div>
-    <?php
+        require __DIR__ . '/admin/view-settings.php';
     }
 
     public function render_audit_page(): void
@@ -2933,356 +1982,25 @@ JS;
             return;
         }
 
-        $report = $this->audit_engine->get_report(12);
-        $summary = $report['summary'];
-        $readiness = $report['readiness'];
-        $options = $this->settings->get();
-        $has_api_key = ! empty($options['api_key']);
-        $site_audits = $this->history_store->get_recent_site_audits(3);
-        $audit_status = isset($_GET['audit_status']) ? sanitize_key((string) wp_unslash($_GET['audit_status'])) : '';
+        $report        = $this->audit_engine->get_report(12);
+        $summary       = $report['summary'];
+        $readiness     = $report['readiness'];
+        $options       = $this->settings->get();
+        $has_api_key   = ! empty($options['api_key']);
+        $site_audits   = $this->history_store->get_recent_site_audits(3);
+        $audit_status  = isset($_GET['audit_status']) ? sanitize_key((string) wp_unslash($_GET['audit_status'])) : '';
         $audit_message = isset($_GET['audit_message']) ? sanitize_text_field((string) wp_unslash($_GET['audit_message'])) : '';
-        $indexnow_enabled = ! empty($options['indexnow_enabled']);
+        $indexnow_enabled     = ! empty($options['indexnow_enabled']);
         $indexnow_auto_submit = ! empty($options['indexnow_auto_submit']);
-        $indexnow_key_url = $this->indexnow_service ? $this->indexnow_service->get_key_url() : '';
-        $indexnow_log = $this->indexnow_service ? $this->indexnow_service->get_log(5) : array();
-    ?>
-        <div class="wrap">
-            <h1>AI SEO Keeper Audit</h1>
-            <p>Deterministic audit layer for content coverage, approval rollout, duplicate signals, and thin content. This page is the stable operational baseline before AI adds strategic prioritization.</p>
+        $indexnow_key_url     = $this->indexnow_service ? $this->indexnow_service->get_key_url() : '';
+        $indexnow_log         = $this->indexnow_service ? $this->indexnow_service->get_log(5) : array();
 
-            <?php if ('' !== $audit_message) : ?>
-                <div class="notice <?php echo 'success' === $audit_status ? 'notice-success' : 'notice-error'; ?> is-dismissible">
-                    <p><?php echo esc_html($audit_message); ?></p>
-                </div>
-            <?php endif; ?>
+        $admin                      = $this;
+        $generate_site_audit_action = self::GENERATE_SITE_AUDIT_ACTION;
+        $submit_indexnow_action     = self::SUBMIT_INDEXNOW_ACTION;
+        $bulk_frontend_action       = self::BULK_FRONTEND_ACTION;
 
-            <div style="display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:16px;max-width:1120px;margin-top:24px;">
-                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;">
-                    <h2 style="margin-top:0;">Readiness</h2>
-                    <p style="font-size:28px;margin:0;"><?php echo esc_html((string) $readiness['score']); ?>/100</p>
-                    <p style="margin:8px 0 0;"><?php echo esc_html($readiness['label']); ?></p>
-                </div>
-                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;">
-                    <h2 style="margin-top:0;">Draft Coverage</h2>
-                    <p style="font-size:28px;margin:0;"><?php echo esc_html((string) $readiness['draft_coverage']); ?>%</p>
-                    <p style="margin:8px 0 0;">Published items with AI title and description drafts.</p>
-                </div>
-                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;">
-                    <h2 style="margin-top:0;">Approval Coverage</h2>
-                    <p style="font-size:28px;margin:0;"><?php echo esc_html((string) $readiness['approval_coverage']); ?>%</p>
-                    <p style="margin:8px 0 0;"><?php echo esc_html((string) $summary['approved_items']); ?> approved suggestions across <?php echo esc_html((string) $summary['published_items']); ?> published items.</p>
-                </div>
-                <div style="background:#fff;border:1px solid #dcdcde;padding:16px;">
-                    <h2 style="margin-top:0;">Frontend Coverage</h2>
-                    <p style="font-size:28px;margin:0;"><?php echo esc_html((string) $readiness['frontend_coverage']); ?>%</p>
-                    <p style="margin:8px 0 0;"><?php echo esc_html((string) $summary['frontend_ready_items']); ?> pages are ready to render AI SEO Keeper metadata.</p>
-                </div>
-            </div>
-
-            <div style="display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:16px;max-width:1120px;margin-top:24px;">
-                <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
-                    <h2 style="margin-top:0;">Coverage Gaps</h2>
-                    <p style="margin:0 0 8px;">Missing AI title drafts: <strong><?php echo esc_html((string) $summary['missing_title_drafts']); ?></strong></p>
-                    <p style="margin:0 0 8px;">Missing AI description drafts: <strong><?php echo esc_html((string) $summary['missing_description_drafts']); ?></strong></p>
-                    <p style="margin:0 0 8px;">Frontend opt-in pages: <strong><?php echo esc_html((string) $summary['frontend_enabled_items']); ?></strong></p>
-                    <p style="margin:0 0 8px;">Frontend-ready pages: <strong><?php echo esc_html((string) $summary['frontend_ready_items']); ?></strong></p>
-                    <?php
-                    global $wpdb;
-                    $cornerstone_count = (int) $wpdb->get_var(
-                        "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = '_ai_seo_keeper_cornerstone' AND meta_value = '1'"
-                    );
-                    ?>
-                    <p style="margin:0;">Cornerstone pages: <strong><?php echo $cornerstone_count; ?></strong></p>
-                </div>
-                <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
-                    <h2 style="margin-top:0;">What This Score Means</h2>
-                    <p style="margin:0 0 8px;">The readiness score is operational, not predictive. It measures rollout maturity using draft coverage, approval coverage, and frontend readiness.</p>
-                    <p style="margin:0;">Use it to prioritize execution order, not to claim rankings.</p>
-                </div>
-            </div>
-
-            <div style="display:grid;grid-template-columns:repeat(2,minmax(320px,1fr));gap:16px;max-width:1120px;margin-top:24px;">
-                <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
-                    <h2 style="margin-top:0;">IndexNow Status</h2>
-                    <p style="margin:0 0 8px;">Enabled: <strong><?php echo $indexnow_enabled ? 'Yes' : 'No'; ?></strong></p>
-                    <p style="margin:0 0 8px;">Auto-submit: <strong><?php echo $indexnow_auto_submit ? 'Yes' : 'No'; ?></strong></p>
-                    <?php if ('' !== $indexnow_key_url) : ?>
-                        <p style="margin:0 0 8px;">Key URL: <a href="<?php echo esc_url($indexnow_key_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($indexnow_key_url); ?></a></p>
-                    <?php endif; ?>
-                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin-top:12px;">
-                        <?php wp_nonce_field('ai_seo_keeper_submit_indexnow'); ?>
-                        <input type="hidden" name="action" value="<?php echo esc_attr(self::SUBMIT_INDEXNOW_ACTION); ?>" />
-                        <button type="submit" class="button button-secondary">Submit Priority Queue to IndexNow</button>
-                    </form>
-                    <p style="margin:12px 0 0;color:#50575e;">On localhost this will log a safe skip instead of calling the live IndexNow endpoint.</p>
-                </div>
-
-                <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
-                    <h2 style="margin-top:0;">Recent IndexNow Activity</h2>
-                    <?php if (empty($indexnow_log)) : ?>
-                        <p style="margin:0;">No IndexNow submissions or skips have been logged yet.</p>
-                    <?php else : ?>
-                        <?php foreach ($indexnow_log as $entry) : ?>
-                            <div style="padding:12px;border:1px solid #dcdcde;background:#f6f7f7;margin-bottom:12px;">
-                                <p style="margin:0 0 8px;"><strong><?php echo esc_html(strtoupper((string) $entry['status'])); ?></strong> | <?php echo esc_html((string) $entry['reason']); ?></p>
-                                <p style="margin:0 0 8px;"><?php echo esc_html((string) $entry['message']); ?></p>
-                                <p style="margin:0;color:#50575e;">URLs: <?php echo esc_html((string) $entry['url_count']); ?><?php if (! empty($entry['created_at'])) : ?> | <?php echo esc_html((string) $entry['created_at']); ?><?php endif; ?></p>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <div style="display:grid;grid-template-columns:repeat(2,minmax(320px,1fr));gap:16px;max-width:1120px;margin-top:24px;">
-                <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
-                    <h2 style="margin-top:0;">AI Strategic Audit</h2>
-                    <p>Use the deterministic report as the source of truth, then ask the configured model to turn it into a short execution plan.</p>
-                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin-top:16px;">
-                        <?php wp_nonce_field('ai_seo_keeper_generate_site_audit'); ?>
-                        <input type="hidden" name="action" value="<?php echo esc_attr(self::GENERATE_SITE_AUDIT_ACTION); ?>" />
-                        <button type="submit" class="button button-primary" <?php disabled(! $has_api_key); ?>>Generate AI Strategic Audit</button>
-                    </form>
-                    <?php if (! $has_api_key) : ?>
-                        <p style="margin:12px 0 0;color:#8a2424;">Add an API key in Settings before generating AI strategic audits.</p>
-                    <?php else : ?>
-                        <p style="margin:12px 0 0;color:#50575e;">This keeps the human review step: AI proposes the site-level plan, but deterministic checks continue to drive the facts underneath it.</p>
-                    <?php endif; ?>
-                </div>
-
-                <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
-                    <h2 style="margin-top:0;">Recent AI Site Audits</h2>
-                    <?php if (empty($site_audits)) : ?>
-                        <p style="margin:0;">No AI site audits have been generated yet.</p>
-                    <?php else : ?>
-                        <?php foreach ($site_audits as $audit) : ?>
-                            <div style="padding:12px;border:1px solid #dcdcde;background:#f6f7f7;margin-bottom:12px;">
-                                <p style="margin:0 0 8px;"><strong><?php echo esc_html($audit['audit_title']); ?></strong></p>
-                                <p style="margin:0 0 8px;"><?php echo esc_html($audit['executive_summary']); ?></p>
-                                <?php if (! empty($audit['priority_actions'])) : ?>
-                                    <p style="margin:0 0 8px;"><strong>Priority actions</strong></p>
-                                    <ul style="margin:0 0 8px;padding-left:20px;">
-                                        <?php foreach ($audit['priority_actions'] as $item) : ?>
-                                            <li><?php echo esc_html((string) $item); ?></li>
-                                        <?php endforeach; ?>
-                                    </ul>
-                                <?php endif; ?>
-                                <?php if (! empty($audit['quick_wins'])) : ?>
-                                    <p style="margin:0 0 8px;"><strong>Quick wins</strong></p>
-                                    <ul style="margin:0 0 8px;padding-left:20px;">
-                                        <?php foreach ($audit['quick_wins'] as $item) : ?>
-                                            <li><?php echo esc_html((string) $item); ?></li>
-                                        <?php endforeach; ?>
-                                    </ul>
-                                <?php endif; ?>
-                                <?php if ('' !== $audit['notes']) : ?>
-                                    <p style="margin:0 0 8px;"><em><?php echo esc_html($audit['notes']); ?></em></p>
-                                <?php endif; ?>
-                                <p style="margin:0;color:#50575e;">
-                                    <?php echo esc_html(strtoupper($audit['provider'])); ?>
-                                    <?php if ('' !== $audit['model']) : ?>
-                                        <?php echo ' | ' . esc_html($audit['model']); ?>
-                                    <?php endif; ?>
-                                    <?php if ('' !== $audit['created_at']) : ?>
-                                        <?php echo ' | ' . esc_html($audit['created_at']); ?>
-                                    <?php endif; ?>
-                                </p>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <div style="background:#fff;border:1px solid #dcdcde;padding:20px;max-width:1120px;margin-top:24px;">
-                <h2>Priority Queue</h2>
-                <p>These rows are ordered toward published content with missing AI drafts first, then by approval state and freshness.</p>
-                <table class="widefat striped" style="margin-top:12px;">
-                    <thead>
-                        <tr>
-                            <th>Content</th>
-                            <th>Drafts</th>
-                            <th>Approval</th>
-                            <th>Frontend</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($report['priority_rows'] as $row) : ?>
-                            <tr>
-                                <td>
-                                    <a href="<?php echo esc_url(admin_url('post.php?post=' . (int) $row['object_id'] . '&action=edit')); ?>"><?php echo esc_html($row['title']); ?></a>
-                                    <div style="margin-top:4px;color:#50575e;"><?php echo esc_html($row['post_type']); ?> / <?php echo esc_html($row['status']); ?></div>
-                                </td>
-                                <td>
-                                    Title: <?php echo $row['has_title_draft'] ? 'Yes' : 'No'; ?><br />
-                                    Description: <?php echo $row['has_description_draft'] ? 'Yes' : 'No'; ?>
-                                </td>
-                                <td><?php echo $row['has_approved_suggestion'] ? 'Approved' : 'Pending'; ?></td>
-                                <td>
-                                    Gate: <?php echo $row['frontend_enabled'] ? 'On' : 'Off'; ?><br />
-                                    Ready: <?php echo $row['frontend_ready'] ? 'Yes' : 'No'; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <div style="background:#fff;border:1px solid #dcdcde;padding:20px;max-width:1120px;margin-top:24px;">
-                <h2>Approved Rollout Queue</h2>
-                <p>These pages already have an approved AI suggestion. Use this queue to enable or disable the page-level frontend gate in batches without weakening approval rules.</p>
-                <?php if (empty($report['rollout_candidates'])) : ?>
-                    <p style="margin:0;">No approved pages are waiting for rollout right now.</p>
-                <?php else : ?>
-                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                        <?php wp_nonce_field('ai_seo_keeper_bulk_frontend_rollout'); ?>
-                        <input type="hidden" name="action" value="<?php echo esc_attr(self::BULK_FRONTEND_ACTION); ?>" />
-                        <table class="widefat striped" style="margin-top:12px;">
-                            <thead>
-                                <tr>
-                                    <th style="width:36px;"></th>
-                                    <th>Content</th>
-                                    <th>Status</th>
-                                    <th>Frontend Gate</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($report['rollout_candidates'] as $row) : ?>
-                                    <tr>
-                                        <td><input type="checkbox" name="post_ids[]" value="<?php echo (int) $row['object_id']; ?>" /></td>
-                                        <td>
-                                            <a href="<?php echo esc_url(admin_url('post.php?post=' . (int) $row['object_id'] . '&action=edit')); ?>"><?php echo esc_html($row['title']); ?></a>
-                                            <div style="margin-top:4px;"><a href="<?php echo esc_url($row['permalink']); ?>" target="_blank" rel="noopener noreferrer">View page</a></div>
-                                        </td>
-                                        <td><?php echo esc_html($row['post_type']); ?> / <?php echo esc_html($row['status']); ?><br />Approved</td>
-                                        <td><?php echo $row['frontend_enabled'] ? 'On' : 'Off'; ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                        <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                            <button type="submit" class="button button-primary" name="bulk_mode" value="enable_frontend">Enable Frontend For Approved Selections</button>
-                            <button type="submit" class="button button-secondary" name="bulk_mode" value="disable_frontend">Disable Frontend For Selections</button>
-                            <span style="color:#50575e;">When IndexNow is enabled, bulk enable actions also send refresh signals for the changed pages.</span>
-                        </div>
-                    </form>
-                <?php endif; ?>
-            </div>
-
-            <div style="display:grid;grid-template-columns:repeat(2,minmax(320px,1fr));gap:16px;max-width:1120px;margin-top:24px;">
-                <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
-                    <h2 style="margin-top:0;">Unapproved Draft Candidates</h2>
-                    <?php if (empty($report['draft_candidates'])) : ?>
-                        <p style="margin:0;">No pages currently have unapproved drafts waiting in the queue.</p>
-                    <?php else : ?>
-                        <ul style="margin:0;padding-left:20px;">
-                            <?php foreach ($report['draft_candidates'] as $candidate) : ?>
-                                <li style="margin-bottom:10px;">
-                                    <a href="<?php echo esc_url(admin_url('post.php?post=' . (int) $candidate['object_id'] . '&action=edit')); ?>"><?php echo esc_html($candidate['title']); ?></a>
-                                    :
-                                    <?php echo $candidate['has_title_draft'] ? 'title draft' : 'no title draft'; ?>,
-                                    <?php echo $candidate['has_description_draft'] ? 'description draft' : 'no description draft'; ?>,
-                                    frontend gate <?php echo $candidate['frontend_enabled'] ? 'on' : 'off'; ?>.
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
-                </div>
-
-                <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
-                    <h2 style="margin-top:0;">Thin Content Risks</h2>
-                    <?php if (empty($report['thin_content_rows'])) : ?>
-                        <p style="margin:0;">No thin-content risks were flagged by the current word-count threshold.</p>
-                    <?php else : ?>
-                        <table class="widefat striped" style="margin-top:12px;">
-                            <thead>
-                                <tr>
-                                    <th>Content</th>
-                                    <th>Words</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($report['thin_content_rows'] as $row) : ?>
-                                    <tr>
-                                        <td><a href="<?php echo esc_url(admin_url('post.php?post=' . (int) $row['object_id'] . '&action=edit')); ?>"><?php echo esc_html($row['title']); ?></a></td>
-                                        <td><?php echo esc_html((string) $row['word_count']); ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <div style="display:grid;grid-template-columns:repeat(2,minmax(320px,1fr));gap:16px;max-width:1120px;margin-top:24px;">
-                <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
-                    <h2 style="margin-top:0;">Duplicate Native Titles</h2>
-                    <?php if (empty($report['duplicate_post_titles'])) : ?>
-                        <p style="margin:0;">No exact duplicate published page titles were detected in the indexed content.</p>
-                    <?php else : ?>
-                        <ul style="margin:0;padding-left:20px;">
-                            <?php foreach ($report['duplicate_post_titles'] as $group) : ?>
-                                <li style="margin-bottom:10px;">
-                                    <strong><?php echo esc_html($group['label']); ?></strong> appears <?php echo esc_html((string) $group['total_count']); ?> times:
-                                    <?php echo $this->render_audit_post_links($group['ids']); ?>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
-                </div>
-
-                <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
-                    <h2 style="margin-top:0;">Duplicate AI Draft Titles</h2>
-                    <?php if (empty($report['duplicate_ai_titles'])) : ?>
-                        <p style="margin:0;">No exact duplicate AI title drafts were detected.</p>
-                    <?php else : ?>
-                        <ul style="margin:0;padding-left:20px;">
-                            <?php foreach ($report['duplicate_ai_titles'] as $group) : ?>
-                                <li style="margin-bottom:10px;">
-                                    <strong><?php echo esc_html($group['label']); ?></strong> appears <?php echo esc_html((string) $group['total_count']); ?> times:
-                                    <?php echo $this->render_audit_post_links($group['ids']); ?>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <?php
-            $orphaned = $report['orphaned_content'] ?? array('orphans' => array(), 'total_orphans' => 0, 'total_pages' => 0);
-            ?>
-            <div style="background:#fff;border:1px solid #dcdcde;padding:20px;max-width:1120px;margin-top:24px;">
-                <h2 style="margin-top:0;">Orphaned Content <span style="font-weight:normal;color:#50575e;font-size:14px;">(<?php echo (int) $orphaned['total_orphans']; ?> of <?php echo (int) $orphaned['total_pages']; ?> pages)</span></h2>
-                <p style="margin:0 0 12px;color:#50575e;">Pages with zero inbound internal links. These are invisible to crawlers that follow links and may never get indexed.</p>
-                <?php if (empty($orphaned['orphans'])) : ?>
-                    <p style="margin:0;color:#00a32a;"><strong>No orphaned content detected.</strong> Every indexed page has at least one internal link pointing to it.</p>
-                <?php else : ?>
-                    <table class="widefat striped" style="margin-top:8px;">
-                        <thead>
-                            <tr>
-                                <th>Page</th>
-                                <th>Type</th>
-                                <th>Inbound links</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($orphaned['orphans'] as $row) : ?>
-                                <tr>
-                                    <td>
-                                        <a href="<?php echo esc_url(admin_url('post.php?post=' . (int) $row['object_id'] . '&action=edit')); ?>"><?php echo esc_html($row['title']); ?></a>
-                                        <div style="margin-top:2px;"><a href="<?php echo esc_url($row['permalink']); ?>" target="_blank" rel="noopener" style="color:#50575e;font-size:12px;">View</a></div>
-                                    </td>
-                                    <td><?php echo esc_html($row['post_type']); ?></td>
-                                    <td style="color:#d63638;"><strong>0</strong></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                    <?php if ($orphaned['total_orphans'] > count($orphaned['orphans'])) : ?>
-                        <p style="margin:8px 0 0;color:#50575e;">Showing <?php echo count($orphaned['orphans']); ?> of <?php echo (int) $orphaned['total_orphans']; ?> orphaned pages.</p>
-                    <?php endif; ?>
-                <?php endif; ?>
-            </div>
-        </div>
-    <?php
+        require __DIR__ . '/admin/view-audit.php';
     }
 
     public function register_editor_metabox(string $post_type, $post): void
@@ -5639,1053 +4357,15 @@ HTML;
         $total_pages = count($published_ids ?: array());
         $step2_all_done = $has_metadata && $total_pages > 0 && $meta_count >= $total_pages;
         $step3_all_done = $audited_count > 0 && $total_pages > 0 && $audited_count >= $total_pages;
-    ?>
-        <style>
-            .aisk-wizard {
-                max-width: 960px;
-            }
 
-            .aisk-step {
-                background: #fff;
-                border: 1px solid #dcdcde;
-                padding: 24px;
-                margin-top: 16px;
-                border-radius: 4px;
-                transition: opacity .3s;
-            }
-
-            .aisk-step.locked {
-                opacity: 0.5;
-                pointer-events: none;
-            }
-
-            .aisk-step-header {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                margin-bottom: 12px;
-            }
-
-            .aisk-badge {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                width: 36px;
-                height: 36px;
-                border-radius: 50%;
-                color: #fff;
-                font-weight: 700;
-                font-size: 16px;
-                flex-shrink: 0;
-                transition: background .3s;
-            }
-
-            .aisk-badge.pending {
-                background: #72aee6;
-            }
-
-            .aisk-badge.active {
-                background: #2271b1;
-            }
-
-            .aisk-badge.done {
-                background: #00a32a;
-            }
-
-            .aisk-progress-wrap {
-                margin-top: 16px;
-                display: none;
-            }
-
-            .aisk-progress-track {
-                background: #f0f0f1;
-                border-radius: 4px;
-                overflow: hidden;
-                height: 24px;
-                max-width: 600px;
-            }
-
-            .aisk-progress-bar {
-                height: 100%;
-                width: 0%;
-                transition: width .3s;
-                border-radius: 4px;
-            }
-
-            .aisk-progress-info {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin: 8px 0 0;
-                max-width: 600px;
-                font-size: 13px;
-                color: #50575e;
-            }
-
-            .aisk-log {
-                margin-top: 12px;
-                max-height: 300px;
-                overflow-y: auto;
-                border: 1px solid #dcdcde;
-                padding: 8px;
-                font-size: 13px;
-                background: #f6f7f7;
-                display: none;
-                border-radius: 4px;
-            }
-
-            .aisk-log-entry {
-                padding: 4px 0;
-                border-bottom: 1px solid #f0f0f1;
-            }
-
-            .aisk-log-entry:last-child {
-                border-bottom: none;
-            }
-
-            .aisk-done-banner {
-                display: none;
-                margin-top: 12px;
-                padding: 12px 16px;
-                border-radius: 4px;
-                font-size: 13px;
-            }
-
-            .aisk-done-banner.success {
-                background: #edf8f1;
-                border: 1px solid #00a32a;
-            }
-
-            .aisk-done-banner.warning {
-                background: #fef8e7;
-                border: 1px solid #dba617;
-            }
-
-            .aisk-error-banner {
-                display: none;
-                margin-top: 12px;
-                padding: 12px 16px;
-                background: #fcf0f1;
-                border: 1px solid #d63638;
-                border-radius: 4px;
-                font-size: 13px;
-            }
-
-            .aisk-controls {
-                display: flex;
-                gap: 8px;
-                align-items: center;
-                flex-wrap: wrap;
-                margin-top: 8px;
-            }
-
-            .aisk-controls .button {
-                min-width: 100px;
-            }
-
-            .aisk-audit-card {
-                border: 1px solid #dcdcde;
-                padding: 16px;
-                margin-bottom: 12px;
-                background: #f6f7f7;
-                border-radius: 4px;
-            }
-
-            .aisk-audit-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-
-            .aisk-audit-score {
-                font-size: 20px;
-                font-weight: 700;
-            }
-
-            .aisk-elapsed {
-                font-size: 12px;
-                color: #787c82;
-                margin-left: 8px;
-            }
-        </style>
-
-        <div class="wrap aisk-wizard">
-            <h1>AI SEO Keeper — Setup Wizard</h1>
-            <p style="font-size:14px;">Scan your site, generate AI metadata, and run a full SEO audit. Each step can be paused, stopped, and resumed at any time.</p>
-
-            <?php if (! $has_api_key) : ?>
-                <div class="notice notice-error" style="max-width:920px;">
-                    <p><strong>No API key configured.</strong> <a href="<?php echo esc_url(admin_url('admin.php?page=ai-seo-keeper-settings')); ?>">Go to Settings</a> and add your AI provider API key before running the wizard.</p>
-                </div>
-            <?php endif; ?>
-
-            <!-- STEP 1: INDEX -->
-            <div id="aisk-step-1" class="aisk-step">
-                <div class="aisk-step-header">
-                    <span id="aisk-s1-badge" class="aisk-badge active">1</span>
-                    <h2 style="margin:0;">Index Your Site</h2>
-                </div>
-                <p>Scan all published pages and build the content index. This is required before AI processing.</p>
-                <div class="aisk-controls">
-                    <button id="aisk-btn-index" class="button button-primary button-hero" type="button" <?php disabled(! $has_api_key); ?>>
-                        <?php echo $has_index ? 'Re-Index Site' : 'Start Indexing'; ?>
-                    </button>
-                </div>
-                <div id="aisk-s1-progress" class="aisk-progress-wrap">
-                    <div class="aisk-progress-track">
-                        <div id="aisk-s1-bar" class="aisk-progress-bar" style="background:#2271b1;"></div>
-                    </div>
-                    <div class="aisk-progress-info"><span id="aisk-s1-status"></span></div>
-                </div>
-                <div id="aisk-s1-done" class="aisk-done-banner success">
-                    <strong>&#10003; Indexing complete.</strong> <span id="aisk-s1-result"></span>
-                </div>
-                <div id="aisk-s1-error" class="aisk-error-banner"></div>
-            </div>
-
-            <!-- STEP 2: BULK GENERATE -->
-            <div id="aisk-step-2" class="aisk-step<?php echo ! $has_index ? ' locked' : ''; ?>">
-                <div class="aisk-step-header">
-                    <span id="aisk-s2-badge" class="aisk-badge <?php echo $has_index ? 'active' : 'pending'; ?>">2</span>
-                    <h2 style="margin:0;">Generate SEO Metadata</h2>
-                    <span id="aisk-s2-elapsed" class="aisk-elapsed"></span>
-                </div>
-                <p>AI reads each page and generates an SEO title and meta description. Pages that already have metadata are skipped automatically.</p>
-                <div class="aisk-controls">
-                    <button id="aisk-btn-generate" class="button button-primary button-hero" type="button" <?php disabled(! $has_index); ?>>
-                        <?php echo $has_metadata ? 'Continue Generation' : 'Start AI Generation'; ?>
-                    </button>
-                    <button id="aisk-btn-s2-pause" class="button" type="button" style="display:none;">&#10074;&#10074; Pause</button>
-                    <button id="aisk-btn-s2-stop" class="button" type="button" style="display:none;">&#9632; Stop</button>
-                </div>
-                <div id="aisk-s2-progress" class="aisk-progress-wrap">
-                    <div class="aisk-progress-track">
-                        <div id="aisk-s2-bar" class="aisk-progress-bar" style="background:#00a32a;"></div>
-                    </div>
-                    <div class="aisk-progress-info">
-                        <span id="aisk-s2-status"></span>
-                        <span id="aisk-s2-counts" style="font-size:12px;"></span>
-                    </div>
-                </div>
-                <div id="aisk-s2-log" class="aisk-log"></div>
-                <div id="aisk-s2-done" class="aisk-done-banner success">
-                    <strong>&#10003; Generation complete.</strong> <span id="aisk-s2-result"></span>
-                </div>
-                <div id="aisk-s2-paused" class="aisk-done-banner warning" style="display:none;">
-                    <strong>&#10074;&#10074; Paused.</strong> <span id="aisk-s2-paused-info"></span> Click <em>Resume</em> to continue.
-                </div>
-                <div id="aisk-s2-stopped" class="aisk-done-banner warning" style="display:none;">
-                    <strong>&#9632; Stopped.</strong> <span id="aisk-s2-stopped-info"></span> You can restart or continue later.
-                </div>
-                <div id="aisk-s2-error" class="aisk-error-banner"></div>
-            </div>
-
-            <!-- STEP 3: PAGE AUDITS -->
-            <div id="aisk-step-3" class="aisk-step<?php echo (! $has_index || ! $has_metadata) ? ' locked' : ''; ?>">
-                <div class="aisk-step-header">
-                    <span id="aisk-s3-badge" class="aisk-badge <?php echo ($has_index && $has_metadata) ? 'active' : 'pending'; ?>">3</span>
-                    <h2 style="margin:0;">Full SEO Audit</h2>
-                    <span id="aisk-s3-elapsed" class="aisk-elapsed"></span>
-                </div>
-                <p>AI analyzes each page individually: missing alt tags, content issues, heading structure, and specific improvement suggestions.</p>
-                <?php if ($audited_count > 0 && ! $step3_all_done) : ?>
-                    <p style="font-size:13px;color:#50575e;">&#128204; <?php echo (int) $audited_count; ?> of <?php echo (int) $total_pages; ?> pages already audited. Previously audited pages load from cache instantly.</p>
-                <?php endif; ?>
-                <div class="aisk-controls">
-                    <button id="aisk-btn-audit" class="button button-primary button-hero" type="button" <?php disabled(! $has_index || ! $has_metadata); ?>>
-                        <?php
-                        if ($step3_all_done) {
-                            echo 'Re-Run Audits';
-                        } elseif ($audited_count > 0) {
-                            echo 'Continue Audits';
-                        } else {
-                            echo 'Start Page Audits';
-                        }
-                        ?>
-                    </button>
-                    <button id="aisk-btn-s3-pause" class="button" type="button" style="display:none;">&#10074;&#10074; Pause</button>
-                    <button id="aisk-btn-s3-stop" class="button" type="button" style="display:none;">&#9632; Stop</button>
-                </div>
-                <div id="aisk-s3-progress" class="aisk-progress-wrap">
-                    <div class="aisk-progress-track">
-                        <div id="aisk-s3-bar" class="aisk-progress-bar" style="background:#dba617;"></div>
-                    </div>
-                    <div class="aisk-progress-info">
-                        <span id="aisk-s3-status"></span>
-                        <span id="aisk-s3-counts" style="font-size:12px;"></span>
-                    </div>
-                </div>
-                <div id="aisk-s3-done" class="aisk-done-banner warning">
-                    <strong>&#10003; Audit complete.</strong> <span id="aisk-s3-result"></span>
-                </div>
-                <div id="aisk-s3-paused" class="aisk-done-banner warning" style="display:none;">
-                    <strong>&#10074;&#10074; Paused.</strong> <span id="aisk-s3-paused-info"></span> Click <em>Resume</em> to continue.
-                </div>
-                <div id="aisk-s3-stopped" class="aisk-done-banner warning" style="display:none;">
-                    <strong>&#9632; Stopped.</strong> <span id="aisk-s3-stopped-info"></span> You can restart or continue later.
-                </div>
-                <div id="aisk-s3-error" class="aisk-error-banner"></div>
-
-                <!-- Collapsible Tabs -->
-                <div id="aisk-s3-tabs" style="margin-top:20px;<?php echo $audited_count === 0 ? 'display:none;' : ''; ?>">
-
-                    <!-- TAB 1: Summary Overview -->
-                    <details id="aisk-tab-summary" open style="border:1px solid #dcdcde;border-radius:4px;margin-bottom:12px;background:#fff;">
-                        <summary style="cursor:pointer;padding:14px 18px;font-weight:600;font-size:14px;background:#f6f7f7;border-radius:4px 4px 0 0;user-select:none;">
-                            &#128202; Audit Overview
-                            <span id="aisk-tab-summary-count" style="font-weight:400;font-size:13px;color:#787c82;margin-left:8px;"></span>
-                        </summary>
-                        <div style="padding:18px;">
-                            <!-- Score distribution summary -->
-                            <div id="aisk-score-summary" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;"></div>
-
-                            <!-- Top 10 / Bottom 10 tables side by side -->
-                            <div style="display:flex;gap:20px;flex-wrap:wrap;">
-                                <div style="flex:1;min-width:300px;">
-                                    <h4 style="margin:0 0 8px;color:#00a32a;">&#127942; Top 10 — Best SEO Scores</h4>
-                                    <table id="aisk-top10-table" class="widefat striped" style="font-size:13px;">
-                                        <thead>
-                                            <tr>
-                                                <th>#</th>
-                                                <th>Page</th>
-                                                <th style="width:80px;text-align:center;">Score</th>
-                                                <th style="width:80px;text-align:center;">Issues</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody></tbody>
-                                    </table>
-                                </div>
-                                <div style="flex:1;min-width:300px;">
-                                    <h4 style="margin:0 0 8px;color:#d63638;">&#9888; Bottom 10 — Needs Attention</h4>
-                                    <table id="aisk-bottom10-table" class="widefat striped" style="font-size:13px;">
-                                        <thead>
-                                            <tr>
-                                                <th>#</th>
-                                                <th>Page</th>
-                                                <th style="width:80px;text-align:center;">Score</th>
-                                                <th style="width:80px;text-align:center;">Issues</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </details>
-
-                    <!-- TAB 2: Detailed Results -->
-                    <details id="aisk-tab-details" style="border:1px solid #dcdcde;border-radius:4px;background:#fff;">
-                        <summary style="cursor:pointer;padding:14px 18px;font-weight:600;font-size:14px;background:#f6f7f7;border-radius:4px 4px 0 0;user-select:none;">
-                            &#128196; Detailed Page Reports
-                            <span id="aisk-tab-details-count" style="font-weight:400;font-size:13px;color:#787c82;margin-left:8px;"></span>
-                        </summary>
-                        <div style="padding:18px;">
-                            <!-- Sort controls -->
-                            <div style="margin-bottom:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-                                <label style="font-size:13px;font-weight:600;">Sort by:</label>
-                                <select id="aisk-sort-order" style="min-width:180px;">
-                                    <option value="score-asc">Score: Worst first</option>
-                                    <option value="score-desc">Score: Best first</option>
-                                    <option value="title-asc">Title: A → Z</option>
-                                    <option value="issues-desc">Most issues first</option>
-                                </select>
-                                <label style="font-size:13px;font-weight:600;margin-left:8px;">Filter:</label>
-                                <select id="aisk-score-filter" style="min-width:150px;">
-                                    <option value="all">All pages</option>
-                                    <option value="critical">Critical (0-39)</option>
-                                    <option value="warning">Needs work (40-69)</option>
-                                    <option value="good">Good (70-100)</option>
-                                    <option value="skipped">Skipped pages</option>
-                                    <option value="not-skipped">Active (not skipped)</option>
-                                </select>
-                            </div>
-                            <div id="aisk-s3-results"></div>
-                        </div>
-                    </details>
-
-                    <!-- TAB 3: Skip Patterns -->
-                    <details id="aisk-tab-skip" style="border:1px solid #dcdcde;border-radius:4px;margin-top:12px;background:#fff;">
-                        <summary style="cursor:pointer;padding:14px 18px;font-weight:600;font-size:14px;background:#f6f7f7;border-radius:4px 4px 0 0;user-select:none;">
-                            &#128683; Skip Rules
-                            <span id="aisk-tab-skip-count" style="font-weight:400;font-size:13px;color:#787c82;margin-left:8px;"></span>
-                        </summary>
-                        <div style="padding:18px;">
-                            <p style="font-size:13px;margin:0 0 12px;color:#50575e;">
-                                Pages skipped here are excluded from future audits only. SEO metadata, sitemaps, and all other features remain active.
-                                Use the <strong>&#128683;</strong> button on any page card to skip/unskip individually, or define path patterns below.
-                            </p>
-                            <div style="margin-bottom:16px;">
-                                <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px;">Path patterns (one per line):</label>
-                                <textarea id="aisk-skip-patterns" rows="5" style="width:100%;max-width:500px;font-family:monospace;font-size:13px;" placeholder="/experiments/*&#10;/test-pages/**&#10;/landing/*/thank-you"><?php echo esc_textarea($skip_patterns); ?></textarea>
-                                <p style="font-size:12px;color:#787c82;margin:6px 0 0;">
-                                    Use <code>*</code> to match one path segment, <code>**</code> to match any depth. Lines starting with <code>#</code> are comments.<br>
-                                    Examples: <code>/experiments/*</code> skips all direct children &bull; <code>/experiments/**</code> skips all descendants &bull; <code>/*/thank-you</code> skips any "thank-you" page.
-                                </p>
-                            </div>
-                            <div style="display:flex;gap:10px;align-items:center;">
-                                <button id="aisk-btn-save-patterns" class="button button-primary" type="button">Save Patterns</button>
-                                <span id="aisk-patterns-feedback" style="font-size:13px;color:#00a32a;display:none;"></span>
-                            </div>
-                            <div id="aisk-skip-list" style="margin-top:16px;">
-                                <h4 style="margin:0 0 8px;">Individually Skipped Pages:</h4>
-                                <div id="aisk-skipped-pages-list" style="font-size:13px;color:#50575e;"></div>
-                            </div>
-                        </div>
-                    </details>
-
-                </div>
-            </div>
-        </div>
-
-        <script type="text/javascript">
-            (function($) {
-                var nonce = <?php echo wp_json_encode(wp_create_nonce('ai_seo_keeper_setup_wizard')); ?>;
-                var ajaxUrl = <?php echo wp_json_encode(admin_url('admin-ajax.php')); ?>;
-                var publishedIds = <?php echo $published_ids_json; ?>;
-                var skippedIds = <?php echo $skipped_ids_json; ?>;
-
-                // ── Helpers ──────────────────────────────────────────────────
-
-                function unlockStep(num) {
-                    $('#aisk-step-' + num).removeClass('locked');
-                    $('#aisk-s' + num + '-badge').removeClass('pending').addClass('active');
-                    var btnId = num === 2 ? '#aisk-btn-generate' : '#aisk-btn-audit';
-                    $(btnId).prop('disabled', false);
-                }
-
-                function markStepDone(num) {
-                    $('#aisk-s' + num + '-badge').removeClass('active pending').addClass('done').text('✓');
-                }
-
-                function esc(str) {
-                    return $('<span>').text(str).html();
-                }
-
-                function formatTime(seconds) {
-                    var m = Math.floor(seconds / 60);
-                    var s = seconds % 60;
-                    return (m > 0 ? m + 'm ' : '') + s + 's';
-                }
-
-                function showError(prefix, msg) {
-                    $(prefix + '-error').html('<strong>Error:</strong> ' + esc(msg) +
-                        ' <br><small style="color:#787c82;">Check your AI provider API key and quota in <a href="<?php echo esc_url(admin_url('admin.php?page=ai-seo-keeper-settings')); ?>">Settings</a>. ' +
-                        'Common causes: invalid API key, rate limit exceeded, provider outage, or network timeout.</small>'
-                    ).show();
-                }
-
-                // ── Timer helper ──────────────────────────────────────────────
-
-                function createTimer(displayEl) {
-                    var startTime = null;
-                    var interval = null;
-                    return {
-                        start: function() {
-                            startTime = Date.now();
-                            var self = this;
-                            interval = setInterval(function() {
-                                self.update();
-                            }, 1000);
-                        },
-                        pause: function() {
-                            if (interval) clearInterval(interval);
-                        },
-                        resume: function() {
-                            var self = this;
-                            interval = setInterval(function() {
-                                self.update();
-                            }, 1000);
-                        },
-                        stop: function() {
-                            if (interval) clearInterval(interval);
-                        },
-                        update: function() {
-                            if (!startTime) return;
-                            var elapsed = Math.floor((Date.now() - startTime) / 1000);
-                            $(displayEl).text('⏱ ' + formatTime(elapsed));
-                        },
-                        getText: function() {
-                            if (!startTime) return '';
-                            return formatTime(Math.floor((Date.now() - startTime) / 1000));
-                        }
-                    };
-                }
-
-                // ── Batch processor (reusable for Steps 2 and 3) ──────────────
-
-                function BatchProcessor(config) {
-                    this.ids = config.ids;
-                    this.ajaxAction = config.ajaxAction;
-                    this.prefix = config.prefix; // '#aisk-s2' or '#aisk-s3'
-                    this.btnStart = config.btnStart;
-                    this.btnPause = config.btnPause;
-                    this.btnStop = config.btnStop;
-                    this.onItem = config.onItem; // function(response, postId)
-                    this.onDone = config.onDone; // function(stats)
-                    this.onError = config.onError; // function(postId, msg)
-                    this.timer = createTimer(config.timerEl);
-
-                    this.current = 0;
-                    this.stats = {
-                        processed: 0,
-                        skipped: 0,
-                        cached: 0,
-                        errors: 0
-                    };
-                    this.state = 'idle'; // idle | running | paused | stopped | done
-                    this.consecutiveErrors = 0;
-                }
-
-                BatchProcessor.prototype.start = function() {
-                    var self = this;
-                    this.state = 'running';
-                    this.timer.start();
-
-                    $(this.prefix + '-progress').show();
-                    $(this.prefix + '-paused').hide();
-                    $(this.prefix + '-stopped').hide();
-                    $(this.prefix + '-error').hide();
-                    $(this.btnStart).prop('disabled', true).text('Processing...');
-                    $(this.btnPause).show();
-                    $(this.btnStop).show();
-
-                    // Pause button
-                    $(this.btnPause).off('click').on('click', function() {
-                        if (self.state === 'running') {
-                            self.state = 'paused';
-                            self.timer.pause();
-                            $(self.btnPause).html('&#9654; Resume');
-                            $(self.prefix + '-paused-info').text(
-                                self.stats.processed + ' processed, ' + self.stats.skipped + ' skipped, ' +
-                                self.stats.errors + ' errors so far.'
-                            );
-                            $(self.prefix + '-paused').show();
-                            $(self.prefix + '-status').text('Paused at ' + self.current + ' of ' + self.ids.length);
-                        } else if (self.state === 'paused') {
-                            self.state = 'running';
-                            self.timer.resume();
-                            $(self.btnPause).html('&#10074;&#10074; Pause');
-                            $(self.prefix + '-paused').hide();
-                            self.processNext();
-                        }
-                    });
-
-                    // Stop button
-                    $(this.btnStop).off('click').on('click', function() {
-                        self.state = 'stopped';
-                        self.timer.stop();
-                        $(self.btnPause).hide();
-                        $(self.btnStop).hide();
-                        $(self.prefix + '-stopped-info').text(
-                            self.current + ' of ' + self.ids.length + ' pages processed. ' +
-                            self.stats.processed + ' new, ' + self.stats.skipped + ' skipped, ' +
-                            self.stats.errors + ' errors.'
-                        );
-                        $(self.prefix + '-stopped').show();
-                        $(self.btnStart).prop('disabled', false).text('Continue');
-                    });
-
-                    this.processNext();
-                };
-
-                BatchProcessor.prototype.processNext = function() {
-                    if (this.state === 'paused' || this.state === 'stopped') return;
-
-                    if (this.current >= this.ids.length) {
-                        this.finish();
-                        return;
-                    }
-
-                    // Abort after 5 consecutive API errors.
-                    if (this.consecutiveErrors >= 5) {
-                        this.timer.stop();
-                        $(this.btnPause).hide();
-                        $(this.btnStop).hide();
-                        showError(this.prefix,
-                            '5 consecutive API errors. Processing stopped. Last ' +
-                            this.stats.errors + ' pages failed. Please check your API key and provider status.'
-                        );
-                        $(this.btnStart).prop('disabled', false).text('Retry');
-                        this.state = 'stopped';
-                        return;
-                    }
-
-                    var self = this;
-                    var postId = this.ids[this.current];
-                    var pct = Math.round(((this.current + 1) / this.ids.length) * 100);
-                    $(this.prefix + '-bar').css('width', pct + '%');
-                    $(this.prefix + '-status').text('Processing ' + (this.current + 1) + ' of ' + this.ids.length + '...');
-                    $(this.prefix + '-counts').text(
-                        '✓ ' + this.stats.processed + '  ⏭ ' + this.stats.skipped +
-                        (this.stats.cached > 0 ? '  📋 ' + this.stats.cached : '') +
-                        '  ✗ ' + this.stats.errors
-                    );
-
-                    $.post(ajaxUrl, {
-                        action: this.ajaxAction,
-                        nonce: nonce,
-                        post_id: postId
-                    }, function(response) {
-                        self.consecutiveErrors = 0;
-                        if (response.success) {
-                            if (response.data.skipped) {
-                                self.stats.skipped++;
-                            } else if (response.data.cached) {
-                                self.stats.cached++;
-                            } else {
-                                self.stats.processed++;
-                            }
-                            self.onItem(response, postId);
-                        } else {
-                            self.stats.errors++;
-                            self.consecutiveErrors++;
-                            var msg = response.data && response.data.message ? response.data.message : 'Unknown error';
-                            var title = response.data && response.data.title ? response.data.title : 'Post #' + postId;
-                            self.onError(postId, title, msg);
-                        }
-                        self.current++;
-                        self.processNext();
-                    }).fail(function(jqXHR, textStatus) {
-                        self.stats.errors++;
-                        self.consecutiveErrors++;
-                        var detail = textStatus === 'timeout' ? 'Request timed out' : 'Network error (' + textStatus + ')';
-                        self.onError(postId, 'Post #' + postId, detail);
-                        self.current++;
-                        self.processNext();
-                    });
-                };
-
-                BatchProcessor.prototype.finish = function() {
-                    this.state = 'done';
-                    this.timer.stop();
-                    $(this.prefix + '-bar').css('width', '100%');
-                    $(this.btnPause).hide();
-                    $(this.btnStop).hide();
-                    this.onDone(this.stats);
-                };
-
-                // ── STEP 1: Index ─────────────────────────────────────────────
-
-                <?php if ($has_index) : ?>
-                    markStepDone(1);
-                    $('#aisk-s1-done').show();
-                    $('#aisk-s1-result').text('<?php echo esc_js((string) $summary['total_items']); ?> pages indexed.');
-                    unlockStep(2);
-                <?php endif; ?>
-                <?php if ($has_index && $has_metadata) : ?>
-                    <?php if ($step2_all_done) : ?>
-                        markStepDone(2);
-                        $('#aisk-s2-done').show();
-                        $('#aisk-s2-result').text('All <?php echo (int) $total_pages; ?> pages have metadata.');
-                        $('#aisk-btn-generate').text('Re-Generate All');
-                    <?php endif; ?>
-                    unlockStep(3);
-                <?php endif; ?>
-                <?php if ($step3_all_done) : ?>
-                    markStepDone(3);
-                    $('#aisk-s3-done').show();
-                    $('#aisk-s3-result').text('All <?php echo (int) $total_pages; ?> pages audited.');
-                <?php endif; ?>
-
-                $('#aisk-btn-index').on('click', function() {
-                    var btn = $(this);
-                    btn.prop('disabled', true).text('Indexing...');
-                    $('#aisk-s1-progress').show();
-                    $('#aisk-s1-done').hide();
-                    $('#aisk-s1-error').hide();
-                    $('#aisk-s1-bar').css('width', '50%');
-                    $('#aisk-s1-status').text('Scanning pages...');
-
-                    $.post(ajaxUrl, {
-                        action: <?php echo wp_json_encode(self::AJAX_SETUP_INDEX_ACTION); ?>,
-                        nonce: nonce
-                    }, function(response) {
-                        $('#aisk-s1-bar').css('width', '100%');
-                        if (response.success) {
-                            publishedIds = response.data.publishedIds || [];
-                            $('#aisk-s1-status').text('Done.');
-                            $('#aisk-s1-done').show();
-                            $('#aisk-s1-result').text(response.data.count + ' pages indexed.');
-                            markStepDone(1);
-                            unlockStep(2);
-                        } else {
-                            showError('#aisk-s1', response.data && response.data.message ? response.data.message : 'Unknown error');
-                            btn.prop('disabled', false).text('Retry Indexing');
-                        }
-                    }).fail(function(jqXHR, textStatus) {
-                        showError('#aisk-s1', 'Network error (' + textStatus + '). Please check your connection and try again.');
-                        btn.prop('disabled', false).text('Retry Indexing');
-                    });
-                });
-
-                // ── STEP 2: Bulk Generate ────────────────────────────────────
-
-                var s2processor = null;
-
-                $('#aisk-btn-generate').on('click', function() {
-                    $('#aisk-s2-log').show();
-                    $('#aisk-s2-done').hide();
-                    $('#aisk-s2-stopped').hide();
-                    $('#aisk-s2-paused').hide();
-
-                    s2processor = new BatchProcessor({
-                        ids: publishedIds,
-                        ajaxAction: <?php echo wp_json_encode(self::AJAX_BULK_GENERATE_ACTION); ?>,
-                        prefix: '#aisk-s2',
-                        btnStart: '#aisk-btn-generate',
-                        btnPause: '#aisk-btn-s2-pause',
-                        btnStop: '#aisk-btn-s2-stop',
-                        timerEl: '#aisk-s2-elapsed',
-                        onItem: function(response) {
-                            var d = response.data;
-                            if (d.skipped) {
-                                $('#aisk-s2-log').prepend('<div class="aisk-log-entry" style="color:#50575e;">⏭ <strong>' + esc(d.title) + '</strong> — skipped (already has metadata)</div>');
-                            } else {
-                                $('#aisk-s2-log').prepend('<div class="aisk-log-entry" style="color:#00a32a;">✓ <strong>' + esc(d.title) + '</strong> — ' + esc(d.seo_title) + '</div>');
-                            }
-                        },
-                        onDone: function(stats) {
-                            $('#aisk-s2-status').text('Done in ' + s2processor.timer.getText() + '.');
-                            $('#aisk-s2-done').show();
-                            $('#aisk-s2-result').text(stats.processed + ' generated, ' + stats.skipped + ' skipped, ' + stats.errors + ' errors.');
-                            $('#aisk-btn-generate').prop('disabled', false).text('Re-Generate All');
-                            markStepDone(2);
-                            unlockStep(3);
-                        },
-                        onError: function(postId, title, msg) {
-                            $('#aisk-s2-log').prepend('<div class="aisk-log-entry" style="color:#d63638;">✗ <strong>' + esc(title) + '</strong> — ' + esc(msg) + '</div>');
-                        }
-                    });
-
-                    s2processor.start();
-                });
-
-                // ── STEP 3: Page Audits ──────────────────────────────────────
-
-                var s3processor = null;
-                var allAudits = <?php echo $existing_audits_json; ?>;
-
-                function scoreColor(score) {
-                    return score >= 70 ? '#00a32a' : (score >= 40 ? '#dba617' : '#d63638');
-                }
-
-                function scoreBadge(score) {
-                    return '<span style="display:inline-block;min-width:36px;text-align:center;padding:2px 6px;border-radius:3px;color:#fff;font-weight:700;font-size:13px;background:' + scoreColor(score) + ';">' + score + '</span>';
-                }
-
-                function renderAuditCard(d) {
-                    var isSkipped = d.audit_skipped || skippedIds.indexOf(d.post_id) !== -1;
-                    var cachedTag = d.cached ? ' <span style="font-size:11px;color:#787c82;font-weight:400;">(cached)</span>' : '';
-                    var skipBadge = isSkipped ? ' <span class="aisk-skip-badge" style="font-size:11px;background:#f0c33c;color:#3c2300;padding:1px 6px;border-radius:3px;font-weight:600;">SKIPPED</span>' : '';
-                    var skipBtnLabel = isSkipped ? '&#9654; Unskip' : '&#128683; Skip';
-                    var skipBtnColor = isSkipped ? '#2271b1' : '#b32d2e';
-                    var html = '<div class="aisk-audit-card" data-score="' + d.score + '" data-title="' + esc(d.title) + '" data-issues="' + (d.issues ? d.issues.length : 0) + '" data-postid="' + d.post_id + '" data-skipped="' + (isSkipped ? '1' : '0') + '"' + (isSkipped ? ' style="opacity:0.6;"' : '') + '>';
-                    html += '<div class="aisk-audit-header">';
-                    html += '<div><strong style="font-size:14px;">' + esc(d.title) + '</strong>' + cachedTag + skipBadge;
-                    html += ' <a href="' + esc(d.permalink) + '" target="_blank" style="font-size:12px;margin-left:6px;">View ↗</a></div>';
-                    html += '<div style="display:flex;align-items:center;gap:10px;">';
-                    html += '<button type="button" class="aisk-skip-toggle button-link" data-postid="' + d.post_id + '" style="font-size:12px;color:' + skipBtnColor + ';cursor:pointer;white-space:nowrap;">' + skipBtnLabel + '</button>';
-                    html += '<div class="aisk-audit-score" style="color:' + scoreColor(d.score) + ';">' + d.score + '<span style="font-size:13px;font-weight:400;">/100</span></div>';
-                    html += '</div></div>';
-                    if (d.summary) html += '<p style="margin:8px 0 4px;color:#50575e;font-size:13px;">' + esc(d.summary) + '</p>';
-                    html += '<p style="margin:4px 0;font-size:12px;color:#787c82;">';
-                    if (d.heading_structure) html += 'Headings: ' + esc(d.heading_structure) + ' · ';
-                    html += 'Words: ' + d.word_count + ' · Missing alt: ' + d.missing_alt_tags + '</p>';
-                    if (d.issues && d.issues.length > 0) {
-                        html += '<details style="margin-top:8px;"><summary style="cursor:pointer;font-weight:600;color:#d63638;font-size:13px;">Issues (' + d.issues.length + ')</summary><ul style="margin:4px 0 0 16px;padding:0;">';
-                        for (var i = 0; i < d.issues.length; i++) html += '<li style="font-size:13px;margin:2px 0;">' + esc(d.issues[i]) + '</li>';
-                        html += '</ul></details>';
-                    }
-                    if (d.suggestions && d.suggestions.length > 0) {
-                        html += '<details style="margin-top:6px;"><summary style="cursor:pointer;font-weight:600;color:#2271b1;font-size:13px;">Suggestions (' + d.suggestions.length + ')</summary><ul style="margin:4px 0 0 16px;padding:0;">';
-                        for (var i = 0; i < d.suggestions.length; i++) html += '<li style="font-size:13px;margin:2px 0;">' + esc(d.suggestions[i]) + '</li>';
-                        html += '</ul></details>';
-                    }
-                    html += '</div>';
-                    return html;
-                }
-
-                function addOrUpdateAudit(d) {
-                    var found = false;
-                    for (var i = 0; i < allAudits.length; i++) {
-                        if (allAudits[i].post_id === d.post_id) {
-                            allAudits[i] = d;
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) allAudits.push(d);
-                }
-
-                function refreshSummaryTab() {
-                    if (allAudits.length === 0) {
-                        $('#aisk-s3-tabs').hide();
-                        return;
-                    }
-                    $('#aisk-s3-tabs').show();
-
-                    var sorted = allAudits.slice().sort(function(a, b) {
-                        return b.score - a.score;
-                    });
-                    var totalIssues = 0;
-                    var good = 0,
-                        warning = 0,
-                        critical = 0,
-                        totalScore = 0;
-                    for (var i = 0; i < sorted.length; i++) {
-                        totalScore += sorted[i].score;
-                        totalIssues += (sorted[i].issues ? sorted[i].issues.length : 0);
-                        if (sorted[i].score >= 70) good++;
-                        else if (sorted[i].score >= 40) warning++;
-                        else critical++;
-                    }
-                    var avg = Math.round(totalScore / sorted.length);
-
-                    $('#aisk-tab-summary-count').text('(' + sorted.length + ' pages)');
-                    $('#aisk-tab-details-count').text('(' + sorted.length + ' pages)');
-
-                    // Score distribution cards
-                    $('#aisk-score-summary').html(
-                        '<div style="background:#f0f6fc;border:1px solid #72aee6;border-radius:6px;padding:14px 20px;text-align:center;min-width:120px;">' +
-                        '<div style="font-size:28px;font-weight:700;color:' + scoreColor(avg) + ';">' + avg + '</div>' +
-                        '<div style="font-size:12px;color:#50575e;">Average Score</div></div>' +
-                        '<div style="background:#edf8f1;border:1px solid #00a32a;border-radius:6px;padding:14px 20px;text-align:center;min-width:120px;">' +
-                        '<div style="font-size:28px;font-weight:700;color:#00a32a;">' + good + '</div>' +
-                        '<div style="font-size:12px;color:#50575e;">Good (70+)</div></div>' +
-                        '<div style="background:#fef8e7;border:1px solid #dba617;border-radius:6px;padding:14px 20px;text-align:center;min-width:120px;">' +
-                        '<div style="font-size:28px;font-weight:700;color:#dba617;">' + warning + '</div>' +
-                        '<div style="font-size:12px;color:#50575e;">Needs Work (40-69)</div></div>' +
-                        '<div style="background:#fcf0f1;border:1px solid #d63638;border-radius:6px;padding:14px 20px;text-align:center;min-width:120px;">' +
-                        '<div style="font-size:28px;font-weight:700;color:#d63638;">' + critical + '</div>' +
-                        '<div style="font-size:12px;color:#50575e;">Critical (&lt;40)</div></div>' +
-                        '<div style="background:#f6f7f7;border:1px solid #dcdcde;border-radius:6px;padding:14px 20px;text-align:center;min-width:120px;">' +
-                        '<div style="font-size:28px;font-weight:700;color:#50575e;">' + totalIssues + '</div>' +
-                        '<div style="font-size:12px;color:#50575e;">Total Issues</div></div>'
-                    );
-
-                    // Top 10
-                    var top10 = sorted.slice(0, 10);
-                    var top10html = '';
-                    for (var i = 0; i < top10.length; i++) {
-                        top10html += '<tr><td>' + (i + 1) + '</td><td><a href="' + esc(top10[i].permalink) + '" target="_blank">' + esc(top10[i].title) + '</a></td>' +
-                            '<td style="text-align:center;">' + scoreBadge(top10[i].score) + '</td>' +
-                            '<td style="text-align:center;">' + (top10[i].issues ? top10[i].issues.length : 0) + '</td></tr>';
-                    }
-                    $('#aisk-top10-table tbody').html(top10html);
-
-                    // Bottom 10
-                    var bottom10 = sorted.slice(-10).reverse();
-                    var bottom10html = '';
-                    for (var i = 0; i < bottom10.length; i++) {
-                        bottom10html += '<tr><td>' + (i + 1) + '</td><td><a href="' + esc(bottom10[i].permalink) + '" target="_blank">' + esc(bottom10[i].title) + '</a></td>' +
-                            '<td style="text-align:center;">' + scoreBadge(bottom10[i].score) + '</td>' +
-                            '<td style="text-align:center;">' + (bottom10[i].issues ? bottom10[i].issues.length : 0) + '</td></tr>';
-                    }
-                    $('#aisk-bottom10-table tbody').html(bottom10html);
-                }
-
-                function refreshDetailsTab() {
-                    var sortOrder = $('#aisk-sort-order').val();
-                    var filterVal = $('#aisk-score-filter').val();
-
-                    var filtered = allAudits.slice();
-
-                    // Apply filter
-                    if (filterVal === 'critical') filtered = filtered.filter(function(d) {
-                        return d.score < 40;
-                    });
-                    else if (filterVal === 'warning') filtered = filtered.filter(function(d) {
-                        return d.score >= 40 && d.score < 70;
-                    });
-                    else if (filterVal === 'good') filtered = filtered.filter(function(d) {
-                        return d.score >= 70;
-                    });
-                    else if (filterVal === 'skipped') filtered = filtered.filter(function(d) {
-                        return d.audit_skipped || skippedIds.indexOf(d.post_id) !== -1;
-                    });
-                    else if (filterVal === 'not-skipped') filtered = filtered.filter(function(d) {
-                        return !d.audit_skipped && skippedIds.indexOf(d.post_id) === -1;
-                    });
-
-                    // Apply sort
-                    if (sortOrder === 'score-asc') filtered.sort(function(a, b) {
-                        return a.score - b.score;
-                    });
-                    else if (sortOrder === 'score-desc') filtered.sort(function(a, b) {
-                        return b.score - a.score;
-                    });
-                    else if (sortOrder === 'title-asc') filtered.sort(function(a, b) {
-                        return a.title.localeCompare(b.title);
-                    });
-                    else if (sortOrder === 'issues-desc') filtered.sort(function(a, b) {
-                        return (b.issues ? b.issues.length : 0) - (a.issues ? a.issues.length : 0);
-                    });
-
-                    var html = '';
-                    if (filtered.length === 0) {
-                        html = '<p style="color:#787c82;font-style:italic;">No pages match the current filter.</p>';
-                    } else {
-                        for (var i = 0; i < filtered.length; i++) {
-                            html += renderAuditCard(filtered[i]);
-                        }
-                    }
-                    $('#aisk-s3-results').html(html);
-                }
-
-                // Sort/filter change handlers
-                $('#aisk-sort-order, #aisk-score-filter').on('change', function() {
-                    refreshDetailsTab();
-                });
-
-                // ── Skip toggle (delegated) ───────────────────────────────
-                $(document).on('click', '.aisk-skip-toggle', function(e) {
-                    e.preventDefault();
-                    var btn = $(this);
-                    var postId = parseInt(btn.data('postid'), 10);
-                    btn.prop('disabled', true).text('…');
-                    $.post(ajaxUrl, {
-                        action: <?php echo wp_json_encode(self::AJAX_TOGGLE_AUDIT_SKIP_ACTION); ?>,
-                        nonce: nonce,
-                        post_id: postId
-                    }).done(function(res) {
-                        if (res.success) {
-                            if (res.data.skipped) {
-                                if (skippedIds.indexOf(postId) === -1) skippedIds.push(postId);
-                            } else {
-                                skippedIds = skippedIds.filter(function(id) {
-                                    return id !== postId;
-                                });
-                            }
-                            // Update allAudits entry
-                            for (var i = 0; i < allAudits.length; i++) {
-                                if (allAudits[i].post_id === postId) {
-                                    allAudits[i].audit_skipped = res.data.skipped;
-                                    break;
-                                }
-                            }
-                            refreshDetailsTab();
-                            refreshSkipTab();
-                        }
-                    }).always(function() {
-                        btn.prop('disabled', false);
-                    });
-                });
-
-                // ── Save skip patterns ────────────────────────────────────
-                $('#aisk-btn-save-patterns').on('click', function() {
-                    var btn = $(this);
-                    var patterns = $('#aisk-skip-patterns').val();
-                    btn.prop('disabled', true).text('Saving…');
-                    $('#aisk-patterns-feedback').hide();
-                    $.post(ajaxUrl, {
-                        action: <?php echo wp_json_encode(self::AJAX_SAVE_SKIP_PATTERNS_ACTION); ?>,
-                        nonce: nonce,
-                        patterns: patterns
-                    }).done(function(res) {
-                        if (res.success) {
-                            var msg = 'Saved! ' + res.data.matched_count + ' page(s) match current patterns.';
-                            $('#aisk-patterns-feedback').text(msg).show();
-                        }
-                    }).always(function() {
-                        btn.prop('disabled', false).text('Save Patterns');
-                    });
-                });
-
-                // ── Refresh Skip tab (individually skipped pages list) ────
-                function refreshSkipTab() {
-                    var list = '';
-                    var skipCount = 0;
-                    for (var i = 0; i < allAudits.length; i++) {
-                        if (allAudits[i].audit_skipped || skippedIds.indexOf(allAudits[i].post_id) !== -1) {
-                            skipCount++;
-                            list += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #f0f0f0;">';
-                            list += '<span>' + esc(allAudits[i].title) + '</span>';
-                            list += '<button type="button" class="aisk-skip-toggle button-link" data-postid="' + allAudits[i].post_id + '" style="font-size:12px;color:#2271b1;">&#9654; Unskip</button>';
-                            list += '</div>';
-                        }
-                    }
-                    if (skipCount === 0) list = '<em>No individually skipped pages.</em>';
-                    $('#aisk-skipped-pages-list').html(list);
-                    $('#aisk-tab-skip-count').text('(' + skipCount + ' skipped)');
-                }
-                refreshSkipTab();
-
-                // Pre-load existing audits on page load
-                if (allAudits.length > 0) {
-                    refreshSummaryTab();
-                    refreshDetailsTab();
-                }
-
-                $('#aisk-btn-audit').on('click', function() {
-                    var btn = $(this);
-                    var isRerun = btn.text().indexOf('Re-Run') !== -1;
-                    $('#aisk-s3-done').hide();
-                    $('#aisk-s3-stopped').hide();
-                    $('#aisk-s3-paused').hide();
-
-                    // For "Continue": only process pages not yet audited.
-                    // For "Re-Run": process all pages.
-                    // Always exclude individually-skipped pages.
-                    var idsToProcess = publishedIds.filter(function(id) {
-                        return skippedIds.indexOf(id) === -1;
-                    });
-                    if (!isRerun && allAudits.length > 0) {
-                        var auditedIds = {};
-                        for (var i = 0; i < allAudits.length; i++) {
-                            auditedIds[allAudits[i].post_id] = true;
-                        }
-                        idsToProcess = idsToProcess.filter(function(id) {
-                            return !auditedIds[id];
-                        });
-                    }
-
-                    if (idsToProcess.length === 0) {
-                        $('#aisk-s3-done').show();
-                        $('#aisk-s3-result').text('All ' + publishedIds.length + ' pages already audited. Click "Re-Run Audits" to refresh all scores.');
-                        btn.prop('disabled', false).text('Re-Run Audits');
-                        markStepDone(3);
-                        return;
-                    }
-
-                    s3processor = new BatchProcessor({
-                        ids: idsToProcess,
-                        ajaxAction: <?php echo wp_json_encode(self::AJAX_PAGE_AUDIT_ACTION); ?>,
-                        prefix: '#aisk-s3',
-                        btnStart: '#aisk-btn-audit',
-                        btnPause: '#aisk-btn-s3-pause',
-                        btnStop: '#aisk-btn-s3-stop',
-                        timerEl: '#aisk-s3-elapsed',
-                        onItem: function(response) {
-                            addOrUpdateAudit(response.data);
-                            refreshSummaryTab();
-                            refreshDetailsTab();
-                        },
-                        onDone: function(stats) {
-                            var total = stats.processed + stats.cached;
-                            $('#aisk-s3-status').text('Done in ' + s3processor.timer.getText() + '.');
-                            $('#aisk-s3-done').show();
-                            $('#aisk-s3-result').text(total + ' pages audited' +
-                                (stats.cached > 0 ? ' (' + stats.cached + ' from cache)' : '') +
-                                ', ' + stats.errors + ' errors. Total: ' + allAudits.length + ' pages.');
-                            btn.prop('disabled', false).text('Re-Run Audits');
-                            markStepDone(3);
-                            refreshSummaryTab();
-                            refreshDetailsTab();
-                        },
-                        onError: function(postId, title, msg) {
-                            $('#aisk-s3-results').prepend(
-                                '<div style="border:1px solid #d63638;padding:12px;margin-bottom:12px;background:#fcf0f1;border-radius:4px;">' +
-                                '<strong>' + esc(title) + '</strong> — <span style="color:#d63638;">' + esc(msg) + '</span></div>'
-                            );
-                        }
-                    });
-
-                    s3processor.start();
-                });
-
-            })(jQuery);
-        </script>
-    <?php
+        // Pass private constants as local vars for view file.
+        $ajax_setup_index_action      = self::AJAX_SETUP_INDEX_ACTION;
+        $ajax_bulk_generate_action    = self::AJAX_BULK_GENERATE_ACTION;
+        $ajax_page_audit_action       = self::AJAX_PAGE_AUDIT_ACTION;
+        $ajax_toggle_audit_skip_action = self::AJAX_TOGGLE_AUDIT_SKIP_ACTION;
+        $ajax_save_skip_patterns_action = self::AJAX_SAVE_SKIP_PATTERNS_ACTION;
+
+        require __DIR__ . '/admin/view-setup-wizard.php';
     }
 
     public function save_editor_meta(int $post_id): void

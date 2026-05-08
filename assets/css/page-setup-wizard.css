@@ -1,0 +1,168 @@
+/* AI SEO Keeper — Setup Wizard page styles */
+
+.aisk-wizard {
+    max-width: 960px;
+}
+
+.aisk-step {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    padding: 24px;
+    margin-top: 16px;
+    border-radius: 4px;
+    transition: opacity .3s;
+}
+
+.aisk-step.locked {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.aisk-step-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.aisk-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: #fff;
+    font-weight: 700;
+    font-size: 16px;
+    flex-shrink: 0;
+    transition: background .3s;
+}
+
+.aisk-badge.pending {
+    background: #72aee6;
+}
+
+.aisk-badge.active {
+    background: #2271b1;
+}
+
+.aisk-badge.done {
+    background: #00a32a;
+}
+
+.aisk-progress-wrap {
+    margin-top: 16px;
+    display: none;
+}
+
+.aisk-progress-track {
+    background: #f0f0f1;
+    border-radius: 4px;
+    overflow: hidden;
+    height: 24px;
+    max-width: 600px;
+}
+
+.aisk-progress-bar {
+    height: 100%;
+    width: 0%;
+    transition: width .3s;
+    border-radius: 4px;
+}
+
+.aisk-progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0 0;
+    max-width: 600px;
+    font-size: 13px;
+    color: #50575e;
+}
+
+.aisk-log {
+    margin-top: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #dcdcde;
+    padding: 8px;
+    font-size: 13px;
+    background: #f6f7f7;
+    display: none;
+    border-radius: 4px;
+}
+
+.aisk-log-entry {
+    padding: 4px 0;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.aisk-log-entry:last-child {
+    border-bottom: none;
+}
+
+.aisk-done-banner {
+    display: none;
+    margin-top: 12px;
+    padding: 12px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.aisk-done-banner.success {
+    background: #edf8f1;
+    border: 1px solid #00a32a;
+}
+
+.aisk-done-banner.warning {
+    background: #fef8e7;
+    border: 1px solid #dba617;
+}
+
+.aisk-error-banner {
+    display: none;
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: #fcf0f1;
+    border: 1px solid #d63638;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.aisk-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.aisk-controls .button {
+    min-width: 100px;
+}
+
+.aisk-audit-card {
+    border: 1px solid #dcdcde;
+    padding: 16px;
+    margin-bottom: 12px;
+    background: #f6f7f7;
+    border-radius: 4px;
+}
+
+.aisk-audit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.aisk-audit-score {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.aisk-elapsed {
+    font-size: 12px;
+    color: #787c82;
+    margin-left: 8px;
+}

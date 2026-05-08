@@ -1,0 +1,124 @@
+/**
+ * AI SEO Keeper — Shared admin styles
+ *
+ * Accordion, cards, sortable tables, and other shared UI patterns.
+ */
+
+/* ── Accordion ───────────────────────────────────────────────────────── */
+.ai-seo-accordion {
+    max-width: 960px;
+    margin-top: 20px;
+}
+
+.ai-seo-accordion-section {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    margin-bottom: 0;
+    border-bottom: 0;
+}
+
+.ai-seo-accordion-section:last-of-type {
+    border-bottom: 1px solid #dcdcde;
+}
+
+.ai-seo-accordion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s;
+}
+
+.ai-seo-accordion-header:hover {
+    background: #f6f7f7;
+}
+
+.ai-seo-accordion-header h2 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.ai-seo-accordion-header .dashicons {
+    transition: transform .2s;
+    color: #50575e;
+}
+
+.ai-seo-accordion-section.is-open .ai-seo-accordion-header .dashicons {
+    transform: rotate(180deg);
+}
+
+.ai-seo-accordion-body {
+    display: none;
+    padding: 0 20px 20px;
+    border-top: 1px solid #f0f0f1;
+}
+
+.ai-seo-accordion-section.is-open .ai-seo-accordion-body {
+    display: block;
+}
+
+.ai-seo-accordion-body .form-table th {
+    padding-left: 0;
+    width: 200px;
+}
+
+.ai-seo-accordion-body .form-table td {
+    padding-left: 10px;
+}
+
+/* ── Stat cards grid ─────────────────────────────────────────────────── */
+.ai-seo-stat-grid {
+    display: grid;
+    gap: 16px;
+    max-width: 1120px;
+    margin-top: 24px;
+}
+
+.ai-seo-stat-grid-3 {
+    grid-template-columns: repeat(3, minmax(220px, 1fr));
+}
+
+.ai-seo-stat-grid-4 {
+    grid-template-columns: repeat(4, minmax(180px, 1fr));
+}
+
+.ai-seo-stat-card {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    padding: 16px;
+}
+
+.ai-seo-stat-card h2 {
+    margin-top: 0;
+}
+
+/* ── White box sections ──────────────────────────────────────────────── */
+.ai-seo-box {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    padding: 20px;
+    max-width: 960px;
+    margin-top: 24px;
+}
+
+.ai-seo-box-wide {
+    max-width: 1120px;
+}
+
+.ai-seo-box h2 {
+    margin-top: 0;
+}
+
+/* ── Sortable table helpers ──────────────────────────────────────────── */
+.ai-seo-sortable th.ai-seo-sort {
+    cursor: pointer;
+}
+
+.ai-seo-sortable .ai-seo-sort-icon {
+    font-size: 14px;
+    vertical-align: middle;
+}
