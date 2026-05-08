@@ -280,10 +280,12 @@ use AI_SEO_Keeper\Settings;
                                     'social_pinterest' => 'Pinterest',
                                 );
                                 foreach ($social_fields as $field_key => $label) : ?>
-                                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                                        <span style="min-width:80px;font-size:13px;"><?php echo esc_html($label); ?></span>
-                                        <input class="regular-text" type="url" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[<?php echo esc_attr($field_key); ?>]" value="<?php echo esc_attr($options[$field_key] ?? ''); ?>" placeholder="https://" />
-                                    </label>
+                                    <div class="aisk-field-row" style="margin-bottom:6px;">
+                                        <div class="aisk-field-group aisk-w-full">
+                                            <label for="ai-seo-<?php echo esc_attr($field_key); ?>"><?php echo esc_html($label); ?></label>
+                                            <input id="ai-seo-<?php echo esc_attr($field_key); ?>" class="regular-text" type="url" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[<?php echo esc_attr($field_key); ?>]" value="<?php echo esc_attr($options[$field_key] ?? ''); ?>" placeholder="https://" />
+                                        </div>
+                                    </div>
                                 <?php endforeach; ?>
                             </td>
                         </tr>
@@ -298,7 +300,7 @@ use AI_SEO_Keeper\Settings;
                     <span class="dashicons dashicons-arrow-down-alt2"></span>
                 </div>
                 <div class="ai-seo-accordion-body">
-                    <p class="description" style="margin:0 0 12px;">Configure your business details to output LocalBusiness structured data. Use the <code>[ai_seo_map]</code> shortcode to embed a Google Map.</p>
+                    <p class="description">Configure your business details to output LocalBusiness structured data. Use the <code>[ai_seo_map]</code> shortcode to embed a Google Map.</p>
                     <table class="form-table">
                         <tr>
                             <th scope="row">Enable Local SEO</th>
@@ -326,45 +328,83 @@ use AI_SEO_Keeper\Settings;
                         <tr>
                             <th scope="row">Address</th>
                             <td>
-                                <label style="display:block;margin-bottom:6px;">Street <input class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_street]" value="<?php echo esc_attr($options['local_street'] ?? ''); ?>" /></label>
-                                <label style="display:inline-block;margin-right:12px;">City <input class="regular-text" style="width:180px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_city]" value="<?php echo esc_attr($options['local_city'] ?? ''); ?>" /></label>
-                                <label style="display:inline-block;margin-right:12px;">State <input class="regular-text" style="width:120px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_state]" value="<?php echo esc_attr($options['local_state'] ?? ''); ?>" /></label>
-                                <label style="display:inline-block;margin-right:12px;">Zip <input class="regular-text" style="width:100px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_zip]" value="<?php echo esc_attr($options['local_zip'] ?? ''); ?>" /></label>
-                                <label style="display:inline-block;">Country <input class="regular-text" style="width:120px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_country]" value="<?php echo esc_attr($options['local_country'] ?? ''); ?>" /></label>
+                                <div class="aisk-field-row">
+                                    <div class="aisk-field-group aisk-w-full">
+                                        <label for="ai-seo-local-street">Street</label>
+                                        <input id="ai-seo-local-street" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_street]" value="<?php echo esc_attr($options['local_street'] ?? ''); ?>" />
+                                    </div>
+                                </div>
+                                <div class="aisk-field-row">
+                                    <div class="aisk-field-group aisk-w-200">
+                                        <label for="ai-seo-local-city">City</label>
+                                        <input id="ai-seo-local-city" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_city]" value="<?php echo esc_attr($options['local_city'] ?? ''); ?>" />
+                                    </div>
+                                    <div class="aisk-field-group aisk-w-140">
+                                        <label for="ai-seo-local-state">State</label>
+                                        <input id="ai-seo-local-state" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_state]" value="<?php echo esc_attr($options['local_state'] ?? ''); ?>" />
+                                    </div>
+                                    <div class="aisk-field-group aisk-w-100">
+                                        <label for="ai-seo-local-zip">Zip</label>
+                                        <input id="ai-seo-local-zip" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_zip]" value="<?php echo esc_attr($options['local_zip'] ?? ''); ?>" />
+                                    </div>
+                                    <div class="aisk-field-group aisk-w-140">
+                                        <label for="ai-seo-local-country">Country</label>
+                                        <input id="ai-seo-local-country" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_country]" value="<?php echo esc_attr($options['local_country'] ?? ''); ?>" />
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         <tr>
                             <th scope="row">Contact</th>
                             <td>
-                                <label style="display:inline-block;margin-right:16px;">Phone <input class="regular-text" style="width:180px;" type="tel" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_phone]" value="<?php echo esc_attr($options['local_phone'] ?? ''); ?>" placeholder="+1-555-000-0000" /></label>
-                                <label style="display:inline-block;">Email <input class="regular-text" style="width:240px;" type="email" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_email]" value="<?php echo esc_attr($options['local_email'] ?? ''); ?>" /></label>
+                                <div class="aisk-field-row">
+                                    <div class="aisk-field-group aisk-w-200">
+                                        <label for="ai-seo-local-phone">Phone</label>
+                                        <input id="ai-seo-local-phone" type="tel" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_phone]" value="<?php echo esc_attr($options['local_phone'] ?? ''); ?>" placeholder="+1-555-000-0000" />
+                                    </div>
+                                    <div class="aisk-field-group aisk-w-200">
+                                        <label for="ai-seo-local-email">Email</label>
+                                        <input id="ai-seo-local-email" type="email" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_email]" value="<?php echo esc_attr($options['local_email'] ?? ''); ?>" />
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         <tr>
                             <th scope="row">Geo coordinates</th>
                             <td>
-                                <label style="display:inline-block;margin-right:16px;">Latitude <input class="regular-text" style="width:150px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_lat]" value="<?php echo esc_attr($options['local_lat'] ?? ''); ?>" placeholder="44.4268" /></label>
-                                <label style="display:inline-block;">Longitude <input class="regular-text" style="width:150px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_lng]" value="<?php echo esc_attr($options['local_lng'] ?? ''); ?>" placeholder="26.1025" /></label>
+                                <div class="aisk-field-row">
+                                    <div class="aisk-field-group aisk-w-160">
+                                        <label for="ai-seo-local-lat">Latitude</label>
+                                        <input id="ai-seo-local-lat" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_lat]" value="<?php echo esc_attr($options['local_lat'] ?? ''); ?>" placeholder="44.4268" />
+                                    </div>
+                                    <div class="aisk-field-group aisk-w-160">
+                                        <label for="ai-seo-local-lng">Longitude</label>
+                                        <input id="ai-seo-local-lng" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_lng]" value="<?php echo esc_attr($options['local_lng'] ?? ''); ?>" placeholder="26.1025" />
+                                    </div>
+                                </div>
                                 <p class="description">Used in schema and the <code>[ai_seo_map]</code> shortcode.</p>
                             </td>
                         </tr>
                         <tr>
                             <th scope="row">Opening hours</th>
                             <td>
-                                <p class="description" style="margin:0 0 8px;">Format: <code>09:00-17:00</code> — leave blank for closed. Use <code>00:00-23:59</code> for 24h.</p>
+                                <p class="description" style="margin: 0 0 12px;">Format: <code>09:00-17:00</code> — leave blank for closed. Use <code>00:00-23:59</code> for 24h.</p>
                                 <?php
                                 $days = array('mon' => 'Monday', 'tue' => 'Tuesday', 'wed' => 'Wednesday', 'thu' => 'Thursday', 'fri' => 'Friday', 'sat' => 'Saturday', 'sun' => 'Sunday');
                                 foreach ($days as $dk => $dl) : ?>
-                                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-                                        <span style="min-width:80px;font-size:13px;"><?php echo esc_html($dl); ?></span>
-                                        <input class="regular-text" style="width:140px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_hours_<?php echo $dk; ?>]" value="<?php echo esc_attr($options['local_hours_' . $dk] ?? ''); ?>" placeholder="09:00-17:00" />
-                                    </label>
+                                    <div class="aisk-hours-row">
+                                        <span><?php echo esc_html($dl); ?></span>
+                                        <input type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_hours_<?php echo $dk; ?>]" value="<?php echo esc_attr($options['local_hours_' . $dk] ?? ''); ?>" placeholder="09:00-17:00" />
+                                    </div>
                                 <?php endforeach; ?>
                             </td>
                         </tr>
                         <tr>
                             <th scope="row"><label for="ai-seo-local-price">Price range</label></th>
-                            <td><input id="ai-seo-local-price" class="regular-text" style="width:100px;" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_price_range]" value="<?php echo esc_attr($options['local_price_range'] ?? ''); ?>" placeholder="$$" />
+                            <td>
+                                <div class="aisk-field-group aisk-w-100">
+                                    <input id="ai-seo-local-price" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_price_range]" value="<?php echo esc_attr($options['local_price_range'] ?? ''); ?>" placeholder="$$" />
+                                </div>
                                 <p class="description">Use $ signs (e.g. $, $$, $$$) to indicate price level.</p>
                             </td>
                         </tr>
@@ -379,7 +419,7 @@ use AI_SEO_Keeper\Settings;
                     <span class="dashicons dashicons-arrow-down-alt2"></span>
                 </div>
                 <div class="ai-seo-accordion-body">
-                    <p class="description" style="margin:0 0 12px;">Control how your content appears in RSS feeds. Add branding, prevent scraping, and include featured images.</p>
+                    <p class="description">Control how your content appears in RSS feeds. Add branding, prevent scraping, and include featured images.</p>
                     <table class="form-table">
                         <tr>
                             <th scope="row"><label for="ai-seo-rss-before">Content before feed items</label></th>
@@ -416,7 +456,7 @@ use AI_SEO_Keeper\Settings;
                     <span class="dashicons dashicons-arrow-down-alt2"></span>
                 </div>
                 <div class="ai-seo-accordion-body">
-                    <p class="description" style="margin:0 0 12px;">Remove unnecessary pages from search engine crawl to focus crawl budget on your most important content.</p>
+                    <p class="description">Remove unnecessary pages from search engine crawl to focus crawl budget on your most important content.</p>
                     <table class="form-table">
                         <tr>
                             <th scope="row">Disable archive pages</th>
