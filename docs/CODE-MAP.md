@@ -16,10 +16,10 @@ ai-seo-keeper/
 │
 ├── includes/                      ← All PHP classes (PSR-4 style, AI_SEO_Keeper namespace)
 │   ├── class-plugin.php           ← Singleton controller — wires all modules together
-│   ├── class-settings.php         ← Options registry, defaults, get/save
-│   ├── class-admin.php            ← Admin UI, AJAX handlers, editor metabox (~5,950 lines)
-│   ├── class-frontend.php         ← Frontend SEO output (meta tags, schema, OG, crawl)
-│   ├── class-ai-generator.php     ← AI provider integration (OpenAI / Google)
+│   ├── class-settings.php         ← Options registry, defaults, get/save, title branding helpers
+│   ├── class-admin.php            ← Admin UI, AJAX handlers, editor metabox, GreenCoders design (~5,200 lines)
+│   ├── class-frontend.php         ← Frontend SEO output (meta tags, schema, OG, crawl, title branding)
+│   ├── class-ai-generator.php     ← AI provider integration (OpenAI / Google), live context overrides, preserve-if-good logic
 │   ├── class-content-indexer.php  ← Site content indexing & summary stats
 │   ├── class-content-writer.php   ← Pending content changes workflow
 │   ├── class-content-helper.php   ← Content extraction helper for AI prompts
@@ -44,11 +44,15 @@ ai-seo-keeper/
 ├── assets/
 │   ├── css/
 │   │   ├── admin-common.css       ← Shared styles (accordions, stat cards, tables, boxes)
+│   │   ├── page-settings.css      ← Settings page styles
 │   │   └── page-setup-wizard.css  ← Setup Wizard page styles
+│   ├── img/
+│   │   └── info-icon.svg          ← Purple-to-green gradient info icon
 │   └── js/
 │       ├── admin-common.js        ← Shared JS (accordion toggle, sortable table headers)
 │       ├── page-bulk-editor.js    ← Bulk Editor AJAX save per row
-│       └── page-images.js        ← Image SEO alt-text save, "Used on" toggle
+│       ├── page-images.js         ← Image SEO alt-text save, "Used on" toggle
+│       └── page-settings.js       ← Settings page interactions
 │
 └── docs/
     ├── CODE-MAP.md                ← This file
@@ -203,6 +207,7 @@ Created by `class-activator.php` on plugin activation.
 | `_ai_seo_keeper_pending_content_changes` | Pending AI content edits |
 | `_ai_seo_keeper_cornerstone` | Cornerstone content flag |
 | `_ai_seo_keeper_audit_skip` | Audit skip flag |
+| `_ai_seo_keeper_title_branding_off` | Per-page title branding opt-out |
 
 ---
 
@@ -215,7 +220,7 @@ Registered on all public post types. Contains these tabs:
 | **SEO** | Focus keyphrase, SEO title (30-60 chars), meta description (70-155 chars), AI generate, approve |
 | **Social** | Social title, description, image upload, preview |
 | **Schema** | Schema type selector |
-| **Advanced** | Canonical URL, robots directives (noindex, nofollow, noodp, etc.) |
+| **Advanced** | Canonical URL, robots directives (noindex, nofollow, noodp, etc.), cornerstone flag, hreflang |
 | **Checks** | Focus keyphrase analysis, readability scoring, link anchor quality, transition words |
 | **Links** | Internal/external link analysis, outbound/inbound link counts |
 

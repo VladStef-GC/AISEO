@@ -117,8 +117,9 @@ Before building the content editor, inject full SEO context into the chat prompt
 ### Add to `build_chat_user_prompt()`:
 
 - [x] Page content via Content_Helper (already done)
-- [ ] Current `_ai_seo_keeper_meta_title` draft
-- [ ] Current `_ai_seo_keeper_meta_description` draft
+- [x] Current `_ai_seo_keeper_meta_title` draft (via `get_seo_context()` → `format_seo_context_lines()`)
+- [x] Current `_ai_seo_keeper_meta_description` draft (via `get_seo_context()` → `format_seo_context_lines()`)
+- [x] Social title/description, schema type, canonical, robots, cornerstone (via `format_seo_context_lines()`)
 - [ ] Snippet score metrics (title length, desc length, keyphrase-in-title, keyphrase-in-desc)
 - [ ] Page audit data if exists (`_ai_seo_keeper_page_audit` — score, issues, suggestions)
 

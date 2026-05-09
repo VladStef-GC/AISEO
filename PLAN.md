@@ -16,7 +16,7 @@ The working model is hybrid by design:
 - `PLAN.md`: strategic direction, current shipped scope, and next priorities.
 - `PROJECT-HANDOFF.md`: current-state snapshot, architecture graph, runtime flow, data model, and new-chat briefing.
 
-## Current status as of 2026-05-06
+## Current status as of 2026-05-09
 
 - The plugin is a complete standalone SEO layer for both singular and non-singular content.
 - The editor workflow, AI drafting, saved manual metadata, history/approval, schema, breadcrumbs, discovery documents, audits, and IndexNow are already in place.
@@ -29,6 +29,9 @@ The working model is hybrid by design:
 - XML Sitemap replaces WordPress core sitemaps when enabled, includes an XSL stylesheet for human-readable display, and adds a Sitemap directive to robots.txt.
 - Sitemap respects per-page noindex robots directives and excludes noindexed content.
 - Schema output adapts to non-singular contexts with appropriate entity types (CollectionPage, SearchResultsPage, WebPage).
+- Title branding system appends a configurable site brand suffix to all page-specific SEO titles, with per-page opt-out and AI prompt budget enforcement.
+- AI generation sends live browser field values as context overrides, evaluates existing drafts before rewriting (preserve-if-good), enforces keyphrase presence in both title and description, passes full tab data (social, schema, canonical, robots, cornerstone) to AI prompts, and writes AI-generated keyphrase back to the editor field.
+- GreenCoders design identity applied to the editor metabox with promoted accordion gradients, branded button styles, and custom iconography.
 
 ## Current replacement target
 
@@ -250,7 +253,7 @@ Features that put us ahead of Yoast Free:
 | Feature | Yoast Free | AI SEO Keeper | Gap |
 |---------|-----------|---------------|-----|
 | SEO title / meta description | ✅ | ✅ | — |
-| Focus keyphrase analysis | ✅ Full | ⚠️ Partial | Phase 1.3 |
+| Focus keyphrase analysis | ✅ Full | ✅ Full | — |
 | Readability analysis | ✅ | ✅ | — |
 | Search appearance templates | ✅ | ✅ | — |
 | Open Graph / Twitter | ✅ | ✅ | — |
@@ -259,14 +262,15 @@ Features that put us ahead of Yoast Free:
 | Breadcrumbs | ✅ | ✅ | — |
 | Canonical URLs | ✅ | ✅ | — |
 | Robots directives | ✅ | ✅ | — |
-| Redirect manager | ✅ Premium | ❌ | Phase 1.1 |
-| Internal linking | ✅ Premium | ❌ | Phase 2.8 |
-| Orphaned content | ✅ Premium | ❌ | Phase 2.7 |
-| Cornerstone content | ✅ | ❌ | Phase 2.9 |
-| Social profiles schema | ✅ | ❌ | Phase 1.4 |
-| Taxonomy SEO fields | ✅ | ❌ | Phase 1.5 |
-| Robots.txt editor | ❌ | ❌ | Phase 1.2 |
-| Bulk editor | ❌ | ❌ | Phase 1.6 |
+| Redirect manager | ✅ Premium | ✅ | Ahead |
+| Internal linking | ✅ Premium | ✅ | Ahead |
+| Orphaned content | ✅ Premium | ✅ | Ahead |
+| Cornerstone content | ✅ | ✅ | — |
+| Social profiles schema | ✅ | ✅ | — |
+| Taxonomy SEO fields | ✅ | ✅ | — |
+| Robots.txt editor | ❌ | ✅ | Ahead |
+| Bulk editor | ❌ | ✅ | Ahead |
+| Title branding | ❌ | ✅ | Ahead |
 | AI page assistant | ❌ | ✅ | Ahead |
 | AI content editor | ❌ | ✅ | Ahead |
 | AI site audit | ❌ | ✅ | Ahead |

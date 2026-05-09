@@ -1,10 +1,10 @@
 # AI SEO Keeper Project Handoff
 
-Snapshot date: 2026-05-06
+Snapshot date: 2026-05-09
 
 Plugin root: `wp-content/plugins/ai-seo-keeper`
 
-Plugin version header: `1.0.0`
+Plugin version header: `1.2.0`
 
 Purpose: this is the fast-start handoff document for any new chat session. Read this together with `PLAN.md` before making new changes.
 
@@ -33,6 +33,9 @@ AI SEO Keeper is a hybrid AI plus deterministic SEO plugin for WordPress. The cu
 - AI discovery documents at `llms.txt` and `llms-full.txt`.
 - IndexNow key serving, logging, manual submission, and auto-submit hooks.
 - Non-destructive Yoast metadata import for migration without overwriting existing AI SEO Keeper values.
+- Title branding system: automatic ` | Brand` suffix on page-specific SEO titles, configurable site brand setting, per-page opt-out, and AI prompt budget enforcement.
+- AI generation context intelligence: live browser field overrides, preserve-if-good evaluation, keyphrase enforcement in both title and description, full tab data (social, schema, canonical, robots, cornerstone) in AI prompts, and keyphrase write-back to editor.
+- GreenCoders design identity in the editor metabox: promoted accordion style with purple-to-green gradient, branded button styles, and custom help-tip iconography.
 
 ## What is not finished yet
 
@@ -100,13 +103,13 @@ flowchart TD
 | `ai-seo-keeper.php` | Bootstrap, constants, class loading, activation hook, boot entrypoint |
 | `includes/class-plugin.php` | Runtime composition and admin/frontend boot split |
 | `includes/class-activator.php` | SQL table creation and default option initialization |
-| `includes/class-settings.php` | Settings defaults, registration, sanitization |
+| `includes/class-settings.php` | Settings defaults, registration, sanitization, title branding helpers |
 | `includes/class-admin.php` | Dashboard, settings, audit page, editor metabox, AJAX handlers, rollout actions, Yoast import |
 | `includes/class-content-indexer.php` | Content inventory, audit summary SQL, readiness counts |
 | `includes/class-audit-engine.php` | Higher-level audit report assembly for admin |
-| `includes/class-ai-generator.php` | Provider calls, prompt building, AI response parsing |
+| `includes/class-ai-generator.php` | Provider calls, prompt building with live context overrides and preserve-if-good logic, AI response parsing |
 | `includes/class-history-store.php` | Conversation storage, suggestion history, approvals, site audit history |
-| `includes/class-frontend.php` | Document title, head tags, schema, breadcrumbs, automatic search appearance for singular and non-singular contexts, verification tags |
+| `includes/class-frontend.php` | Document title with branding suffix, head tags, schema, breadcrumbs, automatic search appearance for singular and non-singular contexts, verification tags |
 | `includes/class-sitemap.php` | XML Sitemap index, per-type sitemaps, XSL stylesheet, robots.txt directive, WordPress core sitemap replacement |
 | `includes/class-discovery.php` | `llms.txt` and `llms-full.txt` generation |
 | `includes/class-indexnow.php` | IndexNow key file handling, submissions, log storage |
@@ -156,7 +159,7 @@ flowchart TD
 
 1. `class-admin.php` registers the metabox for public post types except attachments.
 2. The operator can save manual SEO fields, request AI suggestions, approve a suggestion, or chat with the page assistant.
-3. AI requests are built by `class-ai-generator.php` using the current post plus indexed site context.
+3. AI requests are built by `class-ai-generator.php` using the current post plus indexed site context. When called from the editor, live browser field values override stale database values. The AI evaluates existing drafts before rewriting and enforces keyphrase presence in titles and descriptions.
 4. Requests and responses are stored by `class-history-store.php`.
 5. Approved suggestions and saved manual fields become eligible frontend inputs.
 
@@ -214,10 +217,10 @@ flowchart TD
 
 ## Current priorities for the next session
 
-1. Extend automatic search appearance and frontend metadata resolution beyond singular content.
-2. Cover archives, taxonomies, the posts page, search results, and other non-singular templates with deterministic defaults.
-3. Keep strengthening standalone behavior before adding more migration tooling.
-4. Add richer schema enrichment only where the site already stores clean structured values.
+1. AI Content Editor Phase 2: "Apply" button for chat suggestions, snippet score metrics in chat prompt, page audit data in chat prompt.
+2. AI site-structure assistant: dedicated admin page where AI can view the full sitemap, propose URL restructuring, rename slugs, and manage redirects.
+3. Taxonomy-level SEO fields (title/description per individual category/tag) beyond template-based defaults.
+4. Broader schema enrichment from trusted site-specific data sources.
 
 ## New chat briefing
 

@@ -18,6 +18,7 @@ AI SEO Keeper uses artificial intelligence to generate, manage, and optimize eve
 | | Feature | Why it matters |
 |---|---------|----------------|
 | 🤖 | **AI-Generated SEO Metadata** | One click generates optimized titles and descriptions using GPT-4.1 or Google Gemini |
+| 🏷️ | **Title Branding** | Automatic ` | Brand` suffix on all SEO titles with per-page opt-out |
 | ✅ | **Approval Workflow** | AI suggestions stay as drafts until you approve — nothing goes live without your say |
 | 📊 | **Full Page Audits with Scoring** | Every page gets an SEO score (0-100) with specific issues and actionable suggestions |
 | 💬 | **Per-Page AI Chat** | Ask the AI questions about any page's SEO directly from the post editor |
@@ -51,6 +52,8 @@ AI SEO Keeper uses artificial intelligence to generate, manage, and optimize eve
   - [RSS Feed Optimization](#-rss-feed-optimization)
   - [AI Discovery Documents](#-ai-discovery-documents)
   - [Search Appearance Templates](#-search-appearance-templates)
+  - [Title Branding](#-title-branding)
+  - [AI Context Intelligence](#-ai-context-intelligence)
   - [AI Content Editor](#-ai-content-editor)
   - [Export & Import](#-export--import)
   - [Yoast SEO Migration](#-yoast-seo-migration)
@@ -94,7 +97,7 @@ A comprehensive SEO panel inside every post/page editor with six tabs:
 | **SEO** | Focus keyphrase, SEO title (30-60 char guide), meta description (70-155 char guide), one-click AI generation, approve/reject workflow, suggestion history |
 | **Social** | Open Graph title, description, and image with live preview |
 | **Schema** | Schema.org type selector per page |
-| **Advanced** | Canonical URL override, robots directives (noindex, nofollow, noodp, noimageindex, etc.) |
+| **Advanced** | Canonical URL override, robots directives (noindex, nofollow, noodp, noimageindex, etc.), cornerstone content toggle, hreflang entries |
 | **Checks** | Real-time SEO analysis — keyphrase density, title/description length, readability score, transition word usage, link anchor quality (detects "click here", "read more", etc.) |
 | **Links** | Internal and external link analysis — outbound count, inbound links, orphan detection, link suggestions |
 
@@ -314,6 +317,30 @@ Automatic title templates with variable placeholders:
 | `%%author%%` | Author display name |
 
 Templates for: posts, pages, categories, tags, author archives, date archives, search results, general archives, and 404 pages.
+
+---
+
+### 🏷️ Title Branding
+
+Automatic brand suffix on all SEO titles:
+
+- **Site Brand setting** — define your brand name (defaults to site name)
+- **Automatic suffix** — appends ` | Brand Name` to every page-specific SEO title
+- **Smart budget** — AI prompt enforces a page-title character budget so the full branded title stays within 60 chars
+- **Per-page opt-out** — disable branding on individual pages when needed
+- **Template-safe** — search appearance templates already contain branding, so the suffix only applies to page-specific titles
+
+---
+
+### 🧠 AI Context Intelligence
+
+The AI generation pipeline sends full real-time context for smarter results:
+
+- **Live browser context** — when generating from the editor, the AI receives your current unsaved field values (title, description, keyphrase, social, schema, canonical, robots, cornerstone) — not stale database values
+- **Preserve-if-good** — AI evaluates existing drafts before rewriting. If they're already well-optimized, it returns them unchanged
+- **Keyphrase enforcement** — the focus keyphrase must appear naturally in both the SEO title and meta description
+- **Full tab data** — AI sees social titles/descriptions, schema type, canonical URL, robots directives, and cornerstone status — not just the SEO tab
+- **Keyphrase write-back** — if the user hasn't set a focus keyphrase, the AI-generated one is written back to the editor field automatically
 
 ---
 
