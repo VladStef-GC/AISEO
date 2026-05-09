@@ -674,6 +674,9 @@ class AI_Generator
         return $this->extract_response_text($response, 'google');
     }
 
+    /**
+     * @param array|\WP_Error $response
+     */
     private function extract_response_text($response, string $provider): string
     {
         if (is_wp_error($response)) {
@@ -702,6 +705,9 @@ class AI_Generator
         return $content;
     }
 
+    /**
+     * @param array|null $decoded
+     */
     private function extract_error_message($decoded): string
     {
         if (! is_array($decoded)) {
@@ -761,6 +767,9 @@ class AI_Generator
         return substr($text, 0, $limit);
     }
 
+    /**
+     * @param mixed $value
+     */
     private function sanitize_string_list($value, int $limit): array
     {
         if (! is_array($value)) {

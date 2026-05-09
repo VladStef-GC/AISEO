@@ -296,7 +296,7 @@ class Frontend
 
         // 2) Auto-detect from WPML.
         if (empty($alternates) && function_exists('icl_get_languages')) {
-            $languages = icl_get_languages('skip_missing=0');
+            $languages = \icl_get_languages('skip_missing=0');
             if (is_array($languages)) {
                 foreach ($languages as $lang_data) {
                     if (! empty($lang_data['url']) && ! empty($lang_data['language_code'])) {
@@ -308,7 +308,7 @@ class Frontend
 
         // 3) Auto-detect from Polylang.
         if (empty($alternates) && function_exists('pll_the_languages')) {
-            $translations = function_exists('pll_get_post_translations') ? pll_get_post_translations($post_id) : array();
+            $translations = function_exists('pll_get_post_translations') ? \pll_get_post_translations($post_id) : array();
             if (! empty($translations)) {
                 foreach ($translations as $lang => $translated_id) {
                     $url = get_permalink($translated_id);

@@ -9,6 +9,15 @@
  *   $settings_message, $yoast_import_action
  *
  * @package AI_SEO_Keeper
+ *
+ * @var array  $options              Plugin options array.
+ * @var string $settings_status      'success' or 'error' flash status.
+ * @var string $settings_message     Flash message text.
+ * @var string $yoast_import_action  Admin-post action slug for Yoast import.
+ * @var bool   $indexnow_enabled     Whether IndexNow is enabled.
+ * @var bool   $indexnow_auto_submit Whether auto-submit is enabled.
+ * @var string $indexnow_key         The IndexNow API key.
+ * @var string $indexnow_key_url     Public URL to the IndexNow key file.
  */
 
 defined('ABSPATH') || exit;

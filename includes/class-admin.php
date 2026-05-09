@@ -118,14 +118,23 @@ class Admin
 
     private Content_Indexer $content_indexer;
 
+    /** @var AI_Generator */
     private $ai_generator;
 
+    /** @var History_Store */
     private $history_store;
 
+    /** @var Audit_Engine */
     private $audit_engine;
 
+    /** @var IndexNow|null */
     private $indexnow_service;
 
+    /**
+     * @param AI_Generator  $ai_generator
+     * @param History_Store  $history_store
+     * @param IndexNow|null  $indexnow_service
+     */
     public function __construct(Settings $settings, Content_Indexer $content_indexer, $ai_generator, $history_store, $indexnow_service = null)
     {
         $this->settings = $settings;
@@ -2057,6 +2066,9 @@ JS;
         require __DIR__ . '/admin/view-audit.php';
     }
 
+    /**
+     * @param \WP_Post $post
+     */
     public function register_editor_metabox(string $post_type, $post): void
     {
         if (! $this->is_supported_post_type($post_type)) {
@@ -2077,6 +2089,9 @@ JS;
         );
     }
 
+    /**
+     * @param \WP_Post $post
+     */
     public function render_editor_metabox($post): void
     {
         $options          = $this->settings->get();
@@ -3744,6 +3759,7 @@ HTML;
             $suggestion = $this->ai_generator->generate_for_post($post_id, $field_overrides);
         } catch (\Throwable $throwable) {
             wp_send_json_error(array('message' => $throwable->getMessage()), 500);
+            return;
         }
 
         $suggestion = array_merge(
@@ -3829,6 +3845,7 @@ HTML;
             $approved = $this->history_store->approve_suggestion($post_id, 'post', $message_id);
         } catch (\Throwable $throwable) {
             wp_send_json_error(array('message' => $throwable->getMessage()), 500);
+            return;
         }
 
         $approved = array_merge(
@@ -3929,6 +3946,7 @@ HTML;
             }
         } catch (\Throwable $throwable) {
             wp_send_json_error(array('message' => $throwable->getMessage()), 500);
+            return;
         }
 
         $chat_messages = $this->history_store->get_recent_chat_messages($post_id, 12);
@@ -4302,6 +4320,7 @@ HTML;
             $result = $this->ai_generator->generate_content_changes($post_id, $instruction);
         } catch (\Throwable $throwable) {
             wp_send_json_error(array('message' => $throwable->getMessage()), 500);
+            return;
         }
 
         wp_send_json_success(array(
@@ -4538,6 +4557,7 @@ HTML;
 
         // Check if Step 2 was already completed (any page has AI-generated metadata).
         $has_metadata = false;
+        $meta_count = 0;
         if ($has_index) {
             global $wpdb;
             $meta_count = (int) $wpdb->get_var(
