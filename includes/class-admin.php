@@ -1400,7 +1400,7 @@ jQuery(function ($) {
         var $group = $tab.closest('.ai-seo-keeper-accordion-panel');
 
         $group.find('.ai-seo-keeper-assistant-tab').removeClass('is-active').css({'border-bottom-color': 'transparent', 'color': '#787c82'});
-        $tab.addClass('is-active').css({'border-bottom-color': '#2271b1', 'color': '#1d2327'});
+        $tab.addClass('is-active').css({'border-bottom-color': '#643d87', 'color': '#1d2327'});
 
         $group.find('.ai-seo-keeper-assistant-panel').hide();
         $group.find('.ai-seo-keeper-assistant-panel[data-panel="' + target + '"]').show();
@@ -2194,7 +2194,7 @@ JS;
                     <div class="ai-seo-keeper-snippet-analyzer is-neutral">
                         <div class="ai-seo-keeper-snippet-header">
                             <div>
-                                <strong>Live snippet health <span class="ai-seo-keeper-help-tip" data-tip="Checks ONLY whether your title and description have correct length and contain the focus keyphrase. This is NOT an overall SEO score — it tracks metadata formatting only. Use the AI audit below for a full SEO analysis.">&#9432;</span></strong>
+                                <strong>Live snippet health <span class="ai-seo-keeper-help-tip" data-tip="Checks ONLY whether your title and description have correct length and contain the focus keyphrase. This is NOT an overall SEO score — it tracks metadata formatting only. Use the AI audit below for a full SEO analysis."></span></strong>
                                 <p class="ai-seo-keeper-panel-note">Title length, description length, and focus-keyphrase coverage update instantly while you type.</p>
                             </div>
                             <div class="ai-seo-keeper-snippet-score is-neutral">
@@ -2209,9 +2209,9 @@ JS;
                         </div>
 
                         <?php if (null !== $page_audit_score) : ?>
-                            <div style="display:flex;align-items:center;gap:12px;margin:10px 0;padding:8px 12px;background:#f6f7f7;border-radius:4px;">
-                                <span style="font-size:13px;">AI SEO Score: <strong style="color:<?php echo $page_audit_score >= 70 ? '#00a32a' : ($page_audit_score >= 40 ? '#dba617' : '#d63638'); ?>;"><?php echo esc_html((string) $page_audit_score); ?>/100</strong> <span class="ai-seo-keeper-help-tip" data-tip="Full AI-powered SEO audit of this page. Unlike the metadata fit score above, this analyzes content quality, heading structure, word count, image alt tags, readability, and more.">&#9432;</span></span>
-                                <button type="button" class="button button-small ai-seo-keeper-run-page-audit" <?php disabled(! $has_api_key); ?>>🔄 Re-run AI Audit</button>
+                            <div style="display:flex;align-items:center;gap:12px;margin:10px 0;padding:10px 14px;background:#f6f7f7;border-radius:8px;">
+                                <span style="font-size:14px;">AI SEO Score: <strong style="color:<?php echo $page_audit_score >= 70 ? '#00a32a' : ($page_audit_score >= 40 ? '#dba617' : '#d63638'); ?>; font-size:16px;"><?php echo esc_html((string) $page_audit_score); ?>/100</strong> <span class="ai-seo-keeper-help-tip" data-tip="Full AI-powered SEO audit of this page. Unlike the metadata fit score above, this analyzes content quality, heading structure, word count, image alt tags, readability, and more."></span></span>
+                                <button type="button" class="button button-primary ai-seo-keeper-run-page-audit" style="font-size:13px;min-height:34px;padding:0 18px;border-radius:12px;" <?php disabled(! $has_api_key); ?>>↻ Re-run AI Audit</button>
                                 <span class="ai-seo-keeper-audit-status" style="font-size:12px;color:#787c82;"></span>
                             </div>
                         <?php else : ?>
@@ -2259,7 +2259,7 @@ JS;
                         </label>
 
                         <label class="ai-seo-keeper-field ai-seo-keeper-field-textarea-wide">
-                            <span class="ai-seo-keeper-field-label">SEO title <span class="ai-seo-keeper-help-tip" data-tip="This is the page-specific part of the title. The separator and site brand from Settings are appended automatically unless you check 'Use as full title' below.">&#9432;</span></span>
+                            <span class="ai-seo-keeper-field-label">SEO title <span class="ai-seo-keeper-help-tip" data-tip="This is the page-specific part of the title. The separator and site brand from Settings are appended automatically unless you check 'Use as full title' below."></span></span>
                             <div style="display:flex;align-items:center;">
                                 <input id="ai-seo-keeper-meta-title" type="text" name="ai_seo_keeper_meta_title" value="<?php echo esc_attr($seo_title); ?>" maxlength="<?php echo esc_attr((string) self::TITLE_MAX_LENGTH); ?>" style="flex:1;" />
                                 <?php if ('' !== $branding_suffix && ! $title_branding_off) : ?>
@@ -2275,7 +2275,7 @@ JS;
                         </label>
 
                         <label class="ai-seo-keeper-field ai-seo-keeper-field-textarea-wide">
-                            <span class="ai-seo-keeper-field-label">Meta description <span class="ai-seo-keeper-help-tip" data-tip="This description appears below the title in search results. Approve it via the readiness section to make it live. AI can generate or edit it for you.">&#9432;</span></span>
+                            <span class="ai-seo-keeper-field-label">Meta description <span class="ai-seo-keeper-help-tip" data-tip="This description appears below the title in search results. Approve it via the readiness section to make it live. AI can generate or edit it for you."></span></span>
                             <textarea id="ai-seo-keeper-meta-description" rows="5" name="ai_seo_keeper_meta_description" maxlength="<?php echo esc_attr((string) self::DESCRIPTION_MAX_LENGTH); ?>"><?php echo esc_textarea($seo_description); ?></textarea>
                             <?php echo $this->render_field_counter('ai-seo-keeper-meta-description', $seo_description, self::DESCRIPTION_MAX_LENGTH); ?>
                             <span class="ai-seo-keeper-field-help">Shown under the title in search results. Approve it below to go live. Max <?php echo esc_html((string) self::DESCRIPTION_MAX_LENGTH); ?> chars.</span>
@@ -2286,17 +2286,18 @@ JS;
                         <?php if ($chat_is_enabled) : ?>
                             <?php
                             $ai_assistant_content =
-                                '<div class="ai-seo-keeper-chat-intro">Your AI SEO copilot — ask questions, get metadata suggestions, or request page content edits. Everything happens in one conversation. <span class="ai-seo-keeper-help-tip" data-tip="AI sees your full page content, SEO title, meta description, focus keyphrase, snippet scores, audit results, related pages, and the full conversation history.">&#9432;</span></div>' .
+                                '<div class="ai-seo-keeper-chat-intro">Your AI SEO copilot — ask questions, get metadata suggestions, or request page content edits. Everything happens in one conversation. <span class="ai-seo-keeper-help-tip" data-tip="AI sees your full page content, SEO title, meta description, focus keyphrase, snippet scores, audit results, related pages, and the full conversation history."></span></div>' .
 
                                 '<div class="ai-seo-keeper-assistant-tabs" style="display:flex;gap:0;border-bottom:2px solid #dcdcde;margin-bottom:12px;">' .
-                                '<button type="button" class="ai-seo-keeper-assistant-tab is-active" data-target="chat" style="padding:8px 16px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:2px solid #2271b1;margin-bottom:-2px;cursor:pointer;color:#1d2327;">💬 Chat</button>' .
-                                '<button type="button" class="ai-seo-keeper-assistant-tab" data-target="history" style="padding:8px 16px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:#787c82;">📋 History</button>' .
+                                '<button type="button" class="ai-seo-keeper-assistant-tab is-active" data-target="chat" style="padding:8px 16px;font-size:14px;font-weight:600;background:none;border:none;border-bottom:2px solid #643d87;margin-bottom:-2px;cursor:pointer;color:#1d2327;">💬 Chat</button>' .
+                                '<button type="button" class="ai-seo-keeper-assistant-tab" data-target="history" style="padding:8px 16px;font-size:14px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:#787c82;">📋 History</button>' .
                                 '</div>' .
 
                                 '<div class="ai-seo-keeper-assistant-panel" data-panel="chat">' .
                                 '<textarea class="widefat ai-seo-keeper-chat-input" rows="3" placeholder="Ask about SEO, request content edits, or follow up on previous advice — AI handles it all in one conversation…"></textarea>' .
                                 '<p class="ai-seo-keeper-chat-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' .
-                                '<button type="button" class="button button-primary ai-seo-keeper-send-chat" ' . disabled(! $has_api_key, true, false) . '>Send <span class="ai-seo-keeper-help-tip" data-tip="AI reads your full page content, SEO data, audit results, and conversation history. Ask questions, request metadata changes, or ask for page content edits — AI decides what to do automatically. When edits are needed, you get BEFORE/AFTER diffs to review before anything is saved.">&#9432;</span></button>' .
+                                '<button type="button" class="button button-primary ai-seo-keeper-send-chat" ' . disabled(! $has_api_key, true, false) . '>Send</button>' .
+                                '<span class="ai-seo-keeper-help-tip" data-tip="AI reads your full page content, SEO data, audit results, and conversation history. Ask questions, request metadata changes, or ask for page content edits \u2014 AI decides what to do automatically. When edits are needed, you get BEFORE/AFTER diffs to review before anything is saved."></span>' .
                                 '<button type="button" class="button ai-seo-keeper-clear-chat" style="margin-left:auto;color:#8a2424;" ' . disabled(empty($chat_messages), true, false) . '>🗑 Clear</button>' .
                                 '</p>' .
                                 '<span class="ai-seo-keeper-chat-status" aria-live="polite" style="display:block;font-size:13px;margin:4px 0 8px;"></span>' .
@@ -2310,9 +2311,10 @@ JS;
 
                             echo $this->render_accordion_section(
                                 $chat_accordion_id,
-                                '🤖 AI Assistant <span class="ai-seo-keeper-help-tip" data-tip="Unified AI workspace: chat for SEO advice, edit page content, and view suggestion history — all in one place.">&#9432;</span>',
+                                'AI Assistant <span class="ai-seo-keeper-help-tip" data-tip="Unified AI workspace: chat for SEO advice, edit page content, and view suggestion history — all in one place."></span>',
                                 $ai_assistant_content,
-                                false
+                                false,
+                                true
                             );
                             ?>
                         <?php endif; ?>
@@ -2320,7 +2322,7 @@ JS;
                         <?php
                         echo $this->render_accordion_section(
                             $readiness_accordion_id,
-                            'Frontend readiness <span class="ai-seo-keeper-help-tip" data-tip="Shows whether this page\'s SEO metadata is approved and ready to be served on the live site. All checks must pass for AI SEO Keeper to output your title and description.">&#9432;</span>',
+                            'Frontend readiness <span class="ai-seo-keeper-help-tip" data-tip="Shows whether this page\'s SEO metadata is approved and ready to be served on the live site. All checks must pass for AI SEO Keeper to output your title and description."></span>',
                             $frontend_readiness_markup,
                             true
                         );
@@ -2752,16 +2754,17 @@ JS;
 
 .ai-seo-keeper-tab-button:hover,
 .ai-seo-keeper-tab-button:focus-visible {
-    border-color: #2271b1;
-    color: #0a4b78;
+    border-color: #c3c4c7;
+    color: #1d2327;
     outline: none;
 }
 
 .ai-seo-keeper-tab-button.is-active {
     background: #ffffff;
-    border-color: #2271b1;
-    color: #0a4b78;
-    box-shadow: inset 0 3px 0 #2271b1;
+    border-color: #c3c4c7;
+    border-bottom: 3px solid #1db954;
+    color: #1d2327;
+    box-shadow: none;
 }
 
 .ai-seo-keeper-tab-panels {
@@ -2878,7 +2881,7 @@ JS;
 }
 
 .ai-seo-keeper-snippet-analyzer.is-neutral .ai-seo-keeper-snippet-score-fill {
-    background: linear-gradient(90deg, #2271b1 0%, #76a9ff 100%);
+    background: linear-gradient(90deg, #643d87 0%, #a66dd4 100%);
 }
 
 .ai-seo-keeper-snippet-analyzer.is-warning .ai-seo-keeper-snippet-score-fill {
@@ -3070,8 +3073,8 @@ JS;
 .ai-seo-keeper-editor-panel .ai-seo-keeper-field textarea:focus,
 .ai-seo-keeper-editor-panel .ai-seo-keeper-field select:focus,
 .ai-seo-keeper-editor-panel .ai-seo-keeper-chat-input:focus {
-    border-color: #2271b1;
-    box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.12);
+    border-color: #643d87;
+    box-shadow: 0 0 0 3px rgba(100, 61, 135, 0.12);
     outline: none;
 }
 
@@ -3183,9 +3186,14 @@ JS;
 .ai-seo-keeper-checkbox-row {
     display: grid;
     grid-template-columns: 18px minmax(0, 1fr);
-    gap: 10px;
+    gap: 4px;
     align-items: start;
     color: #1f2937;
+}
+
+.ai-seo-keeper-checkbox-row input[type="checkbox"] {
+    margin: 3px 0 0;
+    vertical-align: top;
 }
 
 .ai-seo-keeper-accordion-group {
@@ -3199,6 +3207,28 @@ JS;
     border-radius: 18px;
     overflow: hidden;
     background: #ffffff;
+}
+
+.ai-seo-keeper-accordion-item.is-promoted {
+    border: 2px solid transparent;
+    background-image: linear-gradient(#fff, #fff), linear-gradient(135deg, #643d87 0%, #1db954 100%);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    box-shadow: 0 4px 18px rgba(100, 61, 135, 0.13);
+}
+
+.ai-seo-keeper-accordion-item.is-promoted .ai-seo-keeper-accordion-toggle {
+    background: linear-gradient(135deg, #643d87 0%, #1db954 100%);
+    color: #ffffff;
+}
+
+.ai-seo-keeper-accordion-item.is-promoted .ai-seo-keeper-accordion-toggle:hover,
+.ai-seo-keeper-accordion-item.is-promoted .ai-seo-keeper-accordion-toggle:focus-visible {
+    background: linear-gradient(135deg, #7a4fa0 0%, #22d362 100%);
+}
+
+.ai-seo-keeper-accordion-item.is-promoted .ai-seo-keeper-accordion-symbol {
+    color: #ffffff;
 }
 
 .ai-seo-keeper-accordion-toggle {
@@ -3225,7 +3255,7 @@ JS;
 .ai-seo-keeper-accordion-symbol {
     font-size: 18px;
     font-weight: 400;
-    color: #2271b1;
+    color: #643d87;
 }
 
 .ai-seo-keeper-accordion-panel {
@@ -3268,10 +3298,23 @@ JS;
 .ai-seo-keeper-help-tip {
     display: inline-block;
     cursor: help;
-    color: #2271b1;
     font-weight: 400;
     font-size: 14px;
     position: static;
+    color: #50575e;
+}
+
+.ai-seo-keeper-help-tip::before {
+    content: "\1D48A";
+    margin-left: 5px;
+    font-size: 14px;
+    font-weight: 700;
+    vertical-align: baseline;
+}
+
+.ai-seo-keeper-help-tip.is-light,
+.ai-seo-keeper-accordion-item.is-promoted .ai-seo-keeper-accordion-toggle .ai-seo-keeper-help-tip {
+    color: #ffffff;
 }
 
 .ai-seo-keeper-help-tip:hover::after {
@@ -3420,17 +3463,68 @@ JS;
         min-height: 220px;
     }
 }
+
+/* GreenCoders button branding */
+.ai-seo-keeper-editor-panel .button.button-primary {
+    display: inline-block;
+    text-decoration: none;
+    font-size: 13px;
+    line-height: 2.15384615;
+    min-height: 40px;
+    padding: 0 40px;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 15px;
+    white-space: nowrap;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    background: linear-gradient(135deg, #643d87 0%, #1db954 100%);
+    border-color: #643d87;
+    color: #ffffff;
+    text-shadow: none;
+    box-shadow: 0 2px 6px rgba(100, 61, 135, 0.25);
+    transition: opacity 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+}
+
+.ai-seo-keeper-editor-panel .button.button-primary:hover,
+.ai-seo-keeper-editor-panel .button.button-primary:focus {
+    background: linear-gradient(135deg, #7a4fa0 0%, #22d362 100%);
+    border-color: #7a4fa0;
+    box-shadow: 0 4px 12px rgba(100, 61, 135, 0.35);
+    color: #ffffff;
+}
+
+.ai-seo-keeper-editor-panel .button.button-primary:disabled {
+    background: linear-gradient(135deg, #9b7db5 0%, #7dd4a0 100%);
+    border-color: #9b7db5;
+    opacity: 0.6;
+    box-shadow: none;
+}
+
+.ai-seo-keeper-editor-panel .button:not(.button-primary) {
+    border-color: #643d87;
+    color: #643d87;
+}
+
+.ai-seo-keeper-editor-panel .button:not(.button-primary):hover,
+.ai-seo-keeper-editor-panel .button:not(.button-primary):focus {
+    background: rgba(100, 61, 135, 0.06);
+    border-color: #4a2d64;
+    color: #4a2d64;
+}
 </style>
 HTML;
     }
 
-    private function render_accordion_section(string $accordion_id, string $title, string $content, bool $open = false): string
+    private function render_accordion_section(string $accordion_id, string $title, string $content, bool $open = false, bool $promoted = false): string
     {
+        $item_class = 'ai-seo-keeper-accordion-item' . ($promoted ? ' is-promoted' : '');
         ob_start();
     ?>
-        <div class="ai-seo-keeper-accordion-item">
+        <div class="<?php echo esc_attr($item_class); ?>">
             <button type="button" class="ai-seo-keeper-accordion-toggle" aria-expanded="<?php echo $open ? 'true' : 'false'; ?>" aria-controls="<?php echo esc_attr($accordion_id); ?>" data-default-open="<?php echo $open ? '1' : '0'; ?>">
-                <span><?php echo wp_kses($title, array('span' => array('class' => true, 'data-tip' => true))); ?></span>
+                <span><?php echo wp_kses($title, array('span' => array('class' => true, 'data-tip' => true), 'img' => array('class' => true, 'src' => true, 'alt' => true, 'width' => true, 'height' => true, 'style' => true))); ?></span>
                 <span class="ai-seo-keeper-accordion-symbol"><?php echo $open ? '-' : '+'; ?></span>
             </button>
             <div id="<?php echo esc_attr($accordion_id); ?>" class="ai-seo-keeper-accordion-panel" <?php echo $open ? '' : 'hidden'; ?>>

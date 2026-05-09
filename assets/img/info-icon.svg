@@ -1,5 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="8" cy="8" r="6.5"/>
-  <line x1="8" y1="7" x2="8" y2="11"/>
-  <circle cx="8" cy="5" r=".5" fill="currentColor" stroke="none"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+  <circle cx="8" cy="8" r="7" fill="url(#gc-info-grad)" opacity="0.15"/>
+  <circle cx="8" cy="8" r="6.25" stroke="url(#gc-info-grad)" stroke-width="1.5" fill="none"/>
+  <rect x="7.15" y="7" width="1.7" height="4.2" rx="0.85" fill="url(#gc-info-grad)"/>
+  <circle cx="8" cy="5.1" r="1" fill="url(#gc-info-grad)"/>
+  <defs>
+    <linearGradient id="gc-info-grad" x1="0" y1="0" x2="16" y2="16" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#643d87"/>
+      <stop offset="100%" stop-color="#1db954"/>
+    </linearGradient>
+  </defs>
 </svg>
