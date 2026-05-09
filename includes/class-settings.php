@@ -6,6 +6,34 @@ class Settings
 {
     public const OPTION_NAME = 'ai_seo_keeper_options';
 
+    /**
+     * Curated text-only models for plugin workflows that require JSON output.
+     *
+     * This excludes realtime/audio/image-only models by design.
+     */
+    private const PROVIDER_MODELS = array(
+        'openai' => array(
+            'gpt-5.5' => array('label' => 'GPT-5.5', 'tier' => 'stable'),
+            'gpt-5.4' => array('label' => 'GPT-5.4', 'tier' => 'stable'),
+            'gpt-5.4-mini' => array('label' => 'GPT-5.4 Mini', 'tier' => 'stable'),
+            'gpt-5.4-nano' => array('label' => 'GPT-5.4 Nano', 'tier' => 'stable'),
+            'o3' => array('label' => 'o3', 'tier' => 'stable'),
+            'o4-mini' => array('label' => 'o4-mini', 'tier' => 'stable'),
+            'gpt-4.1' => array('label' => 'GPT-4.1', 'tier' => 'stable'),
+            'gpt-4.1-mini' => array('label' => 'GPT-4.1 Mini', 'tier' => 'stable'),
+            'gpt-4.1-nano' => array('label' => 'GPT-4.1 Nano', 'tier' => 'stable'),
+        ),
+        'google' => array(
+            'gemini-3.1-pro-preview' => array('label' => 'Gemini 3.1 Pro', 'tier' => 'preview'),
+            'gemini-3-flash-preview' => array('label' => 'Gemini 3 Flash', 'tier' => 'preview'),
+            'gemini-3.1-flash-lite' => array('label' => 'Gemini 3.1 Flash-Lite', 'tier' => 'stable'),
+            'gemini-3.1-flash-lite-preview' => array('label' => 'Gemini 3.1 Flash-Lite', 'tier' => 'preview'),
+            'gemini-2.5-pro' => array('label' => 'Gemini 2.5 Pro', 'tier' => 'stable'),
+            'gemini-2.5-flash' => array('label' => 'Gemini 2.5 Flash', 'tier' => 'stable'),
+            'gemini-2.5-flash-lite' => array('label' => 'Gemini 2.5 Flash-Lite', 'tier' => 'stable'),
+        ),
+    );
+
     public const FEATURE_FLAGS = array(
         'meta_title'       => 'Meta Title',
         'meta_description' => 'Meta Description',
@@ -26,6 +54,9 @@ class Settings
         $defaults = array(
             'provider'             => 'openai',
             'model'                => 'gpt-4.1-mini',
+            'custom_model_enabled' => 0,
+            'custom_model_id'      => '',
+            'ai_temperature'       => 0.3,
             'api_key'              => '',
             'system_prompt'        => 'You are the SEO copilot for this WordPress site. Suggest clear, differentiated, search-intent-aware metadata and explain tradeoffs briefly.',
             'google_tracking_code' => '',
@@ -35,6 +66,7 @@ class Settings
             'frontend_override_conflicts' => 0,
             'search_appearance_auto_enabled' => 1,
             'search_title_separator' => '|',
+            'site_brand'            => '',
             'search_title_template_post' => '%%title%% %%sep%% %%sitename%%',
             'search_title_template_page' => '%%title%% %%sep%% %%sitename%%',
             'search_title_template_default' => '%%title%% %%sep%% %%sitename%%',
@@ -115,6 +147,95 @@ class Settings
         return $defaults;
     }
 
+    public static function get_supported_providers(): array
+    {
+        return array_keys(self::PROVIDER_MODELS);
+    }
+
+    public static function get_models_for_provider(string $provider): array
+    {
+        $provider = sanitize_key($provider);
+
+        if (! isset(self::PROVIDER_MODELS[$provider]) || ! is_array(self::PROVIDER_MODELS[$provider])) {
+            return array();
+        }
+
+        $labels = array();
+
+        foreach (self::PROVIDER_MODELS[$provider] as $model_id => $meta) {
+            if (! is_array($meta) || empty($meta['label'])) {
+                continue;
+            }
+
+            $labels[$model_id] = (string) $meta['label'];
+        }
+
+        return $labels;
+    }
+
+    public static function get_model_catalog_for_provider(string $provider): array
+    {
+        $provider = sanitize_key($provider);
+
+        return isset(self::PROVIDER_MODELS[$provider]) && is_array(self::PROVIDER_MODELS[$provider])
+            ? self::PROVIDER_MODELS[$provider]
+            : array();
+    }
+
+    public static function get_default_model_for_provider(string $provider): string
+    {
+        $provider = sanitize_key($provider);
+
+        $preferred_defaults = array(
+            'openai' => 'gpt-4.1-mini',
+            'google' => 'gemini-2.5-flash',
+        );
+
+        if (isset($preferred_defaults[$provider])) {
+            return $preferred_defaults[$provider];
+        }
+
+        $models = self::get_models_for_provider($provider);
+
+        if (! empty($models)) {
+            $keys = array_keys($models);
+
+            return (string) $keys[0];
+        }
+
+        $defaults = self::defaults();
+
+        return (string) ($defaults['model'] ?? 'gpt-4.1-mini');
+    }
+
+    public static function sanitize_provider_model(string $provider, string $model): string
+    {
+        $model = sanitize_text_field($model);
+        $models = self::get_models_for_provider($provider);
+
+        if (isset($models[$model])) {
+            return $model;
+        }
+
+        return self::get_default_model_for_provider($provider);
+    }
+
+    public static function sanitize_custom_model_id(string $model): string
+    {
+        $model = sanitize_text_field($model);
+        $model = preg_replace('/[^a-zA-Z0-9._:-]/', '', $model);
+
+        if (! is_string($model)) {
+            return '';
+        }
+
+        if (function_exists('mb_substr')) {
+            return trim(mb_substr($model, 0, 120));
+        }
+
+        return trim(substr($model, 0, 120));
+    }
+
     public function register(): void
     {
         register_setting(
@@ -134,8 +255,23 @@ class Settings
         $current = $this->get();
         $output  = self::defaults();
 
-        $output['provider']             = isset($input['provider']) ? sanitize_key($input['provider']) : $current['provider'];
-        $output['model']                = isset($input['model']) ? sanitize_text_field($input['model']) : $current['model'];
+        $raw_provider = isset($input['provider']) ? sanitize_key($input['provider']) : (string) $current['provider'];
+        $supported_providers = self::get_supported_providers();
+        $output['provider'] = in_array($raw_provider, $supported_providers, true) ? $raw_provider : (string) $current['provider'];
+
+        $raw_model = isset($input['model']) ? sanitize_text_field($input['model']) : (string) $current['model'];
+        $output['custom_model_enabled'] = empty($input['custom_model_enabled']) ? 0 : 1;
+        $output['custom_model_id'] = isset($input['custom_model_id']) ? self::sanitize_custom_model_id((string) $input['custom_model_id']) : (string) ($current['custom_model_id'] ?? '');
+
+        if (! empty($output['custom_model_enabled']) && '' !== $output['custom_model_id']) {
+            $output['model'] = $output['custom_model_id'];
+        } else {
+            $output['custom_model_enabled'] = 0;
+            $output['model'] = self::sanitize_provider_model($output['provider'], $raw_model);
+        }
+        $output['ai_temperature'] = isset($input['ai_temperature'])
+            ? $this->sanitize_temperature((string) $input['ai_temperature'])
+            : $this->sanitize_temperature((string) ($current['ai_temperature'] ?? '0.3'));
         $output['api_key']              = isset($input['api_key']) ? sanitize_text_field($input['api_key']) : $current['api_key'];
         $output['system_prompt']        = isset($input['system_prompt']) ? sanitize_textarea_field($input['system_prompt']) : $current['system_prompt'];
         $output['google_tracking_code'] = isset($input['google_tracking_code']) ? sanitize_text_field($input['google_tracking_code']) : '';
@@ -145,6 +281,7 @@ class Settings
         $output['frontend_override_conflicts'] = empty($input['frontend_override_conflicts']) ? 0 : 1;
         $output['search_appearance_auto_enabled'] = empty($input['search_appearance_auto_enabled']) ? 0 : 1;
         $output['search_title_separator'] = isset($input['search_title_separator']) ? $this->sanitize_separator((string) $input['search_title_separator']) : $current['search_title_separator'];
+        $output['site_brand'] = isset($input['site_brand']) ? sanitize_text_field(wp_unslash($input['site_brand'])) : $current['site_brand'];
         $output['search_title_template_post'] = isset($input['search_title_template_post']) ? $this->sanitize_template((string) $input['search_title_template_post']) : $current['search_title_template_post'];
         $output['search_title_template_page'] = isset($input['search_title_template_page']) ? $this->sanitize_template((string) $input['search_title_template_page']) : $current['search_title_template_page'];
         $output['search_title_template_default'] = isset($input['search_title_template_default']) ? $this->sanitize_template((string) $input['search_title_template_default']) : $current['search_title_template_default'];
@@ -232,5 +369,65 @@ class Settings
         }
 
         return $template;
+    }
+
+    private function sanitize_temperature(string $temperature): float
+    {
+        $temperature = trim($temperature);
+
+        if ('' === $temperature) {
+            return 0.3;
+        }
+
+        $numeric = is_numeric($temperature) ? (float) $temperature : 0.3;
+        $numeric = max(0.0, min(2.0, $numeric));
+
+        return round($numeric, 1);
+    }
+
+    /**
+     * Get the effective site brand name.
+     * Falls back to the WordPress site name when the setting is empty.
+     */
+    public function get_site_brand(): string
+    {
+        $options = $this->get();
+        $brand = trim((string) ($options['site_brand'] ?? ''));
+
+        if ('' === $brand) {
+            $brand = wp_specialchars_decode((string) get_bloginfo('name'), ENT_QUOTES);
+        }
+
+        return $brand;
+    }
+
+    /**
+     * Build the branding suffix string (e.g. " | Green Coders").
+     * Returns empty string when brand is empty.
+     */
+    public function get_branding_suffix(): string
+    {
+        $brand = $this->get_site_brand();
+
+        if ('' === $brand) {
+            return '';
+        }
+
+        $options = $this->get();
+        $separator = trim((string) ($options['search_title_separator'] ?? '|'));
+
+        return ' ' . $separator . ' ' . $brand;
+    }
+
+    /**
+     * Get the maximum character budget for the page-specific part of the title.
+     * Subtracts the branding suffix length from 60.
+     */
+    public function get_title_part_max_length(int $total_max = 60): int
+    {
+        $suffix = $this->get_branding_suffix();
+        $suffix_len = function_exists('mb_strlen') ? mb_strlen($suffix) : strlen($suffix);
+
+        return max(10, $total_max - $suffix_len);
     }
 }

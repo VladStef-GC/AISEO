@@ -1,0 +1,40 @@
+.ai-seo-model-tier-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.8;
+    vertical-align: middle;
+}
+
+.ai-seo-model-tier-badge.is-stable {
+    background: #e8f5e9;
+    color: #1b5e20;
+    border: 1px solid #b7dfba;
+}
+
+.ai-seo-model-tier-badge.is-preview {
+    background: #fff8e1;
+    color: #8d6e00;
+    border: 1px solid #ffe082;
+}
+
+.ai-seo-custom-model-wrap {
+    margin-top: 8px;
+    padding: 10px;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    background: #f9f9f9;
+}
+
+#ai-seo-test-model-result {
+    min-height: 1.4em;
+    font-weight: 500;
+}
+
+.ai-seo-temperature-hint {
+    margin-top: 6px;
+    color: #8d6e00;
+}

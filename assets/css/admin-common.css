@@ -9,22 +9,24 @@
    ══════════════════════════════════════════════════════════════════════ */
 :root {
     --aisk-border: #dcdcde;
-    --aisk-border-focus: #3858e9;
+    --aisk-border-focus: #089564;
     --aisk-bg: #fff;
     --aisk-bg-hover: #f9fafb;
     --aisk-bg-muted: #f6f7f7;
     --aisk-text: #1d2327;
     --aisk-text-secondary: #50575e;
     --aisk-text-muted: #787c82;
-    --aisk-primary: #3858e9;
-    --aisk-primary-hover: #2145d6;
+    --aisk-primary: #089564;
+    --aisk-primary-hover: #02b77c;
     --aisk-primary-text: #fff;
+    --aisk-accent: #6a14d1;
+    --aisk-accent-hover: #5a10b3;
     --aisk-danger: #d63638;
-    --aisk-success: #00a32a;
+    --aisk-success: #1c9739;
     --aisk-warning: #dba617;
     --aisk-radius: 6px;
     --aisk-radius-sm: 4px;
-    --aisk-shadow-focus: 0 0 0 2px rgba(56, 88, 233, .2);
+    --aisk-shadow-focus: 0 0 0 2px rgba(8, 149, 100, .2);
     --aisk-transition: .18s ease;
 }
 
@@ -109,7 +111,7 @@
 }
 
 /* Section description — the text right below accordion header */
-.ai-seo-accordion-body > p.description:first-child {
+.ai-seo-accordion-body>p.description:first-child {
     margin: 0 0 20px;
     padding: 12px 16px;
     background: var(--aisk-bg-muted);
@@ -297,13 +299,17 @@
 .ai-seo-accordion-body .button-primary,
 .ai-seo-box .button-primary,
 .ai-seo-accordion .button-primary,
-.wrap .ai-seo-accordion ~ div .button-primary {
+.wrap .ai-seo-accordion~div .button-primary {
     background: var(--aisk-primary);
     border-color: var(--aisk-primary);
     color: var(--aisk-primary-text);
     border-radius: var(--aisk-radius-sm);
-    padding: 6px 18px;
+    padding: 0 18px;
     height: 36px;
+    line-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     font-size: 13px;
     font-weight: 500;
     letter-spacing: 0.01em;
@@ -314,11 +320,11 @@
 .ai-seo-accordion-body .button-primary:hover,
 .ai-seo-box .button-primary:hover,
 .ai-seo-accordion .button-primary:hover,
-.wrap .ai-seo-accordion ~ div .button-primary:hover {
+.wrap .ai-seo-accordion~div .button-primary:hover {
     background: var(--aisk-primary-hover);
     border-color: var(--aisk-primary-hover);
     color: var(--aisk-primary-text);
-    box-shadow: 0 1px 3px rgba(0,0,0,.12);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .12);
 }
 
 .ai-seo-accordion-body .button-primary:focus,
@@ -332,10 +338,14 @@
 .ai-seo-accordion-body .button-secondary,
 .ai-seo-box .button-secondary,
 .ai-seo-accordion .button-secondary,
-.wrap .ai-seo-accordion ~ div .button-secondary {
+.wrap .ai-seo-accordion~div .button-secondary {
     border-radius: var(--aisk-radius-sm);
-    padding: 6px 16px;
+    padding: 0 16px;
     height: 36px;
+    line-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     font-size: 13px;
     font-weight: 500;
     box-shadow: none;
@@ -343,10 +353,11 @@
 }
 
 /* Submit button under accordion */
-.wrap .ai-seo-accordion ~ div input[type="submit"].button-primary,
-.wrap .ai-seo-accordion ~ div .button-primary {
+.wrap .ai-seo-accordion~div input[type="submit"].button-primary,
+.wrap .ai-seo-accordion~div .button-primary {
     height: 40px;
-    padding: 8px 28px;
+    line-height: 40px;
+    padding: 0 28px;
     font-size: 14px;
     font-weight: 600;
     border-radius: var(--aisk-radius);
@@ -408,7 +419,7 @@
     visibility: hidden;
     transition: opacity .15s ease, visibility .15s ease;
     z-index: 100;
-    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
 }
 
 .aisk-info-icon[data-tip]::before {
@@ -461,13 +472,40 @@
     margin: 0 !important;
 }
 
-.aisk-field-group.aisk-w-full { flex: 1 1 100%; max-width: 380px; }
-.aisk-field-group.aisk-w-200  { flex: 0 0 auto; width: 200px; }
-.aisk-field-group.aisk-w-160  { flex: 0 0 auto; width: 160px; }
-.aisk-field-group.aisk-w-140  { flex: 0 0 auto; width: 140px; }
-.aisk-field-group.aisk-w-120  { flex: 0 0 auto; width: 120px; }
-.aisk-field-group.aisk-w-100  { flex: 0 0 auto; width: 100px; }
-.aisk-field-group.aisk-w-80   { flex: 0 0 auto; width: 80px; }
+.aisk-field-group.aisk-w-full {
+    flex: 1 1 100%;
+    max-width: 380px;
+}
+
+.aisk-field-group.aisk-w-200 {
+    flex: 0 0 auto;
+    width: 200px;
+}
+
+.aisk-field-group.aisk-w-160 {
+    flex: 0 0 auto;
+    width: 160px;
+}
+
+.aisk-field-group.aisk-w-140 {
+    flex: 0 0 auto;
+    width: 140px;
+}
+
+.aisk-field-group.aisk-w-120 {
+    flex: 0 0 auto;
+    width: 120px;
+}
+
+.aisk-field-group.aisk-w-100 {
+    flex: 0 0 auto;
+    width: 100px;
+}
+
+.aisk-field-group.aisk-w-80 {
+    flex: 0 0 auto;
+    width: 80px;
+}
 
 /* Hours row (day + input) */
 .aisk-hours-row {
@@ -561,7 +599,7 @@
 /* ══════════════════════════════════════════════════════════════════════
    PAGE-LEVEL DESCRIPTIONS (below page titles)
    ══════════════════════════════════════════════════════════════════════ */
-.wrap > p.description {
+.wrap>p.description {
     font-size: 13px;
     color: var(--aisk-text-secondary);
     margin: 4px 0 16px;
@@ -576,24 +614,30 @@
     .ai-seo-accordion-header {
         padding: 14px 16px;
     }
+
     .ai-seo-accordion-body {
         padding: 16px;
     }
+
     .ai-seo-accordion-body .form-table th {
         display: block;
         width: 100%;
         padding-bottom: 4px;
     }
+
     .ai-seo-accordion-body .form-table td {
         display: block;
         padding-left: 0;
     }
+
     .ai-seo-accordion-body input.regular-text {
         max-width: 100%;
     }
+
     .aisk-field-row {
         flex-direction: column;
     }
+
     .aisk-field-group.aisk-w-200,
     .aisk-field-group.aisk-w-160,
     .aisk-field-group.aisk-w-140,
@@ -601,6 +645,7 @@
         width: 100%;
         max-width: 380px;
     }
+
     .ai-seo-stat-grid-3,
     .ai-seo-stat-grid-4 {
         grid-template-columns: 1fr;

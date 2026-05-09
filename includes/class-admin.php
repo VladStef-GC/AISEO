@@ -50,12 +50,15 @@ class Admin
 
     private const AJAX_RESTORE_BACKUP_ACTION = 'ai_seo_keeper_restore_backup';
     private const AJAX_CLEAR_CHAT_ACTION = 'ai_seo_keeper_clear_chat';
+    private const AJAX_TEST_MODEL_ACTION = 'ai_seo_keeper_test_model';
 
     private const CHAT_OBJECT_TYPE = 'post_chat';
 
     private const META_TITLE_KEY = '_ai_seo_keeper_meta_title';
 
     private const META_DESCRIPTION_KEY = '_ai_seo_keeper_meta_description';
+
+    private const TITLE_BRANDING_OFF_META_KEY = '_ai_seo_keeper_title_branding_off';
 
     private const FOCUS_KEYPHRASE_META_KEY = '_ai_seo_keeper_focus_keyphrase';
 
@@ -157,6 +160,7 @@ class Admin
         add_action('wp_ajax_' . self::AJAX_APPLY_SUGGESTION_ACTION, array($this, 'handle_ajax_apply_suggestion'));
         add_action('wp_ajax_' . self::AJAX_RESTORE_BACKUP_ACTION, array($this, 'handle_ajax_restore_backup'));
         add_action('wp_ajax_' . self::AJAX_CLEAR_CHAT_ACTION, array($this, 'handle_ajax_clear_chat'));
+        add_action('wp_ajax_' . self::AJAX_TEST_MODEL_ACTION, array($this, 'handle_ajax_test_model'));
         add_action('wp_ajax_ai_seo_keeper_delete_edit_plan', array($this, 'handle_ajax_delete_edit_plan'));
         add_action('wp_ajax_ai_seo_keeper_bulk_save_seo', array($this, 'handle_ajax_bulk_save_seo'));
         add_action('wp_ajax_ai_seo_keeper_save_image_alt', array($this, 'handle_ajax_save_image_alt'));
@@ -405,6 +409,10 @@ class Admin
                     'descriptionMin' => self::DESCRIPTION_MIN_LENGTH,
                     'descriptionMax' => self::DESCRIPTION_MAX_LENGTH,
                 ),
+                'brandingSuffix' => $this->settings->get_branding_suffix(),
+                'brandingSuffixLength' => function_exists('mb_strlen')
+                    ? mb_strlen($this->settings->get_branding_suffix())
+                    : strlen($this->settings->get_branding_suffix()),
             )
         );
 
@@ -510,11 +518,14 @@ jQuery(function ($) {
         var fallbackImage = $preview.data('fallbackImage') || '';
         var title = $.trim($panel.find('#ai-seo-keeper-meta-title').val()) || fallbackTitle;
         var description = $.trim($panel.find('#ai-seo-keeper-meta-description').val()) || fallbackDescription;
+        var brandingSuffix = $preview.data('brandingSuffix') || '';
+        var brandingOff = $panel.find('#ai-seo-keeper-title-branding-off').is(':checked');
+        var displayTitle = (brandingOff || !brandingSuffix) ? title : title + brandingSuffix;
         var previewImage = $.trim($panel.find('#ai-seo-keeper-social-image').val()) || fallbackImage;
         var $image = $preview.find('.ai-seo-keeper-preview-image');
         var $placeholder = $preview.find('.ai-seo-keeper-preview-image-placeholder');
 
-        $preview.find('.ai-seo-keeper-preview-title').text(title);
+        $preview.find('.ai-seo-keeper-preview-title').text(displayTitle);
         $preview.find('.ai-seo-keeper-preview-description').text(description);
         $preview.find('.ai-seo-keeper-preview-url').text(previewUrl);
 
@@ -596,28 +607,40 @@ jQuery(function ($) {
     }
 
     function updateFieldCharacterCounters($panel) {
+        var brandingOff = $panel.find('#ai-seo-keeper-title-branding-off').is(':checked');
+
         $panel.find('.ai-seo-keeper-field-counter').each(function () {
             var $counter = $(this);
             var fieldId = $counter.data('fieldId');
             var $field = $panel.find('#' + fieldId);
             var maxLength = parseInt($field.attr('maxlength'), 10) || 0;
             var currentLength = String($field.val() || '').length;
+            var suffixLength = parseInt($counter.data('brandingSuffixLength'), 10) || 0;
 
             if (! $field.length || ! maxLength) {
                 return;
             }
 
+            // Only apply branding suffix to the title field and when branding is on
+            var isTitleField = (fieldId === 'ai-seo-keeper-meta-title');
+            var effectiveSuffix = (isTitleField && !brandingOff) ? suffixLength : 0;
+            var totalLength = currentLength + effectiveSuffix;
+
             $counter.removeClass('is-neutral is-warning is-limit');
 
-            if (currentLength > maxLength) {
+            if (totalLength > maxLength) {
                 $counter.addClass('is-limit');
-            } else if (currentLength >= Math.max(1, maxLength - 10)) {
+            } else if (totalLength >= Math.max(1, maxLength - 10)) {
                 $counter.addClass('is-warning');
             } else {
                 $counter.addClass('is-neutral');
             }
 
-            $counter.text(currentLength + ' / ' + maxLength + ' characters');
+            if (effectiveSuffix > 0) {
+                $counter.text(currentLength + ' + ' + effectiveSuffix + ' (brand) = ' + totalLength + ' / ' + maxLength + ' characters');
+            } else {
+                $counter.text(currentLength + ' / ' + maxLength + ' characters');
+            }
         });
     }
 
@@ -639,10 +662,14 @@ jQuery(function ($) {
             return;
         }
 
+        var brandingOff = $panel.find('#ai-seo-keeper-title-branding-off').is(':checked');
+        var brandingSuffixLen = parseInt(aiSeoKeeperEditor.brandingSuffixLength || 0, 10);
+        var effectiveSuffix = brandingOff ? 0 : brandingSuffixLen;
+
         var title = normalizeSeoDraftText($panel.find('#ai-seo-keeper-meta-title').val());
         var description = normalizeSeoDraftText($panel.find('#ai-seo-keeper-meta-description').val());
         var keyphrase = normalizeSeoDraftText($panel.find('#ai-seo-keeper-focus-keyphrase').val()).toLowerCase();
-        var titleLength = title.length;
+        var titleLength = title.length + effectiveSuffix;
         var descriptionLength = description.length;
         var titleLower = title.toLowerCase();
         var descriptionLower = description.toLowerCase();
@@ -1443,6 +1470,13 @@ jQuery(function ($) {
         refreshSeoDraftFeedback($(this).closest('.ai-seo-keeper-editor-panel'));
     });
 
+    $(document).on('change', '#ai-seo-keeper-title-branding-off', function () {
+        var $panel = $(this).closest('.ai-seo-keeper-editor-panel');
+        var isOff = $(this).is(':checked');
+        $panel.find('.ai-seo-keeper-branding-suffix').toggle(!isOff);
+        refreshSeoDraftFeedback($panel);
+    });
+
     $('.ai-seo-keeper-editor-panel').each(function () {
         var $panel = $(this);
         var firstTab = $panel.find('.ai-seo-keeper-tab-button').first().data('tabTarget');
@@ -2037,6 +2071,9 @@ JS;
         $canonical_url    = (string) get_post_meta($post->ID, self::CANONICAL_URL_META_KEY, true);
         $robots_directives = (string) get_post_meta($post->ID, self::ROBOTS_DIRECTIVES_META_KEY, true);
         $frontend_post_enabled = '1' === (string) get_post_meta($post->ID, self::FRONTEND_ENABLE_META_KEY, true);
+        $title_branding_off = '1' === (string) get_post_meta($post->ID, self::TITLE_BRANDING_OFF_META_KEY, true);
+        $branding_suffix = $this->settings->get_branding_suffix();
+        $site_brand = $this->settings->get_site_brand();
         $recent_suggestions = $this->history_store->get_recent_suggestions((int) $post->ID, 'post', 3);
         $recent_content_edits = $this->history_store->get_recent_content_edits((int) $post->ID, 5);
         $approved_suggestion = $this->history_store->get_approved_suggestion((int) $post->ID, 'post');
@@ -2052,6 +2089,7 @@ JS;
         $page_audit_score = is_array($page_audit_data) && isset($page_audit_data['score']) ? (int) $page_audit_data['score'] : null;
         $pending_changes = Content_Writer::get_pending_changes((int) $post->ID);
         $preview_title = '' !== $seo_title ? $seo_title : (string) get_the_title($post->ID);
+        $preview_title_full = $title_branding_off ? $preview_title : $preview_title . $branding_suffix;
         $preview_description = '' !== $seo_description ? $seo_description : wp_trim_words(wp_strip_all_tags((string) ($post->post_excerpt ?: Content_Helper::get_content($post))), 24, '...');
         $preview_url = (string) get_permalink($post->ID);
         $site_name = wp_specialchars_decode((string) get_bloginfo('name'), ENT_QUOTES);
@@ -2136,14 +2174,14 @@ JS;
 
             <div class="ai-seo-keeper-tab-panels">
                 <section id="<?php echo esc_attr($seo_tab_id); ?>" class="ai-seo-keeper-tab-panel ai-seo-keeper-surface" role="tabpanel" hidden>
-                    <div class="ai-seo-keeper-search-preview" data-fallback-title="<?php echo esc_attr($preview_title); ?>" data-fallback-description="<?php echo esc_attr($preview_description); ?>" data-preview-url="<?php echo esc_attr($preview_url); ?>" data-fallback-image="<?php echo esc_attr($default_preview_image_url); ?>">
+                    <div class="ai-seo-keeper-search-preview" data-fallback-title="<?php echo esc_attr($preview_title); ?>" data-fallback-description="<?php echo esc_attr($preview_description); ?>" data-preview-url="<?php echo esc_attr($preview_url); ?>" data-fallback-image="<?php echo esc_attr($default_preview_image_url); ?>" data-branding-suffix="<?php echo esc_attr($branding_suffix); ?>">
                         <strong>Search preview</strong>
                         <p class="ai-seo-keeper-panel-note">A quick preview of how the current title and description draft can look in search results, including the current preview image used by SEO Keeper.</p>
                         <div class="ai-seo-keeper-preview-card">
                             <div class="ai-seo-keeper-preview-copy">
                                 <div class="ai-seo-keeper-preview-brand">GreenCoders</div>
                                 <div class="ai-seo-keeper-preview-url"><?php echo esc_html($preview_url); ?></div>
-                                <div class="ai-seo-keeper-preview-title"><?php echo esc_html($preview_title); ?></div>
+                                <div class="ai-seo-keeper-preview-title"><?php echo esc_html($preview_title_full); ?></div>
                                 <div class="ai-seo-keeper-preview-description"><?php echo esc_html($preview_description); ?></div>
                             </div>
                             <div class="ai-seo-keeper-preview-media">
@@ -2221,10 +2259,19 @@ JS;
                         </label>
 
                         <label class="ai-seo-keeper-field ai-seo-keeper-field-textarea-wide">
-                            <span class="ai-seo-keeper-field-label">SEO title <span class="ai-seo-keeper-help-tip" data-tip="This is the title search engines display in results. It becomes live once approved and the frontend gate is enabled. AI can generate or edit it for you.">&#9432;</span></span>
-                            <input id="ai-seo-keeper-meta-title" type="text" name="ai_seo_keeper_meta_title" value="<?php echo esc_attr($seo_title); ?>" maxlength="<?php echo esc_attr((string) self::TITLE_MAX_LENGTH); ?>" />
-                            <?php echo $this->render_field_counter('ai-seo-keeper-meta-title', $seo_title, self::TITLE_MAX_LENGTH); ?>
-                            <span class="ai-seo-keeper-field-help">This is the title shown in Google search results. Approve it via the readiness section below to make it live. Max <?php echo esc_html((string) self::TITLE_MAX_LENGTH); ?> chars.</span>
+                            <span class="ai-seo-keeper-field-label">SEO title <span class="ai-seo-keeper-help-tip" data-tip="This is the page-specific part of the title. The separator and site brand from Settings are appended automatically unless you check 'Use as full title' below.">&#9432;</span></span>
+                            <div style="display:flex;align-items:center;">
+                                <input id="ai-seo-keeper-meta-title" type="text" name="ai_seo_keeper_meta_title" value="<?php echo esc_attr($seo_title); ?>" maxlength="<?php echo esc_attr((string) self::TITLE_MAX_LENGTH); ?>" style="flex:1;" />
+                                <?php if ('' !== $branding_suffix && ! $title_branding_off) : ?>
+                                    <span class="ai-seo-keeper-branding-suffix" style="white-space:nowrap;margin-left:5px;padding:0 8px;background:#643d87;border:1px solid #643d87;border-radius:4px;line-height:50px;color:#ffffff;font-size:13px;" title="Auto-appended from Settings > Search Appearance"><?php echo esc_html($branding_suffix); ?></span>
+                                <?php endif; ?>
+                            </div>
+                            <?php echo $this->render_field_counter('ai-seo-keeper-meta-title', $seo_title, self::TITLE_MAX_LENGTH, $title_branding_off ? '' : $branding_suffix); ?>
+                            <label style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:12px;color:#50575e;">
+                                <input id="ai-seo-keeper-title-branding-off" type="checkbox" name="ai_seo_keeper_title_branding_off" value="1" <?php checked($title_branding_off); ?> />
+                                Use as full title (skip auto separator &amp; brand)
+                            </label>
+                            <span class="ai-seo-keeper-field-help">The page-specific title. Separator + brand (<strong><?php echo esc_html('' !== $branding_suffix ? $branding_suffix : 'none set'); ?></strong>) are appended automatically from <a href="<?php echo esc_url(admin_url('admin.php?page=ai-seo-keeper-settings')); ?>">Settings</a>. Check the box above to use this field as the complete title.</span>
                         </label>
 
                         <label class="ai-seo-keeper-field ai-seo-keeper-field-textarea-wide">
@@ -4264,6 +4311,69 @@ HTML;
         wp_send_json_success(array('message' => $deleted . ' message(s) cleared.', 'deleted' => $deleted));
     }
 
+    public function handle_ajax_test_model(): void
+    {
+        check_ajax_referer('ai_seo_keeper_settings_test_model', 'nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'You are not allowed to test AI model access.'), 403);
+        }
+
+        $options = $this->settings->get();
+        $provider = isset($_POST['provider']) ? sanitize_key((string) wp_unslash($_POST['provider'])) : (string) ($options['provider'] ?? 'openai');
+        $supported_providers = Settings::get_supported_providers();
+
+        if (! in_array($provider, $supported_providers, true)) {
+            wp_send_json_error(array('message' => 'Unsupported AI provider selected.'), 400);
+        }
+
+        $requested_model = isset($_POST['model']) ? sanitize_text_field((string) wp_unslash($_POST['model'])) : '';
+        $allowed_models = Settings::get_models_for_provider($provider);
+        if (isset($allowed_models[$requested_model])) {
+            $model = $requested_model;
+        } else {
+            $custom_model = Settings::sanitize_custom_model_id($requested_model);
+            $model = '' !== $custom_model ? $custom_model : Settings::sanitize_provider_model($provider, $requested_model);
+        }
+
+        $posted_temperature = isset($_POST['temperature']) ? (string) wp_unslash($_POST['temperature']) : '';
+        $temperature = is_numeric($posted_temperature) ? (float) $posted_temperature : (float) ($options['ai_temperature'] ?? 0.3);
+        $temperature = max(0.0, min(2.0, $temperature));
+        $temperature = round($temperature, 1);
+
+        $posted_api_key = isset($_POST['api_key']) ? sanitize_text_field((string) wp_unslash($_POST['api_key'])) : '';
+        $api_key = '' !== trim($posted_api_key) ? $posted_api_key : (string) ($options['api_key'] ?? '');
+
+        if ('' === trim($api_key)) {
+            wp_send_json_error(array('message' => 'Enter an API key before testing model availability.'), 400);
+        }
+
+        try {
+            $result = $this->ai_generator->test_model_connection($provider, $api_key, $model, $temperature);
+        } catch (\Throwable $throwable) {
+            wp_send_json_error(array('message' => $throwable->getMessage()), 400);
+        }
+
+        $preview = isset($result['preview']) ? sanitize_text_field((string) $result['preview']) : '';
+        $temperature_note = '';
+        if ('openai' === $provider && preg_match('/^o[1-9]/i', $model)) {
+            $temperature_note = ' (provider default temperature mode)';
+        }
+        $message = sprintf(
+            'Model is available: %s / %s%s',
+            ucfirst($provider),
+            $model,
+            $temperature_note . ('' !== $preview ? ' - ' . $preview : '')
+        );
+
+        wp_send_json_success(array(
+            'message' => $message,
+            'provider' => $provider,
+            'model' => $model,
+            'temperature' => $temperature,
+        ));
+    }
+
     public function handle_ajax_delete_edit_plan(): void
     {
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
@@ -4422,6 +4532,7 @@ HTML;
         $canonical_url = isset($raw_input['ai_seo_keeper_canonical_url']) ? esc_url_raw(wp_unslash($raw_input['ai_seo_keeper_canonical_url'])) : '';
         $robots_directives = isset($raw_input['ai_seo_keeper_robots_directives']) ? sanitize_text_field(wp_unslash($raw_input['ai_seo_keeper_robots_directives'])) : '';
         $frontend_enabled = empty($raw_input['ai_seo_keeper_frontend_enabled']) ? '' : '1';
+        $title_branding_off = empty($raw_input['ai_seo_keeper_title_branding_off']) ? '' : '1';
         $cornerstone = empty($raw_input['ai_seo_keeper_cornerstone']) ? '' : '1';
 
         $limited_fields = $this->apply_editor_text_limits(
@@ -4506,6 +4617,12 @@ HTML;
             update_post_meta($post_id, self::FRONTEND_ENABLE_META_KEY, '1');
         }
 
+        if ('' === $title_branding_off) {
+            delete_post_meta($post_id, self::TITLE_BRANDING_OFF_META_KEY);
+        } else {
+            update_post_meta($post_id, self::TITLE_BRANDING_OFF_META_KEY, '1');
+        }
+
         if ('' === $cornerstone) {
             delete_post_meta($post_id, '_ai_seo_keeper_cornerstone');
         } else {
@@ -4534,23 +4651,29 @@ HTML;
         );
     }
 
-    private function render_field_counter(string $field_id, string $field_value, int $max_length): string
+    private function render_field_counter(string $field_id, string $field_value, int $max_length, string $branding_suffix = ''): string
     {
         $current_length = $this->get_text_length($field_value);
+        $suffix_length = '' !== $branding_suffix ? $this->get_text_length($branding_suffix) : 0;
+        $total_length = $current_length + $suffix_length;
         $state_class = 'is-neutral';
 
-        if ($current_length > $max_length) {
+        if ($total_length > $max_length) {
             $state_class = 'is-limit';
-        } elseif ($current_length >= max(1, $max_length - 10)) {
+        } elseif ($total_length >= max(1, $max_length - 10)) {
             $state_class = 'is-warning';
         }
 
+        $display = $suffix_length > 0
+            ? sprintf('%d + %d (brand) = %d / %d characters', $current_length, $suffix_length, $total_length, $max_length)
+            : sprintf('%d / %d characters', $current_length, $max_length);
+
         return sprintf(
-            '<span class="ai-seo-keeper-field-counter %s" data-field-id="%s" aria-live="polite">%d / %d characters</span>',
+            '<span class="ai-seo-keeper-field-counter %s" data-field-id="%s" data-branding-suffix-length="%d" aria-live="polite">%s</span>',
             esc_attr($state_class),
             esc_attr($field_id),
-            $current_length,
-            $max_length
+            $suffix_length,
+            esc_html($display)
         );
     }
 

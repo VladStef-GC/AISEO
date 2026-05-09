@@ -33,13 +33,14 @@ class AI_Generator
 
         $provider = (string) $options['provider'];
         $model = trim((string) $options['model']);
+        $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_system_prompt((string) $options['system_prompt']);
         $user_prompt = $this->build_user_prompt($post);
 
         if ('openai' === $provider) {
-            $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt);
+            $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } elseif ('google' === $provider) {
-            $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt);
+            $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } else {
             throw new \RuntimeException('Unsupported AI provider configured.');
         }
@@ -77,13 +78,14 @@ class AI_Generator
 
         $provider = (string) $options['provider'];
         $model = trim((string) $options['model']);
+        $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_site_audit_system_prompt((string) $options['system_prompt']);
         $user_prompt = $this->build_site_audit_user_prompt($report);
 
         if ('openai' === $provider) {
-            $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt);
+            $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } elseif ('google' === $provider) {
-            $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt);
+            $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } else {
             throw new \RuntimeException('Unsupported AI provider configured.');
         }
@@ -135,13 +137,14 @@ class AI_Generator
 
         $provider = (string) $options['provider'];
         $model = trim((string) $options['model']);
+        $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_chat_system_prompt((string) $options['system_prompt']);
         $user_prompt = $this->build_chat_user_prompt($post, $message, $recent_messages);
 
         if ('openai' === $provider) {
-            $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt);
+            $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } elseif ('google' === $provider) {
-            $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt);
+            $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } else {
             throw new \RuntimeException('Unsupported AI provider configured.');
         }
@@ -173,13 +176,24 @@ class AI_Generator
     private function build_system_prompt(string $custom_prompt): string
     {
         $base_prompt = trim($custom_prompt);
+        $branding_suffix = $this->settings->get_branding_suffix();
+        $suffix_note = '';
+
+        if ('' !== $branding_suffix) {
+            $suffix_len = function_exists('mb_strlen') ? mb_strlen($branding_suffix) : strlen($branding_suffix);
+            $page_title_budget = max(10, 60 - $suffix_len);
+            $suffix_note = ' IMPORTANT: The site auto-appends "' . $branding_suffix . '" (' . $suffix_len . ' chars) to every SEO title.' .
+                ' You must generate ONLY the page-specific part of the title, WITHOUT the separator and brand.' .
+                ' Keep seo_title at or under ' . $page_title_budget . ' characters (the system adds ' . $suffix_len . ' chars for branding to reach the 60-char total limit).';
+        }
 
         return trim(
             $base_prompt . "\n\n" .
                 'Return only valid JSON with exactly these keys: seo_title, meta_description, notes. ' .
-                'Do not use markdown fences. Keep the title at or under 60 characters. ' .
+                'Do not use markdown fences. Keep the title at or under 60 characters (total including branding). ' .
                 'Keep the meta description at or under 155 characters, ideally around 140-155. ' .
-                'Be specific to the real page content and avoid generic claims.'
+                'Be specific to the real page content and avoid generic claims.' .
+                $suffix_note
         );
     }
 
@@ -199,6 +213,15 @@ class AI_Generator
     private function build_chat_system_prompt(string $custom_prompt): string
     {
         $base_prompt = trim($custom_prompt);
+        $branding_suffix = $this->settings->get_branding_suffix();
+        $suffix_note = '';
+
+        if ('' !== $branding_suffix) {
+            $suffix_len = function_exists('mb_strlen') ? mb_strlen($branding_suffix) : strlen($branding_suffix);
+            $page_title_budget = max(10, 60 - $suffix_len);
+            $suffix_note = ' The site auto-appends "' . $branding_suffix . '" (' . $suffix_len . ' chars) to every SEO title.' .
+                ' Generate ONLY the page-specific part, at or under ' . $page_title_budget . ' characters.';
+        }
 
         return trim(
             $base_prompt . "\n\n" .
@@ -214,7 +237,8 @@ class AI_Generator
                 '5. When the user asks for content changes, set wants_edits to true — the system will automatically generate page edit proposals for review. ' .
                 'When you provide suggested_title, keep it at or under 60 characters. ' .
                 'When you provide suggested_description, keep it at or under 155 characters. ' .
-                'Do not invent facts that are not supported by the page content or site context.'
+                'Do not invent facts that are not supported by the page content or site context.' .
+                $suffix_note
         );
     }
 
@@ -252,7 +276,13 @@ class AI_Generator
     private function format_seo_context_lines(array $ctx): string
     {
         $lines = array();
-        $lines[] = 'Current SEO title draft: ' . ('' !== $ctx['seo_title_draft'] ? $ctx['seo_title_draft'] . ' (' . $ctx['title_length'] . ' chars)' : 'Empty — not yet written');
+        $branding_suffix = $this->settings->get_branding_suffix();
+        $suffix_info = '';
+        if ('' !== $branding_suffix) {
+            $suffix_len = function_exists('mb_strlen') ? mb_strlen($branding_suffix) : strlen($branding_suffix);
+            $suffix_info = ' (page-part only; "' . $branding_suffix . '" auto-appended = ' . $suffix_len . ' extra chars)';
+        }
+        $lines[] = 'Current SEO title draft: ' . ('' !== $ctx['seo_title_draft'] ? $ctx['seo_title_draft'] . ' (' . $ctx['title_length'] . ' chars' . $suffix_info . ')' : 'Empty — not yet written');
         $lines[] = 'Current meta description draft: ' . ('' !== $ctx['meta_desc_draft'] ? $ctx['meta_desc_draft'] . ' (' . $ctx['desc_length'] . ' chars)' : 'Empty — not yet written');
         $lines[] = 'Focus keyphrase: ' . ('' !== $ctx['focus_keyphrase'] ? $ctx['focus_keyphrase'] : 'None specified');
         $lines[] = 'Keyphrase in title: ' . ($ctx['keyphrase_in_title'] ? 'Found' : 'Missing');
@@ -292,22 +322,33 @@ class AI_Generator
             $related_lines[] = '- No related indexed pages were found.';
         }
 
-        return implode(
-            "\n\n",
-            array(
-                'Task: Generate a draft SEO title and meta description for the current WordPress page.',
-                'Output format: {"seo_title":"...","meta_description":"...","focus_keyphrase":"...","notes":"..."}',
-                'Requirements: Make the draft clearly differentiated from the related pages. Keep seo_title at or under 60 characters and meta_description at or under 155 characters. Do not invent services, guarantees, or facts not present on the page. The focus_keyphrase should be the single most important 2-4 word phrase this page should rank for. When a focus keyphrase is already provided, keep it in your output unless it is clearly wrong. Notes should be one or two short sentences explaining the positioning choice.',
-                'Site: ' . get_bloginfo('name'),
-                'Page type: ' . $post->post_type,
-                'Current page title: ' . (string) $post->post_title,
-                'Page URL: ' . (string) get_permalink($post),
-                'Existing excerpt: ' . ('' !== $page_excerpt ? $page_excerpt : 'None'),
-                $this->format_seo_context_lines($ctx),
-                'Main page content: ' . ('' !== $page_content ? $page_content : 'No body content is available.'),
-                "Related pages to avoid overlapping with:\n" . implode("\n", $related_lines),
-            )
+        $branding_suffix = $this->settings->get_branding_suffix();
+        $branding_note = '';
+        if ('' !== $branding_suffix) {
+            $suffix_len = function_exists('mb_strlen') ? mb_strlen($branding_suffix) : strlen($branding_suffix);
+            $page_title_budget = max(10, 60 - $suffix_len);
+            $branding_note = 'Title branding: The system auto-appends "' . $branding_suffix . '" (' . $suffix_len . ' chars) to the title. Generate ONLY the page-specific part — max ' . $page_title_budget . ' chars. Do NOT include the separator or brand name in seo_title.';
+        }
+
+        $prompt_parts = array(
+            'Task: Generate a draft SEO title and meta description for the current WordPress page.',
+            'Output format: {"seo_title":"...","meta_description":"...","focus_keyphrase":"...","notes":"..."}',
+            'Requirements: Make the draft clearly differentiated from the related pages. Keep seo_title at or under ' . ('' !== $branding_suffix ? (string) $page_title_budget : '60') . ' characters and meta_description at or under 155 characters. Do not invent services, guarantees, or facts not present on the page. The focus_keyphrase should be the single most important 2-4 word phrase this page should rank for. When a focus keyphrase is already provided, keep it in your output unless it is clearly wrong. Notes should be one or two short sentences explaining the positioning choice.',
+            'Site: ' . get_bloginfo('name'),
+            'Page type: ' . $post->post_type,
+            'Current page title: ' . (string) $post->post_title,
+            'Page URL: ' . (string) get_permalink($post),
+            'Existing excerpt: ' . ('' !== $page_excerpt ? $page_excerpt : 'None'),
+            $this->format_seo_context_lines($ctx),
+            'Main page content: ' . ('' !== $page_content ? $page_content : 'No body content is available.'),
+            "Related pages to avoid overlapping with:\n" . implode("\n", $related_lines),
         );
+
+        if ('' !== $branding_note) {
+            $prompt_parts[] = $branding_note;
+        }
+
+        return implode("\n\n", $prompt_parts);
     }
 
     private function build_site_audit_user_prompt(array $report): string
@@ -336,21 +377,30 @@ class AI_Generator
             $priority_lines[] = '- No priority rows were found.';
         }
 
-        return implode(
-            "\n\n",
-            array(
-                'Task: Turn this deterministic WordPress SEO audit into a prioritized execution summary for the site owner.',
-                'Output format: {"audit_title":"...","executive_summary":"...","priority_actions":["..."],"quick_wins":["..."],"notes":"..."}',
-                'Requirements: Prioritize concrete fixes first. Mention conflicts with an existing SEO plugin only when relevant. Do not recommend deleting proven safety gates. Keep the output concise and operator-focused.',
-                'Site: ' . get_bloginfo('name'),
-                'Summary counts: ' . wp_json_encode($summary),
-                "Priority content rows:\n" . implode("\n", $priority_lines),
-                "Duplicate live titles:\n" . $this->format_duplicate_prompt_lines($duplicate_live_titles),
-                "Duplicate AI title drafts:\n" . $this->format_duplicate_prompt_lines($duplicate_ai_titles),
-                "Duplicate AI description drafts:\n" . $this->format_duplicate_prompt_lines($duplicate_ai_descriptions),
-                "Thin content rows:\n" . $this->format_thin_content_prompt_lines($thin_content_rows),
-            )
+        $branding_suffix = $this->settings->get_branding_suffix();
+        $branding_context = '';
+        if ('' !== $branding_suffix) {
+            $branding_context = 'Title branding: All page titles auto-append "' . $branding_suffix . '". Stored titles contain only the page-specific part.';
+        }
+
+        $prompt_parts = array(
+            'Task: Turn this deterministic WordPress SEO audit into a prioritized execution summary for the site owner.',
+            'Output format: {"audit_title":"...","executive_summary":"...","priority_actions":["..."],"quick_wins":["..."],"notes":"..."}',
+            'Requirements: Prioritize concrete fixes first. Mention conflicts with an existing SEO plugin only when relevant. Do not recommend deleting proven safety gates. Keep the output concise and operator-focused.',
+            'Site: ' . get_bloginfo('name'),
+            'Summary counts: ' . wp_json_encode($summary),
+            "Priority content rows:\n" . implode("\n", $priority_lines),
+            "Duplicate live titles:\n" . $this->format_duplicate_prompt_lines($duplicate_live_titles),
+            "Duplicate AI title drafts:\n" . $this->format_duplicate_prompt_lines($duplicate_ai_titles),
+            "Duplicate AI description drafts:\n" . $this->format_duplicate_prompt_lines($duplicate_ai_descriptions),
+            "Thin content rows:\n" . $this->format_thin_content_prompt_lines($thin_content_rows),
         );
+
+        if ('' !== $branding_context) {
+            $prompt_parts[] = $branding_context;
+        }
+
+        return implode("\n\n", $prompt_parts);
     }
 
     private function build_chat_user_prompt(\WP_Post $post, string $message, array $recent_messages): string
@@ -396,28 +446,58 @@ class AI_Generator
             $conversation_lines[] = '- No recent chat context.';
         }
 
-        return implode(
-            "\n\n",
-            array(
-                'Task: Answer the editor user as an SEO copilot for the current WordPress page.',
-                'Output format: {"reply":"...","suggested_title":"...","suggested_description":"...","notes":"..."}',
-                'Requirements: Ground advice in the real page content, related pages, and the current user question. Be concise and specific. When the user is not explicitly asking for metadata, keep suggested_title and suggested_description empty. You have FULL access to the page SEO data below — reference it precisely when the user asks about scores, issues, or metadata.',
-                'Site: ' . get_bloginfo('name'),
-                'Page type: ' . $post->post_type,
-                'Current page title: ' . (string) $post->post_title,
-                'Page URL: ' . (string) get_permalink($post),
-                $this->format_seo_context_lines($ctx),
-                'Existing excerpt: ' . ('' !== $page_excerpt ? $page_excerpt : 'None'),
-                'Main page content: ' . ('' !== $page_content ? $page_content : 'No body content is available.'),
-                "Related pages to avoid overlapping with:\n" . implode("\n", $related_lines),
-                "Recent conversation:\n" . implode("\n", $conversation_lines),
-                'User question: ' . $message,
-            )
+        $branding_suffix = $this->settings->get_branding_suffix();
+        $branding_note = '';
+        if ('' !== $branding_suffix) {
+            $suffix_len = function_exists('mb_strlen') ? mb_strlen($branding_suffix) : strlen($branding_suffix);
+            $page_title_budget = max(10, 60 - $suffix_len);
+            $branding_note = 'Title branding: "' . $branding_suffix . '" (' . $suffix_len . ' chars) is auto-appended. suggested_title must be ONLY the page-specific part — max ' . $page_title_budget . ' chars.';
+        }
+
+        $prompt_parts = array(
+            'Task: Answer the editor user as an SEO copilot for the current WordPress page.',
+            'Output format: {"reply":"...","suggested_title":"...","suggested_description":"...","notes":"..."}',
+            'Requirements: Ground advice in the real page content, related pages, and the current user question. Be concise and specific. When the user is not explicitly asking for metadata, keep suggested_title and suggested_description empty. You have FULL access to the page SEO data below — reference it precisely when the user asks about scores, issues, or metadata.',
+            'Site: ' . get_bloginfo('name'),
+            'Page type: ' . $post->post_type,
+            'Current page title: ' . (string) $post->post_title,
+            'Page URL: ' . (string) get_permalink($post),
+            $this->format_seo_context_lines($ctx),
+            'Existing excerpt: ' . ('' !== $page_excerpt ? $page_excerpt : 'None'),
+            'Main page content: ' . ('' !== $page_content ? $page_content : 'No body content is available.'),
+            "Related pages to avoid overlapping with:\n" . implode("\n", $related_lines),
+            "Recent conversation:\n" . implode("\n", $conversation_lines),
+            'User question: ' . $message,
         );
+
+        if ('' !== $branding_note) {
+            $prompt_parts[] = $branding_note;
+        }
+
+        return implode("\n\n", $prompt_parts);
     }
 
-    private function call_openai(string $api_key, string $model, string $system_prompt, string $user_prompt): string
+    private function call_openai(string $api_key, string $model, string $system_prompt, string $user_prompt, float $temperature): string
     {
+        $payload = array(
+            'model' => '' !== $model ? $model : 'gpt-4.1-mini',
+            'messages' => array(
+                array(
+                    'role' => 'system',
+                    'content' => $system_prompt,
+                ),
+                array(
+                    'role' => 'user',
+                    'content' => $user_prompt,
+                ),
+            ),
+        );
+
+        // OpenAI o-series models only support their default temperature behavior.
+        if ($this->supports_openai_custom_temperature($model)) {
+            $payload['temperature'] = $this->normalize_temperature($temperature);
+        }
+
         $response = wp_remote_post(
             'https://api.openai.com/v1/chat/completions',
             array(
@@ -426,31 +506,53 @@ class AI_Generator
                     'Content-Type' => 'application/json',
                 ),
                 'timeout' => 60,
-                'body' => wp_json_encode(
-                    array(
-                        'model' => '' !== $model ? $model : 'gpt-4.1-mini',
-                        'temperature' => 0.3,
-                        'messages' => array(
-                            array(
-                                'role' => 'system',
-                                'content' => $system_prompt,
-                            ),
-                            array(
-                                'role' => 'user',
-                                'content' => $user_prompt,
-                            ),
-                        ),
-                    )
-                ),
+                'body' => wp_json_encode($payload),
             )
         );
 
         return $this->extract_response_text($response, 'openai');
     }
 
-    private function call_google(string $api_key, string $model, string $system_prompt, string $user_prompt): string
+    public function test_model_connection(string $provider, string $api_key, string $model, float $temperature = 0.3): array
+    {
+        $provider = sanitize_key($provider);
+        $model = trim(sanitize_text_field($model));
+        $api_key = trim($api_key);
+        $temperature = $this->normalize_temperature($temperature);
+
+        if ('' === $api_key) {
+            throw new \RuntimeException('API key is required to test model availability.');
+        }
+
+        $system_prompt = 'You are a connectivity test assistant. Return short plain text only.';
+        $user_prompt = 'Reply with exactly: OK';
+
+        if ('openai' === $provider) {
+            $content = $this->call_openai($api_key, $model, $system_prompt, $user_prompt, $temperature);
+        } elseif ('google' === $provider) {
+            $content = $this->call_google($api_key, $model, $system_prompt, $user_prompt, $temperature);
+        } else {
+            throw new \RuntimeException('Unsupported AI provider configured.');
+        }
+
+        $preview = trim(preg_replace('/\s+/', ' ', sanitize_text_field($content)) ?? '');
+        if (function_exists('mb_substr')) {
+            $preview = mb_substr($preview, 0, 80);
+        } else {
+            $preview = substr($preview, 0, 80);
+        }
+
+        return array(
+            'provider' => $provider,
+            'model' => $model,
+            'preview' => $preview,
+        );
+    }
+
+    private function call_google(string $api_key, string $model, string $system_prompt, string $user_prompt, float $temperature): string
     {
         $effective_model = '' !== $model ? $model : 'gemini-2.0-flash';
+        $temperature = $this->normalize_temperature($temperature);
         $url = sprintf(
             'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s',
             rawurlencode($effective_model),
@@ -484,7 +586,7 @@ class AI_Generator
                             ),
                         ),
                         'generationConfig' => array(
-                            'temperature' => 0.3,
+                            'temperature' => $temperature,
                             'responseMimeType' => 'application/json',
                         ),
                     )
@@ -627,13 +729,14 @@ class AI_Generator
 
         $provider = (string) $options['provider'];
         $model = trim((string) $options['model']);
+        $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_page_audit_system_prompt((string) $options['system_prompt']);
         $user_prompt = $this->build_page_audit_user_prompt($post);
 
         if ('openai' === $provider) {
-            $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt);
+            $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } elseif ('google' === $provider) {
-            $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt);
+            $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } else {
             throw new \RuntimeException('Unsupported AI provider configured.');
         }
@@ -669,13 +772,14 @@ class AI_Generator
 
         $provider = (string) $options['provider'];
         $model = trim((string) $options['model']);
+        $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_content_edit_system_prompt((string) $options['system_prompt']);
         $user_prompt = $this->build_content_edit_user_prompt($post, $instruction, $recent_messages);
 
         if ('openai' === $provider) {
-            $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt);
+            $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } elseif ('google' === $provider) {
-            $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt);
+            $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } else {
             throw new \RuntimeException('Unsupported AI provider configured.');
         }
@@ -875,5 +979,24 @@ class AI_Generator
         }
 
         return implode("\n", $lines);
+    }
+
+    private function get_effective_temperature(array $options): float
+    {
+        $raw = $options['ai_temperature'] ?? 0.3;
+
+        return $this->normalize_temperature((float) $raw);
+    }
+
+    private function normalize_temperature(float $temperature): float
+    {
+        return round(max(0.0, min(2.0, $temperature)), 1);
+    }
+
+    private function supports_openai_custom_temperature(string $model): bool
+    {
+        $model = strtolower(trim($model));
+
+        return ! preg_match('/^o[1-9]/', $model);
     }
 }

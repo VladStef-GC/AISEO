@@ -25,6 +25,8 @@ class Frontend
 
     private const SCHEMA_TYPE_META_KEY = '_ai_seo_keeper_schema_type';
 
+    private const TITLE_BRANDING_OFF_META_KEY = '_ai_seo_keeper_title_branding_off';
+
     private const TITLE_MAX_LENGTH = 60;
 
     private const DESCRIPTION_MAX_LENGTH = 155;
@@ -523,8 +525,17 @@ class Frontend
             $title = $manual_source['seo_title'];
         }
 
+        // When the title comes from suggestion or manual source, append branding unless overridden.
+        $title_branding_off = '1' === (string) get_post_meta($post_id, self::TITLE_BRANDING_OFF_META_KEY, true);
+        $branding_suffix = $this->settings->get_branding_suffix();
+        $has_page_specific_title = ('' !== $title);
+
         if ('' === $title) {
+            // Fallback: build_search_title already includes branding via template
             $title = '' !== $default_title ? $default_title : trim(wp_strip_all_tags((string) get_the_title($post_id)));
+        } elseif (! $title_branding_off && '' !== $branding_suffix) {
+            // Append branding suffix to the page-specific title
+            $title = $title . $branding_suffix;
         }
 
         if ('' === $description) {

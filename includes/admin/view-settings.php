@@ -14,6 +14,36 @@
 defined('ABSPATH') || exit;
 
 use AI_SEO_Keeper\Settings;
+
+$supported_providers = Settings::get_supported_providers();
+$provider_models = array();
+$provider_labels = array(
+    'openai' => 'OpenAI',
+    'google' => 'Google',
+);
+
+foreach ($supported_providers as $provider_key) {
+    $provider_models[$provider_key] = Settings::get_model_catalog_for_provider($provider_key);
+}
+
+$active_provider = isset($options['provider']) ? sanitize_key((string) $options['provider']) : 'openai';
+
+if (! isset($provider_models[$active_provider])) {
+    $active_provider = 'openai';
+}
+
+$active_models = $provider_models[$active_provider] ?? array();
+$saved_model = (string) ($options['model'] ?? '');
+$custom_model_enabled = ! empty($options['custom_model_enabled']);
+$custom_model_id = (string) ($options['custom_model_id'] ?? '');
+
+if ($custom_model_enabled && '' !== trim($custom_model_id)) {
+    $active_model = $custom_model_id;
+} else {
+    $active_model = Settings::sanitize_provider_model($active_provider, $saved_model);
+}
+
+$active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_temperature'] : 0.3;
 ?>
 <div class="wrap">
     <h1>AI SEO Keeper Settings</h1>
@@ -40,24 +70,98 @@ use AI_SEO_Keeper\Settings;
                             <th scope="row"><label for="ai-seo-provider">AI provider</label></th>
                             <td>
                                 <select id="ai-seo-provider" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[provider]">
-                                    <option value="openai" <?php selected($options['provider'], 'openai'); ?>>OpenAI</option>
-                                    <option value="google" <?php selected($options['provider'], 'google'); ?>>Google</option>
+                                    <?php foreach ($supported_providers as $provider_key) : ?>
+                                        <option value="<?php echo esc_attr($provider_key); ?>" <?php selected($active_provider, $provider_key); ?>><?php echo esc_html($provider_labels[$provider_key] ?? ucfirst($provider_key)); ?></option>
+                                    <?php endforeach; ?>
                                 </select>
                             </td>
                         </tr>
                         <tr>
                             <th scope="row"><label for="ai-seo-model">Model</label></th>
-                            <td><input id="ai-seo-model" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[model]" value="<?php echo esc_attr($options['model']); ?>" /></td>
+                            <td>
+                                <select
+                                    id="ai-seo-model"
+                                    name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[model]"
+                                    data-provider-models="<?php echo esc_attr(wp_json_encode($provider_models)); ?>">
+                                    <?php foreach ($active_models as $model_id => $model_meta) : ?>
+                                        <?php
+                                        $model_label = isset($model_meta['label']) ? (string) $model_meta['label'] : (string) $model_id;
+                                        $model_tier = isset($model_meta['tier']) ? (string) $model_meta['tier'] : 'stable';
+                                        $tier_suffix = 'preview' === $model_tier ? ' [Preview]' : ' [Stable]';
+                                        ?>
+                                        <option value="<?php echo esc_attr($model_id); ?>" data-tier="<?php echo esc_attr($model_tier); ?>" <?php selected($active_model, $model_id); ?>><?php echo esc_html($model_label . $tier_suffix . ' (' . $model_id . ')'); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <span id="ai-seo-model-tier-badge" class="ai-seo-model-tier-badge" aria-live="polite"></span>
+                                <p class="description" style="margin-top:8px;">
+                                    Curated text-generation models only. Image, TTS, realtime, and transcription models are intentionally excluded.
+                                </p>
+                                <label class="ai-seo-custom-model-toggle" style="display:block;margin-top:8px;">
+                                    <input id="ai-seo-custom-model-enabled" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[custom_model_enabled]" value="1" <?php checked($custom_model_enabled); ?> />
+                                    Advanced: use custom model ID
+                                </label>
+                                <div id="ai-seo-custom-model-wrap" class="ai-seo-custom-model-wrap" <?php echo $custom_model_enabled ? '' : 'hidden'; ?>>
+                                    <input
+                                        id="ai-seo-custom-model-id"
+                                        class="regular-text"
+                                        type="text"
+                                        name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[custom_model_id]"
+                                        value="<?php echo esc_attr($custom_model_id); ?>"
+                                        maxlength="120"
+                                        placeholder="e.g. gpt-5.5 or gemini-2.5-flash" />
+                                    <p class="description" style="margin-top:8px;">
+                                        Use only when needed. If invalid or unavailable for your subscription, requests will fail until corrected.
+                                    </p>
+                                </div>
+                            </td>
                         </tr>
                         <tr>
                             <th scope="row"><label for="ai-seo-api-key">API key</label></th>
                             <td><input id="ai-seo-api-key" class="regular-text" type="password" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[api_key]" value="<?php echo esc_attr($options['api_key']); ?>" autocomplete="off" /></td>
                         </tr>
                         <tr>
+                            <th scope="row"><label for="ai-seo-temperature">Temperature</label></th>
+                            <td>
+                                <input
+                                    id="ai-seo-temperature"
+                                    class="small-text"
+                                    type="number"
+                                    min="0"
+                                    max="2"
+                                    step="0.1"
+                                    name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[ai_temperature]"
+                                    value="<?php echo esc_attr(number_format($active_temperature, 1, '.', '')); ?>" />
+                                <p class="description" style="margin-top:8px;">
+                                    Lower values are more deterministic, higher values are more creative. For OpenAI o-series models, unsupported values are automatically ignored and provider defaults are used.
+                                </p>
+                                <p id="ai-seo-temperature-hint" class="description ai-seo-temperature-hint" hidden>
+                                    Current model is an OpenAI o-series model. Custom temperature is ignored by the provider for this model family.
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
                             <th scope="row"><label for="ai-seo-system-prompt">AI instructions</label></th>
                             <td>
                                 <textarea id="ai-seo-system-prompt" class="large-text" rows="5" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[system_prompt]"><?php echo esc_textarea($options['system_prompt']); ?></textarea>
                                 <p class="description">Global instructions applied to page generation, page chat, and site audit requests.</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Model availability test</th>
+                            <td>
+                                <button
+                                    type="button"
+                                    class="button"
+                                    id="ai-seo-test-model"
+                                    data-ajax-url="<?php echo esc_url(admin_url('admin-ajax.php')); ?>"
+                                    data-action="ai_seo_keeper_test_model"
+                                    data-nonce="<?php echo esc_attr(wp_create_nonce('ai_seo_keeper_settings_test_model')); ?>">
+                                    Test selected model
+                                </button>
+                                <p class="description" style="margin-top:8px;">
+                                    Checks whether the selected provider/model is accessible with the current API key and can return a response.
+                                </p>
+                                <p id="ai-seo-test-model-result" style="margin-top:8px;"></p>
                             </td>
                         </tr>
                     </table>
@@ -120,6 +224,11 @@ use AI_SEO_Keeper\Settings;
                                 <p style="margin:0 0 8px;">
                                     <label for="ai-seo-search-separator"><strong>Title separator</strong></label><br />
                                     <input id="ai-seo-search-separator" class="small-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[search_title_separator]" value="<?php echo esc_attr((string) $options['search_title_separator']); ?>" maxlength="3" />
+                                </p>
+                                <p style="margin:0 0 8px;">
+                                    <label for="ai-seo-site-brand"><strong>Site brand</strong></label><br />
+                                    <input id="ai-seo-site-brand" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[site_brand]" value="<?php echo esc_attr((string) ($options['site_brand'] ?? '')); ?>" placeholder="<?php echo esc_attr(wp_specialchars_decode((string) get_bloginfo('name'), ENT_QUOTES)); ?>" />
+                                <p class="description" style="margin:4px 0 0;">The brand name appended to every page title (e.g. "Cool Service <strong><?php echo esc_html((string) $options['search_title_separator']); ?> <?php echo esc_html('' !== trim((string) ($options['site_brand'] ?? '')) ? trim((string) $options['site_brand']) : wp_specialchars_decode((string) get_bloginfo('name'), ENT_QUOTES)); ?></strong>"). Leave empty to use your WordPress site name. Pages store only the page-specific part; the separator + brand are appended automatically.</p>
                                 </p>
                                 <p style="margin:0 0 8px;">
                                     <label for="ai-seo-template-post"><strong>Post title template</strong></label><br />
