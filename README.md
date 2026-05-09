@@ -55,6 +55,7 @@ AI SEO Keeper uses artificial intelligence to generate, manage, and optimize eve
   - [Title Branding](#-title-branding)
   - [AI Context Intelligence](#-ai-context-intelligence)
   - [AI Content Editor](#-ai-content-editor)
+  - [Page Builder Compatibility](#-page-builder-compatibility)
   - [Export & Import](#-export--import)
   - [Yoast SEO Migration](#-yoast-seo-migration)
 - [Requirements](#requirements)
@@ -349,10 +350,35 @@ The AI generation pipeline sends full real-time context for smarter results:
 AI-assisted content improvements with a safe editing workflow:
 
 - **Plan edits:** AI analyzes a page and proposes specific content changes
-- **Preview changes:** See pending edits before applying (works with WordPress Preview)
+- **Preview changes:** See pending edits before applying — works in the builder's own editor and in WordPress Preview
 - **Apply or discard:** One-click apply writes changes to the post content
 - **Backup & restore:** Original content is backed up — restore anytime
-- **Multi-builder support:** Works with classic editor, Gutenberg, and page builders
+- **Multi-builder support:** Works with classic editor, Gutenberg, and all major page builders
+
+---
+
+### 🔌 Page Builder Compatibility
+
+AI content editing, preview, and write-back work natively with every major WordPress page builder — no extra plugins or configuration needed.
+
+| Builder | Storage Detected | Admin Preview | Content Write-back |
+|---------|-----------------|---------------|-------------------|
+| **Classic Editor** | `post_content` | ✅ via WP Preview | ✅ |
+| **Gutenberg (Block Editor)** | `post_content` | ✅ via WP Preview | ✅ |
+| **BeTheme / BeBuilder** | `mfn-page-items` | ✅ Live in builder | ✅ |
+| **Elementor** | `_elementor_data` | ✅ Live in builder | ✅ |
+| **Beaver Builder** | `_fl_builder_data` | ✅ Live in builder | ✅ |
+| **Bricks** | `_bricks_page_content_2` | ✅ Live in builder | ✅ |
+| **Themify Builder** | `_themify_builder_settings_json` | ✅ Live in builder | ✅ |
+| **Oxygen Builder** | `ct_builder_shortcodes` | ✅ Live in builder | ✅ |
+| **Thrive Architect** | `tve_updated_post` | ✅ Live in builder | ✅ |
+| **Brizy** | `brizy-post-editor-data` | ✅ Live in builder | ✅ |
+| **SeedProd** | `_seedprod_page` | ✅ Live in builder | ✅ |
+| **Tatsu Builder** | `tatsu_sections` | ✅ Live in builder | ✅ |
+| **WPBakery** | `post_content` (shortcodes) | ✅ via WP Preview | ✅ |
+| **Divi Builder** | `post_content` (shortcodes) | ✅ via WP Preview | ✅ |
+
+> **How it works:** When AI proposes content changes, they are stored as "pending" and injected into the builder's data on-the-fly. You see the changes in your editor before publishing. On Update/Publish, the changes are committed permanently. No content is ever pushed live without your explicit action.
 
 ---
 

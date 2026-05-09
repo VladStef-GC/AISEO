@@ -169,6 +169,10 @@ class Admin
 
         // Taxonomy SEO fields for all public taxonomies.
         add_action('admin_init', array($this, 'register_taxonomy_seo_fields'));
+
+        // Show pending AI content changes in page builder editors (BeTheme, Elementor, etc.)
+        // by intercepting their meta reads so the editor loads the modified content.
+        add_filter('get_post_metadata', array($this, 'filter_admin_pending_builder_meta'), 1, 4);
     }
 
     private function is_supported_post_type(string $post_type): bool
@@ -4605,6 +4609,120 @@ HTML;
         require __DIR__ . '/admin/view-setup-wizard.php';
     }
 
+    /**
+     * In the admin editor, intercept page builder meta reads so that pending
+     * AI content changes are visible in BeTheme, Elementor, and other builders
+     * before the user clicks Update/Publish.
+     *
+     * @param mixed  $value     The value to return (null = let WordPress handle it).
+     * @param int    $object_id The post ID.
+     * @param string $meta_key  The meta key being read.
+     * @param bool   $single    Whether to return a single value.
+     * @return mixed Modified meta value or null.
+     */
+    public function filter_admin_pending_builder_meta($value, int $object_id, string $meta_key, bool $single)
+    {
+        // Only operate when editing a post in admin.
+        global $pagenow;
+        if (! is_admin() || ! in_array($pagenow, array('post.php', 'post-new.php'), true)) {
+            return $value;
+        }
+
+        static $builder_meta_keys = array(
+            'mfn-page-items',
+            '_elementor_data',
+            '_fl_builder_data',
+            '_bricks_page_content_2',
+            '_themify_builder_settings_json',
+            'ct_builder_shortcodes',
+            'tve_updated_post',
+            'brizy-post-editor-data',
+            '_seedprod_page',
+            'tatsu_sections',
+        );
+
+        if (! in_array($meta_key, $builder_meta_keys, true)) {
+            return $value;
+        }
+
+        $pending = Content_Writer::get_pending_changes($object_id);
+        if (empty($pending)) {
+            return $value;
+        }
+
+        // Map builder name → meta key.
+        static $builder_map = array(
+            'betheme'  => 'mfn-page-items',
+            'elementor' => '_elementor_data',
+            'beaver'   => '_fl_builder_data',
+            'bricks'   => '_bricks_page_content_2',
+            'themify'  => '_themify_builder_settings_json',
+            'oxygen'   => 'ct_builder_shortcodes',
+            'thrive'   => 'tve_updated_post',
+            'brizy'    => 'brizy-post-editor-data',
+            'seedprod' => '_seedprod_page',
+            'tatsu'    => 'tatsu_sections',
+        );
+
+        $pending_builder = $pending['builder'] ?? 'post_content';
+        $target_key = $builder_map[$pending_builder] ?? '';
+        if ($meta_key !== $target_key) {
+            return $value;
+        }
+
+        // Remove filter temporarily to read actual meta without recursion.
+        remove_filter('get_post_metadata', array($this, 'filter_admin_pending_builder_meta'), 1);
+        $raw = get_post_meta($object_id, $meta_key, $single);
+        add_filter('get_post_metadata', array($this, 'filter_admin_pending_builder_meta'), 1, 4);
+
+        if (empty($raw)) {
+            return $value;
+        }
+
+        $is_betheme = ('betheme' === $pending_builder);
+
+        if ($is_betheme && is_string($raw)) {
+            $decoded_b64 = base64_decode($raw, true);
+            if (false === $decoded_b64) {
+                return $value;
+            }
+            $data = @unserialize($decoded_b64);
+            if (! is_array($data)) {
+                return $value;
+            }
+
+            $changes = $pending['changes'] ?? array();
+            foreach ($changes as $change) {
+                $old = (string) ($change['old'] ?? '');
+                $new = (string) ($change['new'] ?? '');
+                if ('' === $old) {
+                    continue;
+                }
+
+                if (
+                    preg_match('/^<(h[1-6])>(.*)<\/\1>$/is', trim($old), $old_m)
+                    && preg_match('/^<(h[1-6])>(.*)<\/\1>$/is', trim($new), $new_m)
+                ) {
+                    Content_Writer::betheme_heading_replace_public($data, strtolower($old_m[1]), $old_m[2], strtolower($new_m[1]), $new_m[2]);
+                    continue;
+                }
+
+                $found = false;
+                $data = Content_Writer::walk_replace_public($data, $old, $new, $found);
+            }
+
+            $modified = base64_encode(serialize($data));
+            return $single ? array($modified) : array($modified);
+        }
+
+        // Non-BeTheme builders: string-based replacement.
+        $content = is_string($raw) ? $raw : maybe_serialize($raw);
+        $modified = Content_Writer::apply_changes_to_string($content, $pending['changes']);
+
+        $unserialized = maybe_unserialize($modified);
+        return $single ? array($unserialized) : array($unserialized);
+    }
+
     public function save_editor_meta(int $post_id): void
     {
         if (! isset($_POST['ai_seo_keeper_editor_nonce'])) {
@@ -4638,11 +4756,19 @@ HTML;
         // Apply any pending AI content changes on Update/Publish.
         $pending = Content_Writer::get_pending_changes($post_id);
         if (! empty($pending)) {
-            $result = Content_Writer::apply_pending_changes($post_id);
-
-            // Only mark as published if at least one change was actually applied.
-            if (! empty($result) && $result['applied'] > 0) {
+            // When editing via a page builder (BeTheme, Elementor, etc.), our
+            // filter_admin_pending_builder_meta already injected the modified
+            // content into the builder's read, so the builder saved the changes
+            // itself. In that case, just clear the pending meta and mark published.
+            $pending_builder = $pending['builder'] ?? 'post_content';
+            if ('post_content' !== $pending_builder) {
+                Content_Writer::clear_pending_changes($post_id);
                 $this->history_store->update_content_edit_status($post_id, 'published');
+            } else {
+                $result = Content_Writer::apply_pending_changes($post_id);
+                if (! empty($result) && $result['applied'] > 0) {
+                    $this->history_store->update_content_edit_status($post_id, 'published');
+                }
             }
         }
     }
