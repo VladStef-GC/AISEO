@@ -17,7 +17,7 @@ class AI_Generator
         $this->content_indexer = $content_indexer;
     }
 
-    public function generate_for_post(int $post_id): array
+    public function generate_for_post(int $post_id, array $field_overrides = array()): array
     {
         $post = get_post($post_id);
 
@@ -35,7 +35,7 @@ class AI_Generator
         $model = trim((string) $options['model']);
         $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_system_prompt((string) $options['system_prompt']);
-        $user_prompt = $this->build_user_prompt($post);
+        $user_prompt = $this->build_user_prompt($post, $field_overrides);
 
         if ('openai' === $provider) {
             $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
@@ -189,10 +189,12 @@ class AI_Generator
 
         return trim(
             $base_prompt . "\n\n" .
-                'Return only valid JSON with exactly these keys: seo_title, meta_description, notes. ' .
+                'Return only valid JSON with exactly these keys: seo_title, meta_description, focus_keyphrase, notes. ' .
                 'Do not use markdown fences. Keep the title at or under 60 characters (total including branding). ' .
                 'Keep the meta description at or under 155 characters, ideally around 140-155. ' .
-                'Be specific to the real page content and avoid generic claims.' .
+                'Be specific to the real page content and avoid generic claims. ' .
+                'CRITICAL: If a focus keyphrase is provided, it MUST appear naturally in both the seo_title and meta_description. ' .
+                'If the existing drafts are already well-optimized, return them unchanged — do not rewrite good content unnecessarily.' .
                 $suffix_note
         );
     }
@@ -242,11 +244,20 @@ class AI_Generator
         );
     }
 
-    private function get_seo_context(\WP_Post $post): array
+    private function get_seo_context(\WP_Post $post, array $overrides = array()): array
     {
-        $focus_keyphrase = trim(wp_strip_all_tags((string) get_post_meta($post->ID, '_ai_seo_keeper_focus_keyphrase', true)));
-        $seo_title_draft = trim((string) get_post_meta($post->ID, '_ai_seo_keeper_meta_title', true));
-        $meta_desc_draft = trim((string) get_post_meta($post->ID, '_ai_seo_keeper_meta_description', true));
+        // Use browser values if provided, otherwise fall back to saved meta.
+        $focus_keyphrase = isset($overrides['focus_keyphrase']) && '' !== $overrides['focus_keyphrase']
+            ? trim(wp_strip_all_tags($overrides['focus_keyphrase']))
+            : trim(wp_strip_all_tags((string) get_post_meta($post->ID, '_ai_seo_keeper_focus_keyphrase', true)));
+
+        $seo_title_draft = isset($overrides['seo_title']) && null !== $overrides['seo_title']
+            ? trim($overrides['seo_title'])
+            : trim((string) get_post_meta($post->ID, '_ai_seo_keeper_meta_title', true));
+
+        $meta_desc_draft = isset($overrides['meta_description']) && null !== $overrides['meta_description']
+            ? trim($overrides['meta_description'])
+            : trim((string) get_post_meta($post->ID, '_ai_seo_keeper_meta_description', true));
 
         // Snippet score metrics.
         $title_len = mb_strlen($seo_title_draft);
@@ -257,6 +268,31 @@ class AI_Generator
         // Page audit data (if previously audited).
         $audit_raw = get_post_meta($post->ID, '_ai_seo_keeper_page_audit', true);
         $audit_data = is_array($audit_raw) ? $audit_raw : array();
+
+        // Additional tab data for full context.
+        $social_title = isset($overrides['social_title']) && null !== $overrides['social_title']
+            ? trim($overrides['social_title'])
+            : trim((string) get_post_meta($post->ID, '_ai_seo_keeper_social_title', true));
+
+        $social_description = isset($overrides['social_description']) && null !== $overrides['social_description']
+            ? trim($overrides['social_description'])
+            : trim((string) get_post_meta($post->ID, '_ai_seo_keeper_social_description', true));
+
+        $schema_type = isset($overrides['schema_type']) && null !== $overrides['schema_type']
+            ? trim($overrides['schema_type'])
+            : trim((string) get_post_meta($post->ID, '_ai_seo_keeper_schema_type', true));
+
+        $canonical_url = isset($overrides['canonical_url']) && null !== $overrides['canonical_url']
+            ? trim($overrides['canonical_url'])
+            : trim((string) get_post_meta($post->ID, '_ai_seo_keeper_canonical_url', true));
+
+        $robots_directives = isset($overrides['robots_directives']) && null !== $overrides['robots_directives']
+            ? trim($overrides['robots_directives'])
+            : trim((string) get_post_meta($post->ID, '_ai_seo_keeper_robots_directives', true));
+
+        $is_cornerstone = isset($overrides['cornerstone']) && null !== $overrides['cornerstone']
+            ? ('1' === $overrides['cornerstone'])
+            : (! empty(get_post_meta($post->ID, '_ai_seo_keeper_cornerstone', true)));
 
         return array(
             'focus_keyphrase' => $focus_keyphrase,
@@ -270,6 +306,12 @@ class AI_Generator
             'audit_issues' => isset($audit_data['issues']) ? $audit_data['issues'] : array(),
             'audit_suggestions' => isset($audit_data['suggestions']) ? $audit_data['suggestions'] : array(),
             'audit_summary' => isset($audit_data['summary']) ? (string) $audit_data['summary'] : '',
+            'social_title' => $social_title,
+            'social_description' => $social_description,
+            'schema_type' => $schema_type,
+            'canonical_url' => $canonical_url,
+            'robots_directives' => $robots_directives,
+            'is_cornerstone' => $is_cornerstone,
         );
     }
 
@@ -298,12 +340,32 @@ class AI_Generator
             }
         }
 
+        // Additional tab data for full context.
+        if ('' !== ($ctx['social_title'] ?? '')) {
+            $lines[] = 'Social title override: ' . $ctx['social_title'];
+        }
+        if ('' !== ($ctx['social_description'] ?? '')) {
+            $lines[] = 'Social description override: ' . $ctx['social_description'];
+        }
+        if ('' !== ($ctx['schema_type'] ?? '')) {
+            $lines[] = 'Schema type: ' . $ctx['schema_type'];
+        }
+        if ('' !== ($ctx['canonical_url'] ?? '')) {
+            $lines[] = 'Canonical URL: ' . $ctx['canonical_url'];
+        }
+        if ('' !== ($ctx['robots_directives'] ?? '')) {
+            $lines[] = 'Robots directives: ' . $ctx['robots_directives'];
+        }
+        if (! empty($ctx['is_cornerstone'])) {
+            $lines[] = 'Cornerstone content: Yes (high-priority page)';
+        }
+
         return implode("\n", $lines);
     }
 
-    private function build_user_prompt(\WP_Post $post): string
+    private function build_user_prompt(\WP_Post $post, array $field_overrides = array()): string
     {
-        $ctx = $this->get_seo_context($post);
+        $ctx = $this->get_seo_context($post, $field_overrides);
         $page_content = $this->truncate_text($this->normalize_text(Content_Helper::get_content($post)), 5000);
         $page_excerpt = $this->truncate_text($this->normalize_text((string) $post->post_excerpt), 400);
         $related_pages = $this->content_indexer->get_related_entries((int) $post->ID, (string) $post->post_type, (int) $post->post_parent, 5);
@@ -330,10 +392,21 @@ class AI_Generator
             $branding_note = 'Title branding: The system auto-appends "' . $branding_suffix . '" (' . $suffix_len . ' chars) to the title. Generate ONLY the page-specific part — max ' . $page_title_budget . ' chars. Do NOT include the separator or brand name in seo_title.';
         }
 
+        // Build the "preserve if good" guard based on existing drafts.
+        $preserve_instruction = '';
+        $has_existing_title = '' !== $ctx['seo_title_draft'];
+        $has_existing_desc = '' !== $ctx['meta_desc_draft'];
+        if ($has_existing_title && $has_existing_desc) {
+            $preserve_instruction = 'IMPORTANT — Preservation rule: The page already has an SEO title and meta description draft (shown above). '
+                . 'Do NOT blindly replace them. Evaluate whether they are accurate, well-written, contain the focus keyphrase, and have correct length. '
+                . 'If the existing drafts are already good, return them unchanged and explain in notes why no changes were needed. '
+                . 'Only rewrite them if there is a concrete problem: wrong length, missing keyphrase, factual inaccuracy, poor differentiation from related pages, or low relevance to the page content.';
+        }
+
         $prompt_parts = array(
-            'Task: Generate a draft SEO title and meta description for the current WordPress page.',
+            'Task: Generate or refine the SEO title and meta description for the current WordPress page.',
             'Output format: {"seo_title":"...","meta_description":"...","focus_keyphrase":"...","notes":"..."}',
-            'Requirements: Make the draft clearly differentiated from the related pages. Keep seo_title at or under ' . ('' !== $branding_suffix ? (string) $page_title_budget : '60') . ' characters and meta_description at or under 155 characters. Do not invent services, guarantees, or facts not present on the page. The focus_keyphrase should be the single most important 2-4 word phrase this page should rank for. When a focus keyphrase is already provided, keep it in your output unless it is clearly wrong. Notes should be one or two short sentences explaining the positioning choice.',
+            'Requirements: Make the draft clearly differentiated from the related pages. Keep seo_title at or under ' . ('' !== $branding_suffix ? (string) $page_title_budget : '60') . ' characters and meta_description at or under 155 characters. Do not invent services, guarantees, or facts not present on the page. The focus_keyphrase should be the single most important 2-4 word phrase this page should rank for. When a focus keyphrase is already provided, keep it in your output AND ensure it appears naturally in both seo_title and meta_description. Notes should be one or two short sentences explaining the positioning choice or why the existing draft was kept.',
             'Site: ' . get_bloginfo('name'),
             'Page type: ' . $post->post_type,
             'Current page title: ' . (string) $post->post_title,
@@ -343,6 +416,10 @@ class AI_Generator
             'Main page content: ' . ('' !== $page_content ? $page_content : 'No body content is available.'),
             "Related pages to avoid overlapping with:\n" . implode("\n", $related_lines),
         );
+
+        if ('' !== $preserve_instruction) {
+            $prompt_parts[] = $preserve_instruction;
+        }
 
         if ('' !== $branding_note) {
             $prompt_parts[] = $branding_note;

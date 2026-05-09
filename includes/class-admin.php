@@ -971,12 +971,28 @@ jQuery(function ($) {
         $.post(aiSeoKeeperEditor.ajaxUrl, {
             action: aiSeoKeeperEditor.generateAction,
             nonce: $('#ai_seo_keeper_editor_nonce').val(),
-            post_id: postId
+            post_id: postId,
+            current_focus_keyphrase: $('#ai-seo-keeper-focus-keyphrase').val(),
+            current_seo_title: $('#ai-seo-keeper-meta-title').val(),
+            current_meta_description: $('#ai-seo-keeper-meta-description').val(),
+            current_social_title: $('#ai-seo-keeper-social-title').val(),
+            current_social_description: $('#ai-seo-keeper-social-description').val(),
+            current_schema_type: $('#ai-seo-keeper-schema-type').val(),
+            current_canonical_url: $('#ai-seo-keeper-canonical-url').val(),
+            current_robots_directives: $('#ai-seo-keeper-robots-directives').val(),
+            current_cornerstone: $('#ai-seo-keeper-cornerstone').is(':checked') ? '1' : '0'
         })
             .done(function (response) {
                 if (response && response.success && response.data) {
                     $('#ai-seo-keeper-meta-title').val(response.data.seoTitle || '');
                     $('#ai-seo-keeper-meta-description').val(response.data.metaDescription || '');
+
+                    if (response.data.focusKeyphrase) {
+                        var $kw = $('#ai-seo-keeper-focus-keyphrase');
+                        if ('' === $.trim($kw.val())) {
+                            $kw.val(response.data.focusKeyphrase);
+                        }
+                    }
 
                     if (response.data.notes) {
                         $notes.text(response.data.notes);
@@ -3706,8 +3722,22 @@ HTML;
             wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
         }
 
+        // Read the live field values from the browser (not just saved meta)
+        // so AI sees what the user is currently working with.
+        $field_overrides = array(
+            'focus_keyphrase'    => isset($_POST['current_focus_keyphrase']) ? sanitize_text_field(wp_unslash($_POST['current_focus_keyphrase'])) : null,
+            'seo_title'          => isset($_POST['current_seo_title']) ? sanitize_text_field(wp_unslash($_POST['current_seo_title'])) : null,
+            'meta_description'   => isset($_POST['current_meta_description']) ? sanitize_textarea_field(wp_unslash($_POST['current_meta_description'])) : null,
+            'social_title'       => isset($_POST['current_social_title']) ? sanitize_text_field(wp_unslash($_POST['current_social_title'])) : null,
+            'social_description' => isset($_POST['current_social_description']) ? sanitize_textarea_field(wp_unslash($_POST['current_social_description'])) : null,
+            'schema_type'        => isset($_POST['current_schema_type']) ? sanitize_text_field(wp_unslash($_POST['current_schema_type'])) : null,
+            'canonical_url'      => isset($_POST['current_canonical_url']) ? esc_url_raw(wp_unslash($_POST['current_canonical_url'])) : null,
+            'robots_directives'  => isset($_POST['current_robots_directives']) ? sanitize_text_field(wp_unslash($_POST['current_robots_directives'])) : null,
+            'cornerstone'        => isset($_POST['current_cornerstone']) ? sanitize_text_field(wp_unslash($_POST['current_cornerstone'])) : null,
+        );
+
         try {
-            $suggestion = $this->ai_generator->generate_for_post($post_id);
+            $suggestion = $this->ai_generator->generate_for_post($post_id, $field_overrides);
         } catch (\Throwable $throwable) {
             wp_send_json_error(array('message' => $throwable->getMessage()), 500);
         }
@@ -3749,19 +3779,22 @@ HTML;
 
         $recent_suggestions = $this->history_store->get_recent_suggestions($post_id, 'post', 3);
         $post = get_post($post_id);
-        $focus_keyphrase = (string) get_post_meta($post_id, self::FOCUS_KEYPHRASE_META_KEY, true);
+        // Use the AI-returned keyphrase if the user had none, otherwise keep theirs.
+        $user_keyphrase = isset($field_overrides['focus_keyphrase']) ? (string) $field_overrides['focus_keyphrase'] : '';
+        $effective_keyphrase = '' !== $user_keyphrase ? $user_keyphrase : ($suggestion['focus_keyphrase'] ?? '');
 
         wp_send_json_success(
             array(
                 'message' => 'AI suggestion loaded. Review it and save the draft if you want to keep it.' . $history_warning,
                 'seoTitle' => $suggestion['seo_title'],
                 'metaDescription' => $suggestion['meta_description'],
+                'focusKeyphrase' => $suggestion['focus_keyphrase'] ?? '',
                 'notes' => $suggestion['notes'],
                 'provider' => $suggestion['provider'],
                 'model' => $suggestion['model'],
                 'historyHtml' => $this->render_history_markup($recent_suggestions, $this->history_store->get_recent_content_edits($post_id, 5)),
                 'analysisHtml' => $post instanceof \WP_Post
-                    ? $this->render_focus_keyphrase_checks_markup($post, $focus_keyphrase, $suggestion['seo_title'], $suggestion['meta_description'])
+                    ? $this->render_focus_keyphrase_checks_markup($post, $effective_keyphrase, $suggestion['seo_title'], $suggestion['meta_description'])
                     : '',
             )
         );
