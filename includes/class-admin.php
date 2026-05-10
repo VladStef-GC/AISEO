@@ -9,12 +9,24 @@ require_once __DIR__ . '/class-history-store.php';
 require_once __DIR__ . '/class-frontend.php';
 require_once __DIR__ . '/class-audit-engine.php';
 require_once __DIR__ . '/class-indexnow.php';
+require_once __DIR__ . '/class-meta-keys.php';
+require_once __DIR__ . '/admin/class-admin-seo-analysis.php';
+require_once __DIR__ . '/admin/class-admin-taxonomy.php';
+require_once __DIR__ . '/admin/class-admin-import-export.php';
+require_once __DIR__ . '/admin/class-admin-rollout.php';
+require_once __DIR__ . '/admin/class-admin-ajax.php';
+
+use AI_SEO_Keeper\Admin\SEO_Analysis;
+use AI_SEO_Keeper\Admin\Admin_Taxonomy;
+use AI_SEO_Keeper\Admin\Admin_Import_Export;
+use AI_SEO_Keeper\Admin\Admin_Rollout;
+use AI_SEO_Keeper\Admin\Admin_Ajax;
 
 class Admin
 {
     private const META_BOX_ID = 'ai_seo_keeper_meta_box';
 
-    private const FRONTEND_ENABLE_META_KEY = '_ai_seo_keeper_frontend_enabled';
+    public const FRONTEND_ENABLE_META_KEY = '_ai_seo_keeper_frontend_enabled';
 
     private const AJAX_SAVE_ACTION = 'ai_seo_keeper_save_meta';
 
@@ -52,27 +64,27 @@ class Admin
     private const AJAX_CLEAR_CHAT_ACTION = 'ai_seo_keeper_clear_chat';
     private const AJAX_TEST_MODEL_ACTION = 'ai_seo_keeper_test_model';
 
-    private const CHAT_OBJECT_TYPE = 'post_chat';
+    public const CHAT_OBJECT_TYPE = 'post_chat';
 
-    private const META_TITLE_KEY = '_ai_seo_keeper_meta_title';
+    public const META_TITLE_KEY = '_ai_seo_keeper_meta_title';
 
-    private const META_DESCRIPTION_KEY = '_ai_seo_keeper_meta_description';
+    public const META_DESCRIPTION_KEY = '_ai_seo_keeper_meta_description';
 
-    private const TITLE_BRANDING_OFF_META_KEY = '_ai_seo_keeper_title_branding_off';
+    public const TITLE_BRANDING_OFF_META_KEY = '_ai_seo_keeper_title_branding_off';
 
-    private const FOCUS_KEYPHRASE_META_KEY = '_ai_seo_keeper_focus_keyphrase';
+    public const FOCUS_KEYPHRASE_META_KEY = '_ai_seo_keeper_focus_keyphrase';
 
-    private const SOCIAL_TITLE_META_KEY = '_ai_seo_keeper_social_title';
+    public const SOCIAL_TITLE_META_KEY = '_ai_seo_keeper_social_title';
 
-    private const SOCIAL_DESCRIPTION_META_KEY = '_ai_seo_keeper_social_description';
+    public const SOCIAL_DESCRIPTION_META_KEY = '_ai_seo_keeper_social_description';
 
-    private const SOCIAL_IMAGE_META_KEY = '_ai_seo_keeper_social_image';
+    public const SOCIAL_IMAGE_META_KEY = '_ai_seo_keeper_social_image';
 
-    private const CANONICAL_URL_META_KEY = '_ai_seo_keeper_canonical_url';
+    public const CANONICAL_URL_META_KEY = '_ai_seo_keeper_canonical_url';
 
-    private const ROBOTS_DIRECTIVES_META_KEY = '_ai_seo_keeper_robots_directives';
+    public const ROBOTS_DIRECTIVES_META_KEY = '_ai_seo_keeper_robots_directives';
 
-    private const SCHEMA_TYPE_META_KEY = '_ai_seo_keeper_schema_type';
+    public const SCHEMA_TYPE_META_KEY = '_ai_seo_keeper_schema_type';
 
     private const TITLE_MIN_LENGTH = 30;
 
@@ -130,6 +142,13 @@ class Admin
     /** @var IndexNow|null */
     private $indexnow_service;
 
+    // --- Delegates (extracted sub-classes) ---
+
+    private Admin_Taxonomy $taxonomy;
+    private Admin_Import_Export $import_export;
+    private Admin_Rollout $rollout;
+    private Admin_Ajax $ajax;
+
     /**
      * @param AI_Generator  $ai_generator
      * @param History_Store  $history_store
@@ -145,46 +164,57 @@ class Admin
         $this->audit_engine = new $audit_engine_class($content_indexer);
         $this->indexnow_service = $indexnow_service;
 
+        // Instantiate delegates.
+        $this->taxonomy      = new Admin_Taxonomy();
+        $this->import_export = new Admin_Import_Export($settings, $this);
+        $this->rollout       = new Admin_Rollout($content_indexer, $ai_generator, $history_store, $this->audit_engine, $indexnow_service, $this);
+        $this->ajax          = new Admin_Ajax($this, $settings, $ai_generator, $content_indexer, $history_store);
+
+        // --- Menu, assets, metabox ---
         add_action('admin_menu', array($this, 'register_menu'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_editor_assets'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_page_assets'));
-        add_action('admin_post_ai_seo_keeper_sync_index', array($this, 'handle_sync_index'));
-        add_action('admin_post_' . self::SUBMIT_INDEXNOW_ACTION, array($this, 'handle_submit_indexnow'));
-        add_action('admin_post_' . self::YOAST_IMPORT_ACTION, array($this, 'handle_import_yoast_metadata'));
-        add_action('admin_post_' . self::BULK_FRONTEND_ACTION, array($this, 'handle_bulk_frontend_rollout'));
         add_action('add_meta_boxes', array($this, 'register_editor_metabox'), 10, 2);
         add_action('save_post', array($this, 'save_editor_meta'));
-        add_action('admin_post_' . self::GENERATE_SITE_AUDIT_ACTION, array($this, 'handle_generate_site_audit'));
-        add_action('wp_ajax_' . self::AJAX_SAVE_ACTION, array($this, 'handle_ajax_save_editor_meta'));
-        add_action('wp_ajax_' . self::AJAX_GENERATE_ACTION, array($this, 'handle_ajax_generate_editor_meta'));
-        add_action('wp_ajax_' . self::AJAX_APPROVE_ACTION, array($this, 'handle_ajax_approve_suggestion'));
-        add_action('wp_ajax_' . self::AJAX_CHAT_ACTION, array($this, 'handle_ajax_chat_for_post'));
-        add_action('wp_ajax_' . self::AJAX_BULK_GENERATE_ACTION, array($this, 'handle_ajax_bulk_generate'));
-        add_action('wp_ajax_' . self::AJAX_PAGE_AUDIT_ACTION, array($this, 'handle_ajax_page_audit'));
-        add_action('wp_ajax_' . self::AJAX_SETUP_INDEX_ACTION, array($this, 'handle_ajax_setup_index'));
-        add_action('wp_ajax_' . self::AJAX_TOGGLE_AUDIT_SKIP_ACTION, array($this, 'handle_ajax_toggle_audit_skip'));
-        add_action('wp_ajax_' . self::AJAX_SAVE_SKIP_PATTERNS_ACTION, array($this, 'handle_ajax_save_skip_patterns'));
-        add_action('wp_ajax_' . self::AJAX_CONTENT_EDIT_ACTION, array($this, 'handle_ajax_content_edit'));
-        add_action('wp_ajax_' . self::AJAX_APPLY_CHANGES_ACTION, array($this, 'handle_ajax_apply_changes'));
-        add_action('wp_ajax_' . self::AJAX_APPLY_SUGGESTION_ACTION, array($this, 'handle_ajax_apply_suggestion'));
-        add_action('wp_ajax_' . self::AJAX_RESTORE_BACKUP_ACTION, array($this, 'handle_ajax_restore_backup'));
-        add_action('wp_ajax_' . self::AJAX_CLEAR_CHAT_ACTION, array($this, 'handle_ajax_clear_chat'));
-        add_action('wp_ajax_' . self::AJAX_TEST_MODEL_ACTION, array($this, 'handle_ajax_test_model'));
-        add_action('wp_ajax_ai_seo_keeper_delete_edit_plan', array($this, 'handle_ajax_delete_edit_plan'));
-        add_action('wp_ajax_ai_seo_keeper_bulk_save_seo', array($this, 'handle_ajax_bulk_save_seo'));
-        add_action('wp_ajax_ai_seo_keeper_save_image_alt', array($this, 'handle_ajax_save_image_alt'));
-        add_action('admin_post_ai_seo_keeper_export', array($this, 'handle_export'));
-        add_action('admin_post_ai_seo_keeper_import', array($this, 'handle_import'));
 
-        // Taxonomy SEO fields for all public taxonomies.
-        add_action('admin_init', array($this, 'register_taxonomy_seo_fields'));
+        // --- Admin-post handlers → delegates ---
+        add_action('admin_post_ai_seo_keeper_sync_index', array($this->rollout, 'handle_sync_index'));
+        add_action('admin_post_' . self::GENERATE_SITE_AUDIT_ACTION, array($this->rollout, 'handle_generate_site_audit'));
+        add_action('admin_post_' . self::SUBMIT_INDEXNOW_ACTION, array($this->rollout, 'handle_submit_indexnow'));
+        add_action('admin_post_' . self::BULK_FRONTEND_ACTION, array($this->rollout, 'handle_bulk_frontend_rollout'));
+        add_action('admin_post_' . self::YOAST_IMPORT_ACTION, array($this->import_export, 'handle_import_yoast'));
+        add_action('admin_post_ai_seo_keeper_export', array($this->import_export, 'handle_export'));
+        add_action('admin_post_ai_seo_keeper_import', array($this->import_export, 'handle_import'));
+
+        // --- AJAX handlers → delegates ---
+        add_action('wp_ajax_' . self::AJAX_SAVE_ACTION, array($this->ajax, 'handle_save_editor_meta'));
+        add_action('wp_ajax_' . self::AJAX_GENERATE_ACTION, array($this->ajax, 'handle_generate_editor_meta'));
+        add_action('wp_ajax_' . self::AJAX_APPROVE_ACTION, array($this->ajax, 'handle_approve_suggestion'));
+        add_action('wp_ajax_' . self::AJAX_CHAT_ACTION, array($this->ajax, 'handle_chat_for_post'));
+        add_action('wp_ajax_' . self::AJAX_BULK_GENERATE_ACTION, array($this->ajax, 'handle_bulk_generate'));
+        add_action('wp_ajax_' . self::AJAX_PAGE_AUDIT_ACTION, array($this->ajax, 'handle_page_audit'));
+        add_action('wp_ajax_' . self::AJAX_SETUP_INDEX_ACTION, array($this->ajax, 'handle_setup_index'));
+        add_action('wp_ajax_' . self::AJAX_TOGGLE_AUDIT_SKIP_ACTION, array($this->ajax, 'handle_toggle_audit_skip'));
+        add_action('wp_ajax_' . self::AJAX_SAVE_SKIP_PATTERNS_ACTION, array($this->ajax, 'handle_save_skip_patterns'));
+        add_action('wp_ajax_' . self::AJAX_CONTENT_EDIT_ACTION, array($this->ajax, 'handle_content_edit'));
+        add_action('wp_ajax_' . self::AJAX_APPLY_CHANGES_ACTION, array($this->ajax, 'handle_apply_changes'));
+        add_action('wp_ajax_' . self::AJAX_APPLY_SUGGESTION_ACTION, array($this->ajax, 'handle_apply_suggestion'));
+        add_action('wp_ajax_' . self::AJAX_RESTORE_BACKUP_ACTION, array($this->ajax, 'handle_restore_backup'));
+        add_action('wp_ajax_' . self::AJAX_CLEAR_CHAT_ACTION, array($this->ajax, 'handle_clear_chat'));
+        add_action('wp_ajax_' . self::AJAX_TEST_MODEL_ACTION, array($this->ajax, 'handle_test_model'));
+        add_action('wp_ajax_ai_seo_keeper_delete_edit_plan', array($this->ajax, 'handle_delete_edit_plan'));
+        add_action('wp_ajax_ai_seo_keeper_bulk_save_seo', array($this->ajax, 'handle_bulk_save_seo'));
+        add_action('wp_ajax_ai_seo_keeper_save_image_alt', array($this->ajax, 'handle_save_image_alt'));
+
+        // --- Taxonomy SEO fields → delegate ---
+        add_action('admin_init', array($this->taxonomy, 'register'));
 
         // Show pending AI content changes in page builder editors (BeTheme, Elementor, etc.)
         // by intercepting their meta reads so the editor loads the modified content.
         add_filter('get_post_metadata', array($this, 'filter_admin_pending_builder_meta'), 1, 4);
     }
 
-    private function is_supported_post_type(string $post_type): bool
+    public function is_supported_post_type(string $post_type): bool
     {
         $supported_post_types = get_post_types(
             array(
@@ -196,100 +226,6 @@ class Admin
         unset($supported_post_types['attachment']);
 
         return isset($supported_post_types[$post_type]);
-    }
-
-    /**
-     * Register SEO fields on all public taxonomy term edit screens.
-     */
-    public function register_taxonomy_seo_fields(): void
-    {
-        $taxonomies = get_taxonomies(array('public' => true), 'names');
-        foreach ($taxonomies as $taxonomy) {
-            add_action("{$taxonomy}_edit_form_fields", array($this, 'render_term_seo_fields'), 10, 2);
-            add_action("edited_{$taxonomy}", array($this, 'save_term_seo_fields'), 10, 2);
-        }
-    }
-
-    /**
-     * Render SEO fields on term edit screen.
-     */
-    public function render_term_seo_fields(\WP_Term $term, string $taxonomy): void
-    {
-        $seo_title       = get_term_meta($term->term_id, '_ai_seo_keeper_seo_title', true);
-        $meta_description = get_term_meta($term->term_id, '_ai_seo_keeper_meta_description', true);
-        $canonical       = get_term_meta($term->term_id, '_ai_seo_keeper_canonical', true);
-        $noindex         = get_term_meta($term->term_id, '_ai_seo_keeper_noindex', true);
-        wp_nonce_field('ai_seo_keeper_term_seo', '_ai_seo_keeper_term_nonce');
-?>
-        <tr class="form-field">
-            <th scope="row" colspan="2">
-                <h2 style="margin:0;">AI SEO Keeper</h2>
-            </th>
-        </tr>
-        <tr class="form-field">
-            <th scope="row"><label for="ai-seo-keeper-term-seo-title">SEO Title</label></th>
-            <td>
-                <input id="ai-seo-keeper-term-seo-title" type="text" name="ai_seo_keeper_seo_title" value="<?php echo esc_attr($seo_title); ?>" class="large-text" />
-                <p class="description">Override the default title tag. Leave blank to use the WordPress default.</p>
-            </td>
-        </tr>
-        <tr class="form-field">
-            <th scope="row"><label for="ai-seo-keeper-term-meta-desc">Meta description</label></th>
-            <td>
-                <textarea id="ai-seo-keeper-term-meta-desc" name="ai_seo_keeper_meta_description" rows="3" class="large-text"><?php echo esc_textarea($meta_description); ?></textarea>
-            </td>
-        </tr>
-        <tr class="form-field">
-            <th scope="row"><label for="ai-seo-keeper-term-canonical">Canonical URL</label></th>
-            <td>
-                <input id="ai-seo-keeper-term-canonical" type="url" name="ai_seo_keeper_canonical" value="<?php echo esc_attr($canonical); ?>" class="large-text" placeholder="https://" />
-                <p class="description">Leave blank for the default canonical URL.</p>
-            </td>
-        </tr>
-        <tr class="form-field">
-            <th scope="row">Noindex</th>
-            <td>
-                <label><input type="checkbox" name="ai_seo_keeper_noindex" value="1" <?php checked($noindex, '1'); ?> /> Prevent search engines from indexing this taxonomy archive</label>
-            </td>
-        </tr>
-    <?php
-    }
-
-    /**
-     * Save taxonomy term SEO fields.
-     */
-    public function save_term_seo_fields(int $term_id, int $tt_id): void
-    {
-        if (! isset($_POST['_ai_seo_keeper_term_nonce']) || ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_ai_seo_keeper_term_nonce'])), 'ai_seo_keeper_term_seo')) {
-            return;
-        }
-        if (! current_user_can('manage_categories')) {
-            return;
-        }
-
-        $fields = array(
-            'ai_seo_keeper_seo_title'        => '_ai_seo_keeper_seo_title',
-            'ai_seo_keeper_meta_description'  => '_ai_seo_keeper_meta_description',
-            'ai_seo_keeper_canonical'         => '_ai_seo_keeper_canonical',
-        );
-        foreach ($fields as $input_key => $meta_key) {
-            $value = isset($_POST[$input_key]) ? sanitize_text_field(wp_unslash($_POST[$input_key])) : '';
-            if ('_ai_seo_keeper_canonical' === $meta_key) {
-                $value = esc_url_raw($value);
-            }
-            if ('' !== $value) {
-                update_term_meta($term_id, $meta_key, $value);
-            } else {
-                delete_term_meta($term_id, $meta_key);
-            }
-        }
-
-        $noindex = isset($_POST['ai_seo_keeper_noindex']) ? '1' : '';
-        if ('' !== $noindex) {
-            update_term_meta($term_id, '_ai_seo_keeper_noindex', '1');
-        } else {
-            delete_term_meta($term_id, '_ai_seo_keeper_noindex');
-        }
     }
 
     public function register_menu(): void
@@ -1611,31 +1547,6 @@ JS;
     }
 
     /**
-     * AJAX handler for bulk saving SEO meta.
-     */
-    public function handle_ajax_bulk_save_seo(): void
-    {
-        check_ajax_referer('ai_seo_keeper_nonce', '_nonce');
-
-        if (! current_user_can('manage_options')) {
-            wp_send_json_error('Unauthorized');
-        }
-
-        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
-        if ($post_id <= 0 || ! get_post($post_id)) {
-            wp_send_json_error('Invalid post ID.');
-        }
-
-        $seo_title = isset($_POST['seo_title']) ? sanitize_text_field(wp_unslash($_POST['seo_title'])) : '';
-        $seo_description = isset($_POST['seo_description']) ? sanitize_textarea_field(wp_unslash($_POST['seo_description'])) : '';
-
-        update_post_meta($post_id, self::META_TITLE_KEY, $seo_title);
-        update_post_meta($post_id, self::META_DESCRIPTION_KEY, $seo_description);
-
-        wp_send_json_success(array('message' => 'Saved.'));
-    }
-
-    /**
      * Render the Image SEO dashboard — site-wide image inventory with alt tag status and editing.
      */
     public function render_image_seo_page(): void
@@ -1751,28 +1662,6 @@ JS;
     }
 
     /**
-     * AJAX handler for saving image alt text.
-     */
-    public function handle_ajax_save_image_alt(): void
-    {
-        check_ajax_referer('ai_seo_keeper_nonce', '_nonce');
-
-        if (! current_user_can('manage_options')) {
-            wp_send_json_error('Unauthorized');
-        }
-
-        $attachment_id = isset($_POST['attachment_id']) ? (int) $_POST['attachment_id'] : 0;
-        if ($attachment_id <= 0 || 'attachment' !== get_post_type($attachment_id)) {
-            wp_send_json_error('Invalid attachment.');
-        }
-
-        $alt_text = isset($_POST['alt_text']) ? sanitize_text_field(wp_unslash($_POST['alt_text'])) : '';
-        update_post_meta($attachment_id, '_wp_attachment_image_alt', $alt_text);
-
-        wp_send_json_success(array('message' => 'Alt text saved.'));
-    }
-
-    /**
      * Render the keyword tracking page — cross-page keyphrase map and cannibalization detection.
      */
     public function render_keyword_tracking_page(): void
@@ -1843,182 +1732,6 @@ JS;
         $import_msg    = isset($_GET['import_msg']) ? sanitize_text_field(wp_unslash($_GET['import_msg'])) : '';
 
         require __DIR__ . '/admin/view-export-import.php';
-    }
-
-    /**
-     * Handle JSON export download.
-     */
-    public function handle_export(): void
-    {
-        if (! current_user_can('manage_options')) {
-            wp_die('Unauthorized');
-        }
-        check_admin_referer('ai_seo_keeper_export');
-
-        $data = array(
-            'plugin' => 'ai-seo-keeper',
-            'version' => defined('AI_SEO_KEEPER_VERSION') ? AI_SEO_KEEPER_VERSION : '1.0.0',
-            'exported_at' => gmdate('c'),
-            'site_url' => home_url('/'),
-        );
-
-        // Settings.
-        if (! empty($_POST['export_settings'])) {
-            $data['settings'] = $this->settings->get();
-            // Never export API keys.
-            unset($data['settings']['api_key'], $data['settings']['google_api_key']);
-        }
-
-        // Per-page SEO metadata.
-        if (! empty($_POST['export_seo_meta'])) {
-            global $wpdb;
-            $meta_keys = array(
-                '_ai_seo_keeper_meta_title',
-                '_ai_seo_keeper_meta_description',
-                '_ai_seo_keeper_focus_keyphrase',
-                '_ai_seo_keeper_social_title',
-                '_ai_seo_keeper_social_description',
-                '_ai_seo_keeper_social_image',
-                '_ai_seo_keeper_schema_type',
-                '_ai_seo_keeper_canonical_url',
-                '_ai_seo_keeper_robots_directives',
-                '_ai_seo_keeper_frontend_enabled',
-                '_ai_seo_keeper_cornerstone',
-                '_ai_seo_keeper_hreflang',
-            );
-            $placeholders = implode(',', array_fill(0, count($meta_keys), '%s'));
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            $rows = $wpdb->get_results(
-                $wpdb->prepare(
-                    "SELECT p.ID, p.post_title, p.post_name, pm.meta_key, pm.meta_value
-                    FROM {$wpdb->postmeta} pm
-                    INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
-                    WHERE pm.meta_key IN ({$placeholders})
-                        AND pm.meta_value != ''
-                    ORDER BY p.ID ASC",
-                    ...$meta_keys
-                ),
-                ARRAY_A
-            );
-
-            $seo_meta = array();
-            foreach ($rows as $row) {
-                $pid = (int) $row['ID'];
-                if (! isset($seo_meta[$pid])) {
-                    $seo_meta[$pid] = array(
-                        'post_id' => $pid,
-                        'post_title' => $row['post_title'],
-                        'post_slug' => $row['post_name'],
-                        'meta' => array(),
-                    );
-                }
-                $seo_meta[$pid]['meta'][$row['meta_key']] = $row['meta_value'];
-            }
-            $data['seo_meta'] = array_values($seo_meta);
-        }
-
-        // Redirects.
-        if (! empty($_POST['export_redirects'])) {
-            global $wpdb;
-            $redirects_table = $wpdb->prefix . 'ai_seo_keeper_redirects';
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-            $redirects = $wpdb->get_results(
-                "SELECT source_url, target_url, status_code, type FROM {$redirects_table} WHERE type = 'redirect' ORDER BY source_url ASC",
-                ARRAY_A
-            );
-            $data['redirects'] = is_array($redirects) ? $redirects : array();
-        }
-
-        $json = wp_json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-
-        header('Content-Type: application/json; charset=utf-8');
-        header('Content-Disposition: attachment; filename="ai-seo-keeper-export-' . gmdate('Y-m-d') . '.json"');
-        header('Content-Length: ' . strlen($json));
-        echo $json;
-        exit;
-    }
-
-    /**
-     * Handle JSON import upload.
-     */
-    public function handle_import(): void
-    {
-        if (! current_user_can('manage_options')) {
-            wp_die('Unauthorized');
-        }
-        check_admin_referer('ai_seo_keeper_import');
-
-        $redirect_url = admin_url('admin.php?page=ai-seo-keeper-export-import');
-
-        if (empty($_FILES['import_file']['tmp_name']) || 0 !== (int) $_FILES['import_file']['error']) {
-            wp_redirect(add_query_arg(array('import_status' => 'error', 'import_msg' => 'No file uploaded or upload error.'), $redirect_url));
-            exit;
-        }
-
-        $json = file_get_contents($_FILES['import_file']['tmp_name']); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-        $data = json_decode($json, true);
-
-        if (! is_array($data) || 'ai-seo-keeper' !== ($data['plugin'] ?? '')) {
-            wp_redirect(add_query_arg(array('import_status' => 'error', 'import_msg' => 'Invalid import file. Must be an AI SEO Keeper export.'), $redirect_url));
-            exit;
-        }
-
-        $imported = array();
-
-        // Import settings.
-        if (! empty($data['settings']) && is_array($data['settings'])) {
-            $current = $this->settings->get();
-            // Preserve existing API keys — never import them.
-            $data['settings']['api_key'] = $current['api_key'] ?? '';
-            $data['settings']['google_api_key'] = $current['google_api_key'] ?? '';
-            update_option(Settings::OPTION_NAME, wp_parse_args($data['settings'], $current));
-            $imported[] = 'settings';
-        }
-
-        // Import SEO metadata.
-        if (! empty($data['seo_meta']) && is_array($data['seo_meta'])) {
-            $meta_count = 0;
-            foreach ($data['seo_meta'] as $entry) {
-                $post_id = (int) ($entry['post_id'] ?? 0);
-                if ($post_id <= 0 || ! get_post($post_id)) {
-                    continue;
-                }
-                if (! empty($entry['meta']) && is_array($entry['meta'])) {
-                    foreach ($entry['meta'] as $key => $value) {
-                        // Only allow known meta keys.
-                        if (0 !== strpos($key, '_ai_seo_keeper_')) {
-                            continue;
-                        }
-                        update_post_meta($post_id, sanitize_key($key), sanitize_text_field($value));
-                    }
-                    $meta_count++;
-                }
-            }
-            $imported[] = "{$meta_count} pages SEO data";
-        }
-
-        // Import redirects.
-        if (! empty($data['redirects']) && is_array($data['redirects'])) {
-            $redir_instance = Plugin::instance()->get_redirects();
-            $redir_count = 0;
-            if ($redir_instance) {
-                foreach ($data['redirects'] as $r) {
-                    if (! empty($r['source_url']) && ! empty($r['target_url'])) {
-                        $redir_instance->add_redirect(
-                            sanitize_text_field($r['source_url']),
-                            esc_url_raw($r['target_url']),
-                            (int) ($r['status_code'] ?? 301)
-                        );
-                        $redir_count++;
-                    }
-                }
-            }
-            $imported[] = "{$redir_count} redirects";
-        }
-
-        $msg = empty($imported) ? 'Nothing to import.' : 'Imported: ' . implode(', ', $imported) . '.';
-        wp_redirect(add_query_arg(array('import_status' => 'success', 'import_msg' => $msg), $redirect_url));
-        exit;
     }
 
     public function render_settings_page(): void
@@ -2169,7 +1882,7 @@ JS;
         );
 
         wp_nonce_field('ai_seo_keeper_save_editor_meta', 'ai_seo_keeper_editor_nonce');
-    ?>
+?>
         <div class="ai-seo-keeper-editor-panel">
             <?php echo $this->render_editor_panel_styles(); ?>
 
@@ -3687,541 +3400,7 @@ HTML;
         );
     }
 
-    public function handle_ajax_save_editor_meta(): void
-    {
-        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
-
-        if (! $post_id) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
-        }
-
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
-
-        $post_type = get_post_type($post_id);
-
-        if (! $post_type || ! $this->is_supported_post_type($post_type)) {
-            wp_send_json_error(array('message' => 'Unsupported content type.'), 400);
-        }
-
-        if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
-        }
-
-        $saved_meta = $this->persist_editor_meta($post_id, $_POST);
-        $post = get_post($post_id);
-
-        wp_send_json_success(
-            array(
-                'message' => 'SEO draft saved.',
-                'savedAt' => current_time('mysql'),
-                'analysisHtml' => $post instanceof \WP_Post
-                    ? $this->render_focus_keyphrase_checks_markup($post, $saved_meta['focus_keyphrase'], $saved_meta['seo_title'], $saved_meta['seo_description'])
-                    : '',
-            )
-        );
-    }
-
-    public function handle_ajax_generate_editor_meta(): void
-    {
-        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
-
-        if (! $post_id) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
-        }
-
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
-
-        $post_type = get_post_type($post_id);
-
-        if (! $post_type || ! $this->is_supported_post_type($post_type)) {
-            wp_send_json_error(array('message' => 'Unsupported content type.'), 400);
-        }
-
-        if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
-        }
-
-        // Read the live field values from the browser (not just saved meta)
-        // so AI sees what the user is currently working with.
-        $field_overrides = array(
-            'focus_keyphrase'    => isset($_POST['current_focus_keyphrase']) ? sanitize_text_field(wp_unslash($_POST['current_focus_keyphrase'])) : null,
-            'seo_title'          => isset($_POST['current_seo_title']) ? sanitize_text_field(wp_unslash($_POST['current_seo_title'])) : null,
-            'meta_description'   => isset($_POST['current_meta_description']) ? sanitize_textarea_field(wp_unslash($_POST['current_meta_description'])) : null,
-            'social_title'       => isset($_POST['current_social_title']) ? sanitize_text_field(wp_unslash($_POST['current_social_title'])) : null,
-            'social_description' => isset($_POST['current_social_description']) ? sanitize_textarea_field(wp_unslash($_POST['current_social_description'])) : null,
-            'schema_type'        => isset($_POST['current_schema_type']) ? sanitize_text_field(wp_unslash($_POST['current_schema_type'])) : null,
-            'canonical_url'      => isset($_POST['current_canonical_url']) ? esc_url_raw(wp_unslash($_POST['current_canonical_url'])) : null,
-            'robots_directives'  => isset($_POST['current_robots_directives']) ? sanitize_text_field(wp_unslash($_POST['current_robots_directives'])) : null,
-            'cornerstone'        => isset($_POST['current_cornerstone']) ? sanitize_text_field(wp_unslash($_POST['current_cornerstone'])) : null,
-        );
-
-        try {
-            $suggestion = $this->ai_generator->generate_for_post($post_id, $field_overrides);
-        } catch (\Throwable $throwable) {
-            wp_send_json_error(array('message' => $throwable->getMessage()), 500);
-            return;
-        }
-
-        $suggestion = array_merge(
-            $suggestion,
-            $this->apply_editor_text_limits(
-                array(
-                    'seo_title' => isset($suggestion['seo_title']) ? (string) $suggestion['seo_title'] : '',
-                    'meta_description' => isset($suggestion['meta_description']) ? (string) $suggestion['meta_description'] : '',
-                )
-            )
-        );
-
-        $history_warning = '';
-
-        try {
-            $this->history_store->log_generation(
-                $post_id,
-                'post',
-                get_the_title($post_id) . ' SEO history',
-                array(
-                    'system_prompt' => $suggestion['system_prompt'],
-                    'user_prompt' => $suggestion['user_prompt'],
-                    'provider' => $suggestion['provider'],
-                    'model' => $suggestion['model'],
-                ),
-                array(
-                    'seo_title' => $suggestion['seo_title'],
-                    'meta_description' => $suggestion['meta_description'],
-                    'notes' => $suggestion['notes'],
-                    'provider' => $suggestion['provider'],
-                    'model' => $suggestion['model'],
-                )
-            );
-        } catch (\Throwable $throwable) {
-            $history_warning = ' The suggestion was generated, but history could not be stored.';
-        }
-
-        $recent_suggestions = $this->history_store->get_recent_suggestions($post_id, 'post', 3);
-        $post = get_post($post_id);
-        // Use the AI-returned keyphrase if the user had none, otherwise keep theirs.
-        $user_keyphrase = isset($field_overrides['focus_keyphrase']) ? (string) $field_overrides['focus_keyphrase'] : '';
-        $effective_keyphrase = '' !== $user_keyphrase ? $user_keyphrase : ($suggestion['focus_keyphrase'] ?? '');
-
-        wp_send_json_success(
-            array(
-                'message' => 'AI suggestion loaded. Review it and save the draft if you want to keep it.' . $history_warning,
-                'seoTitle' => $suggestion['seo_title'],
-                'metaDescription' => $suggestion['meta_description'],
-                'focusKeyphrase' => $suggestion['focus_keyphrase'] ?? '',
-                'notes' => $suggestion['notes'],
-                'provider' => $suggestion['provider'],
-                'model' => $suggestion['model'],
-                'historyHtml' => $this->render_history_markup($recent_suggestions, $this->history_store->get_recent_content_edits($post_id, 5)),
-                'analysisHtml' => $post instanceof \WP_Post
-                    ? $this->render_focus_keyphrase_checks_markup($post, $effective_keyphrase, $suggestion['seo_title'], $suggestion['meta_description'])
-                    : '',
-            )
-        );
-    }
-
-    public function handle_ajax_approve_suggestion(): void
-    {
-        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
-        $message_id = isset($_POST['message_id']) ? (int) $_POST['message_id'] : 0;
-
-        if (! $post_id || ! $message_id) {
-            wp_send_json_error(array('message' => 'Missing suggestion approval details.'), 400);
-        }
-
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
-
-        $post_type = get_post_type($post_id);
-
-        if (! $post_type || ! $this->is_supported_post_type($post_type)) {
-            wp_send_json_error(array('message' => 'Unsupported content type.'), 400);
-        }
-
-        if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
-        }
-
-        try {
-            $approved = $this->history_store->approve_suggestion($post_id, 'post', $message_id);
-        } catch (\Throwable $throwable) {
-            wp_send_json_error(array('message' => $throwable->getMessage()), 500);
-            return;
-        }
-
-        $approved = array_merge(
-            $approved,
-            $this->apply_editor_text_limits(
-                array(
-                    'seo_title' => isset($approved['seo_title']) ? (string) $approved['seo_title'] : '',
-                    'meta_description' => isset($approved['meta_description']) ? (string) $approved['meta_description'] : '',
-                )
-            )
-        );
-
-        $recent_suggestions = $this->history_store->get_recent_suggestions($post_id, 'post', 5);
-        $post = get_post($post_id);
-        $focus_keyphrase = (string) get_post_meta($post_id, self::FOCUS_KEYPHRASE_META_KEY, true);
-
-        wp_send_json_success(
-            array(
-                'message' => 'Suggestion approved for future output.',
-                'seoTitle' => $approved['seo_title'],
-                'metaDescription' => $approved['meta_description'],
-                'notes' => $approved['notes'],
-                'historyHtml' => $this->render_history_markup($recent_suggestions, $this->history_store->get_recent_content_edits($post_id, 5)),
-                'analysisHtml' => $post instanceof \WP_Post
-                    ? $this->render_focus_keyphrase_checks_markup($post, $focus_keyphrase, $approved['seo_title'], $approved['meta_description'])
-                    : '',
-            )
-        );
-    }
-
-    public function handle_ajax_chat_for_post(): void
-    {
-        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
-        $message = isset($_POST['message']) ? sanitize_textarea_field(wp_unslash($_POST['message'])) : '';
-
-        if (! $post_id) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
-        }
-
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
-
-        $post_type = get_post_type($post_id);
-
-        if (! $post_type || ! $this->is_supported_post_type($post_type)) {
-            wp_send_json_error(array('message' => 'Unsupported content type.'), 400);
-        }
-
-        if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
-        }
-
-        if ('' === trim($message)) {
-            wp_send_json_error(array('message' => 'Enter a question before asking the AI assistant.'), 400);
-        }
-
-        $options = $this->settings->get();
-
-        if (empty($options['editor_chat_enabled'])) {
-            wp_send_json_error(array('message' => 'The AI assistant is disabled in settings.'), 400);
-        }
-
-        try {
-            $recent_messages = $this->history_store->get_recent_chat_messages($post_id, 8);
-            $reply = $this->ai_generator->chat_for_post($post_id, $message, $recent_messages);
-            $this->history_store->log_generation(
-                $post_id,
-                self::CHAT_OBJECT_TYPE,
-                get_the_title($post_id) . ' AI chat',
-                array(
-                    'message' => $message,
-                ),
-                array(
-                    'reply' => $reply['reply'],
-                    'suggested_title' => $reply['suggested_title'],
-                    'suggested_description' => $reply['suggested_description'],
-                    'notes' => $reply['notes'],
-                    'provider' => $reply['provider'],
-                    'model' => $reply['model'],
-                )
-            );
-
-            // If AI decided content edits are needed, auto-generate proposals.
-            $content_changes = null;
-            $content_summary = '';
-            $content_builder = '';
-            if (! empty($reply['wants_edits'])) {
-                try {
-                    $all_messages = $this->history_store->get_recent_chat_messages($post_id, 12);
-                    $edit_result = $this->ai_generator->generate_content_changes($post_id, $message, $all_messages);
-                    $content_changes = $edit_result['changes'];
-                    $content_summary = $edit_result['summary'];
-                    $content_builder = Content_Writer::detect_builder($post_id);
-                } catch (\Throwable $edit_err) {
-                    // Content edit failed; chat reply still goes through.
-                    $content_changes = null;
-                    $content_summary = 'Content edit proposals could not be generated: ' . $edit_err->getMessage();
-                }
-            }
-        } catch (\Throwable $throwable) {
-            wp_send_json_error(array('message' => $throwable->getMessage()), 500);
-            return;
-        }
-
-        $chat_messages = $this->history_store->get_recent_chat_messages($post_id, 12);
-
-        $response_data = array(
-            'message' => 'AI assistant replied.',
-            'notes' => $reply['notes'],
-            'chatHtml' => $this->render_chat_history_markup($chat_messages),
-        );
-
-        if (null !== $content_changes) {
-            $response_data['changes'] = $content_changes;
-            $response_data['summary'] = $content_summary;
-            $response_data['builder'] = $content_builder;
-        }
-
-        wp_send_json_success($response_data);
-    }
-
-    public function handle_ajax_setup_index(): void
-    {
-        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
-
-        if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => 'Permission denied.'), 403);
-        }
-
-        $count = $this->content_indexer->sync();
-
-        global $wpdb;
-        $table = $wpdb->prefix . 'ai_seo_keeper_content_index';
-        $ids = $wpdb->get_col("SELECT object_id FROM {$table} WHERE object_type = 'post' AND status = 'publish' ORDER BY object_id ASC");
-
-        wp_send_json_success(array(
-            'message' => sprintf('Site index synced. %d content records stored.', $count),
-            'count' => $count,
-            'publishedIds' => array_map('intval', $ids ?: array()),
-        ));
-    }
-
-    public function handle_ajax_bulk_generate(): void
-    {
-        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
-
-        if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => 'Permission denied.'), 403);
-        }
-
-        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
-
-        if ($post_id <= 0) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
-        }
-
-        $post = get_post($post_id);
-
-        if (! $post instanceof \WP_Post) {
-            wp_send_json_error(array('message' => 'Page not found.'), 404);
-        }
-
-        $existing_title = trim((string) get_post_meta($post_id, self::META_TITLE_KEY, true));
-        $existing_desc = trim((string) get_post_meta($post_id, self::META_DESCRIPTION_KEY, true));
-        $existing_keyphrase = trim((string) get_post_meta($post_id, self::FOCUS_KEYPHRASE_META_KEY, true));
-
-        if ('' !== $existing_title && '' !== $existing_desc && '' !== $existing_keyphrase) {
-            wp_send_json_success(array(
-                'message' => 'Already has all metadata, skipped.',
-                'skipped' => true,
-                'post_id' => $post_id,
-                'title' => $post->post_title,
-            ));
-            return;
-        }
-
-        try {
-            $suggestion = $this->ai_generator->generate_for_post($post_id);
-        } catch (\Throwable $throwable) {
-            wp_send_json_error(array(
-                'message' => $throwable->getMessage(),
-                'post_id' => $post_id,
-                'title' => $post->post_title,
-            ), 500);
-            return;
-        }
-
-        $suggestion = array_merge(
-            $suggestion,
-            $this->apply_editor_text_limits(array(
-                'seo_title' => isset($suggestion['seo_title']) ? (string) $suggestion['seo_title'] : '',
-                'meta_description' => isset($suggestion['meta_description']) ? (string) $suggestion['meta_description'] : '',
-            ))
-        );
-
-        if ('' === $existing_title) {
-            update_post_meta($post_id, self::META_TITLE_KEY, $suggestion['seo_title']);
-        }
-        if ('' === $existing_desc) {
-            update_post_meta($post_id, self::META_DESCRIPTION_KEY, $suggestion['meta_description']);
-        }
-        if ('' === $existing_keyphrase && ! empty($suggestion['focus_keyphrase'])) {
-            update_post_meta($post_id, self::FOCUS_KEYPHRASE_META_KEY, $suggestion['focus_keyphrase']);
-        }
-
-        try {
-            $this->history_store->log_generation(
-                $post_id,
-                'post',
-                $post->post_title . ' SEO history',
-                array(
-                    'system_prompt' => $suggestion['system_prompt'],
-                    'user_prompt' => $suggestion['user_prompt'],
-                    'provider' => $suggestion['provider'],
-                    'model' => $suggestion['model'],
-                ),
-                array(
-                    'seo_title' => $suggestion['seo_title'],
-                    'meta_description' => $suggestion['meta_description'],
-                    'notes' => $suggestion['notes'],
-                    'provider' => $suggestion['provider'],
-                    'model' => $suggestion['model'],
-                )
-            );
-        } catch (\Throwable $throwable) {
-            // History failure is non-fatal
-        }
-
-        wp_send_json_success(array(
-            'message' => 'Generated metadata for: ' . $post->post_title,
-            'skipped' => false,
-            'post_id' => $post_id,
-            'title' => $post->post_title,
-            'seo_title' => $suggestion['seo_title'],
-            'meta_description' => $suggestion['meta_description'],
-            'focus_keyphrase' => $suggestion['focus_keyphrase'] ?? '',
-            'notes' => $suggestion['notes'],
-        ));
-    }
-
-    public function handle_ajax_page_audit(): void
-    {
-        // Accept both editor nonce and wizard nonce since this is called from both contexts.
-        if (
-            ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? '')), 'ai_seo_keeper_save_editor_meta')
-            && ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? '')), 'ai_seo_keeper_setup_wizard')
-        ) {
-            wp_send_json_error(array('message' => 'Security check failed.'), 403);
-        }
-
-        if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => 'Permission denied.'), 403);
-        }
-
-        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
-
-        if ($post_id <= 0) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
-        }
-
-        $post = get_post($post_id);
-
-        if (! $post instanceof \WP_Post) {
-            wp_send_json_error(array('message' => 'Page not found.'), 404);
-        }
-
-        // Return cached audit if already completed.
-        $cached = get_post_meta($post_id, '_ai_seo_keeper_page_audit', true);
-
-        if (is_array($cached) && isset($cached['score'])) {
-            wp_send_json_success(array(
-                'post_id' => $post_id,
-                'title' => $post->post_title,
-                'permalink' => get_permalink($post_id),
-                'score' => $cached['score'],
-                'issues' => $cached['issues'],
-                'suggestions' => $cached['suggestions'],
-                'missing_alt_tags' => $cached['missing_alt_tags'],
-                'word_count' => $cached['word_count'],
-                'heading_structure' => $cached['heading_structure'],
-                'summary' => $cached['summary'],
-                'cached' => true,
-            ));
-            return;
-        }
-
-        try {
-            $audit = $this->ai_generator->generate_page_audit($post_id);
-        } catch (\Throwable $throwable) {
-            wp_send_json_error(array(
-                'message' => $throwable->getMessage(),
-                'post_id' => $post_id,
-                'title' => $post->post_title,
-            ), 500);
-            return;
-        }
-
-        // Persist audit results for resume and for use elsewhere.
-        update_post_meta($post_id, '_ai_seo_keeper_page_audit', array(
-            'score' => $audit['score'],
-            'issues' => $audit['issues'],
-            'suggestions' => $audit['suggestions'],
-            'missing_alt_tags' => $audit['missing_alt_tags'],
-            'word_count' => $audit['word_count'],
-            'heading_structure' => $audit['heading_structure'],
-            'summary' => $audit['summary'],
-            'audited_at' => current_time('mysql', true),
-        ));
-
-        wp_send_json_success(array(
-            'post_id' => $post_id,
-            'title' => $post->post_title,
-            'permalink' => get_permalink($post_id),
-            'score' => $audit['score'],
-            'issues' => $audit['issues'],
-            'suggestions' => $audit['suggestions'],
-            'missing_alt_tags' => $audit['missing_alt_tags'],
-            'word_count' => $audit['word_count'],
-            'heading_structure' => $audit['heading_structure'],
-            'summary' => $audit['summary'],
-            'cached' => false,
-        ));
-    }
-
-    public function handle_ajax_toggle_audit_skip(): void
-    {
-        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
-
-        if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => 'Permission denied.'), 403);
-        }
-
-        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
-
-        if ($post_id <= 0) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
-        }
-
-        $current = get_post_meta($post_id, '_ai_seo_keeper_audit_skip', true);
-        $new_value = empty($current) ? '1' : '';
-
-        if ('' === $new_value) {
-            delete_post_meta($post_id, '_ai_seo_keeper_audit_skip');
-        } else {
-            update_post_meta($post_id, '_ai_seo_keeper_audit_skip', '1');
-        }
-
-        wp_send_json_success(array(
-            'post_id' => $post_id,
-            'skipped' => '' !== $new_value,
-        ));
-    }
-
-    public function handle_ajax_save_skip_patterns(): void
-    {
-        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
-
-        if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => 'Permission denied.'), 403);
-        }
-
-        $patterns = isset($_POST['patterns']) ? sanitize_textarea_field(wp_unslash($_POST['patterns'])) : '';
-
-        $options = $this->settings->get();
-        $options['audit_skip_patterns'] = $patterns;
-        update_option('ai_seo_keeper_options', $options);
-
-        // Count how many published pages match.
-        $matched = $this->count_pages_matching_skip_patterns($patterns);
-
-        wp_send_json_success(array(
-            'patterns' => $patterns,
-            'matched_count' => $matched,
-        ));
-    }
-
-    private function count_pages_matching_skip_patterns(string $patterns_text): int
+    public function count_pages_matching_skip_patterns(string $patterns_text): int
     {
         $patterns = $this->parse_skip_patterns($patterns_text);
 
@@ -4295,253 +3474,6 @@ HTML;
         }
 
         return false;
-    }
-
-    public function handle_ajax_content_edit(): void
-    {
-        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
-        $instruction = isset($_POST['instruction']) ? sanitize_textarea_field(wp_unslash($_POST['instruction'])) : '';
-
-        if (! $post_id) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
-        }
-
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
-
-        if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
-        }
-
-        if ('' === trim($instruction)) {
-            wp_send_json_error(array('message' => 'Provide an instruction for the AI content editor.'), 400);
-        }
-
-        try {
-            $result = $this->ai_generator->generate_content_changes($post_id, $instruction);
-        } catch (\Throwable $throwable) {
-            wp_send_json_error(array('message' => $throwable->getMessage()), 500);
-            return;
-        }
-
-        wp_send_json_success(array(
-            'changes' => $result['changes'],
-            'summary' => $result['summary'],
-            'provider' => $result['provider'],
-            'model' => $result['model'],
-            'builder' => Content_Writer::detect_builder($post_id),
-        ));
-    }
-
-    public function handle_ajax_apply_changes(): void
-    {
-        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
-        $changes_json = isset($_POST['changes']) ? wp_unslash($_POST['changes']) : '';
-        $summary = isset($_POST['summary']) ? sanitize_textarea_field(wp_unslash($_POST['summary'])) : '';
-
-        if (! $post_id) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
-        }
-
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
-
-        if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
-        }
-
-        $changes = json_decode($changes_json, true);
-        if (! is_array($changes) || empty($changes)) {
-            wp_send_json_error(array('message' => 'No changes to apply.'), 400);
-        }
-
-        // Store as pending — changes will be applied when the user clicks Update/Publish.
-        Content_Writer::store_pending_changes($post_id, $changes, $summary);
-
-        // Log to history as a content edit plan.
-        $this->history_store->log_generation(
-            $post_id,
-            'content_edit',
-            get_the_title($post_id) . ' — content edit plan',
-            array('instruction' => $summary),
-            array(
-                'content_edit_summary' => $summary,
-                'content_edit_count' => count($changes),
-                'content_edit_status' => 'pending',
-                'changes' => $changes,
-                'provider' => 'ai',
-                'model' => '',
-            )
-        );
-
-        wp_send_json_success(array(
-            'applied' => count($changes),
-            'failed' => 0,
-            'details' => array(),
-            'message' => sprintf(
-                '%d change(s) approved. Preview the page, then click Update to publish them.',
-                count($changes)
-            ),
-        ));
-    }
-
-    public function handle_ajax_apply_suggestion(): void
-    {
-        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
-        $field = isset($_POST['field']) ? sanitize_text_field(wp_unslash($_POST['field'])) : '';
-        $value = isset($_POST['value']) ? wp_unslash($_POST['value']) : '';
-
-        if (! $post_id) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
-        }
-
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
-
-        if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
-        }
-
-        $allowed_fields = array(
-            'meta_title' => self::META_TITLE_KEY,
-            'meta_description' => self::META_DESCRIPTION_KEY,
-        );
-
-        if (! isset($allowed_fields[$field])) {
-            wp_send_json_error(array('message' => 'Invalid field: ' . $field), 400);
-        }
-
-        $meta_key = $allowed_fields[$field];
-        $sanitized = 'meta_title' === $field ? sanitize_text_field($value) : sanitize_textarea_field($value);
-        update_post_meta($post_id, $meta_key, $sanitized);
-
-        wp_send_json_success(array(
-            'field' => $field,
-            'value' => $sanitized,
-            'message' => ucfirst(str_replace('_', ' ', $field)) . ' updated.',
-        ));
-    }
-
-    public function handle_ajax_restore_backup(): void
-    {
-        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
-
-        if (! $post_id) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
-        }
-
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
-
-        if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
-        }
-
-        $restored = Content_Writer::restore_backup($post_id);
-
-        if (! $restored) {
-            wp_send_json_error(array('message' => 'No backup found for this page.'), 404);
-        }
-
-        wp_send_json_success(array('message' => 'Content restored to the version before AI edits.'));
-    }
-
-    public function handle_ajax_clear_chat(): void
-    {
-        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
-
-        if (! $post_id) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
-        }
-
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
-
-        if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'Permission denied.'), 403);
-        }
-
-        $deleted = $this->history_store->clear_chat_messages($post_id);
-
-        wp_send_json_success(array('message' => $deleted . ' message(s) cleared.', 'deleted' => $deleted));
-    }
-
-    public function handle_ajax_test_model(): void
-    {
-        check_ajax_referer('ai_seo_keeper_settings_test_model', 'nonce');
-
-        if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => 'You are not allowed to test AI model access.'), 403);
-        }
-
-        $options = $this->settings->get();
-        $provider = isset($_POST['provider']) ? sanitize_key((string) wp_unslash($_POST['provider'])) : (string) ($options['provider'] ?? 'openai');
-        $supported_providers = Settings::get_supported_providers();
-
-        if (! in_array($provider, $supported_providers, true)) {
-            wp_send_json_error(array('message' => 'Unsupported AI provider selected.'), 400);
-        }
-
-        $requested_model = isset($_POST['model']) ? sanitize_text_field((string) wp_unslash($_POST['model'])) : '';
-        $allowed_models = Settings::get_models_for_provider($provider);
-        if (isset($allowed_models[$requested_model])) {
-            $model = $requested_model;
-        } else {
-            $custom_model = Settings::sanitize_custom_model_id($requested_model);
-            $model = '' !== $custom_model ? $custom_model : Settings::sanitize_provider_model($provider, $requested_model);
-        }
-
-        $posted_temperature = isset($_POST['temperature']) ? (string) wp_unslash($_POST['temperature']) : '';
-        $temperature = is_numeric($posted_temperature) ? (float) $posted_temperature : (float) ($options['ai_temperature'] ?? 0.3);
-        $temperature = max(0.0, min(2.0, $temperature));
-        $temperature = round($temperature, 1);
-
-        $posted_api_key = isset($_POST['api_key']) ? sanitize_text_field((string) wp_unslash($_POST['api_key'])) : '';
-        $api_key = '' !== trim($posted_api_key) ? $posted_api_key : (string) ($options['api_key'] ?? '');
-
-        if ('' === trim($api_key)) {
-            wp_send_json_error(array('message' => 'Enter an API key before testing model availability.'), 400);
-        }
-
-        try {
-            $result = $this->ai_generator->test_model_connection($provider, $api_key, $model, $temperature);
-        } catch (\Throwable $throwable) {
-            wp_send_json_error(array('message' => $throwable->getMessage()), 400);
-        }
-
-        $preview = isset($result['preview']) ? sanitize_text_field((string) $result['preview']) : '';
-        $temperature_note = '';
-        if ('openai' === $provider && preg_match('/^o[1-9]/i', $model)) {
-            $temperature_note = ' (provider default temperature mode)';
-        }
-        $message = sprintf(
-            'Model is available: %s / %s%s',
-            ucfirst($provider),
-            $model,
-            $temperature_note . ('' !== $preview ? ' - ' . $preview : '')
-        );
-
-        wp_send_json_success(array(
-            'message' => $message,
-            'provider' => $provider,
-            'model' => $model,
-            'temperature' => $temperature,
-        ));
-    }
-
-    public function handle_ajax_delete_edit_plan(): void
-    {
-        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
-        $edit_id = isset($_POST['edit_id']) ? (int) $_POST['edit_id'] : 0;
-
-        if (! $post_id || ! $edit_id) {
-            wp_send_json_error(array('message' => 'Missing parameters.'), 400);
-        }
-
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
-
-        if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'Permission denied.'), 403);
-        }
-
-        $this->history_store->delete_content_edit_plan($edit_id);
-
-        wp_send_json_success(array('message' => 'Plan removed from history.'));
     }
 
     public function render_setup_wizard_page(): void
@@ -4793,7 +3725,7 @@ HTML;
         }
     }
 
-    private function persist_editor_meta(int $post_id, array $raw_input): array
+    public function persist_editor_meta(int $post_id, array $raw_input): array
     {
         $focus_keyphrase = isset($raw_input['ai_seo_keeper_focus_keyphrase']) ? sanitize_text_field(wp_unslash($raw_input['ai_seo_keeper_focus_keyphrase'])) : '';
         $seo_title = isset($raw_input['ai_seo_keeper_meta_title']) ? sanitize_text_field(wp_unslash($raw_input['ai_seo_keeper_meta_title'])) : '';
@@ -4952,608 +3884,32 @@ HTML;
 
     private function apply_editor_text_limits(array $fields): array
     {
-        $limit_map = array(
-            'seo_title' => self::TITLE_MAX_LENGTH,
-            'meta_description' => self::DESCRIPTION_MAX_LENGTH,
-            'social_title' => self::TITLE_MAX_LENGTH,
-            'social_description' => self::DESCRIPTION_MAX_LENGTH,
-        );
-
-        foreach ($limit_map as $field_key => $max_length) {
-            if (! array_key_exists($field_key, $fields)) {
-                continue;
-            }
-
-            $fields[$field_key] = $this->truncate_text((string) $fields[$field_key], $max_length);
-        }
-
-        return $fields;
+        return SEO_Analysis::apply_editor_text_limits($fields);
     }
 
     private function get_text_length(string $text): int
     {
-        return function_exists('mb_strlen') ? mb_strlen($text) : strlen($text);
+        return SEO_Analysis::get_text_length($text);
     }
 
     private function truncate_text(string $text, int $max_length): string
     {
-        if ('' === $text || $max_length < 1 || $this->get_text_length($text) <= $max_length) {
-            return $text;
-        }
-
-        return function_exists('mb_substr') ? mb_substr($text, 0, $max_length) : substr($text, 0, $max_length);
+        return SEO_Analysis::truncate_text($text, $max_length);
     }
 
     private function get_schema_type_options(): array
     {
-        return array(
-            '' => 'Automatic detection',
-            'WebPage' => 'Web Page',
-            'AboutPage' => 'About Page',
-            'ContactPage' => 'Contact Page',
-            'Article' => 'Article',
-            'Service' => 'Service',
-            'Product' => 'Product',
-            'CollectionPage' => 'Collection Page',
-        );
+        return SEO_Analysis::get_schema_type_options();
     }
 
     private function get_robots_directive_options(): array
     {
-        return array(
-            '' => 'Automatic site default',
-            'index,follow' => 'Index, follow',
-            'noindex,follow' => 'Noindex, follow',
-            'index,nofollow' => 'Index, nofollow',
-            'noindex,nofollow' => 'Noindex, nofollow',
-        );
+        return SEO_Analysis::get_robots_directive_options();
     }
 
     private function render_focus_keyphrase_checks_markup(\WP_Post $post, string $focus_keyphrase, string $seo_title, string $seo_description): string
     {
-        $title_length = $this->get_text_length($seo_title);
-        $description_length = $this->get_text_length($seo_description);
-        $raw_content = Content_Helper::get_content($post);
-        $content = wp_strip_all_tags($raw_content);
-        $normalized_content = $this->normalize_text_for_match($content);
-        $content_word_count = '' === $normalized_content ? 0 : count(preg_split('/\s+/', $normalized_content));
-        $subheading_count = preg_match_all('/<h[2-6][^>]*>/i', $raw_content);
-        $sentences = $this->extract_sentences($content);
-        $sentence_count = count($sentences);
-        $paragraphs = $this->extract_content_blocks($raw_content);
-        $paragraph_count = count($paragraphs);
-        $transition_word_count = $this->count_transition_words($normalized_content);
-        $passive_voice_sentence_count = $this->count_passive_voice_sentences($sentences);
-        $repeated_sentence_start_count = $this->count_repeated_sentence_starts($sentences);
-        $list_count = preg_match_all('/<(ul|ol)\b/i', $raw_content);
-        $question_heading_count = $this->count_question_style_headings($raw_content);
-        $long_sentence_count = 0;
-        $total_sentence_words = 0;
-        $long_paragraph_count = 0;
-        $image_matches = array();
-        $images_with_alt = 0;
-        $internal_link_count = 0;
-        $external_link_count = 0;
-        $generic_anchor_count = 0;
-        $link_count = 0;
-        $site_host = (string) wp_parse_url(home_url('/'), PHP_URL_HOST);
-
-        foreach ($sentences as $sentence) {
-            $sentence_word_count = $this->count_words($sentence);
-
-            if ($sentence_word_count <= 0) {
-                continue;
-            }
-
-            $total_sentence_words += $sentence_word_count;
-
-            if ($sentence_word_count > 24) {
-                $long_sentence_count += 1;
-            }
-        }
-
-        foreach ($paragraphs as $paragraph) {
-            if ($this->count_words($paragraph) > 120) {
-                $long_paragraph_count += 1;
-            }
-        }
-
-        $average_sentence_words = $sentence_count > 0 ? round($total_sentence_words / $sentence_count, 1) : 0;
-
-        preg_match_all('/<img\b[^>]*>/i', $raw_content, $image_matches);
-
-        foreach ($image_matches[0] as $image_html) {
-            if (preg_match('/\balt=("|\')(.*?)\1/i', $image_html, $alt_match) && '' !== trim(wp_strip_all_tags($alt_match[2]))) {
-                $images_with_alt += 1;
-            }
-        }
-
-        $link_matches = array();
-        preg_match_all('/<a\s[^>]*href=("|\')(.*?)\1[^>]*>(.*?)<\/a>/is', $raw_content, $link_matches, PREG_SET_ORDER);
-
-        foreach ($link_matches as $link_match) {
-            $href = isset($link_match[2]) ? trim(html_entity_decode((string) $link_match[2])) : '';
-            $anchor_text = isset($link_match[3]) ? trim(wp_strip_all_tags(html_entity_decode((string) $link_match[3]))) : '';
-
-            if ('' === $href || 0 === strpos($href, '#') || 0 === strpos($href, 'mailto:') || 0 === strpos($href, 'tel:')) {
-                continue;
-            }
-
-            $link_count += 1;
-
-            if ($this->is_generic_anchor_text($anchor_text)) {
-                $generic_anchor_count += 1;
-            }
-
-            $link_host = (string) wp_parse_url($href, PHP_URL_HOST);
-
-            if ('' === $link_host || $link_host === $site_host) {
-                $internal_link_count += 1;
-                continue;
-            }
-
-            $external_link_count += 1;
-        }
-
-        $checks = array(
-            array(
-                'label' => 'SEO title length',
-                'passed' => $title_length >= self::TITLE_MIN_LENGTH && $title_length <= self::TITLE_MAX_LENGTH,
-                'message' => '' === $seo_title
-                    ? 'Add an SEO title.'
-                    : sprintf('Current length: %d characters. Target roughly %d to %d, with a maximum of %d.', $title_length, self::TITLE_MIN_LENGTH, self::TITLE_MAX_LENGTH, self::TITLE_MAX_LENGTH),
-            ),
-            array(
-                'label' => 'Meta description length',
-                'passed' => $description_length >= self::DESCRIPTION_MIN_LENGTH && $description_length <= self::DESCRIPTION_MAX_LENGTH,
-                'message' => '' === $seo_description
-                    ? 'Add a meta description.'
-                    : sprintf('Current length: %d characters. Target roughly %d to %d, with a maximum of %d.', $description_length, self::DESCRIPTION_MIN_LENGTH, self::DESCRIPTION_MAX_LENGTH, self::DESCRIPTION_MAX_LENGTH),
-            ),
-            array(
-                'label' => 'Content length',
-                'passed' => $content_word_count >= 250,
-                'message' => 0 === $content_word_count
-                    ? 'Add meaningful page content before relying on metadata alone.'
-                    : sprintf('Current body length: %d words. For most pages, aim for at least 250 words of useful content.', $content_word_count),
-            ),
-            array(
-                'label' => 'Subheadings in content',
-                'passed' => $subheading_count >= 1,
-                'message' => $subheading_count >= 1
-                    ? sprintf('Found %d subheading%s in the page body.', $subheading_count, 1 === $subheading_count ? '' : 's')
-                    : 'Add at least one H2 or H3 subheading to make the page easier to scan.',
-            ),
-            array(
-                'label' => 'List structure in content',
-                'passed' => $list_count >= 1 || $content_word_count < 220,
-                'message' => $list_count >= 1
-                    ? sprintf('Found %d list%s in the page body for scannable structure.', $list_count, 1 === $list_count ? '' : 's')
-                    : ($content_word_count < 220
-                        ? 'This page is short enough that list structure is optional.'
-                        : 'Consider adding at least one bullet or numbered list for steps, features, or grouped points.'),
-            ),
-            array(
-                'label' => 'Question-style subheadings',
-                'passed' => $question_heading_count >= 1 || $subheading_count < 2 || $content_word_count < 250,
-                'message' => $question_heading_count >= 2
-                    ? sprintf('Found %d question-style heading%s. This content may qualify for live FAQ schema output when each question is followed by a direct answer.', $question_heading_count, 1 === $question_heading_count ? '' : 's')
-                    : ($question_heading_count === 1
-                        ? 'Found one question-style heading that can help match informational search intent.'
-                        : (($subheading_count < 2 || $content_word_count < 250)
-                            ? 'Question-style headings are optional on shorter or simpler pages.'
-                            : 'Consider adding a question-style subheading when the page targets informational search intent or FAQ-style queries.')),
-            ),
-            array(
-                'label' => 'Internal links in content',
-                'passed' => $internal_link_count >= 1,
-                'message' => $internal_link_count >= 1
-                    ? sprintf('Found %d internal link%s that connect this page to the rest of the site.', $internal_link_count, 1 === $internal_link_count ? '' : 's')
-                    : 'Add at least one internal link to strengthen crawl paths and user navigation.',
-            ),
-            array(
-                'label' => 'Outbound links in content',
-                'passed' => $external_link_count >= 1,
-                'message' => $external_link_count >= 1
-                    ? sprintf('Found %d outbound link%s that point to external sources or references.', $external_link_count, 1 === $external_link_count ? '' : 's')
-                    : 'Add an outbound link when the page benefits from citing a credible outside source or reference.',
-            ),
-            array(
-                'label' => 'Descriptive anchor text',
-                'passed' => 0 === $link_count || 0 === $generic_anchor_count,
-                'message' => 0 === $link_count
-                    ? 'No content links were found yet, so anchor-text quality cannot be assessed.'
-                    : (0 === $generic_anchor_count
-                        ? sprintf('Checked %d link%s and none use obvious generic anchor text.', $link_count, 1 === $link_count ? '' : 's')
-                        : sprintf('Generic anchor text detected on %d of %d link%s. Replace phrases like "click here" with destination-specific wording.', $generic_anchor_count, $link_count, 1 === $link_count ? '' : 's')),
-            ),
-            array(
-                'label' => 'Image alt coverage',
-                'passed' => 0 === count($image_matches[0]) || $images_with_alt === count($image_matches[0]),
-                'message' => 0 === count($image_matches[0])
-                    ? 'No inline images found in the page body, so alt text is not required here.'
-                    : sprintf('Images with alt text: %d of %d.', $images_with_alt, count($image_matches[0])),
-            ),
-        );
-
-        $recommended_transition_count = $sentence_count >= 8 ? 3 : ($sentence_count >= 3 ? 2 : 1);
-        $recommended_passive_voice_limit = max(1, (int) ceil(max(1, $sentence_count) * 0.2));
-        $recommended_repeated_starts_limit = max(1, (int) ceil(max(1, $sentence_count - 1) * 0.15));
-        $readability_checks = array(
-            array(
-                'label' => 'Sentence length balance',
-                'passed' => $sentence_count > 0 && $average_sentence_words <= 20 && $long_sentence_count <= max(1, (int) ceil($sentence_count * 0.25)),
-                'message' => 0 === $sentence_count
-                    ? 'Add body copy before readability can be assessed.'
-                    : sprintf('Average sentence length: %s words. Long sentences over 24 words: %d of %d.', number_format_i18n($average_sentence_words, 1), $long_sentence_count, $sentence_count),
-            ),
-            array(
-                'label' => 'Paragraph length balance',
-                'passed' => $paragraph_count > 0 && $long_paragraph_count <= max(1, (int) ceil($paragraph_count * 0.34)),
-                'message' => 0 === $paragraph_count
-                    ? 'Add structured paragraphs to assess reading flow.'
-                    : sprintf('Detected %d paragraph%s. Long paragraphs over 120 words: %d.', $paragraph_count, 1 === $paragraph_count ? '' : 's', $long_paragraph_count),
-            ),
-            array(
-                'label' => 'Transition word usage',
-                'passed' => $sentence_count < 2 || $transition_word_count >= $recommended_transition_count,
-                'message' => sprintf('Detected %d transition word%s. Aim for at least %d to improve flow between ideas.', $transition_word_count, 1 === $transition_word_count ? '' : 's', $recommended_transition_count),
-            ),
-            array(
-                'label' => 'Passive voice estimate',
-                'passed' => $sentence_count < 2 || $passive_voice_sentence_count <= $recommended_passive_voice_limit,
-                'message' => 0 === $sentence_count
-                    ? 'Add body copy before passive voice can be estimated.'
-                    : sprintf('Estimated passive-voice sentences: %d of %d. This is a heuristic, not a full grammar parser.', $passive_voice_sentence_count, $sentence_count),
-            ),
-            array(
-                'label' => 'Repeated sentence starts',
-                'passed' => $sentence_count < 3 || $repeated_sentence_start_count <= $recommended_repeated_starts_limit,
-                'message' => 0 === $sentence_count
-                    ? 'Add body copy before sentence-start variety can be assessed.'
-                    : sprintf('Consecutive repeated sentence openings detected: %d. Varying openings keeps the copy from sounding mechanical.', $repeated_sentence_start_count),
-            ),
-        );
-
-        if ('' !== $focus_keyphrase) {
-            $normalized_keyphrase = $this->normalize_text_for_match($focus_keyphrase);
-            $checks[] = array(
-                'label' => 'Focus keyphrase in SEO title',
-                'passed' => '' !== $normalized_keyphrase && false !== strpos($this->normalize_text_for_match($seo_title), $normalized_keyphrase),
-                'message' => 'Use the focus keyphrase naturally in the SEO title.',
-            );
-            $checks[] = array(
-                'label' => 'Focus keyphrase in meta description',
-                'passed' => '' !== $normalized_keyphrase && false !== strpos($this->normalize_text_for_match($seo_description), $normalized_keyphrase),
-                'message' => 'Use the focus keyphrase naturally in the meta description.',
-            );
-            $checks[] = array(
-                'label' => 'Focus keyphrase in URL',
-                'passed' => '' !== $normalized_keyphrase && false !== strpos($this->normalize_text_for_match((string) get_permalink($post)), $normalized_keyphrase),
-                'message' => 'Short URLs that reflect the target phrase are easier for users and crawlers.',
-            );
-            $checks[] = array(
-                'label' => 'Focus keyphrase in page content',
-                'passed' => '' !== $normalized_keyphrase && false !== strpos($this->normalize_text_for_match($content), $normalized_keyphrase),
-                'message' => 'The real page content should reinforce the target phrase, not just the metadata.',
-            );
-
-            // Keyphrase density.
-            if ($content_word_count > 0 && '' !== $normalized_keyphrase) {
-                $keyphrase_word_count = count(preg_split('/\s+/', $normalized_keyphrase));
-                $keyphrase_occurrences = mb_substr_count($this->normalize_text_for_match($content), $normalized_keyphrase);
-                $density = ($keyphrase_occurrences * $keyphrase_word_count / $content_word_count) * 100;
-                $density_rounded = round($density, 1);
-                $density_ok = $density >= 0.3 && $density <= 3.0;
-
-                $checks[] = array(
-                    'label' => 'Focus keyphrase density',
-                    'passed' => $density_ok,
-                    'message' => sprintf(
-                        'Found %d occurrence%s (%.1f%% density). Aim for 0.5%%–2.5%% for a natural feel — too low means weak signal, too high risks keyword stuffing.',
-                        $keyphrase_occurrences,
-                        1 === $keyphrase_occurrences ? '' : 's',
-                        $density_rounded
-                    ),
-                );
-            }
-
-            // Keyphrase in first paragraph.
-            if ('' !== $normalized_keyphrase) {
-                $first_paragraph = '';
-                if (preg_match('/<p[^>]*>(.*?)<\/p>/is', $raw_content, $fp_match)) {
-                    $first_paragraph = $this->normalize_text_for_match(wp_strip_all_tags($fp_match[1]));
-                } elseif (! empty($sentences)) {
-                    // Fallback: first 2 sentences.
-                    $first_paragraph = $this->normalize_text_for_match(implode(' ', array_slice($sentences, 0, 2)));
-                }
-                $kw_in_intro = '' !== $first_paragraph && false !== strpos($first_paragraph, $normalized_keyphrase);
-                $checks[] = array(
-                    'label' => 'Focus keyphrase in introduction',
-                    'passed' => $kw_in_intro,
-                    'message' => $kw_in_intro
-                        ? 'The keyphrase appears in the opening paragraph — good for early relevance signal.'
-                        : 'Try to include the focus keyphrase in the first paragraph so search engines see it early.',
-                );
-            }
-
-            // Keyphrase in subheadings (H2-H6).
-            if ('' !== $normalized_keyphrase && $subheading_count > 0) {
-                $subheading_kw_count = 0;
-                $subheading_texts = array();
-                preg_match_all('/<h[2-6][^>]*>(.*?)<\/h[2-6]>/is', $raw_content, $sub_matches);
-                foreach ($sub_matches[1] as $sub_text) {
-                    if (false !== strpos($this->normalize_text_for_match(wp_strip_all_tags($sub_text)), $normalized_keyphrase)) {
-                        $subheading_kw_count++;
-                    }
-                }
-                $checks[] = array(
-                    'label' => 'Focus keyphrase in subheadings',
-                    'passed' => $subheading_kw_count >= 1,
-                    'message' => $subheading_kw_count >= 1
-                        ? sprintf('The keyphrase appears in %d of %d subheading%s.', $subheading_kw_count, $subheading_count, $subheading_count > 1 ? 's' : '')
-                        : 'Consider adding the keyphrase to at least one H2 or H3 subheading to reinforce topical relevance.',
-                );
-            }
-
-            // Keyphrase in image alt attributes.
-            if ('' !== $normalized_keyphrase && count($image_matches[0]) > 0) {
-                $img_alt_kw_count = 0;
-                foreach ($image_matches[0] as $img_tag) {
-                    if (preg_match('/\balt=("|\')(.*?)\1/i', $img_tag, $alt_match)) {
-                        if (false !== strpos($this->normalize_text_for_match($alt_match[2]), $normalized_keyphrase)) {
-                            $img_alt_kw_count++;
-                        }
-                    }
-                }
-                $checks[] = array(
-                    'label' => 'Focus keyphrase in image alt tags',
-                    'passed' => $img_alt_kw_count >= 1,
-                    'message' => $img_alt_kw_count >= 1
-                        ? sprintf('The keyphrase appears in %d image alt tag%s.', $img_alt_kw_count, $img_alt_kw_count > 1 ? 's' : '')
-                        : 'Add the focus keyphrase to at least one image alt attribute — helps image search and reinforces page relevance.',
-                );
-            }
-        }
-
-        ob_start();
-    ?>
-        <strong>Basic SEO checks</strong>
-        <p class="ai-seo-keeper-muted" style="margin:8px 0 12px;">Lightweight deterministic checks against the saved draft fields and the current page body.</p>
-        <?php if ('' === $focus_keyphrase) : ?>
-            <p class="ai-seo-keeper-muted" style="margin:0 0 12px;">Add a focus keyphrase to unlock phrase-matching checks similar to Yoast's page analysis.</p>
-        <?php endif; ?>
-        <div class="ai-seo-keeper-check-section">
-            <p class="ai-seo-keeper-check-section-title"><strong>SEO and structure</strong></p>
-            <ul class="ai-seo-keeper-check-list">
-                <?php foreach ($checks as $check) : ?>
-                    <li class="ai-seo-keeper-check-item">
-                        <span class="ai-seo-keeper-check-pill <?php echo $check['passed'] ? 'is-pass' : 'is-warning'; ?>"><?php echo $check['passed'] ? 'Pass' : 'Needs work'; ?></span>
-                        <strong><?php echo esc_html($check['label']); ?></strong><br />
-                        <span class="ai-seo-keeper-muted"><?php echo esc_html($check['message']); ?></span>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-
-        <div class="ai-seo-keeper-check-section">
-            <p class="ai-seo-keeper-check-section-title"><strong>Readability and flow</strong></p>
-            <p class="ai-seo-keeper-muted" style="margin:0 0 12px;">A first-pass reading-flow scan based on sentence length, paragraph size, and transition usage.</p>
-            <div class="ai-seo-keeper-metrics-grid">
-                <div class="ai-seo-keeper-metric-card">
-                    <span class="ai-seo-keeper-metric-label">Sentences</span>
-                    <span class="ai-seo-keeper-metric-value"><?php echo esc_html((string) $sentence_count); ?></span>
-                </div>
-                <div class="ai-seo-keeper-metric-card">
-                    <span class="ai-seo-keeper-metric-label">Avg sentence</span>
-                    <span class="ai-seo-keeper-metric-value"><?php echo esc_html((string) number_format_i18n($average_sentence_words, 1)); ?></span>
-                </div>
-                <div class="ai-seo-keeper-metric-card">
-                    <span class="ai-seo-keeper-metric-label">Paragraphs</span>
-                    <span class="ai-seo-keeper-metric-value"><?php echo esc_html((string) $paragraph_count); ?></span>
-                </div>
-                <div class="ai-seo-keeper-metric-card">
-                    <span class="ai-seo-keeper-metric-label">Transitions</span>
-                    <span class="ai-seo-keeper-metric-value"><?php echo esc_html((string) $transition_word_count); ?></span>
-                </div>
-                <div class="ai-seo-keeper-metric-card">
-                    <span class="ai-seo-keeper-metric-label">Passive est.</span>
-                    <span class="ai-seo-keeper-metric-value"><?php echo esc_html((string) $passive_voice_sentence_count); ?></span>
-                </div>
-                <div class="ai-seo-keeper-metric-card">
-                    <span class="ai-seo-keeper-metric-label">Repeat starts</span>
-                    <span class="ai-seo-keeper-metric-value"><?php echo esc_html((string) $repeated_sentence_start_count); ?></span>
-                </div>
-            </div>
-            <ul class="ai-seo-keeper-check-list">
-                <?php foreach ($readability_checks as $check) : ?>
-                    <li class="ai-seo-keeper-check-item">
-                        <span class="ai-seo-keeper-check-pill <?php echo $check['passed'] ? 'is-pass' : 'is-warning'; ?>"><?php echo $check['passed'] ? 'Pass' : 'Needs work'; ?></span>
-                        <strong><?php echo esc_html($check['label']); ?></strong><br />
-                        <span class="ai-seo-keeper-muted"><?php echo esc_html($check['message']); ?></span>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-    <?php
-
-        return (string) ob_get_clean();
-    }
-
-    private function extract_content_blocks(string $raw_content): array
-    {
-        $content_with_breaks = preg_replace('/<\/(p|div|section|article|li|blockquote|h[1-6])>/i', "$0\n\n", $raw_content);
-        $plain_content = trim(wp_strip_all_tags((string) $content_with_breaks));
-
-        if ('' === $plain_content) {
-            return array();
-        }
-
-        $blocks = preg_split('/\n\s*\n+/u', $plain_content);
-
-        return array_values(
-            array_filter(
-                array_map('trim', is_array($blocks) ? $blocks : array()),
-                static function ($block): bool {
-                    return '' !== (string) $block;
-                }
-            )
-        );
-    }
-
-    private function extract_sentences(string $content): array
-    {
-        $content = trim(preg_replace('/\s+/u', ' ', $content));
-
-        if ('' === $content) {
-            return array();
-        }
-
-        $sentences = preg_split('/(?<=[.!?])\s+/u', $content);
-
-        return array_values(
-            array_filter(
-                array_map('trim', is_array($sentences) ? $sentences : array()),
-                static function ($sentence): bool {
-                    return '' !== (string) $sentence;
-                }
-            )
-        );
-    }
-
-    private function count_words(string $text): int
-    {
-        $normalized_text = $this->normalize_text_for_match($text);
-
-        if ('' === $normalized_text) {
-            return 0;
-        }
-
-        return count(preg_split('/\s+/u', $normalized_text));
-    }
-
-    private function count_transition_words(string $normalized_content): int
-    {
-        if ('' === $normalized_content) {
-            return 0;
-        }
-
-        $transition_word_count = 0;
-
-        foreach (self::READABILITY_TRANSITION_WORDS as $transition_word) {
-            $matches = preg_match_all('/\b' . preg_quote($transition_word, '/') . '\b/u', $normalized_content, $found_matches);
-
-            if (false !== $matches) {
-                $transition_word_count += $matches;
-            }
-        }
-
-        return $transition_word_count;
-    }
-
-    private function count_passive_voice_sentences(array $sentences): int
-    {
-        $passive_voice_sentence_count = 0;
-
-        foreach ($sentences as $sentence) {
-            $normalized_sentence = $this->normalize_text_for_match($sentence);
-
-            if ('' === $normalized_sentence) {
-                continue;
-            }
-
-            if (preg_match('/\b(am|is|are|was|were|be|been|being)\b\s+(?:\w+\s+){0,2}\w+(ed|en)\b/u', $normalized_sentence)) {
-                $passive_voice_sentence_count += 1;
-            }
-        }
-
-        return $passive_voice_sentence_count;
-    }
-
-    private function count_repeated_sentence_starts(array $sentences): int
-    {
-        $repeated_sentence_start_count = 0;
-        $previous_signature = '';
-
-        foreach ($sentences as $sentence) {
-            $normalized_sentence = $this->normalize_text_for_match($sentence);
-
-            if ('' === $normalized_sentence) {
-                continue;
-            }
-
-            $words = preg_split('/\s+/u', $normalized_sentence);
-            $signature = implode(' ', array_slice(is_array($words) ? $words : array(), 0, 2));
-
-            if ('' === $signature) {
-                continue;
-            }
-
-            if ($signature === $previous_signature) {
-                $repeated_sentence_start_count += 1;
-            }
-
-            $previous_signature = $signature;
-        }
-
-        return $repeated_sentence_start_count;
-    }
-
-    private function count_question_style_headings(string $raw_content): int
-    {
-        $heading_matches = array();
-        $question_heading_count = 0;
-
-        preg_match_all('/<h[2-6][^>]*>(.*?)<\/h[2-6]>/is', $raw_content, $heading_matches);
-
-        foreach ($heading_matches[1] as $heading_html) {
-            $heading_text = trim(wp_strip_all_tags((string) html_entity_decode($heading_html)));
-
-            if ('' === $heading_text) {
-                continue;
-            }
-
-            if ($this->is_question_style_heading($heading_text)) {
-                $question_heading_count += 1;
-            }
-        }
-
-        return $question_heading_count;
-    }
-
-    private function is_question_style_heading(string $heading_text): bool
-    {
-        $normalized_heading = $this->normalize_text_for_match($heading_text);
-
-        if ('' === $normalized_heading) {
-            return false;
-        }
-
-        if (false !== strpos($heading_text, '?')) {
-            return true;
-        }
-
-        return 1 === preg_match('/^(how|what|why|when|where|who|can|should|is|are|do|does|will|which)\b/u', $normalized_heading);
-    }
-
-    private function is_generic_anchor_text(string $anchor_text): bool
-    {
-        $normalized_anchor = $this->normalize_text_for_match($anchor_text);
-
-        if ('' === $normalized_anchor) {
-            return true;
-        }
-
-        return in_array($normalized_anchor, self::GENERIC_ANCHOR_TEXTS, true);
-    }
-
-    private function normalize_text_for_match(string $text): string
-    {
-        $text = remove_accents(wp_strip_all_tags($text));
-        $text = strtolower($text);
-        $text = preg_replace('/[^a-z0-9]+/', ' ', $text);
-
-        return trim(preg_replace('/\s+/', ' ', (string) $text));
+        return SEO_Analysis::render_checks_markup($post, $focus_keyphrase, $seo_title, $seo_description);
     }
 
     private function render_audit_post_links(array $ids): string
@@ -5597,7 +3953,7 @@ HTML;
         return false;
     }
 
-    private function render_history_markup(array $recent_suggestions, array $content_edits = array()): string
+    public function render_history_markup(array $recent_suggestions, array $content_edits = array()): string
     {
         ob_start();
     ?>
@@ -5698,7 +4054,7 @@ HTML;
         return (string) ob_get_clean();
     }
 
-    private function render_chat_history_markup(array $chat_messages): string
+    public function render_chat_history_markup(array $chat_messages): string
     {
         ob_start();
     ?>
@@ -5747,435 +4103,7 @@ HTML;
         return (string) ob_get_clean();
     }
 
-    public function handle_sync_index(): void
-    {
-        if (! current_user_can('manage_options')) {
-            wp_die('You are not allowed to do that.');
-        }
-
-        check_admin_referer('ai_seo_keeper_sync_index');
-
-        $sync_count = $this->content_indexer->sync();
-
-        $redirect_url = add_query_arg(
-            array(
-                'page'   => 'ai-seo-keeper',
-                'synced' => $sync_count,
-            ),
-            admin_url('admin.php')
-        );
-
-        wp_safe_redirect($redirect_url);
-        exit;
-    }
-
-    public function handle_generate_site_audit(): void
-    {
-        if (! current_user_can('manage_options')) {
-            wp_die('You are not allowed to do that.');
-        }
-
-        check_admin_referer('ai_seo_keeper_generate_site_audit');
-
-        try {
-            $report = $this->content_indexer->build_site_audit_report(10);
-            $audit = $this->ai_generator->generate_site_audit($report);
-
-            $this->history_store->log_generation(
-                0,
-                'site_audit',
-                'AI SEO Keeper Site Audit',
-                array(
-                    'provider' => $audit['provider'],
-                    'model' => $audit['model'],
-                    'system_prompt' => $audit['system_prompt'],
-                    'user_prompt' => $audit['user_prompt'],
-                    'report_summary' => $report['summary'],
-                ),
-                array(
-                    'audit_title' => $audit['audit_title'],
-                    'executive_summary' => $audit['executive_summary'],
-                    'priority_actions' => $audit['priority_actions'],
-                    'quick_wins' => $audit['quick_wins'],
-                    'notes' => $audit['notes'],
-                    'provider' => $audit['provider'],
-                    'model' => $audit['model'],
-                )
-            );
-
-            $redirect_url = add_query_arg(
-                array(
-                    'page' => 'ai-seo-keeper-audit',
-                    'audit_status' => 'success',
-                    'audit_message' => rawurlencode('AI strategic audit generated successfully.'),
-                ),
-                admin_url('admin.php')
-            );
-        } catch (\Throwable $throwable) {
-            $redirect_url = add_query_arg(
-                array(
-                    'page' => 'ai-seo-keeper-audit',
-                    'audit_status' => 'error',
-                    'audit_message' => rawurlencode($throwable->getMessage()),
-                ),
-                admin_url('admin.php')
-            );
-        }
-
-        wp_safe_redirect($redirect_url);
-        exit;
-    }
-
-    public function handle_submit_indexnow(): void
-    {
-        if (! current_user_can('manage_options')) {
-            wp_die('You are not allowed to do that.');
-        }
-
-        check_admin_referer('ai_seo_keeper_submit_indexnow');
-
-        $report = $this->audit_engine->get_report(10);
-        $urls = array();
-
-        foreach ($report['priority_rows'] as $row) {
-            if (! empty($row['permalink'])) {
-                $urls[] = (string) $row['permalink'];
-            }
-        }
-
-        $result = $this->indexnow_service
-            ? $this->indexnow_service->submit_urls($urls, 'manual_priority_queue')
-            : array('status' => 'error', 'message' => 'IndexNow service is not available.');
-
-        $redirect_url = add_query_arg(
-            array(
-                'page' => 'ai-seo-keeper-audit',
-                'audit_status' => 'success' === ($result['status'] ?? '') ? 'success' : 'error',
-                'audit_message' => rawurlencode((string) ($result['message'] ?? 'IndexNow request finished.')),
-            ),
-            admin_url('admin.php')
-        );
-
-        wp_safe_redirect($redirect_url);
-        exit;
-    }
-
-    public function handle_import_yoast_metadata(): void
-    {
-        if (! current_user_can('manage_options')) {
-            wp_die('You are not allowed to do that.');
-        }
-
-        check_admin_referer('ai_seo_keeper_import_yoast_metadata');
-
-        $result = array();
-
-        try {
-            $result = $this->import_yoast_metadata();
-        } catch (\Throwable $throwable) {
-            $this->redirect_to_settings_page('error', $throwable->getMessage());
-        }
-
-        if (0 === $result['posts_detected']) {
-            $this->redirect_to_settings_page('success', 'No Yoast metadata was found to import.');
-        }
-
-        $message = sprintf('Yoast import finished. %d item(s) were updated and %d field(s) were copied.', $result['posts_updated'], $result['fields_imported']);
-
-        if ($result['frontend_enabled'] > 0) {
-            $message .= ' ' . sprintf('Frontend output was enabled on %d item(s).', $result['frontend_enabled']);
-        }
-
-        if ($result['skipped_existing'] > 0) {
-            $message .= ' ' . sprintf('%d existing AI SEO Keeper field(s) were left unchanged.', $result['skipped_existing']);
-        }
-
-        if ($result['unsupported_advanced_robots'] > 0) {
-            $message .= ' ' . sprintf('%d item(s) had advanced Yoast robots directives that were not mapped.', $result['unsupported_advanced_robots']);
-        }
-
-        $this->redirect_to_settings_page('success', $message);
-    }
-
-    public function handle_bulk_frontend_rollout(): void
-    {
-        if (! current_user_can('manage_options')) {
-            wp_die('You are not allowed to do that.');
-        }
-
-        check_admin_referer('ai_seo_keeper_bulk_frontend_rollout');
-
-        $post_ids = isset($_POST['post_ids']) ? array_map('intval', (array) wp_unslash($_POST['post_ids'])) : array();
-        $mode = isset($_POST['bulk_mode']) ? sanitize_key((string) wp_unslash($_POST['bulk_mode'])) : '';
-
-        if (empty($post_ids) || ! in_array($mode, array('enable_frontend', 'disable_frontend'), true)) {
-            $this->redirect_to_audit_page('error', 'Select at least one row and a valid bulk action.');
-        }
-
-        $result = $this->apply_bulk_frontend_gate($post_ids, 'enable_frontend' === $mode);
-        $message = 'enable_frontend' === $mode
-            ? sprintf('Enabled frontend output on %d page(s).', $result['updated'])
-            : sprintf('Disabled frontend output on %d page(s).', $result['updated']);
-
-        if ($result['unchanged'] > 0) {
-            $message .= ' ' . sprintf('%d page(s) were already in that state.', $result['unchanged']);
-        }
-
-        if ($result['skipped_unapproved'] > 0) {
-            $message .= ' ' . sprintf('%d page(s) were skipped because they do not have an approved suggestion or saved SEO data.', $result['skipped_unapproved']);
-        }
-
-        if ('enable_frontend' === $mode && ! empty($result['urls']) && $this->indexnow_service) {
-            $indexnow_result = $this->indexnow_service->submit_urls($result['urls'], 'bulk_frontend_rollout');
-            if (! empty($indexnow_result['message'])) {
-                $message .= ' IndexNow: ' . (string) $indexnow_result['message'];
-            }
-        }
-
-        $this->redirect_to_audit_page('success', $message);
-    }
-
-    private function apply_bulk_frontend_gate(array $post_ids, bool $enabled): array
-    {
-        $updated = 0;
-        $unchanged = 0;
-        $skipped_unapproved = 0;
-        $urls = array();
-
-        foreach (array_values(array_unique(array_filter($post_ids))) as $post_id) {
-            $post = get_post((int) $post_id);
-
-            if (! $post instanceof \WP_Post) {
-                continue;
-            }
-
-            $currently_enabled = '1' === (string) get_post_meta((int) $post_id, self::FRONTEND_ENABLE_META_KEY, true);
-
-            if ($enabled) {
-                $approved_id = $this->history_store->get_approved_suggestion_id((int) $post_id, 'post');
-                $has_saved_frontend_data = $this->has_saved_frontend_data_for_post((int) $post_id);
-
-                if ($approved_id <= 0 && ! $has_saved_frontend_data) {
-                    $skipped_unapproved++;
-                    continue;
-                }
-
-                if ($currently_enabled) {
-                    $unchanged++;
-                    continue;
-                }
-
-                update_post_meta((int) $post_id, self::FRONTEND_ENABLE_META_KEY, '1');
-                $updated++;
-                $urls[] = (string) get_permalink((int) $post_id);
-                continue;
-            }
-
-            if (! $currently_enabled) {
-                $unchanged++;
-                continue;
-            }
-
-            delete_post_meta((int) $post_id, self::FRONTEND_ENABLE_META_KEY);
-            $updated++;
-        }
-
-        return array(
-            'updated' => $updated,
-            'unchanged' => $unchanged,
-            'skipped_unapproved' => $skipped_unapproved,
-            'urls' => $urls,
-        );
-    }
-
-    private function import_yoast_metadata(): array
-    {
-        $posts_detected = 0;
-        $posts_updated = 0;
-        $fields_imported = 0;
-        $skipped_existing = 0;
-        $frontend_enabled = 0;
-        $unsupported_advanced_robots = 0;
-        $frontend_field_keys = array(
-            'seo_title',
-            'seo_description',
-            'social_title',
-            'social_description',
-            'social_image',
-            'canonical_url',
-            'robots_directives',
-        );
-        $field_map = array(
-            'focus_keyphrase' => self::FOCUS_KEYPHRASE_META_KEY,
-            'seo_title' => self::META_TITLE_KEY,
-            'seo_description' => self::META_DESCRIPTION_KEY,
-            'social_title' => self::SOCIAL_TITLE_META_KEY,
-            'social_description' => self::SOCIAL_DESCRIPTION_META_KEY,
-            'social_image' => self::SOCIAL_IMAGE_META_KEY,
-            'canonical_url' => self::CANONICAL_URL_META_KEY,
-            'robots_directives' => self::ROBOTS_DIRECTIVES_META_KEY,
-        );
-
-        foreach ($this->get_yoast_import_candidate_ids() as $post_id) {
-            $post = get_post($post_id);
-
-            if (! $post instanceof \WP_Post || ! $this->is_supported_post_type($post->post_type)) {
-                continue;
-            }
-
-            $posts_detected++;
-
-            $yoast_title = sanitize_text_field((string) get_post_meta($post_id, '_yoast_wpseo_title', true));
-            $yoast_description = sanitize_textarea_field((string) get_post_meta($post_id, '_yoast_wpseo_metadesc', true));
-            $yoast_social_title = sanitize_text_field((string) get_post_meta($post_id, '_yoast_wpseo_opengraph-title', true));
-            $yoast_social_description = sanitize_textarea_field((string) get_post_meta($post_id, '_yoast_wpseo_opengraph-description', true));
-            $yoast_social_image = esc_url_raw((string) get_post_meta($post_id, '_yoast_wpseo_opengraph-image', true));
-            $yoast_twitter_title = sanitize_text_field((string) get_post_meta($post_id, '_yoast_wpseo_twitter-title', true));
-            $yoast_twitter_description = sanitize_textarea_field((string) get_post_meta($post_id, '_yoast_wpseo_twitter-description', true));
-            $yoast_twitter_image = esc_url_raw((string) get_post_meta($post_id, '_yoast_wpseo_twitter-image', true));
-            $limited_fields = $this->apply_editor_text_limits(
-                array(
-                    'seo_title' => $yoast_title,
-                    'meta_description' => $yoast_description,
-                    'social_title' => '' !== $yoast_social_title ? $yoast_social_title : $yoast_twitter_title,
-                    'social_description' => '' !== $yoast_social_description ? $yoast_social_description : $yoast_twitter_description,
-                )
-            );
-            $import_payload = array(
-                'focus_keyphrase' => sanitize_text_field((string) get_post_meta($post_id, '_yoast_wpseo_focuskw', true)),
-                'seo_title' => $limited_fields['seo_title'],
-                'seo_description' => $limited_fields['meta_description'],
-                'social_title' => $limited_fields['social_title'],
-                'social_description' => $limited_fields['social_description'],
-                'social_image' => '' !== $yoast_social_image ? $yoast_social_image : $yoast_twitter_image,
-                'canonical_url' => esc_url_raw((string) get_post_meta($post_id, '_yoast_wpseo_canonical', true)),
-                'robots_directives' => $this->map_yoast_robots_directives(
-                    (string) get_post_meta($post_id, '_yoast_wpseo_meta-robots-noindex', true),
-                    (string) get_post_meta($post_id, '_yoast_wpseo_meta-robots-nofollow', true)
-                ),
-            );
-            $post_updated = false;
-            $imported_frontend_field = false;
-
-            if ('' !== trim((string) get_post_meta($post_id, '_yoast_wpseo_meta-robots-adv', true))) {
-                $unsupported_advanced_robots++;
-            }
-
-            foreach ($field_map as $field_key => $meta_key) {
-                $value = isset($import_payload[$field_key]) ? (string) $import_payload[$field_key] : '';
-
-                if ('' === trim($value)) {
-                    continue;
-                }
-
-                $existing_value = trim((string) get_post_meta($post_id, $meta_key, true));
-
-                if ('' !== $existing_value) {
-                    $skipped_existing++;
-                    continue;
-                }
-
-                update_post_meta($post_id, $meta_key, $value);
-                $fields_imported++;
-                $post_updated = true;
-
-                if (in_array($field_key, $frontend_field_keys, true)) {
-                    $imported_frontend_field = true;
-                }
-            }
-
-            if ($imported_frontend_field && '1' !== (string) get_post_meta($post_id, self::FRONTEND_ENABLE_META_KEY, true)) {
-                update_post_meta($post_id, self::FRONTEND_ENABLE_META_KEY, '1');
-                $frontend_enabled++;
-            }
-
-            if ($post_updated) {
-                $posts_updated++;
-            }
-        }
-
-        return array(
-            'posts_detected' => $posts_detected,
-            'posts_updated' => $posts_updated,
-            'fields_imported' => $fields_imported,
-            'skipped_existing' => $skipped_existing,
-            'frontend_enabled' => $frontend_enabled,
-            'unsupported_advanced_robots' => $unsupported_advanced_robots,
-        );
-    }
-
-    private function get_yoast_import_candidate_ids(): array
-    {
-        global $wpdb;
-
-        $supported_post_types = get_post_types(
-            array(
-                'public' => true,
-            ),
-            'names'
-        );
-
-        unset($supported_post_types['attachment']);
-
-        if (empty($supported_post_types)) {
-            return array();
-        }
-
-        $yoast_meta_keys = array(
-            '_yoast_wpseo_focuskw',
-            '_yoast_wpseo_title',
-            '_yoast_wpseo_metadesc',
-            '_yoast_wpseo_opengraph-title',
-            '_yoast_wpseo_opengraph-description',
-            '_yoast_wpseo_opengraph-image',
-            '_yoast_wpseo_twitter-title',
-            '_yoast_wpseo_twitter-description',
-            '_yoast_wpseo_twitter-image',
-            '_yoast_wpseo_canonical',
-            '_yoast_wpseo_meta-robots-noindex',
-            '_yoast_wpseo_meta-robots-nofollow',
-            '_yoast_wpseo_meta-robots-adv',
-        );
-
-        $meta_placeholders = implode(', ', array_fill(0, count($yoast_meta_keys), '%s'));
-        $post_type_placeholders = implode(', ', array_fill(0, count($supported_post_types), '%s'));
-        $query_args = array_merge($yoast_meta_keys, array_values($supported_post_types), array('auto-draft', 'trash', 'inherit'));
-        $sql = $wpdb->prepare(
-            "SELECT DISTINCT pm.post_id
-            FROM {$wpdb->postmeta} pm
-            INNER JOIN {$wpdb->posts} posts ON posts.ID = pm.post_id
-            WHERE pm.meta_key IN ({$meta_placeholders})
-                AND posts.post_type IN ({$post_type_placeholders})
-                AND posts.post_status NOT IN (%s, %s, %s)
-            ORDER BY pm.post_id ASC",
-            $query_args
-        );
-        $post_ids = $wpdb->get_col($sql);
-
-        return array_map('intval', is_array($post_ids) ? $post_ids : array());
-    }
-
-    private function map_yoast_robots_directives(string $noindex_value, string $nofollow_value): string
-    {
-        $is_noindex = '1' === trim($noindex_value);
-        $is_nofollow = '1' === trim($nofollow_value);
-
-        if ($is_noindex && $is_nofollow) {
-            return 'noindex,nofollow';
-        }
-
-        if ($is_noindex) {
-            return 'noindex,follow';
-        }
-
-        if ($is_nofollow) {
-            return 'index,nofollow';
-        }
-
-        return '';
-    }
-
-    private function redirect_to_audit_page(string $status, string $message): void
+    public function redirect_to_audit_page(string $status, string $message): void
     {
         $redirect_url = add_query_arg(
             array(
@@ -6190,7 +4118,7 @@ HTML;
         exit;
     }
 
-    private function redirect_to_settings_page(string $status, string $message): void
+    public function redirect_to_settings_page(string $status, string $message): void
     {
         $redirect_url = add_query_arg(
             array(
