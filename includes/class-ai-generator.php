@@ -232,10 +232,17 @@ class AI_Generator
                 'Return only valid JSON with exactly these keys: reply, suggested_title, suggested_description, wants_edits, notes. ' .
                 'reply should answer the user directly with a clear, actionable plan. ' .
                 'wants_edits must be true when the user asks you to improve, fix, or change page CONTENT (headings, paragraphs, links, images, structure). Set it false for questions or metadata-only requests.' . "\n\n" .
-                'YOU HAVE FULL KNOWLEDGE of this page: URL, all SEO metadata fields (filled or empty), the full page text, headings, images, links, and audit results if present. Use ALL of it.' . "\n\n" .
+                'YOU HAVE FULL KNOWLEDGE of this page: URL, all SEO metadata fields (filled or empty), the full page text, headings, images, links, audit results, ' .
+                'the page hierarchy (parent page, sibling pages, child pages — all with their SEO titles, keyphrases, and meta descriptions), ' .
+                'keyphrase conflict warnings (other pages targeting the same keyphrase), and the site structure tree. Use ALL of it.' . "\n\n" .
                 'TWO SEO CATEGORIES — always distinguish clearly:' . "\n" .
                 '  A) SEO METADATA = title, meta description, focus keyphrase, canonical URL, robots directives, schema type, OG tags. These are managed by AI SEO Keeper fields.' . "\n" .
                 '  B) SEO CONTENT/STRUCTURE = H1-H6 headings, body text, word count, images with alt tags, internal/external links, CTAs, page hierarchy. These require page content edits.' . "\n\n" .
+                'HIERARCHY & CANNIBALIZATION RULES:' . "\n" .
+                '8. Use the Page Hierarchy data to understand WHERE this page sits in the site. A child page must have different SEO focus than its parent and siblings.' . "\n" .
+                '9. If sibling pages already target similar keyphrases or have similar SEO titles, recommend a UNIQUE angle for this page. Never produce overlapping SEO metadata.' . "\n" .
+                '10. If the KEYPHRASE CONFLICT WARNING section is present, ALWAYS mention the conflict in your reply and suggest a differentiated keyphrase.' . "\n" .
+                '11. Use the Site Structure tree to suggest internal linking opportunities between related pages.' . "\n\n" .
                 'RESPONSE RULES:' . "\n" .
                 '1. When user asks to "improve SEO" or "improve all" → report AND suggest fixes for BOTH categories. Fill suggested_title and suggested_description with improved versions. Set wants_edits=true for content fixes.' . "\n" .
                 '2. When user asks only about metadata (title, description, keyphrase) → suggest metadata improvements only. Do not discuss content structure.' . "\n" .
@@ -302,6 +309,15 @@ class AI_Generator
         // WooCommerce product data (supplied by WooCommerce_Integration filter when active).
         $wc_data = apply_filters('ai_seo_keeper_product_context', array(), $post);
 
+        // Hierarchy context for AI Chat (parent, siblings, children with SEO meta).
+        $hierarchy = $this->content_indexer->get_hierarchy_context((int) $post->ID);
+
+        // Keyphrase cannibalization: other pages targeting the same focus keyphrase.
+        $keyphrase_conflicts = $this->content_indexer->get_keyphrase_conflicts((int) $post->ID);
+
+        // Compact site tree for structural awareness.
+        $site_tree = $this->content_indexer->get_compact_site_tree((int) $post->ID);
+
         return array(
             'focus_keyphrase' => $focus_keyphrase,
             'seo_title_draft' => $seo_title_draft,
@@ -321,6 +337,9 @@ class AI_Generator
             'robots_directives' => $robots_directives,
             'is_cornerstone' => $is_cornerstone,
             'wc_data' => $wc_data,
+            'hierarchy' => $hierarchy,
+            'keyphrase_conflicts' => $keyphrase_conflicts,
+            'site_tree' => $site_tree,
         );
     }
 
@@ -406,6 +425,64 @@ class AI_Generator
             if (! empty($wc['wc_brand'])) {
                 $lines[] = 'Brand: '        . $wc['wc_brand'];
             }
+        }
+
+        // Page hierarchy context (parent, siblings, children with SEO metadata).
+        if (! empty($ctx['hierarchy'])) {
+            $h = $ctx['hierarchy'];
+            $lines[] = '--- Page Hierarchy ---';
+            $lines[] = 'Position: ' . ('' !== $h['position'] ? $h['position'] : 'Unknown');
+
+            if (is_array($h['grandparent'])) {
+                $lines[] = 'Grandparent: "' . $h['grandparent']['title'] . '" /' . ltrim($h['grandparent']['slug'], '/') . '/'
+                    . ('' !== trim((string) $h['grandparent']['focus_keyphrase']) ? ' [kp: "' . $h['grandparent']['focus_keyphrase'] . '"]' : '');
+            }
+
+            if (is_array($h['parent'])) {
+                $lines[] = 'Parent page: "' . $h['parent']['title'] . '" /' . ltrim($h['parent']['slug'], '/') . '/'
+                    . ('' !== trim((string) $h['parent']['seo_title']) ? ' | SEO title: "' . $h['parent']['seo_title'] . '"' : '')
+                    . ('' !== trim((string) $h['parent']['focus_keyphrase']) ? ' | kp: "' . $h['parent']['focus_keyphrase'] . '"' : '')
+                    . ('' !== trim((string) $h['parent']['meta_description']) ? ' | desc: "' . $h['parent']['meta_description'] . '"' : '');
+            }
+
+            if (! empty($h['siblings'])) {
+                $lines[] = 'Sibling pages (' . count($h['siblings']) . '):';
+                foreach ($h['siblings'] as $sib) {
+                    $lines[] = '  - "' . $sib['title'] . '" /' . ltrim($sib['slug'], '/') . '/'
+                        . ('' !== trim((string) $sib['focus_keyphrase']) ? ' [kp: "' . $sib['focus_keyphrase'] . '"]' : '')
+                        . ('' !== trim((string) $sib['seo_title']) ? ' | SEO: "' . $sib['seo_title'] . '"' : '')
+                        . ('' !== trim((string) $sib['meta_description']) ? ' | desc: "' . $sib['meta_description'] . '"' : '');
+                }
+            }
+
+            if (! empty($h['children'])) {
+                $lines[] = 'Child pages (' . count($h['children']) . '):';
+                foreach ($h['children'] as $child) {
+                    $lines[] = '  - "' . $child['title'] . '" /' . ltrim($child['slug'], '/') . '/'
+                        . ('' !== trim((string) $child['focus_keyphrase']) ? ' [kp: "' . $child['focus_keyphrase'] . '"]' : '')
+                        . ('' !== trim((string) $child['seo_title']) ? ' | SEO: "' . $child['seo_title'] . '"' : '')
+                        . ('' !== trim((string) $child['meta_description']) ? ' | desc: "' . $child['meta_description'] . '"' : '');
+                }
+            }
+        }
+
+        // Keyphrase cannibalization warnings.
+        if (! empty($ctx['keyphrase_conflicts'])) {
+            $lines[] = '--- KEYPHRASE CONFLICT WARNING ---';
+            $lines[] = 'The following pages target the SAME focus keyphrase as this page:';
+            foreach ($ctx['keyphrase_conflicts'] as $conflict) {
+                $lines[] = '  - "' . $conflict['title'] . '" /' . ltrim($conflict['slug'], '/') . '/'
+                    . ' | kp: "' . $conflict['focus_keyphrase'] . '"'
+                    . ('' !== trim((string) $conflict['seo_title']) ? ' | SEO: "' . $conflict['seo_title'] . '"' : '')
+                    . ' | type: ' . $conflict['post_type'];
+            }
+            $lines[] = 'ACTION REQUIRED: Recommend unique keyphrases for this page to avoid SEO cannibalization.';
+        }
+
+        // Compact site tree.
+        if (! empty($ctx['site_tree'])) {
+            $lines[] = '--- Site Structure (titles + keyphrases) ---';
+            $lines[] = $ctx['site_tree'];
         }
 
         return implode("\n", $lines);
@@ -538,21 +615,6 @@ class AI_Generator
         $page_html = strip_shortcodes($page_content_raw);
         $page_content = $this->normalize_text($page_content_raw);
         $page_excerpt = $this->normalize_text((string) $post->post_excerpt);
-        $related_pages = $this->content_indexer->get_related_entries((int) $post->ID, (string) $post->post_type, (int) $post->post_parent, 5);
-        $related_lines = array();
-
-        foreach ($related_pages as $related_page) {
-            $related_lines[] = sprintf(
-                '- %s | /%s/ | %s',
-                trim((string) $related_page['title']) !== '' ? (string) $related_page['title'] : '(untitled)',
-                ltrim((string) $related_page['slug'], '/'),
-                $this->normalize_text((string) $related_page['excerpt'])
-            );
-        }
-
-        if (empty($related_lines)) {
-            $related_lines[] = '- No related indexed pages were found.';
-        }
 
         $conversation_lines = array();
         foreach ($recent_messages as $recent_message) {
@@ -587,7 +649,7 @@ class AI_Generator
         $prompt_parts = array(
             'Task: Answer the editor user as an SEO copilot for the current WordPress page.',
             'Output format: {"reply":"...","suggested_title":"...","suggested_description":"...","wants_edits":true/false,"notes":"..."}',
-            'Requirements: You receive the COMPLETE page content, ALL metadata fields, and the full audit results. Analyze every element — headings, images, links, word count, schema, keyphrase placement. Do not skip any data. Ground your advice in what you actually see below.',
+            'Requirements: You receive the COMPLETE page content, ALL metadata fields, full audit results, the page hierarchy (parent, siblings, children with their SEO data), keyphrase conflict warnings, and the site structure tree. Use ALL of it. Differentiate this page from its siblings. Flag cannibalization risks. Ground your advice in what you actually see below.',
             'Site: ' . get_bloginfo('name'),
             'Page type: ' . $post->post_type,
             'Current page title: ' . (string) $post->post_title,
@@ -596,7 +658,6 @@ class AI_Generator
             'Existing excerpt: ' . ('' !== $page_excerpt ? $page_excerpt : 'None'),
             "Page HTML structure (includes headings, images, links, all elements):\n" . ('' !== $page_html ? $page_html : 'No body content is available.'),
             'Plain text content: ' . ('' !== $page_content ? $page_content : 'No body content is available.'),
-            "Related pages to avoid overlapping with:\n" . implode("\n", $related_lines),
             "Recent conversation:\n" . implode("\n", $conversation_lines),
             'User question: ' . $message,
         );

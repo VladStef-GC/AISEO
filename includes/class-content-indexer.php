@@ -473,6 +473,357 @@ class Content_Indexer
         return is_array($results) ? $results : array();
     }
 
+    /**
+     * Get the page hierarchy context for AI Chat: parent, siblings, children — with SEO metadata.
+     *
+     * @return array{parent: array|null, siblings: array, children: array, grandparent: array|null, position: string}
+     */
+    public function get_hierarchy_context(int $post_id): array
+    {
+        global $wpdb;
+
+        $table_name  = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $postmeta    = $wpdb->postmeta;
+
+        $current = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT object_id, post_type, parent_id, title, slug, permalink, status
+                 FROM {$table_name}
+                 WHERE object_type = %s AND object_id = %d",
+                'post',
+                $post_id
+            ),
+            ARRAY_A
+        );
+
+        if (! is_array($current)) {
+            return array(
+                'parent'       => null,
+                'siblings'     => array(),
+                'children'     => array(),
+                'grandparent'  => null,
+                'position'     => '',
+            );
+        }
+
+        $parent_id = (int) $current['parent_id'];
+        $post_type = (string) $current['post_type'];
+
+        // Fetch parent with SEO meta.
+        $parent = null;
+        if ($parent_id > 0) {
+            $parent = $this->fetch_page_with_seo_meta($table_name, $postmeta, $parent_id);
+        }
+
+        // Fetch grandparent (one level above parent).
+        $grandparent = null;
+        if (is_array($parent) && (int) $parent['parent_id'] > 0) {
+            $grandparent = $this->fetch_page_with_seo_meta($table_name, $postmeta, (int) $parent['parent_id']);
+        }
+
+        // Fetch siblings (same parent, same post_type, excluding current).
+        $siblings = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT idx.object_id, idx.title, idx.slug, idx.permalink, idx.status, idx.parent_id,
+                        COALESCE(pm_kp.meta_value, '')    AS focus_keyphrase,
+                        COALESCE(pm_title.meta_value, '') AS seo_title,
+                        COALESCE(pm_desc.meta_value, '')  AS meta_description
+                 FROM {$table_name} idx
+                 LEFT JOIN {$postmeta} pm_kp    ON pm_kp.post_id    = idx.object_id AND pm_kp.meta_key    = '_ai_seo_keeper_focus_keyphrase'
+                 LEFT JOIN {$postmeta} pm_title ON pm_title.post_id = idx.object_id AND pm_title.meta_key = %s
+                 LEFT JOIN {$postmeta} pm_desc  ON pm_desc.post_id  = idx.object_id AND pm_desc.meta_key  = %s
+                 WHERE idx.object_type = %s
+                   AND idx.post_type   = %s
+                   AND idx.parent_id   = %d
+                   AND idx.object_id  != %d
+                   AND idx.status      = %s
+                 ORDER BY idx.title ASC",
+                self::META_TITLE_KEY,
+                self::META_DESCRIPTION_KEY,
+                'post',
+                $post_type,
+                $parent_id,
+                $post_id,
+                'publish'
+            ),
+            ARRAY_A
+        );
+
+        // Fetch children of the current page.
+        $children = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT idx.object_id, idx.title, idx.slug, idx.permalink, idx.status, idx.parent_id,
+                        COALESCE(pm_kp.meta_value, '')    AS focus_keyphrase,
+                        COALESCE(pm_title.meta_value, '') AS seo_title,
+                        COALESCE(pm_desc.meta_value, '')  AS meta_description
+                 FROM {$table_name} idx
+                 LEFT JOIN {$postmeta} pm_kp    ON pm_kp.post_id    = idx.object_id AND pm_kp.meta_key    = '_ai_seo_keeper_focus_keyphrase'
+                 LEFT JOIN {$postmeta} pm_title ON pm_title.post_id = idx.object_id AND pm_title.meta_key = %s
+                 LEFT JOIN {$postmeta} pm_desc  ON pm_desc.post_id  = idx.object_id AND pm_desc.meta_key  = %s
+                 WHERE idx.object_type = %s
+                   AND idx.post_type   = %s
+                   AND idx.parent_id   = %d
+                   AND idx.status      = %s
+                 ORDER BY idx.title ASC",
+                self::META_TITLE_KEY,
+                self::META_DESCRIPTION_KEY,
+                'post',
+                $post_type,
+                $post_id,
+                'publish'
+            ),
+            ARRAY_A
+        );
+
+        // Build a human-readable position string.
+        $sibling_count = is_array($siblings) ? count($siblings) : 0;
+        $child_count   = is_array($children) ? count($children) : 0;
+
+        $position_parts = array();
+        if (is_array($parent)) {
+            $position_parts[] = 'Child of "' . $parent['title'] . '"';
+            $position_parts[] = ($sibling_count + 1) . ' page(s) at this level';
+        } else {
+            $position_parts[] = 'Top-level page';
+        }
+        if ($child_count > 0) {
+            $position_parts[] = $child_count . ' child page(s) below';
+        }
+
+        return array(
+            'parent'      => $parent,
+            'siblings'    => is_array($siblings) ? $siblings : array(),
+            'children'    => is_array($children) ? $children : array(),
+            'grandparent' => $grandparent,
+            'position'    => implode(' | ', $position_parts),
+        );
+    }
+
+    /**
+     * Get all pages that share the same focus keyphrase as the given post (cannibalization detection).
+     *
+     * @return array List of conflicting pages with their titles, slugs, and keyphrases.
+     */
+    public function get_keyphrase_conflicts(int $post_id): array
+    {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $postmeta   = $wpdb->postmeta;
+
+        // Get the current page's focus keyphrase.
+        $focus_keyphrase = trim((string) get_post_meta($post_id, '_ai_seo_keeper_focus_keyphrase', true));
+
+        if ('' === $focus_keyphrase) {
+            return array();
+        }
+
+        // Find all OTHER pages that have the same focus keyphrase (case-insensitive).
+        $conflicts = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT idx.object_id, idx.title, idx.slug, idx.permalink, idx.post_type, idx.status,
+                        pm_kp.meta_value AS focus_keyphrase,
+                        COALESCE(pm_title.meta_value, '') AS seo_title,
+                        COALESCE(pm_desc.meta_value, '')  AS meta_description
+                 FROM {$postmeta} pm_kp
+                 INNER JOIN {$table_name} idx ON idx.object_id = pm_kp.post_id AND idx.object_type = %s
+                 LEFT JOIN {$postmeta} pm_title ON pm_title.post_id = idx.object_id AND pm_title.meta_key = %s
+                 LEFT JOIN {$postmeta} pm_desc  ON pm_desc.post_id  = idx.object_id AND pm_desc.meta_key  = %s
+                 WHERE pm_kp.meta_key = '_ai_seo_keeper_focus_keyphrase'
+                   AND LOWER(TRIM(pm_kp.meta_value)) = LOWER(%s)
+                   AND idx.object_id != %d
+                   AND idx.status     = %s
+                 ORDER BY idx.title ASC",
+                'post',
+                self::META_TITLE_KEY,
+                self::META_DESCRIPTION_KEY,
+                $focus_keyphrase,
+                $post_id,
+                'publish'
+            ),
+            ARRAY_A
+        );
+
+        return is_array($conflicts) ? $conflicts : array();
+    }
+
+    /**
+     * Build a compact site tree (title + keyphrase + slug per page) for AI context.
+     * For sites with more than $max_pages, only the current branch is included.
+     *
+     * @return string A compact text tree of the site structure.
+     */
+    public function get_compact_site_tree(int $current_post_id, int $max_pages = 500): string
+    {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $postmeta   = $wpdb->postmeta;
+
+        // Count published pages to decide full tree vs branch-only.
+        $total = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$table_name} WHERE object_type = %s AND status = %s",
+                'post',
+                'publish'
+            )
+        );
+
+        if ($total < 1) {
+            return 'No published pages found.';
+        }
+
+        // Fetch all published pages with their keyphrase.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT idx.object_id, idx.title, idx.slug, idx.parent_id, idx.post_type,
+                        COALESCE(pm_kp.meta_value, '') AS focus_keyphrase
+                 FROM {$table_name} idx
+                 LEFT JOIN {$postmeta} pm_kp ON pm_kp.post_id = idx.object_id AND pm_kp.meta_key = '_ai_seo_keeper_focus_keyphrase'
+                 WHERE idx.object_type = %s AND idx.status = %s
+                 ORDER BY idx.parent_id ASC, idx.title ASC",
+                'post',
+                'publish'
+            ),
+            ARRAY_A
+        );
+
+        if (! is_array($rows) || empty($rows)) {
+            return 'No published pages found.';
+        }
+
+        // Index by object_id and group children by parent_id.
+        $by_id       = array();
+        $by_parent   = array();
+
+        foreach ($rows as $row) {
+            $oid = (int) $row['object_id'];
+            $pid = (int) $row['parent_id'];
+            $by_id[$oid] = $row;
+            $by_parent[$pid][] = $row;
+        }
+
+        // For huge sites, limit to current branch only.
+        if ($total > $max_pages) {
+            return $this->build_branch_tree($by_id, $by_parent, $current_post_id);
+        }
+
+        // Full tree: start from root (parent_id = 0).
+        $lines = array();
+        $this->render_tree_level($by_parent, 0, 0, $current_post_id, $lines);
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * Fetch a single page from the content index with its SEO meta fields.
+     */
+    private function fetch_page_with_seo_meta(string $table_name, string $postmeta_table, int $object_id): ?array
+    {
+        global $wpdb;
+
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT idx.object_id, idx.title, idx.slug, idx.permalink, idx.status, idx.parent_id, idx.post_type,
+                        COALESCE(pm_kp.meta_value, '')    AS focus_keyphrase,
+                        COALESCE(pm_title.meta_value, '') AS seo_title,
+                        COALESCE(pm_desc.meta_value, '')  AS meta_description
+                 FROM {$table_name} idx
+                 LEFT JOIN {$postmeta_table} pm_kp    ON pm_kp.post_id    = idx.object_id AND pm_kp.meta_key    = '_ai_seo_keeper_focus_keyphrase'
+                 LEFT JOIN {$postmeta_table} pm_title ON pm_title.post_id = idx.object_id AND pm_title.meta_key = %s
+                 LEFT JOIN {$postmeta_table} pm_desc  ON pm_desc.post_id  = idx.object_id AND pm_desc.meta_key  = %s
+                 WHERE idx.object_type = %s AND idx.object_id = %d",
+                self::META_TITLE_KEY,
+                self::META_DESCRIPTION_KEY,
+                'post',
+                $object_id
+            ),
+            ARRAY_A
+        );
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * Build a branch-only tree (ancestors + siblings + children of the current page).
+     */
+    private function build_branch_tree(array $by_id, array $by_parent, int $current_id): string
+    {
+        // Collect ancestor chain.
+        $ancestors = array();
+        $walk_id   = $current_id;
+
+        while (isset($by_id[$walk_id]) && (int) $by_id[$walk_id]['parent_id'] > 0) {
+            $walk_id     = (int) $by_id[$walk_id]['parent_id'];
+            $ancestors[] = $walk_id;
+        }
+
+        $ancestors = array_reverse($ancestors);
+
+        $lines   = array();
+        $lines[] = '(Large site — showing current branch only)';
+
+        // Render ancestor chain.
+        $depth = 0;
+        foreach ($ancestors as $ancestor_id) {
+            if (isset($by_id[$ancestor_id])) {
+                $r = $by_id[$ancestor_id];
+                $lines[] = $this->format_tree_node($r, $depth, $current_id);
+            }
+            $depth++;
+        }
+
+        // Render siblings (same parent as current).
+        $parent_id = isset($by_id[$current_id]) ? (int) $by_id[$current_id]['parent_id'] : 0;
+        $siblings  = isset($by_parent[$parent_id]) ? $by_parent[$parent_id] : array();
+
+        foreach ($siblings as $sibling) {
+            $sid = (int) $sibling['object_id'];
+            $lines[] = $this->format_tree_node($sibling, $depth, $current_id);
+
+            // If this is the current page, also render its children.
+            if ($sid === $current_id && isset($by_parent[$sid])) {
+                foreach ($by_parent[$sid] as $child) {
+                    $lines[] = $this->format_tree_node($child, $depth + 1, $current_id);
+                }
+            }
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * Recursively render the tree from a given parent level.
+     */
+    private function render_tree_level(array $by_parent, int $parent_id, int $depth, int $current_id, array &$lines): void
+    {
+        if (! isset($by_parent[$parent_id])) {
+            return;
+        }
+
+        foreach ($by_parent[$parent_id] as $row) {
+            $oid     = (int) $row['object_id'];
+            $lines[] = $this->format_tree_node($row, $depth, $current_id);
+
+            // Recurse into children.
+            $this->render_tree_level($by_parent, $oid, $depth + 1, $current_id, $lines);
+        }
+    }
+
+    /**
+     * Format a single tree node as an indented line.
+     */
+    private function format_tree_node(array $row, int $depth, int $current_id): string
+    {
+        $indent    = str_repeat('  ', $depth);
+        $marker    = (int) $row['object_id'] === $current_id ? ' ← YOU ARE HERE' : '';
+        $keyphrase = trim((string) $row['focus_keyphrase']);
+        $kp_label  = '' !== $keyphrase ? ' [kp: "' . $keyphrase . '"]' : '';
+        $slug      = '/' . ltrim((string) $row['slug'], '/') . '/';
+
+        return $indent . $slug . ' "' . $row['title'] . '"' . $kp_label . $marker;
+    }
+
     public function sync(): int
     {
         global $wpdb;
