@@ -186,6 +186,7 @@ class AI_Generator
 
         return trim(
             $base_prompt . "\n\n" .
+                'IDENTITY: You are the AI inside the "AI SEO Keeper" WordPress plugin. This plugin handles ALL SEO. The user does NOT use Yoast, RankMath, or any other SEO plugin — never mention them.' . "\n" .
                 'Return only valid JSON with exactly these keys: seo_title, meta_description, focus_keyphrase, notes. ' .
                 'Do not use markdown fences. Keep the title at or under 60 characters (total including branding). ' .
                 'Keep the meta description at or under 155 characters, ideally around 140-155. ' .
@@ -332,9 +333,18 @@ class AI_Generator
         $lines[] = 'Keyphrase in description: ' . ($ctx['keyphrase_in_desc'] ? 'Found' : 'Missing');
 
         if (null !== $ctx['audit_score']) {
-            $lines[] = 'Last audit score: ' . $ctx['audit_score'] . '/100';
+            $lines[] = '--- AI SEO Audit Results (score ' . $ctx['audit_score'] . '/100) ---';
             if (! empty($ctx['audit_issues'])) {
-                $lines[] = 'Audit issues: ' . implode('; ', array_slice($ctx['audit_issues'], 0, 5));
+                $lines[] = 'Issues found:';
+                foreach (array_slice($ctx['audit_issues'], 0, 10) as $issue) {
+                    $lines[] = '  - ' . $issue;
+                }
+            }
+            if (! empty($ctx['audit_suggestions'])) {
+                $lines[] = 'Suggestions:';
+                foreach (array_slice($ctx['audit_suggestions'], 0, 10) as $suggestion) {
+                    $lines[] = '  - ' . $suggestion;
+                }
             }
             if ('' !== $ctx['audit_summary']) {
                 $lines[] = 'Audit summary: ' . $ctx['audit_summary'];
@@ -1005,6 +1015,7 @@ class AI_Generator
 
         return trim(
             $base_prompt . "\n\n" .
+                'IDENTITY: You are the AI inside the "AI SEO Keeper" WordPress plugin. This plugin handles ALL SEO. The user does NOT use Yoast, RankMath, or any other SEO plugin — never mention them.' . "\n" .
                 'Return only valid JSON with exactly these keys: score, issues, suggestions, missing_alt_tags, word_count, heading_structure, summary. ' .
                 'score is 0-100 representing overall SEO health. ' .
                 'issues is an array of short strings describing problems found. ' .

@@ -382,16 +382,16 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                                 </fieldset>
 
                                 <script>
-                                (function(){
-                                    var toggle = document.getElementById('ai-seo-wc-enabled');
-                                    var panel  = document.getElementById('ai-seo-wc-options');
-                                    if (toggle && panel) {
-                                        toggle.addEventListener('change', function(){
-                                            panel.style.opacity = this.checked ? '1' : '.5';
-                                            panel.style.pointerEvents = this.checked ? '' : 'none';
-                                        });
-                                    }
-                                })();
+                                    (function() {
+                                        var toggle = document.getElementById('ai-seo-wc-enabled');
+                                        var panel = document.getElementById('ai-seo-wc-options');
+                                        if (toggle && panel) {
+                                            toggle.addEventListener('change', function() {
+                                                panel.style.opacity = this.checked ? '1' : '.5';
+                                                panel.style.pointerEvents = this.checked ? '' : 'none';
+                                            });
+                                        }
+                                    })();
                                 </script>
                             </td>
                         </tr>
