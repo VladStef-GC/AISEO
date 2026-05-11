@@ -13,12 +13,12 @@
 defined('ABSPATH') || exit;
 ?>
 <div class="wrap">
-    <h1>Bulk SEO Editor</h1>
-    <p class="description">Edit SEO titles and meta descriptions across all your content. Changes are saved via AJAX — no page reload needed.</p>
+    <h1><?php esc_html_e('Bulk SEO Editor', 'ai-seo-keeper'); ?></h1>
+    <p class="description"><?php esc_html_e('Edit SEO titles and meta descriptions across all your content. Changes are saved via AJAX — no page reload needed.', 'ai-seo-keeper'); ?></p>
 
     <form method="get" style="margin:16px 0;">
         <input type="hidden" name="page" value="ai-seo-keeper-bulk-editor" />
-        <label for="ai-seo-bulk-pt"><strong>Post type:</strong></label>
+        <label for="ai-seo-bulk-pt"><strong><?php esc_html_e('Post type:', 'ai-seo-keeper'); ?></strong></label>
         <select name="pt" id="ai-seo-bulk-pt" onchange="this.form.submit()">
             <?php foreach ($post_types as $pt) : ?>
                 <option value="<?php echo esc_attr($pt->name); ?>" <?php selected($post_type_filter, $pt->name); ?>><?php echo esc_html($pt->labels->name); ?></option>
@@ -30,9 +30,9 @@ defined('ABSPATH') || exit;
         <table class="widefat striped ai-seo-sortable" id="ai-seo-bulk-table">
             <thead>
                 <tr>
-                    <th style="width:30%;" class="ai-seo-sort" data-col="0">Title <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                    <th style="width:35%;" class="ai-seo-sort" data-col="1">SEO Title <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                    <th style="width:30%;" class="ai-seo-sort" data-col="2">Meta Description <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th style="width:30%;" class="ai-seo-sort" data-col="0"><?php esc_html_e('Title', 'ai-seo-keeper'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th style="width:35%;" class="ai-seo-sort" data-col="1"><?php esc_html_e('SEO Title', 'ai-seo-keeper'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th style="width:30%;" class="ai-seo-sort" data-col="2"><?php esc_html_e('Meta Description', 'ai-seo-keeper'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
                     <th style="width:5%;"></th>
                 </tr>
             </thead>
@@ -45,7 +45,7 @@ defined('ABSPATH') || exit;
                     <tr data-post-id="<?php echo (int) $post_id; ?>">
                         <td data-sort-value="<?php echo esc_attr(strtolower(get_the_title())); ?>">
                             <strong><a href="<?php echo esc_url(get_edit_post_link($post_id)); ?>"><?php the_title(); ?></a></strong>
-                            <div class="row-actions"><span><a href="<?php echo esc_url(get_permalink($post_id)); ?>" target="_blank">View</a></span></div>
+                            <div class="row-actions"><span><a href="<?php echo esc_url(get_permalink($post_id)); ?>" target="_blank"><?php esc_html_e('View', 'ai-seo-keeper'); ?></a></span></div>
                         </td>
                         <td data-sort-value="<?php echo esc_attr(strtolower($seo_title_val)); ?>">
                             <input type="text" class="large-text ai-seo-bulk-title" value="<?php echo esc_attr($seo_title_val); ?>" data-original="<?php echo esc_attr($seo_title_val); ?>" />
@@ -54,7 +54,7 @@ defined('ABSPATH') || exit;
                             <textarea class="large-text ai-seo-bulk-desc" rows="2" data-original="<?php echo esc_attr($seo_desc_val); ?>"><?php echo esc_textarea($seo_desc_val); ?></textarea>
                         </td>
                         <td>
-                            <button type="button" class="button button-small ai-seo-bulk-save" disabled>Save</button>
+                            <button type="button" class="button button-small ai-seo-bulk-save" disabled><?php esc_html_e('Save', 'ai-seo-keeper'); ?></button>
                         </td>
                     </tr>
                 <?php endwhile;
@@ -78,6 +78,6 @@ defined('ABSPATH') || exit;
             </div>
         <?php endif; ?>
     <?php else : ?>
-        <p>No posts found for this post type.</p>
+        <p><?php esc_html_e('No posts found for this post type.', 'ai-seo-keeper'); ?></p>
     <?php endif; ?>
 </div>

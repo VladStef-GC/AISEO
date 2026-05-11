@@ -17,14 +17,14 @@
 defined('ABSPATH') || exit;
 ?>
 <div class="wrap aisk-wizard">
-    <h1>🚀 AI SEO Keeper — Setup Wizard</h1>
+    <h1><?php echo esc_html('\ud83d\ude80 ' . __('AI SEO Keeper \u2014 Setup Wizard', 'ai-seo-keeper')); ?></h1>
     <p style="font-size: 14px; max-width: 700px;">
-        This wizard indexes your site, generates AI-powered SEO metadata, and runs a full page audit — all in three easy steps.
+        <?php esc_html_e('This wizard indexes your site, generates AI-powered SEO metadata, and runs a full page audit \u2014 all in three easy steps.', 'ai-seo-keeper'); ?>
     </p>
 
     <?php if (! $has_api_key) : ?>
         <div class="notice notice-warning" style="margin-top:12px;">
-            <p><strong>No API key configured.</strong> <a href="<?php echo esc_url(admin_url('admin.php?page=ai-seo-keeper-settings')); ?>">Go to Settings</a> and add your AI provider API key before running the wizard.</p>
+            <p><strong><?php esc_html_e('No API key configured.', 'ai-seo-keeper'); ?></strong> <a href="<?php echo esc_url(admin_url('admin.php?page=ai-seo-keeper-settings')); ?>"><?php esc_html_e('Go to Settings', 'ai-seo-keeper'); ?></a> <?php esc_html_e('and add your AI provider API key before running the wizard.', 'ai-seo-keeper'); ?></p>
         </div>
     <?php endif; ?>
 
@@ -32,12 +32,12 @@ defined('ABSPATH') || exit;
     <div id="aisk-step-1" class="aisk-step">
         <div class="aisk-step-header">
             <span id="aisk-s1-badge" class="aisk-badge active">1</span>
-            <h2 style="margin:0;">Index Your Site</h2>
+            <h2 style="margin:0;"><?php esc_html_e('Index Your Site', 'ai-seo-keeper'); ?></h2>
         </div>
-        <p>Scan all published pages and build the content index. This is required before AI processing.</p>
+        <p><?php esc_html_e('Scan all published pages and build the content index. This is required before AI processing.', 'ai-seo-keeper'); ?></p>
         <div class="aisk-controls">
             <button id="aisk-btn-index" class="button button-primary button-hero" type="button" <?php disabled(! $has_api_key); ?>>
-                <?php echo $has_index ? 'Re-Index Site' : 'Start Indexing'; ?>
+                <?php echo $has_index ? esc_html__('Re-Index Site', 'ai-seo-keeper') : esc_html__('Start Indexing', 'ai-seo-keeper'); ?>
             </button>
         </div>
         <div id="aisk-s1-progress" class="aisk-progress-wrap">
@@ -47,7 +47,7 @@ defined('ABSPATH') || exit;
             <div class="aisk-progress-info"><span id="aisk-s1-status"></span></div>
         </div>
         <div id="aisk-s1-done" class="aisk-done-banner success">
-            <strong>&#10003; Indexing complete.</strong> <span id="aisk-s1-result"></span>
+            <strong>&#10003; <?php esc_html_e('Indexing complete.', 'ai-seo-keeper'); ?></strong> <span id="aisk-s1-result"></span>
         </div>
         <div id="aisk-s1-error" class="aisk-error-banner"></div>
     </div>
@@ -56,16 +56,16 @@ defined('ABSPATH') || exit;
     <div id="aisk-step-2" class="aisk-step<?php echo ! $has_index ? ' locked' : ''; ?>">
         <div class="aisk-step-header">
             <span id="aisk-s2-badge" class="aisk-badge <?php echo $has_index ? 'active' : 'pending'; ?>">2</span>
-            <h2 style="margin:0;">Generate SEO Metadata</h2>
+            <h2 style="margin:0;"><?php esc_html_e('Generate SEO Metadata', 'ai-seo-keeper'); ?></h2>
             <span id="aisk-s2-elapsed" class="aisk-elapsed"></span>
         </div>
-        <p>AI reads each page and generates an SEO title and meta description. Pages that already have metadata are skipped automatically.</p>
+        <p><?php esc_html_e('AI reads each page and generates an SEO title and meta description. Pages that already have metadata are skipped automatically.', 'ai-seo-keeper'); ?></p>
         <div class="aisk-controls">
             <button id="aisk-btn-generate" class="button button-primary button-hero" type="button" <?php disabled(! $has_index); ?>>
-                <?php echo $has_metadata ? 'Continue Generation' : 'Start AI Generation'; ?>
+                <?php echo $has_metadata ? esc_html__('Continue Generation', 'ai-seo-keeper') : esc_html__('Start AI Generation', 'ai-seo-keeper'); ?>
             </button>
-            <button id="aisk-btn-s2-pause" class="button" type="button" style="display:none;">&#10074;&#10074; Pause</button>
-            <button id="aisk-btn-s2-stop" class="button" type="button" style="display:none;">&#9632; Stop</button>
+            <button id="aisk-btn-s2-pause" class="button" type="button" style="display:none;">&#10074;&#10074; <?php esc_html_e('Pause', 'ai-seo-keeper'); ?></button>
+            <button id="aisk-btn-s2-stop" class="button" type="button" style="display:none;">&#9632; <?php esc_html_e('Stop', 'ai-seo-keeper'); ?></button>
         </div>
         <div id="aisk-s2-progress" class="aisk-progress-wrap">
             <div class="aisk-progress-track">
@@ -78,7 +78,7 @@ defined('ABSPATH') || exit;
         </div>
         <div id="aisk-s2-log" class="aisk-log"></div>
         <div id="aisk-s2-done" class="aisk-done-banner success">
-            <strong>&#10003; Generation complete.</strong> <span id="aisk-s2-result"></span>
+            <strong>&#10003; <?php esc_html_e('Generation complete.', 'ai-seo-keeper'); ?></strong> <span id="aisk-s2-result"></span>
         </div>
         <div id="aisk-s2-paused" class="aisk-done-banner warning" style="display:none;">
             <strong>&#10074;&#10074; Paused.</strong> <span id="aisk-s2-paused-info"></span> Click <em>Resume</em> to continue.
@@ -93,10 +93,10 @@ defined('ABSPATH') || exit;
     <div id="aisk-step-3" class="aisk-step<?php echo (! $has_index || ! $has_metadata) ? ' locked' : ''; ?>">
         <div class="aisk-step-header">
             <span id="aisk-s3-badge" class="aisk-badge <?php echo ($has_index && $has_metadata) ? 'active' : 'pending'; ?>">3</span>
-            <h2 style="margin:0;">Full SEO Audit</h2>
+            <h2 style="margin:0;"><?php esc_html_e('Full SEO Audit', 'ai-seo-keeper'); ?></h2>
             <span id="aisk-s3-elapsed" class="aisk-elapsed"></span>
         </div>
-        <p>AI analyzes each page individually: missing alt tags, content issues, heading structure, and specific improvement suggestions.</p>
+        <p><?php esc_html_e('AI analyzes each page individually: missing alt tags, content issues, heading structure, and specific improvement suggestions.', 'ai-seo-keeper'); ?></p>
         <?php if ($audited_count > 0 && ! $step3_all_done) : ?>
             <p style="font-size:13px;color:#50575e;">&#128204; <?php echo (int) $audited_count; ?> of <?php echo (int) $total_pages; ?> pages already audited. Previously audited pages load from cache instantly.</p>
         <?php endif; ?>

@@ -53,4 +53,3 @@ $term_meta_keys = array(
 foreach ($term_meta_keys as $meta_key) {
     $wpdb->delete($wpdb->termmeta, array('meta_key' => $meta_key), array('%s'));
 }
-

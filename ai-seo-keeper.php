@@ -22,6 +22,10 @@ define('AI_SEO_KEEPER_URL', plugin_dir_url(__FILE__));
 require_once AI_SEO_KEEPER_PATH . 'includes/autoload.php';
 require_once AI_SEO_KEEPER_PATH . 'includes/class-activator.php';
 
+add_action('init', static function () {
+    load_plugin_textdomain('ai-seo-keeper', false, dirname(plugin_basename(__FILE__)) . '/languages');
+});
+
 register_activation_hook(__FILE__, array('AI_SEO_Keeper\\Activator', 'activate'));
 register_deactivation_hook(__FILE__, 'flush_rewrite_rules');
 

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * PHPUnit bootstrap for AI SEO Keeper unit tests.
  *

@@ -55,7 +55,7 @@ if ($custom_model_enabled && '' !== trim($custom_model_id)) {
 $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_temperature'] : 0.3;
 ?>
 <div class="wrap">
-    <h1>AI SEO Keeper Settings</h1>
+    <h1><?php esc_html_e('AI SEO Keeper Settings', 'ai-seo-keeper'); ?></h1>
     <?php if ('' !== $settings_message) : ?>
         <div class="notice <?php echo 'success' === $settings_status ? 'notice-success' : 'notice-error'; ?> is-dismissible">
             <p><?php echo esc_html($settings_message); ?></p>
@@ -70,13 +70,13 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
             <!-- Section 1: AI API Settings -->
             <div class="ai-seo-accordion-section is-open">
                 <div class="ai-seo-accordion-header">
-                    <h2>AI API Settings</h2>
+                    <h2><?php esc_html_e('AI API Settings', 'ai-seo-keeper'); ?></h2>
                     <span class="dashicons dashicons-arrow-down-alt2"></span>
                 </div>
                 <div class="ai-seo-accordion-body">
                     <table class="form-table" role="presentation">
                         <tr>
-                            <th scope="row"><label for="ai-seo-provider">AI provider</label></th>
+                            <th scope="row"><label for="ai-seo-provider"><?php esc_html_e('AI provider', 'ai-seo-keeper'); ?></label></th>
                             <td>
                                 <select id="ai-seo-provider" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[provider]">
                                     <?php foreach ($supported_providers as $provider_key) : ?>
@@ -86,7 +86,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="ai-seo-model">Model</label></th>
+                            <th scope="row"><label for="ai-seo-model"><?php esc_html_e('Model', 'ai-seo-keeper'); ?></label></th>
                             <td>
                                 <select
                                     id="ai-seo-model"
@@ -125,11 +125,11 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="ai-seo-api-key">API key</label></th>
+                            <th scope="row"><label for="ai-seo-api-key"><?php esc_html_e('API key', 'ai-seo-keeper'); ?></label></th>
                             <td><input id="ai-seo-api-key" class="regular-text" type="password" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[api_key]" value="<?php echo esc_attr($options['api_key']); ?>" autocomplete="off" /></td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="ai-seo-temperature">Temperature</label></th>
+                            <th scope="row"><label for="ai-seo-temperature"><?php esc_html_e('Temperature', 'ai-seo-keeper'); ?></label></th>
                             <td>
                                 <input
                                     id="ai-seo-temperature"
@@ -149,14 +149,14 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="ai-seo-system-prompt">AI instructions</label></th>
+                            <th scope="row"><label for="ai-seo-system-prompt"><?php esc_html_e('AI instructions', 'ai-seo-keeper'); ?></label></th>
                             <td>
                                 <textarea id="ai-seo-system-prompt" class="large-text" rows="5" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[system_prompt]"><?php echo esc_textarea($options['system_prompt']); ?></textarea>
                                 <p class="description">Global instructions applied to page generation, page chat, and site audit requests.</p>
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row">Model availability test</th>
+                            <th scope="row"><?php esc_html_e('Model availability test', 'ai-seo-keeper'); ?></th>
                             <td>
                                 <button
                                     type="button"
@@ -165,7 +165,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                                     data-ajax-url="<?php echo esc_url(admin_url('admin-ajax.php')); ?>"
                                     data-action="ai_seo_keeper_test_model"
                                     data-nonce="<?php echo esc_attr(wp_create_nonce('ai_seo_keeper_settings_test_model')); ?>">
-                                    Test selected model
+                                    <?php esc_html_e('Test selected model', 'ai-seo-keeper'); ?>
                                 </button>
                                 <p class="description" style="margin-top:8px;">
                                     Checks whether the selected provider/model is accessible with the current API key and can return a response.
@@ -180,7 +180,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
             <!-- Section 2: Settings -->
             <div class="ai-seo-accordion-section">
                 <div class="ai-seo-accordion-header">
-                    <h2>Settings</h2>
+                    <h2><?php esc_html_e('Settings', 'ai-seo-keeper'); ?></h2>
                     <span class="dashicons dashicons-arrow-down-alt2"></span>
                 </div>
                 <div class="ai-seo-accordion-body">
@@ -371,7 +371,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
             <!-- Section 3: Tracking and Social -->
             <div class="ai-seo-accordion-section">
                 <div class="ai-seo-accordion-header">
-                    <h2>Tracking and Social</h2>
+                    <h2><?php esc_html_e('Tracking and Social', 'ai-seo-keeper'); ?></h2>
                     <span class="dashicons dashicons-arrow-down-alt2"></span>
                 </div>
                 <div class="ai-seo-accordion-body">
@@ -414,7 +414,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
             <!-- Section 4: Local SEO / Business Schema -->
             <div class="ai-seo-accordion-section">
                 <div class="ai-seo-accordion-header">
-                    <h2>Local SEO / Business Schema</h2>
+                    <h2><?php esc_html_e('Local SEO / Business Schema', 'ai-seo-keeper'); ?></h2>
                     <span class="dashicons dashicons-arrow-down-alt2"></span>
                 </div>
                 <div class="ai-seo-accordion-body">
@@ -533,7 +533,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
             <!-- Section 5: RSS Feed Optimization -->
             <div class="ai-seo-accordion-section">
                 <div class="ai-seo-accordion-header">
-                    <h2>RSS Feed Optimization</h2>
+                    <h2><?php esc_html_e('RSS Feed Optimization', 'ai-seo-keeper'); ?></h2>
                     <span class="dashicons dashicons-arrow-down-alt2"></span>
                 </div>
                 <div class="ai-seo-accordion-body">
@@ -570,7 +570,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
             <!-- Section 6: Crawl Budget Optimization -->
             <div class="ai-seo-accordion-section">
                 <div class="ai-seo-accordion-header">
-                    <h2>Crawl Budget Optimization</h2>
+                    <h2><?php esc_html_e('Crawl Budget Optimization', 'ai-seo-keeper'); ?></h2>
                     <span class="dashicons dashicons-arrow-down-alt2"></span>
                 </div>
                 <div class="ai-seo-accordion-body">
@@ -606,17 +606,17 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
         </div><!-- .ai-seo-accordion -->
 
         <div style="max-width:960px;margin-top:20px;">
-            <?php submit_button('Save settings'); ?>
+            <?php submit_button(__('Save settings', 'ai-seo-keeper')); ?>
         </div>
     </form>
 
     <div class="ai-seo-box">
-        <h2>Yoast migration</h2>
+        <h2><?php esc_html_e('Yoast migration', 'ai-seo-keeper'); ?></h2>
         <p style="margin:0 0 12px;">Copy existing Yoast per-page metadata into AI SEO Keeper without overwriting fields already filled here.</p>
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <?php wp_nonce_field('ai_seo_keeper_import_yoast_metadata'); ?>
             <input type="hidden" name="action" value="<?php echo esc_attr($yoast_import_action); ?>" />
-            <button type="submit" class="button button-secondary">Import Yoast metadata</button>
+            <button type="submit" class="button button-secondary"><?php esc_html_e('Import Yoast metadata', 'ai-seo-keeper'); ?></button>
         </form>
         <p class="description" style="margin:12px 0 0;">Imports focus keyphrase, SEO title, meta description, social fields, canonical URL, and noindex/nofollow. Existing AI SEO Keeper values are preserved.</p>
     </div>

@@ -44,7 +44,7 @@ class Admin_Ajax
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
 
         if (! $post_id) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
         }
 
         check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
@@ -52,11 +52,11 @@ class Admin_Ajax
         $post_type = get_post_type($post_id);
 
         if (! $post_type || ! $this->admin->is_supported_post_type($post_type)) {
-            wp_send_json_error(array('message' => 'Unsupported content type.'), 400);
+            wp_send_json_error(array('message' => __('Unsupported content type.', 'ai-seo-keeper')), 400);
         }
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
+            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-keeper')), 403);
         }
 
         $saved_meta = $this->admin->persist_editor_meta($post_id, $_POST);
@@ -78,7 +78,7 @@ class Admin_Ajax
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
 
         if (! $post_id) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
         }
 
         check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
@@ -86,11 +86,11 @@ class Admin_Ajax
         $post_type = get_post_type($post_id);
 
         if (! $post_type || ! $this->admin->is_supported_post_type($post_type)) {
-            wp_send_json_error(array('message' => 'Unsupported content type.'), 400);
+            wp_send_json_error(array('message' => __('Unsupported content type.', 'ai-seo-keeper')), 400);
         }
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
+            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-keeper')), 403);
         }
 
         $field_overrides = array(
@@ -175,7 +175,7 @@ class Admin_Ajax
         $message_id = isset($_POST['message_id']) ? (int) $_POST['message_id'] : 0;
 
         if (! $post_id || ! $message_id) {
-            wp_send_json_error(array('message' => 'Missing suggestion approval details.'), 400);
+            wp_send_json_error(array('message' => __('Missing suggestion approval details.', 'ai-seo-keeper')), 400);
         }
 
         check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
@@ -183,11 +183,11 @@ class Admin_Ajax
         $post_type = get_post_type($post_id);
 
         if (! $post_type || ! $this->admin->is_supported_post_type($post_type)) {
-            wp_send_json_error(array('message' => 'Unsupported content type.'), 400);
+            wp_send_json_error(array('message' => __('Unsupported content type.', 'ai-seo-keeper')), 400);
         }
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
+            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-keeper')), 403);
         }
 
         try {
@@ -235,7 +235,7 @@ class Admin_Ajax
         $message = isset($_POST['message']) ? sanitize_textarea_field(wp_unslash($_POST['message'])) : '';
 
         if (! $post_id) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
         }
 
         check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
@@ -243,21 +243,21 @@ class Admin_Ajax
         $post_type = get_post_type($post_id);
 
         if (! $post_type || ! $this->admin->is_supported_post_type($post_type)) {
-            wp_send_json_error(array('message' => 'Unsupported content type.'), 400);
+            wp_send_json_error(array('message' => __('Unsupported content type.', 'ai-seo-keeper')), 400);
         }
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
+            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-keeper')), 403);
         }
 
         if ('' === trim($message)) {
-            wp_send_json_error(array('message' => 'Enter a question before asking the AI assistant.'), 400);
+            wp_send_json_error(array('message' => __('Enter a question before asking the AI assistant.', 'ai-seo-keeper')), 400);
         }
 
         $options = $this->settings->get();
 
         if (empty($options['editor_chat_enabled'])) {
-            wp_send_json_error(array('message' => 'The AI assistant is disabled in settings.'), 400);
+            wp_send_json_error(array('message' => __('The AI assistant is disabled in settings.', 'ai-seo-keeper')), 400);
         }
 
         try {
@@ -304,7 +304,7 @@ class Admin_Ajax
         $chat_messages = $this->history_store->get_recent_chat_messages($post_id, 12);
 
         $response_data = array(
-            'message' => 'AI assistant replied.',
+            'message' => __('AI assistant replied.', 'ai-seo-keeper'),
             'notes'   => $reply['notes'],
             'chatHtml' => $this->admin->render_chat_history_markup($chat_messages),
         );
@@ -327,7 +327,7 @@ class Admin_Ajax
         check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
 
         if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => 'Permission denied.'), 403);
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-keeper')), 403);
         }
 
         $count = $this->content_indexer->sync();
@@ -348,19 +348,19 @@ class Admin_Ajax
         check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
 
         if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => 'Permission denied.'), 403);
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-keeper')), 403);
         }
 
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
 
         if ($post_id <= 0) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
         }
 
         $post = get_post($post_id);
 
         if (! $post instanceof \WP_Post) {
-            wp_send_json_error(array('message' => 'Page not found.'), 404);
+            wp_send_json_error(array('message' => __('Page not found.', 'ai-seo-keeper')), 404);
         }
 
         $existing_title     = trim((string) get_post_meta($post_id, AdminBase::META_TITLE_KEY, true));
@@ -452,23 +452,23 @@ class Admin_Ajax
             ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? '')), 'ai_seo_keeper_save_editor_meta')
             && ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? '')), 'ai_seo_keeper_setup_wizard')
         ) {
-            wp_send_json_error(array('message' => 'Security check failed.'), 403);
+            wp_send_json_error(array('message' => __('Security check failed.', 'ai-seo-keeper')), 403);
         }
 
         if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => 'Permission denied.'), 403);
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-keeper')), 403);
         }
 
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
 
         if ($post_id <= 0) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
         }
 
         $post = get_post($post_id);
 
         if (! $post instanceof \WP_Post) {
-            wp_send_json_error(array('message' => 'Page not found.'), 404);
+            wp_send_json_error(array('message' => __('Page not found.', 'ai-seo-keeper')), 404);
         }
 
         // Return cached audit if already completed.
@@ -533,13 +533,13 @@ class Admin_Ajax
         check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
 
         if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => 'Permission denied.'), 403);
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-keeper')), 403);
         }
 
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
 
         if ($post_id <= 0) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
         }
 
         $current   = get_post_meta($post_id, '_ai_seo_keeper_audit_skip', true);
@@ -562,7 +562,7 @@ class Admin_Ajax
         check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
 
         if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => 'Permission denied.'), 403);
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-keeper')), 403);
         }
 
         $patterns = isset($_POST['patterns']) ? sanitize_textarea_field(wp_unslash($_POST['patterns'])) : '';
@@ -589,17 +589,17 @@ class Admin_Ajax
         $instruction = isset($_POST['instruction']) ? sanitize_textarea_field(wp_unslash($_POST['instruction'])) : '';
 
         if (! $post_id) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
         }
 
         check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
+            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-keeper')), 403);
         }
 
         if ('' === trim($instruction)) {
-            wp_send_json_error(array('message' => 'Provide an instruction for the AI content editor.'), 400);
+            wp_send_json_error(array('message' => __('Provide an instruction for the AI content editor.', 'ai-seo-keeper')), 400);
         }
 
         try {
@@ -625,18 +625,18 @@ class Admin_Ajax
         $summary      = isset($_POST['summary']) ? sanitize_textarea_field(wp_unslash($_POST['summary'])) : '';
 
         if (! $post_id) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
         }
 
         check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
+            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-keeper')), 403);
         }
 
         $changes = json_decode($changes_json, true);
         if (! is_array($changes) || empty($changes)) {
-            wp_send_json_error(array('message' => 'No changes to apply.'), 400);
+            wp_send_json_error(array('message' => __('No changes to apply.', 'ai-seo-keeper')), 400);
         }
 
         Content_Writer::store_pending_changes($post_id, $changes, $summary);
@@ -674,13 +674,13 @@ class Admin_Ajax
         $value   = isset($_POST['value']) ? wp_unslash($_POST['value']) : '';
 
         if (! $post_id) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
         }
 
         check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
+            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-keeper')), 403);
         }
 
         $allowed_fields = array(
@@ -689,7 +689,7 @@ class Admin_Ajax
         );
 
         if (! isset($allowed_fields[$field])) {
-            wp_send_json_error(array('message' => 'Invalid field: ' . $field), 400);
+            wp_send_json_error(array('message' => __('Invalid field: ', 'ai-seo-keeper') . $field), 400);
         }
 
         $meta_key  = $allowed_fields[$field];
@@ -708,22 +708,22 @@ class Admin_Ajax
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
 
         if (! $post_id) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
         }
 
         check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'You are not allowed to edit this post.'), 403);
+            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-keeper')), 403);
         }
 
         $restored = Content_Writer::restore_backup($post_id);
 
         if (! $restored) {
-            wp_send_json_error(array('message' => 'No backup found for this page.'), 404);
+            wp_send_json_error(array('message' => __('No backup found for this page.', 'ai-seo-keeper')), 404);
         }
 
-        wp_send_json_success(array('message' => 'Content restored to the version before AI edits.'));
+        wp_send_json_success(array('message' => __('Content restored to the version before AI edits.', 'ai-seo-keeper')));
     }
 
     public function handle_clear_chat(): void
@@ -731,13 +731,13 @@ class Admin_Ajax
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
 
         if (! $post_id) {
-            wp_send_json_error(array('message' => 'Missing post id.'), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
         }
 
         check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'Permission denied.'), 403);
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-keeper')), 403);
         }
 
         $deleted = $this->history_store->clear_chat_messages($post_id);
@@ -754,7 +754,7 @@ class Admin_Ajax
         check_ajax_referer('ai_seo_keeper_settings_test_model', 'nonce');
 
         if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => 'You are not allowed to test AI model access.'), 403);
+            wp_send_json_error(array('message' => __('You are not allowed to test AI model access.', 'ai-seo-keeper')), 403);
         }
 
         $options            = $this->settings->get();
@@ -762,7 +762,7 @@ class Admin_Ajax
         $supported_providers = Settings::get_supported_providers();
 
         if (! in_array($provider, $supported_providers, true)) {
-            wp_send_json_error(array('message' => 'Unsupported AI provider selected.'), 400);
+            wp_send_json_error(array('message' => __('Unsupported AI provider selected.', 'ai-seo-keeper')), 400);
         }
 
         $requested_model = isset($_POST['model']) ? sanitize_text_field((string) wp_unslash($_POST['model'])) : '';
@@ -784,7 +784,7 @@ class Admin_Ajax
         $api_key        = '' !== trim($posted_api_key) ? $posted_api_key : (string) ($options['api_key'] ?? '');
 
         if ('' === trim($api_key)) {
-            wp_send_json_error(array('message' => 'Enter an API key before testing model availability.'), 400);
+            wp_send_json_error(array('message' => __('Enter an API key before testing model availability.', 'ai-seo-keeper')), 400);
         }
 
         try {
@@ -821,18 +821,18 @@ class Admin_Ajax
         $edit_id = isset($_POST['edit_id']) ? (int) $_POST['edit_id'] : 0;
 
         if (! $post_id || ! $edit_id) {
-            wp_send_json_error(array('message' => 'Missing parameters.'), 400);
+            wp_send_json_error(array('message' => __('Missing parameters.', 'ai-seo-keeper')), 400);
         }
 
         check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => 'Permission denied.'), 403);
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-keeper')), 403);
         }
 
         $this->history_store->delete_content_edit_plan($edit_id);
 
-        wp_send_json_success(array('message' => 'Plan removed from history.'));
+        wp_send_json_success(array('message' => __('Plan removed from history.', 'ai-seo-keeper')));
     }
 
     // ------------------------------------------------------------------
@@ -859,7 +859,7 @@ class Admin_Ajax
         update_post_meta($post_id, AdminBase::META_TITLE_KEY, $seo_title);
         update_post_meta($post_id, AdminBase::META_DESCRIPTION_KEY, $seo_description);
 
-        wp_send_json_success(array('message' => 'Saved.'));
+        wp_send_json_success(array('message' => __('Saved.', 'ai-seo-keeper')));
     }
 
     public function handle_save_image_alt(): void
@@ -879,6 +879,6 @@ class Admin_Ajax
         $alt_text = isset($_POST['alt_text']) ? sanitize_text_field(wp_unslash($_POST['alt_text'])) : '';
         update_post_meta($attachment_id, '_wp_attachment_image_alt', $alt_text);
 
-        wp_send_json_success(array('message' => 'Alt text saved.'));
+        wp_send_json_success(array('message' => __('Alt text saved.', 'ai-seo-keeper')));
     }
 }

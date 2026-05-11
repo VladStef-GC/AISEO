@@ -36,33 +36,33 @@ class Admin_Taxonomy
 ?>
         <tr class="form-field">
             <th scope="row" colspan="2">
-                <h2 style="margin:0;">AI SEO Keeper</h2>
+                <h2 style="margin:0;"><?php esc_html_e('AI SEO Keeper', 'ai-seo-keeper'); ?></h2>
             </th>
         </tr>
         <tr class="form-field">
-            <th scope="row"><label for="ai-seo-keeper-term-seo-title">SEO Title</label></th>
+            <th scope="row"><label for="ai-seo-keeper-term-seo-title"><?php esc_html_e('SEO Title', 'ai-seo-keeper'); ?></label></th>
             <td>
                 <input id="ai-seo-keeper-term-seo-title" type="text" name="ai_seo_keeper_seo_title" value="<?php echo esc_attr($seo_title); ?>" class="large-text" />
-                <p class="description">Override the default title tag. Leave blank to use the WordPress default.</p>
+                <p class="description"><?php esc_html_e('Override the default title tag. Leave blank to use the WordPress default.', 'ai-seo-keeper'); ?></p>
             </td>
         </tr>
         <tr class="form-field">
-            <th scope="row"><label for="ai-seo-keeper-term-meta-desc">Meta description</label></th>
+            <th scope="row"><label for="ai-seo-keeper-term-meta-desc"><?php esc_html_e('Meta description', 'ai-seo-keeper'); ?></label></th>
             <td>
                 <textarea id="ai-seo-keeper-term-meta-desc" name="ai_seo_keeper_meta_description" rows="3" class="large-text"><?php echo esc_textarea($meta_description); ?></textarea>
             </td>
         </tr>
         <tr class="form-field">
-            <th scope="row"><label for="ai-seo-keeper-term-canonical">Canonical URL</label></th>
+            <th scope="row"><label for="ai-seo-keeper-term-canonical"><?php esc_html_e('Canonical URL', 'ai-seo-keeper'); ?></label></th>
             <td>
                 <input id="ai-seo-keeper-term-canonical" type="url" name="ai_seo_keeper_canonical" value="<?php echo esc_attr($canonical); ?>" class="large-text" placeholder="https://" />
-                <p class="description">Leave blank for the default canonical URL.</p>
+                <p class="description"><?php esc_html_e('Leave blank for the default canonical URL.', 'ai-seo-keeper'); ?></p>
             </td>
         </tr>
         <tr class="form-field">
-            <th scope="row">Noindex</th>
+            <th scope="row"><?php esc_html_e('Noindex', 'ai-seo-keeper'); ?></th>
             <td>
-                <label><input type="checkbox" name="ai_seo_keeper_noindex" value="1" <?php checked($noindex, '1'); ?> /> Prevent search engines from indexing this taxonomy archive</label>
+                <label><input type="checkbox" name="ai_seo_keeper_noindex" value="1" <?php checked($noindex, '1'); ?> /> <?php esc_html_e('Prevent search engines from indexing this taxonomy archive', 'ai-seo-keeper'); ?></label>
             </td>
         </tr>
 <?php

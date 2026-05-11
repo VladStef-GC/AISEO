@@ -140,82 +140,82 @@ class SEO_Analysis
 
         $checks = array(
             array(
-                'label' => 'SEO title length',
+                'label' => __('SEO title length', 'ai-seo-keeper'),
                 'passed' => $title_length >= self::TITLE_MIN_LENGTH && $title_length <= self::TITLE_MAX_LENGTH,
                 'message' => '' === $seo_title
-                    ? 'Add an SEO title.'
-                    : sprintf('Current length: %d characters. Target roughly %d to %d, with a maximum of %d.', $title_length, self::TITLE_MIN_LENGTH, self::TITLE_MAX_LENGTH, self::TITLE_MAX_LENGTH),
+                    ? __('Add an SEO title.', 'ai-seo-keeper')
+                    : sprintf(__('Current length: %d characters. Target roughly %d to %d, with a maximum of %d.', 'ai-seo-keeper'), $title_length, self::TITLE_MIN_LENGTH, self::TITLE_MAX_LENGTH, self::TITLE_MAX_LENGTH),
             ),
             array(
-                'label' => 'Meta description length',
+                'label' => __('Meta description length', 'ai-seo-keeper'),
                 'passed' => $description_length >= self::DESCRIPTION_MIN_LENGTH && $description_length <= self::DESCRIPTION_MAX_LENGTH,
                 'message' => '' === $seo_description
-                    ? 'Add a meta description.'
-                    : sprintf('Current length: %d characters. Target roughly %d to %d, with a maximum of %d.', $description_length, self::DESCRIPTION_MIN_LENGTH, self::DESCRIPTION_MAX_LENGTH, self::DESCRIPTION_MAX_LENGTH),
+                    ? __('Add a meta description.', 'ai-seo-keeper')
+                    : sprintf(__('Current length: %d characters. Target roughly %d to %d, with a maximum of %d.', 'ai-seo-keeper'), $description_length, self::DESCRIPTION_MIN_LENGTH, self::DESCRIPTION_MAX_LENGTH, self::DESCRIPTION_MAX_LENGTH),
             ),
             array(
-                'label' => 'Content length',
+                'label' => __('Content length', 'ai-seo-keeper'),
                 'passed' => $content_word_count >= 250,
                 'message' => 0 === $content_word_count
-                    ? 'Add meaningful page content before relying on metadata alone.'
-                    : sprintf('Current body length: %d words. For most pages, aim for at least 250 words of useful content.', $content_word_count),
+                    ? __('Add meaningful page content before relying on metadata alone.', 'ai-seo-keeper')
+                    : sprintf(__('Current body length: %d words. For most pages, aim for at least 250 words of useful content.', 'ai-seo-keeper'), $content_word_count),
             ),
             array(
-                'label' => 'Subheadings in content',
+                'label' => __('Subheadings in content', 'ai-seo-keeper'),
                 'passed' => $subheading_count >= 1,
                 'message' => $subheading_count >= 1
-                    ? sprintf('Found %d subheading%s in the page body.', $subheading_count, 1 === $subheading_count ? '' : 's')
-                    : 'Add at least one H2 or H3 subheading to make the page easier to scan.',
+                    ? sprintf(__('Found %d subheading%s in the page body.', 'ai-seo-keeper'), $subheading_count, 1 === $subheading_count ? '' : 's')
+                    : __('Add at least one H2 or H3 subheading to make the page easier to scan.', 'ai-seo-keeper'),
             ),
             array(
-                'label' => 'List structure in content',
+                'label' => __('List structure in content', 'ai-seo-keeper'),
                 'passed' => $list_count >= 1 || $content_word_count < 220,
                 'message' => $list_count >= 1
-                    ? sprintf('Found %d list%s in the page body for scannable structure.', $list_count, 1 === $list_count ? '' : 's')
+                    ? sprintf(__('Found %d list%s in the page body for scannable structure.', 'ai-seo-keeper'), $list_count, 1 === $list_count ? '' : 's')
                     : ($content_word_count < 220
-                        ? 'This page is short enough that list structure is optional.'
-                        : 'Consider adding at least one bullet or numbered list for steps, features, or grouped points.'),
+                        ? __('This page is short enough that list structure is optional.', 'ai-seo-keeper')
+                        : __('Consider adding at least one bullet or numbered list for steps, features, or grouped points.', 'ai-seo-keeper')),
             ),
             array(
-                'label' => 'Question-style subheadings',
+                'label' => __('Question-style subheadings', 'ai-seo-keeper'),
                 'passed' => $question_heading_count >= 1 || $subheading_count < 2 || $content_word_count < 250,
                 'message' => $question_heading_count >= 2
-                    ? sprintf('Found %d question-style heading%s. This content may qualify for live FAQ schema output when each question is followed by a direct answer.', $question_heading_count, 1 === $question_heading_count ? '' : 's')
+                    ? sprintf(__('Found %d question-style heading%s. This content may qualify for live FAQ schema output when each question is followed by a direct answer.', 'ai-seo-keeper'), $question_heading_count, 1 === $question_heading_count ? '' : 's')
                     : ($question_heading_count === 1
-                        ? 'Found one question-style heading that can help match informational search intent.'
+                        ? __('Found one question-style heading that can help match informational search intent.', 'ai-seo-keeper')
                         : (($subheading_count < 2 || $content_word_count < 250)
-                            ? 'Question-style headings are optional on shorter or simpler pages.'
-                            : 'Consider adding a question-style subheading when the page targets informational search intent or FAQ-style queries.')),
+                            ? __('Question-style headings are optional on shorter or simpler pages.', 'ai-seo-keeper')
+                            : __('Consider adding a question-style subheading when the page targets informational search intent or FAQ-style queries.', 'ai-seo-keeper'))),
             ),
             array(
-                'label' => 'Internal links in content',
+                'label' => __('Internal links in content', 'ai-seo-keeper'),
                 'passed' => $internal_link_count >= 1,
                 'message' => $internal_link_count >= 1
-                    ? sprintf('Found %d internal link%s that connect this page to the rest of the site.', $internal_link_count, 1 === $internal_link_count ? '' : 's')
-                    : 'Add at least one internal link to strengthen crawl paths and user navigation.',
+                    ? sprintf(__('Found %d internal link%s that connect this page to the rest of the site.', 'ai-seo-keeper'), $internal_link_count, 1 === $internal_link_count ? '' : 's')
+                    : __('Add at least one internal link to strengthen crawl paths and user navigation.', 'ai-seo-keeper'),
             ),
             array(
-                'label' => 'Outbound links in content',
+                'label' => __('Outbound links in content', 'ai-seo-keeper'),
                 'passed' => $external_link_count >= 1,
                 'message' => $external_link_count >= 1
-                    ? sprintf('Found %d outbound link%s that point to external sources or references.', $external_link_count, 1 === $external_link_count ? '' : 's')
-                    : 'Add an outbound link when the page benefits from citing a credible outside source or reference.',
+                    ? sprintf(__('Found %d outbound link%s that point to external sources or references.', 'ai-seo-keeper'), $external_link_count, 1 === $external_link_count ? '' : 's')
+                    : __('Add an outbound link when the page benefits from citing a credible outside source or reference.', 'ai-seo-keeper'),
             ),
             array(
-                'label' => 'Descriptive anchor text',
+                'label' => __('Descriptive anchor text', 'ai-seo-keeper'),
                 'passed' => 0 === $link_count || 0 === $generic_anchor_count,
                 'message' => 0 === $link_count
-                    ? 'No content links were found yet, so anchor-text quality cannot be assessed.'
+                    ? __('No content links were found yet, so anchor-text quality cannot be assessed.', 'ai-seo-keeper')
                     : (0 === $generic_anchor_count
-                        ? sprintf('Checked %d link%s and none use obvious generic anchor text.', $link_count, 1 === $link_count ? '' : 's')
-                        : sprintf('Generic anchor text detected on %d of %d link%s. Replace phrases like "click here" with destination-specific wording.', $generic_anchor_count, $link_count, 1 === $link_count ? '' : 's')),
+                        ? sprintf(__('Checked %d link%s and none use obvious generic anchor text.', 'ai-seo-keeper'), $link_count, 1 === $link_count ? '' : 's')
+                        : sprintf(__('Generic anchor text detected on %d of %d link%s. Replace phrases like "click here" with destination-specific wording.', 'ai-seo-keeper'), $generic_anchor_count, $link_count, 1 === $link_count ? '' : 's')),
             ),
             array(
-                'label' => 'Image alt coverage',
+                'label' => __('Image alt coverage', 'ai-seo-keeper'),
                 'passed' => 0 === count($image_matches[0]) || $images_with_alt === count($image_matches[0]),
                 'message' => 0 === count($image_matches[0])
-                    ? 'No inline images found in the page body, so alt text is not required here.'
-                    : sprintf('Images with alt text: %d of %d.', $images_with_alt, count($image_matches[0])),
+                    ? __('No inline images found in the page body, so alt text is not required here.', 'ai-seo-keeper')
+                    : sprintf(__('Images with alt text: %d of %d.', 'ai-seo-keeper'), $images_with_alt, count($image_matches[0])),
             ),
         );
 
@@ -224,61 +224,61 @@ class SEO_Analysis
         $recommended_repeated_starts_limit = max(1, (int) ceil(max(1, $sentence_count - 1) * 0.15));
         $readability_checks = array(
             array(
-                'label' => 'Sentence length balance',
+                'label' => __('Sentence length balance', 'ai-seo-keeper'),
                 'passed' => $sentence_count > 0 && $average_sentence_words <= 20 && $long_sentence_count <= max(1, (int) ceil($sentence_count * 0.25)),
                 'message' => 0 === $sentence_count
-                    ? 'Add body copy before readability can be assessed.'
-                    : sprintf('Average sentence length: %s words. Long sentences over 24 words: %d of %d.', number_format_i18n($average_sentence_words, 1), $long_sentence_count, $sentence_count),
+                    ? __('Add body copy before readability can be assessed.', 'ai-seo-keeper')
+                    : sprintf(__('Average sentence length: %s words. Long sentences over 24 words: %d of %d.', 'ai-seo-keeper'), number_format_i18n($average_sentence_words, 1), $long_sentence_count, $sentence_count),
             ),
             array(
-                'label' => 'Paragraph length balance',
+                'label' => __('Paragraph length balance', 'ai-seo-keeper'),
                 'passed' => $paragraph_count > 0 && $long_paragraph_count <= max(1, (int) ceil($paragraph_count * 0.34)),
                 'message' => 0 === $paragraph_count
-                    ? 'Add structured paragraphs to assess reading flow.'
-                    : sprintf('Detected %d paragraph%s. Long paragraphs over 120 words: %d.', $paragraph_count, 1 === $paragraph_count ? '' : 's', $long_paragraph_count),
+                    ? __('Add structured paragraphs to assess reading flow.', 'ai-seo-keeper')
+                    : sprintf(__('Detected %d paragraph%s. Long paragraphs over 120 words: %d.', 'ai-seo-keeper'), $paragraph_count, 1 === $paragraph_count ? '' : 's', $long_paragraph_count),
             ),
             array(
-                'label' => 'Transition word usage',
+                'label' => __('Transition word usage', 'ai-seo-keeper'),
                 'passed' => $sentence_count < 2 || $transition_word_count >= $recommended_transition_count,
-                'message' => sprintf('Detected %d transition word%s. Aim for at least %d to improve flow between ideas.', $transition_word_count, 1 === $transition_word_count ? '' : 's', $recommended_transition_count),
+                'message' => sprintf(__('Detected %d transition word%s. Aim for at least %d to improve flow between ideas.', 'ai-seo-keeper'), $transition_word_count, 1 === $transition_word_count ? '' : 's', $recommended_transition_count),
             ),
             array(
-                'label' => 'Passive voice estimate',
+                'label' => __('Passive voice estimate', 'ai-seo-keeper'),
                 'passed' => $sentence_count < 2 || $passive_voice_sentence_count <= $recommended_passive_voice_limit,
                 'message' => 0 === $sentence_count
-                    ? 'Add body copy before passive voice can be estimated.'
-                    : sprintf('Estimated passive-voice sentences: %d of %d. This is a heuristic, not a full grammar parser.', $passive_voice_sentence_count, $sentence_count),
+                    ? __('Add body copy before passive voice can be estimated.', 'ai-seo-keeper')
+                    : sprintf(__('Estimated passive-voice sentences: %d of %d. This is a heuristic, not a full grammar parser.', 'ai-seo-keeper'), $passive_voice_sentence_count, $sentence_count),
             ),
             array(
-                'label' => 'Repeated sentence starts',
+                'label' => __('Repeated sentence starts', 'ai-seo-keeper'),
                 'passed' => $sentence_count < 3 || $repeated_sentence_start_count <= $recommended_repeated_starts_limit,
                 'message' => 0 === $sentence_count
-                    ? 'Add body copy before sentence-start variety can be assessed.'
-                    : sprintf('Consecutive repeated sentence openings detected: %d. Varying openings keeps the copy from sounding mechanical.', $repeated_sentence_start_count),
+                    ? __('Add body copy before sentence-start variety can be assessed.', 'ai-seo-keeper')
+                    : sprintf(__('Consecutive repeated sentence openings detected: %d. Varying openings keeps the copy from sounding mechanical.', 'ai-seo-keeper'), $repeated_sentence_start_count),
             ),
         );
 
         if ('' !== $focus_keyphrase) {
             $normalized_keyphrase = self::normalize_text_for_match($focus_keyphrase);
             $checks[] = array(
-                'label' => 'Focus keyphrase in SEO title',
+                'label' => __('Focus keyphrase in SEO title', 'ai-seo-keeper'),
                 'passed' => '' !== $normalized_keyphrase && false !== strpos(self::normalize_text_for_match($seo_title), $normalized_keyphrase),
-                'message' => 'Use the focus keyphrase naturally in the SEO title.',
+                'message' => __('Use the focus keyphrase naturally in the SEO title.', 'ai-seo-keeper'),
             );
             $checks[] = array(
-                'label' => 'Focus keyphrase in meta description',
+                'label' => __('Focus keyphrase in meta description', 'ai-seo-keeper'),
                 'passed' => '' !== $normalized_keyphrase && false !== strpos(self::normalize_text_for_match($seo_description), $normalized_keyphrase),
-                'message' => 'Use the focus keyphrase naturally in the meta description.',
+                'message' => __('Use the focus keyphrase naturally in the meta description.', 'ai-seo-keeper'),
             );
             $checks[] = array(
-                'label' => 'Focus keyphrase in URL',
+                'label' => __('Focus keyphrase in URL', 'ai-seo-keeper'),
                 'passed' => '' !== $normalized_keyphrase && false !== strpos(self::normalize_text_for_match((string) get_permalink($post)), $normalized_keyphrase),
-                'message' => 'Short URLs that reflect the target phrase are easier for users and crawlers.',
+                'message' => __('Short URLs that reflect the target phrase are easier for users and crawlers.', 'ai-seo-keeper'),
             );
             $checks[] = array(
-                'label' => 'Focus keyphrase in page content',
+                'label' => __('Focus keyphrase in page content', 'ai-seo-keeper'),
                 'passed' => '' !== $normalized_keyphrase && false !== strpos(self::normalize_text_for_match($content), $normalized_keyphrase),
-                'message' => 'The real page content should reinforce the target phrase, not just the metadata.',
+                'message' => __('The real page content should reinforce the target phrase, not just the metadata.', 'ai-seo-keeper'),
             );
 
             // Keyphrase density.
@@ -290,10 +290,10 @@ class SEO_Analysis
                 $density_ok = $density >= 0.3 && $density <= 3.0;
 
                 $checks[] = array(
-                    'label' => 'Focus keyphrase density',
+                    'label' => __('Focus keyphrase density', 'ai-seo-keeper'),
                     'passed' => $density_ok,
                     'message' => sprintf(
-                        'Found %d occurrence%s (%.1f%% density). Aim for 0.5%%–2.5%% for a natural feel — too low means weak signal, too high risks keyword stuffing.',
+                        __('Found %d occurrence%s (%.1f%% density). Aim for 0.5%%–2.5%% for a natural feel — too low means weak signal, too high risks keyword stuffing.', 'ai-seo-keeper'),
                         $keyphrase_occurrences,
                         1 === $keyphrase_occurrences ? '' : 's',
                         $density_rounded
@@ -311,11 +311,11 @@ class SEO_Analysis
                 }
                 $kw_in_intro = '' !== $first_paragraph && false !== strpos($first_paragraph, $normalized_keyphrase);
                 $checks[] = array(
-                    'label' => 'Focus keyphrase in introduction',
+                    'label' => __('Focus keyphrase in introduction', 'ai-seo-keeper'),
                     'passed' => $kw_in_intro,
                     'message' => $kw_in_intro
-                        ? 'The keyphrase appears in the opening paragraph — good for early relevance signal.'
-                        : 'Try to include the focus keyphrase in the first paragraph so search engines see it early.',
+                        ? __('The keyphrase appears in the opening paragraph — good for early relevance signal.', 'ai-seo-keeper')
+                        : __('Try to include the focus keyphrase in the first paragraph so search engines see it early.', 'ai-seo-keeper'),
                 );
             }
 
@@ -329,11 +329,11 @@ class SEO_Analysis
                     }
                 }
                 $checks[] = array(
-                    'label' => 'Focus keyphrase in subheadings',
+                    'label' => __('Focus keyphrase in subheadings', 'ai-seo-keeper'),
                     'passed' => $subheading_kw_count >= 1,
                     'message' => $subheading_kw_count >= 1
-                        ? sprintf('The keyphrase appears in %d of %d subheading%s.', $subheading_kw_count, $subheading_count, $subheading_count > 1 ? 's' : '')
-                        : 'Consider adding the keyphrase to at least one H2 or H3 subheading to reinforce topical relevance.',
+                        ? sprintf(__('The keyphrase appears in %d of %d subheading%s.', 'ai-seo-keeper'), $subheading_kw_count, $subheading_count, $subheading_count > 1 ? 's' : '')
+                        : __('Consider adding the keyphrase to at least one H2 or H3 subheading to reinforce topical relevance.', 'ai-seo-keeper'),
                 );
             }
 
@@ -348,28 +348,28 @@ class SEO_Analysis
                     }
                 }
                 $checks[] = array(
-                    'label' => 'Focus keyphrase in image alt tags',
+                    'label' => __('Focus keyphrase in image alt tags', 'ai-seo-keeper'),
                     'passed' => $img_alt_kw_count >= 1,
                     'message' => $img_alt_kw_count >= 1
-                        ? sprintf('The keyphrase appears in %d image alt tag%s.', $img_alt_kw_count, $img_alt_kw_count > 1 ? 's' : '')
-                        : 'Add the focus keyphrase to at least one image alt attribute — helps image search and reinforces page relevance.',
+                        ? sprintf(__('The keyphrase appears in %d image alt tag%s.', 'ai-seo-keeper'), $img_alt_kw_count, $img_alt_kw_count > 1 ? 's' : '')
+                        : __('Add the focus keyphrase to at least one image alt attribute — helps image search and reinforces page relevance.', 'ai-seo-keeper'),
                 );
             }
         }
 
         ob_start();
 ?>
-        <strong>Basic SEO checks</strong>
-        <p class="ai-seo-keeper-muted" style="margin:8px 0 12px;">Lightweight deterministic checks against the saved draft fields and the current page body.</p>
+        <strong><?php esc_html_e('Basic SEO checks', 'ai-seo-keeper'); ?></strong>
+        <p class="ai-seo-keeper-muted" style="margin:8px 0 12px;"><?php esc_html_e('Lightweight deterministic checks against the saved draft fields and the current page body.', 'ai-seo-keeper'); ?></p>
         <?php if ('' === $focus_keyphrase) : ?>
-            <p class="ai-seo-keeper-muted" style="margin:0 0 12px;">Add a focus keyphrase to unlock phrase-matching checks similar to Yoast's page analysis.</p>
+            <p class="ai-seo-keeper-muted" style="margin:0 0 12px;"><?php esc_html_e("Add a focus keyphrase to unlock phrase-matching checks similar to Yoast's page analysis.", 'ai-seo-keeper'); ?></p>
         <?php endif; ?>
         <div class="ai-seo-keeper-check-section">
-            <p class="ai-seo-keeper-check-section-title"><strong>SEO and structure</strong></p>
+            <p class="ai-seo-keeper-check-section-title"><strong><?php esc_html_e('SEO and structure', 'ai-seo-keeper'); ?></strong></p>
             <ul class="ai-seo-keeper-check-list">
                 <?php foreach ($checks as $check) : ?>
                     <li class="ai-seo-keeper-check-item">
-                        <span class="ai-seo-keeper-check-pill <?php echo $check['passed'] ? 'is-pass' : 'is-warning'; ?>"><?php echo $check['passed'] ? 'Pass' : 'Needs work'; ?></span>
+                        <span class="ai-seo-keeper-check-pill <?php echo $check['passed'] ? 'is-pass' : 'is-warning'; ?>"><?php echo $check['passed'] ? esc_html__('Pass', 'ai-seo-keeper') : esc_html__('Needs work', 'ai-seo-keeper'); ?></span>
                         <strong><?php echo esc_html($check['label']); ?></strong><br />
                         <span class="ai-seo-keeper-muted"><?php echo esc_html($check['message']); ?></span>
                     </li>
@@ -378,38 +378,38 @@ class SEO_Analysis
         </div>
 
         <div class="ai-seo-keeper-check-section">
-            <p class="ai-seo-keeper-check-section-title"><strong>Readability and flow</strong></p>
-            <p class="ai-seo-keeper-muted" style="margin:0 0 12px;">A first-pass reading-flow scan based on sentence length, paragraph size, and transition usage.</p>
+            <p class="ai-seo-keeper-check-section-title"><strong><?php esc_html_e('Readability and flow', 'ai-seo-keeper'); ?></strong></p>
+            <p class="ai-seo-keeper-muted" style="margin:0 0 12px;"><?php esc_html_e('A first-pass reading-flow scan based on sentence length, paragraph size, and transition usage.', 'ai-seo-keeper'); ?></p>
             <div class="ai-seo-keeper-metrics-grid">
                 <div class="ai-seo-keeper-metric-card">
-                    <span class="ai-seo-keeper-metric-label">Sentences</span>
+                    <span class="ai-seo-keeper-metric-label"><?php esc_html_e('Sentences', 'ai-seo-keeper'); ?></span>
                     <span class="ai-seo-keeper-metric-value"><?php echo esc_html((string) $sentence_count); ?></span>
                 </div>
                 <div class="ai-seo-keeper-metric-card">
-                    <span class="ai-seo-keeper-metric-label">Avg sentence</span>
+                    <span class="ai-seo-keeper-metric-label"><?php esc_html_e('Avg sentence', 'ai-seo-keeper'); ?></span>
                     <span class="ai-seo-keeper-metric-value"><?php echo esc_html((string) number_format_i18n($average_sentence_words, 1)); ?></span>
                 </div>
                 <div class="ai-seo-keeper-metric-card">
-                    <span class="ai-seo-keeper-metric-label">Paragraphs</span>
+                    <span class="ai-seo-keeper-metric-label"><?php esc_html_e('Paragraphs', 'ai-seo-keeper'); ?></span>
                     <span class="ai-seo-keeper-metric-value"><?php echo esc_html((string) $paragraph_count); ?></span>
                 </div>
                 <div class="ai-seo-keeper-metric-card">
-                    <span class="ai-seo-keeper-metric-label">Transitions</span>
+                    <span class="ai-seo-keeper-metric-label"><?php esc_html_e('Transitions', 'ai-seo-keeper'); ?></span>
                     <span class="ai-seo-keeper-metric-value"><?php echo esc_html((string) $transition_word_count); ?></span>
                 </div>
                 <div class="ai-seo-keeper-metric-card">
-                    <span class="ai-seo-keeper-metric-label">Passive est.</span>
+                    <span class="ai-seo-keeper-metric-label"><?php esc_html_e('Passive est.', 'ai-seo-keeper'); ?></span>
                     <span class="ai-seo-keeper-metric-value"><?php echo esc_html((string) $passive_voice_sentence_count); ?></span>
                 </div>
                 <div class="ai-seo-keeper-metric-card">
-                    <span class="ai-seo-keeper-metric-label">Repeat starts</span>
+                    <span class="ai-seo-keeper-metric-label"><?php esc_html_e('Repeat starts', 'ai-seo-keeper'); ?></span>
                     <span class="ai-seo-keeper-metric-value"><?php echo esc_html((string) $repeated_sentence_start_count); ?></span>
                 </div>
             </div>
             <ul class="ai-seo-keeper-check-list">
                 <?php foreach ($readability_checks as $check) : ?>
                     <li class="ai-seo-keeper-check-item">
-                        <span class="ai-seo-keeper-check-pill <?php echo $check['passed'] ? 'is-pass' : 'is-warning'; ?>"><?php echo $check['passed'] ? 'Pass' : 'Needs work'; ?></span>
+                        <span class="ai-seo-keeper-check-pill <?php echo $check['passed'] ? 'is-pass' : 'is-warning'; ?>"><?php echo $check['passed'] ? esc_html__('Pass', 'ai-seo-keeper') : esc_html__('Needs work', 'ai-seo-keeper'); ?></span>
                         <strong><?php echo esc_html($check['label']); ?></strong><br />
                         <span class="ai-seo-keeper-muted"><?php echo esc_html($check['message']); ?></span>
                     </li>
