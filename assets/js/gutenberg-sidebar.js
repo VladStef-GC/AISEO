@@ -11,38 +11,38 @@
 
     var cfg = window.aiSeoKeeperGutenberg || {};
 
-    var el          = wp.element.createElement;
-    var Fragment    = wp.element.Fragment;
-    var useState    = wp.element.useState;
-    var useEffect   = wp.element.useEffect;
-    var useRef      = wp.element.useRef;
+    var el = wp.element.createElement;
+    var Fragment = wp.element.Fragment;
+    var useState = wp.element.useState;
+    var useEffect = wp.element.useEffect;
+    var useRef = wp.element.useRef;
 
     var registerPlugin = wp.plugins.registerPlugin;
-    var PluginSidebar  = wp.editPost.PluginSidebar;
+    var PluginSidebar = wp.editPost.PluginSidebar;
     var PluginSidebarMoreMenuItem = wp.editPost.PluginSidebarMoreMenuItem;
 
-    var useSelect  = wp.data.useSelect;
+    var useSelect = wp.data.useSelect;
     var useDispatch = wp.data.useDispatch;
 
-    var PanelBody   = wp.components.PanelBody;
-    var PanelRow    = wp.components.PanelRow;
+    var PanelBody = wp.components.PanelBody;
+    var PanelRow = wp.components.PanelRow;
     var TextControl = wp.components.TextControl;
     var TextareaControl = wp.components.TextareaControl;
-    var Button      = wp.components.Button;
-    var Spinner     = wp.components.Spinner;
-    var Notice      = wp.components.Notice;
+    var Button = wp.components.Button;
+    var Spinner = wp.components.Spinner;
+    var Notice = wp.components.Notice;
     var RangeControl = wp.components.RangeControl;
     var ToggleControl = wp.components.ToggleControl;
 
     // -----------------------------------------------------------------------
     // Constants
     // -----------------------------------------------------------------------
-    var TITLE_MAX   = cfg.limits ? cfg.limits.titleMax   : 60;
-    var TITLE_MIN   = cfg.limits ? cfg.limits.titleMin   : 30;
-    var DESC_MAX    = cfg.limits ? cfg.limits.descriptionMax : 155;
-    var DESC_MIN    = cfg.limits ? cfg.limits.descriptionMin : 70;
-    var SUFFIX_LEN  = cfg.brandingSuffixLength || 0;
-    var SUFFIX      = cfg.brandingSuffix || '';
+    var TITLE_MAX = cfg.limits ? cfg.limits.titleMax : 60;
+    var TITLE_MIN = cfg.limits ? cfg.limits.titleMin : 30;
+    var DESC_MAX = cfg.limits ? cfg.limits.descriptionMax : 155;
+    var DESC_MIN = cfg.limits ? cfg.limits.descriptionMin : 70;
+    var SUFFIX_LEN = cfg.brandingSuffixLength || 0;
+    var SUFFIX = cfg.brandingSuffix || '';
 
     // -----------------------------------------------------------------------
     // Helpers
@@ -93,8 +93,8 @@
     // Title field with counter
     // -----------------------------------------------------------------------
     function TitleField(props) {
-        var raw        = props.value || '';
-        var effective  = SUFFIX ? raw.replace(new RegExp(SUFFIX.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$'), '').trim() : raw;
+        var raw = props.value || '';
+        var effective = SUFFIX ? raw.replace(new RegExp(SUFFIX.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$'), '').trim() : raw;
         var displayLen = raw.length;
         var budgetUsed = effective.length;
 
@@ -121,8 +121,8 @@
     // -----------------------------------------------------------------------
     function SnippetPreview(props) {
         var title = props.title || '(' + cfg.i18n.noTitle + ')';
-        var desc  = props.description || '(' + cfg.i18n.noDescription + ')';
-        var url   = props.url || window.location.host;
+        var desc = props.description || '(' + cfg.i18n.noDescription + ')';
+        var url = props.url || window.location.host;
         return el('div', { className: 'aisk-snippet-preview' },
             el('div', { className: 'aisk-snippet-url' }, url),
             el('div', { className: 'aisk-snippet-title' }, title),
@@ -154,10 +154,10 @@
     // -----------------------------------------------------------------------
     function AiSeoSidebar() {
         // Post data from the editor store
-        var postId     = useSelect(function (s) { return s('core/editor').getCurrentPostId(); });
+        var postId = useSelect(function (s) { return s('core/editor').getCurrentPostId(); });
         var postStatus = useSelect(function (s) { return s('core/editor').getEditedPostAttribute('status'); });
-        var postMeta   = useSelect(function (s) { return s('core/editor').getEditedPostAttribute('meta') || {}; });
-        var permalink  = useSelect(function (s) {
+        var postMeta = useSelect(function (s) { return s('core/editor').getEditedPostAttribute('meta') || {}; });
+        var permalink = useSelect(function (s) {
             var post = s('core/editor').getCurrentPost();
             return post ? (post.link || post.slug || '') : '';
         });
@@ -170,36 +170,36 @@
         var fields = _state[0];
         var setFields = _state[1];
 
-        var _saving    = useState(false);
-        var saving     = _saving[0];
-        var setSaving  = _saving[1];
+        var _saving = useState(false);
+        var saving = _saving[0];
+        var setSaving = _saving[1];
 
         var _generating = useState(false);
-        var generating  = _generating[0];
+        var generating = _generating[0];
         var setGenerating = _generating[1];
 
         var _notice = useState(null);
-        var notice  = _notice[0];
+        var notice = _notice[0];
         var setNotice = _notice[1];
 
-        var _score  = useState(0);
-        var score   = _score[0];
+        var _score = useState(0);
+        var score = _score[0];
         var setScore = _score[1];
 
-        var _checks  = useState([]);
-        var checks   = _checks[0];
+        var _checks = useState([]);
+        var checks = _checks[0];
         var setChecks = _checks[1];
 
         var _chatInput = useState('');
-        var chatInput  = _chatInput[0];
+        var chatInput = _chatInput[0];
         var setChatInput = _chatInput[1];
 
         var _chatReply = useState('');
-        var chatReply  = _chatReply[0];
+        var chatReply = _chatReply[0];
         var setChatReply = _chatReply[1];
 
         var _chatting = useState(false);
-        var chatting  = _chatting[0];
+        var chatting = _chatting[0];
         var setChatting = _chatting[1];
 
         // Initialise fields from post meta when postId becomes available
@@ -207,31 +207,31 @@
             if (!postId || initialised.current) { return; }
             initialised.current = true;
             setFields({
-                seoTitle:   postMeta[cfg.metaKeys.title]       || '',
-                metaDesc:   postMeta[cfg.metaKeys.description]  || '',
-                keyphrase:  postMeta[cfg.metaKeys.keyphrase]    || '',
-                noindex:    postMeta[cfg.metaKeys.robots] ? postMeta[cfg.metaKeys.robots].indexOf('noindex') !== -1 : false
+                seoTitle: postMeta[cfg.metaKeys.title] || '',
+                metaDesc: postMeta[cfg.metaKeys.description] || '',
+                keyphrase: postMeta[cfg.metaKeys.keyphrase] || '',
+                noindex: postMeta[cfg.metaKeys.robots] ? postMeta[cfg.metaKeys.robots].indexOf('noindex') !== -1 : false
             });
         }, [postId]);
 
         // Recompute checks whenever fields change
         useEffect(function () {
-            var t   = fields.seoTitle;
-            var d   = fields.metaDesc;
-            var kp  = (fields.keyphrase || '').toLowerCase();
-            var tc  = t.toLowerCase();
-            var dc  = d.toLowerCase();
+            var t = fields.seoTitle;
+            var d = fields.metaDesc;
+            var kp = (fields.keyphrase || '').toLowerCase();
+            var tc = t.toLowerCase();
+            var dc = d.toLowerCase();
 
             var c = [
-                { label: cfg.i18n.checks.titleLength,   pass: t.length >= TITLE_MIN && t.length <= TITLE_MAX },
-                { label: cfg.i18n.checks.descLength,    pass: d.length >= DESC_MIN  && d.length <= DESC_MAX  },
-                { label: cfg.i18n.checks.titleFilled,   pass: t.length > 0 },
-                { label: cfg.i18n.checks.descFilled,    pass: d.length > 0 }
+                { label: cfg.i18n.checks.titleLength, pass: t.length >= TITLE_MIN && t.length <= TITLE_MAX },
+                { label: cfg.i18n.checks.descLength, pass: d.length >= DESC_MIN && d.length <= DESC_MAX },
+                { label: cfg.i18n.checks.titleFilled, pass: t.length > 0 },
+                { label: cfg.i18n.checks.descFilled, pass: d.length > 0 }
             ];
 
             if (kp) {
                 c.push({ label: cfg.i18n.checks.kpInTitle, pass: tc.indexOf(kp) !== -1 });
-                c.push({ label: cfg.i18n.checks.kpInDesc,  pass: dc.indexOf(kp) !== -1 });
+                c.push({ label: cfg.i18n.checks.kpInDesc, pass: dc.indexOf(kp) !== -1 });
             }
 
             setChecks(c);
@@ -253,10 +253,10 @@
             setSaving(true);
             setNotice(null);
             apiFetch(cfg.actions.save, {
-                post_id:          postId,
-                seo_title:        fields.seoTitle,
+                post_id: postId,
+                seo_title: fields.seoTitle,
                 meta_description: fields.metaDesc,
-                focus_keyphrase:  fields.keyphrase,
+                focus_keyphrase: fields.keyphrase,
                 robots_directives: fields.noindex ? 'noindex' : ''
             }).then(function (res) {
                 setSaving(false);
@@ -264,9 +264,9 @@
                     setNotice({ type: 'success', msg: cfg.i18n.saved });
                     // Update block editor meta store so WP knows fields are persisted
                     var metaUpdate = {};
-                    metaUpdate[cfg.metaKeys.title]       = fields.seoTitle;
-                    metaUpdate[cfg.metaKeys.description]  = fields.metaDesc;
-                    metaUpdate[cfg.metaKeys.keyphrase]    = fields.keyphrase;
+                    metaUpdate[cfg.metaKeys.title] = fields.seoTitle;
+                    metaUpdate[cfg.metaKeys.description] = fields.metaDesc;
+                    metaUpdate[cfg.metaKeys.keyphrase] = fields.keyphrase;
                     editPost({ meta: metaUpdate });
                 } else {
                     setNotice({ type: 'error', msg: res.data && res.data.message ? res.data.message : cfg.i18n.saveError });
@@ -282,9 +282,9 @@
             setGenerating(true);
             setNotice(null);
             apiFetch(cfg.actions.generate, {
-                post_id:         postId,
+                post_id: postId,
                 focus_keyphrase: fields.keyphrase,
-                seo_title:       fields.seoTitle,
+                seo_title: fields.seoTitle,
                 meta_description: fields.metaDesc
             }).then(function (res) {
                 setGenerating(false);
@@ -292,7 +292,7 @@
                     var d = res.data;
                     setFields(function (prev) {
                         return Object.assign({}, prev, {
-                            seoTitle: d.seo_title  || prev.seoTitle,
+                            seoTitle: d.seo_title || prev.seoTitle,
                             metaDesc: d.meta_description || prev.metaDesc,
                             keyphrase: d.focus_keyphrase || prev.keyphrase
                         });
@@ -328,7 +328,7 @@
         }
 
         var titleLen = charCount(fields.seoTitle);
-        var descLen  = charCount(fields.metaDesc);
+        var descLen = charCount(fields.metaDesc);
 
         return el(Fragment, null,
             // "More" menu item to open the sidebar
@@ -337,9 +337,9 @@
             ),
 
             el(PluginSidebar, {
-                name:  'ai-seo-keeper-sidebar',
+                name: 'ai-seo-keeper-sidebar',
                 title: cfg.i18n.sidebarTitle,
-                icon:  el('span', { style: { fontSize: '16px' } }, '🔍')
+                icon: el('span', { style: { fontSize: '16px' } }, '🔍')
             },
 
                 // Notice

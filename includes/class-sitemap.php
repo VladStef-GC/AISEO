@@ -130,6 +130,9 @@ class Sitemap
             $urls = $this->get_taxonomy_urls('category');
         } elseif ('post_tag' === $type && ! empty($options['sitemap_include_tags'])) {
             $urls = $this->get_taxonomy_urls('post_tag');
+        } else {
+            // Allow extensions (e.g. WooCommerce) to supply URLs for custom types.
+            $urls = apply_filters('ai_seo_keeper_sitemap_urls', array(), $type);
         }
 
         if (empty($urls)) {
@@ -207,6 +210,9 @@ class Sitemap
                 'lastmod' => '',
             );
         }
+
+        // Allow WooCommerce and other extensions to add their own sitemap index entries.
+        $entries = apply_filters('ai_seo_keeper_sitemap_index_entries', $entries, $options);
 
         // News sitemap — always present when sitemap is enabled and there are recent posts.
         if (! empty($options['sitemap_include_posts'])) {

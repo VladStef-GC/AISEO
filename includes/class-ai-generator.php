@@ -291,6 +291,9 @@ class AI_Generator
             ? ('1' === $overrides['cornerstone'])
             : (! empty(get_post_meta($post->ID, '_ai_seo_keeper_cornerstone', true)));
 
+        // WooCommerce product data (supplied by WooCommerce_Integration filter when active).
+        $wc_data = apply_filters('ai_seo_keeper_product_context', array(), $post);
+
         return array(
             'focus_keyphrase' => $focus_keyphrase,
             'seo_title_draft' => $seo_title_draft,
@@ -309,6 +312,7 @@ class AI_Generator
             'canonical_url' => $canonical_url,
             'robots_directives' => $robots_directives,
             'is_cornerstone' => $is_cornerstone,
+            'wc_data' => $wc_data,
         );
     }
 
@@ -355,6 +359,20 @@ class AI_Generator
         }
         if (! empty($ctx['is_cornerstone'])) {
             $lines[] = 'Cornerstone content: Yes (high-priority page)';
+        }
+
+        // WooCommerce product data.
+        if (! empty($ctx['wc_data'])) {
+            $wc = $ctx['wc_data'];
+            $lines[] = '--- WooCommerce Product Data ---';
+            if (! empty($wc['wc_price']))        { $lines[] = 'Price: '        . $wc['wc_price']; }
+            if (! empty($wc['wc_sku']))           { $lines[] = 'SKU: '          . $wc['wc_sku']; }
+            if (! empty($wc['wc_availability']))  { $lines[] = 'Availability: ' . $wc['wc_availability']; }
+            if (! empty($wc['wc_type']))          { $lines[] = 'Product type: ' . $wc['wc_type']; }
+            if (! empty($wc['wc_rating']))        { $lines[] = 'Rating: '       . $wc['wc_rating']; }
+            if (! empty($wc['wc_categories']))    { $lines[] = 'Categories: '   . $wc['wc_categories']; }
+            if (! empty($wc['wc_tags']))          { $lines[] = 'Tags: '         . $wc['wc_tags']; }
+            if (! empty($wc['wc_brand']))         { $lines[] = 'Brand: '        . $wc['wc_brand']; }
         }
 
         return implode("\n", $lines);

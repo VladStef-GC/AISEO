@@ -209,6 +209,14 @@ class Frontend
         if ('' !== $context['social_image_url']) {
             $this->print_meta_tag('property', 'og:image', $context['social_image_url'], 'open_graph');
         }
+
+        // Extra OG tags (e.g. WooCommerce og:price, og:availability).
+        $extra_tags = apply_filters('ai_seo_keeper_extra_og_tags', array(), $context);
+        foreach ($extra_tags as $tag) {
+            if (! empty($tag['name']) && ! empty($tag['content'])) {
+                $this->print_meta_tag('property', esc_attr($tag['name']), esc_attr($tag['content']), 'open_graph');
+            }
+        }
     }
 
     public function output_twitter_cards(): void
@@ -687,6 +695,33 @@ class Frontend
             $description = $this->apply_term_seo_overrides_description($term->term_id, $description);
             $canonical_url = $this->apply_term_seo_overrides_canonical($term->term_id, $canonical_url);
             $robots      = $this->apply_term_seo_overrides_noindex($term->term_id, $robots);
+        } elseif (function_exists('is_woocommerce') && (is_shop() || is_product_category() || is_product_tag())) {
+            // Delegate to WooCommerce integration filter.
+            $wc_context = apply_filters(
+                'ai_seo_keeper_wc_archive_context',
+                array(
+                    'robots_directives' => $robots,
+                    'social_image_url'  => $social_image_url,
+                    'open_graph_type'   => $og_type,
+                    'schema_type'       => $schema_type,
+                ),
+                $options,
+                trim((string) ($options['search_title_separator'] ?? '|'))
+            );
+
+            if (empty($wc_context['context_type'])) {
+                $this->context_cache[$cache_key] = array();
+                return array();
+            }
+
+            $context_type      = $wc_context['context_type'];
+            $title             = $wc_context['title']            ?? '';
+            $description       = $wc_context['description']      ?? '';
+            $canonical_url     = $wc_context['canonical_url']    ?? '';
+            $schema_type       = $wc_context['schema_type']      ?? $schema_type;
+            $og_type           = $wc_context['open_graph_type']  ?? $og_type;
+            $robots            = $wc_context['robots_directives'] ?? $robots;
+            $social_image_url  = $wc_context['social_image_url'] ?? $social_image_url;
         } elseif (is_post_type_archive()) {
             $context_type = 'post_type_archive';
             $post_type_obj = get_queried_object();
@@ -1064,6 +1099,11 @@ class Frontend
             $entity['about'] = array(
                 '@id' => home_url('/#organization'),
             );
+        }
+
+        // Allow WooCommerce integration (and other extensions) to enrich the entity.
+        if ('Product' === $context['schema_type']) {
+            $entity = apply_filters('ai_seo_keeper_product_schema', $entity, $context['post']);
         }
 
         return $entity;

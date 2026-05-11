@@ -44,6 +44,9 @@ final class Plugin
         $this->sitemap         = new Sitemap($this->settings);
         $this->redirects       = new Redirects($this->settings);
 
+        // WooCommerce integration — boots only when WC is active.
+        add_action('plugins_loaded', array('AI_SEO_Keeper\\WooCommerce_Integration', 'maybe_boot'), 20);
+
         if ($this->sitemap->needs_flush()) {
             add_action('init', 'flush_rewrite_rules', 99);
         }

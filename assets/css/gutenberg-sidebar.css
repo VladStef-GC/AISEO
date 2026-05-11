@@ -7,6 +7,7 @@
     width: 100%;
     padding: 4px 0;
 }
+
 .aisk-score-bar-wrap {
     height: 8px;
     background: #dcdcde;
@@ -14,11 +15,13 @@
     overflow: hidden;
     margin-bottom: 6px;
 }
+
 .aisk-score-bar {
     height: 100%;
     border-radius: 4px;
     transition: width 0.4s ease;
 }
+
 .aisk-score-label {
     font-size: 12px;
     font-weight: 600;
@@ -33,6 +36,7 @@
     font-family: Arial, sans-serif;
     width: 100%;
 }
+
 .aisk-snippet-url {
     font-size: 12px;
     color: #188038;
@@ -41,6 +45,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 .aisk-snippet-title {
     font-size: 15px;
     color: #1a0dab;
@@ -50,6 +55,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 .aisk-snippet-desc {
     font-size: 12px;
     color: #4d5156;
@@ -69,12 +75,30 @@
     gap: 8px;
     align-items: center;
 }
-.aisk-count { font-weight: 600; }
-.aisk-count--empty { color: #646970; }
-.aisk-count--short { color: #dba617; }
-.aisk-count--ok    { color: #00a32a; }
-.aisk-count--long  { color: #d63638; }
-.aisk-budget-note  { color: #646970; }
+
+.aisk-count {
+    font-weight: 600;
+}
+
+.aisk-count--empty {
+    color: #646970;
+}
+
+.aisk-count--short {
+    color: #dba617;
+}
+
+.aisk-count--ok {
+    color: #00a32a;
+}
+
+.aisk-count--long {
+    color: #d63638;
+}
+
+.aisk-budget-note {
+    color: #646970;
+}
 
 /* Full-width PanelRow children */
 .aisk-full-width {
@@ -97,6 +121,7 @@
     padding: 0;
     width: 100%;
 }
+
 .aisk-check {
     display: flex;
     align-items: flex-start;
@@ -106,14 +131,24 @@
     border-bottom: 1px solid #f0f0f1;
     line-height: 1.4;
 }
-.aisk-check:last-child { border-bottom: none; }
+
+.aisk-check:last-child {
+    border-bottom: none;
+}
+
 .aisk-check-icon {
     font-weight: 700;
     flex-shrink: 0;
     width: 14px;
 }
-.aisk-check--pass .aisk-check-icon { color: #00a32a; }
-.aisk-check--fail .aisk-check-icon { color: #d63638; }
+
+.aisk-check--pass .aisk-check-icon {
+    color: #00a32a;
+}
+
+.aisk-check--fail .aisk-check-icon {
+    color: #d63638;
+}
 
 /* Chat reply */
 .aisk-chat-reply {
