@@ -365,14 +365,30 @@ class AI_Generator
         if (! empty($ctx['wc_data'])) {
             $wc = $ctx['wc_data'];
             $lines[] = '--- WooCommerce Product Data ---';
-            if (! empty($wc['wc_price']))        { $lines[] = 'Price: '        . $wc['wc_price']; }
-            if (! empty($wc['wc_sku']))           { $lines[] = 'SKU: '          . $wc['wc_sku']; }
-            if (! empty($wc['wc_availability']))  { $lines[] = 'Availability: ' . $wc['wc_availability']; }
-            if (! empty($wc['wc_type']))          { $lines[] = 'Product type: ' . $wc['wc_type']; }
-            if (! empty($wc['wc_rating']))        { $lines[] = 'Rating: '       . $wc['wc_rating']; }
-            if (! empty($wc['wc_categories']))    { $lines[] = 'Categories: '   . $wc['wc_categories']; }
-            if (! empty($wc['wc_tags']))          { $lines[] = 'Tags: '         . $wc['wc_tags']; }
-            if (! empty($wc['wc_brand']))         { $lines[] = 'Brand: '        . $wc['wc_brand']; }
+            if (! empty($wc['wc_price'])) {
+                $lines[] = 'Price: '        . $wc['wc_price'];
+            }
+            if (! empty($wc['wc_sku'])) {
+                $lines[] = 'SKU: '          . $wc['wc_sku'];
+            }
+            if (! empty($wc['wc_availability'])) {
+                $lines[] = 'Availability: ' . $wc['wc_availability'];
+            }
+            if (! empty($wc['wc_type'])) {
+                $lines[] = 'Product type: ' . $wc['wc_type'];
+            }
+            if (! empty($wc['wc_rating'])) {
+                $lines[] = 'Rating: '       . $wc['wc_rating'];
+            }
+            if (! empty($wc['wc_categories'])) {
+                $lines[] = 'Categories: '   . $wc['wc_categories'];
+            }
+            if (! empty($wc['wc_tags'])) {
+                $lines[] = 'Tags: '         . $wc['wc_tags'];
+            }
+            if (! empty($wc['wc_brand'])) {
+                $lines[] = 'Brand: '        . $wc['wc_brand'];
+            }
         }
 
         return implode("\n", $lines);

@@ -2,6 +2,15 @@
 
 namespace AI_SEO_Keeper;
 
+// WooCommerce global functions — imported so Intelephense resolves them inside this namespace.
+use function wc_get_product;
+use function wc_get_page_id;
+use function wc_get_page_permalink;
+use function get_woocommerce_currency;
+use function is_shop;
+use function is_product_category;
+use function is_product_tag;
+
 /**
  * WooCommerce Integration for AI SEO Keeper.
  *
@@ -201,7 +210,6 @@ class WooCommerce_Integration
             $context['canonical_url']      = (string) wc_get_page_permalink('shop');
             $context['schema_type']        = 'CollectionPage';
             $context['open_graph_type']    = 'website';
-
         } elseif (function_exists('is_product_category') && is_product_category()) {
             $term = get_queried_object();
             if (! $term instanceof \WP_Term) {
@@ -227,7 +235,6 @@ class WooCommerce_Integration
             if ('1' === $noindex) {
                 $context['robots_directives'] = 'noindex,follow';
             }
-
         } elseif (function_exists('is_product_tag') && is_product_tag()) {
             $term = get_queried_object();
             if (! $term instanceof \WP_Term) {

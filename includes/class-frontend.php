@@ -695,7 +695,7 @@ class Frontend
             $description = $this->apply_term_seo_overrides_description($term->term_id, $description);
             $canonical_url = $this->apply_term_seo_overrides_canonical($term->term_id, $canonical_url);
             $robots      = $this->apply_term_seo_overrides_noindex($term->term_id, $robots);
-        } elseif (function_exists('is_woocommerce') && (is_shop() || is_product_category() || is_product_tag())) {
+        } elseif (function_exists('is_woocommerce') && (\is_shop() || \is_product_category() || \is_product_tag())) {
             // Delegate to WooCommerce integration filter.
             $wc_context = apply_filters(
                 'ai_seo_keeper_wc_archive_context',
