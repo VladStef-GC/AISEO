@@ -2,9 +2,6 @@
 
 namespace AI_SEO_Keeper;
 
-require_once __DIR__ . '/class-settings.php';
-require_once __DIR__ . '/class-content-indexer.php';
-
 class AI_Generator
 {
     private Settings $settings;

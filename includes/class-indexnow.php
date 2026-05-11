@@ -2,8 +2,6 @@
 
 namespace AI_SEO_Keeper;
 
-require_once __DIR__ . '/class-settings.php';
-
 class IndexNow
 {
     private const LOG_OPTION_NAME = 'ai_seo_keeper_indexnow_log';

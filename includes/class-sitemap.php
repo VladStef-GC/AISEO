@@ -2,8 +2,6 @@
 
 namespace AI_SEO_Keeper;
 
-require_once __DIR__ . '/class-settings.php';
-
 class Sitemap
 {
     private const QUERY_VAR = 'ai_seo_keeper_sitemap';

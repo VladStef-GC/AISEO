@@ -2,8 +2,6 @@
 
 namespace AI_SEO_Keeper;
 
-require_once __DIR__ . '/class-settings.php';
-
 class Activator
 {
 	public static function activate(): void

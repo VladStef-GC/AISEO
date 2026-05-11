@@ -209,7 +209,7 @@ class Admin_Ajax
 
         $recent_suggestions = $this->history_store->get_recent_suggestions($post_id, 'post', 5);
         $post               = get_post($post_id);
-        $focus_keyphrase    = (string) get_post_meta($post_id, Admin::FOCUS_KEYPHRASE_META_KEY, true);
+        $focus_keyphrase    = (string) get_post_meta($post_id, AdminBase::FOCUS_KEYPHRASE_META_KEY, true);
 
         wp_send_json_success(
             array(
@@ -266,7 +266,7 @@ class Admin_Ajax
 
             $this->history_store->log_generation(
                 $post_id,
-                Admin::CHAT_OBJECT_TYPE,
+                AdminBase::CHAT_OBJECT_TYPE,
                 get_the_title($post_id) . ' AI chat',
                 array('message' => $message),
                 array(
@@ -363,9 +363,9 @@ class Admin_Ajax
             wp_send_json_error(array('message' => 'Page not found.'), 404);
         }
 
-        $existing_title     = trim((string) get_post_meta($post_id, Admin::META_TITLE_KEY, true));
-        $existing_desc      = trim((string) get_post_meta($post_id, Admin::META_DESCRIPTION_KEY, true));
-        $existing_keyphrase = trim((string) get_post_meta($post_id, Admin::FOCUS_KEYPHRASE_META_KEY, true));
+        $existing_title     = trim((string) get_post_meta($post_id, AdminBase::META_TITLE_KEY, true));
+        $existing_desc      = trim((string) get_post_meta($post_id, AdminBase::META_DESCRIPTION_KEY, true));
+        $existing_keyphrase = trim((string) get_post_meta($post_id, AdminBase::FOCUS_KEYPHRASE_META_KEY, true));
 
         if ('' !== $existing_title && '' !== $existing_desc && '' !== $existing_keyphrase) {
             wp_send_json_success(array(
@@ -397,13 +397,13 @@ class Admin_Ajax
         );
 
         if ('' === $existing_title) {
-            update_post_meta($post_id, Admin::META_TITLE_KEY, $suggestion['seo_title']);
+            update_post_meta($post_id, AdminBase::META_TITLE_KEY, $suggestion['seo_title']);
         }
         if ('' === $existing_desc) {
-            update_post_meta($post_id, Admin::META_DESCRIPTION_KEY, $suggestion['meta_description']);
+            update_post_meta($post_id, AdminBase::META_DESCRIPTION_KEY, $suggestion['meta_description']);
         }
         if ('' === $existing_keyphrase && ! empty($suggestion['focus_keyphrase'])) {
-            update_post_meta($post_id, Admin::FOCUS_KEYPHRASE_META_KEY, $suggestion['focus_keyphrase']);
+            update_post_meta($post_id, AdminBase::FOCUS_KEYPHRASE_META_KEY, $suggestion['focus_keyphrase']);
         }
 
         try {
@@ -684,8 +684,8 @@ class Admin_Ajax
         }
 
         $allowed_fields = array(
-            'meta_title'       => Admin::META_TITLE_KEY,
-            'meta_description' => Admin::META_DESCRIPTION_KEY,
+            'meta_title'       => AdminBase::META_TITLE_KEY,
+            'meta_description' => AdminBase::META_DESCRIPTION_KEY,
         );
 
         if (! isset($allowed_fields[$field])) {
@@ -856,8 +856,8 @@ class Admin_Ajax
         $seo_title       = isset($_POST['seo_title']) ? sanitize_text_field(wp_unslash($_POST['seo_title'])) : '';
         $seo_description = isset($_POST['seo_description']) ? sanitize_textarea_field(wp_unslash($_POST['seo_description'])) : '';
 
-        update_post_meta($post_id, Admin::META_TITLE_KEY, $seo_title);
-        update_post_meta($post_id, Admin::META_DESCRIPTION_KEY, $seo_description);
+        update_post_meta($post_id, AdminBase::META_TITLE_KEY, $seo_title);
+        update_post_meta($post_id, AdminBase::META_DESCRIPTION_KEY, $seo_description);
 
         wp_send_json_success(array('message' => 'Saved.'));
     }

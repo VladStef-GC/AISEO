@@ -275,14 +275,14 @@ class Admin_Import_Export
         );
 
         $field_map = array(
-            'focus_keyphrase'    => Admin::FOCUS_KEYPHRASE_META_KEY,
-            'seo_title'          => Admin::META_TITLE_KEY,
-            'seo_description'    => Admin::META_DESCRIPTION_KEY,
-            'social_title'       => Admin::SOCIAL_TITLE_META_KEY,
-            'social_description' => Admin::SOCIAL_DESCRIPTION_META_KEY,
-            'social_image'       => Admin::SOCIAL_IMAGE_META_KEY,
-            'canonical_url'      => Admin::CANONICAL_URL_META_KEY,
-            'robots_directives'  => Admin::ROBOTS_DIRECTIVES_META_KEY,
+            'focus_keyphrase'    => AdminBase::FOCUS_KEYPHRASE_META_KEY,
+            'seo_title'          => AdminBase::META_TITLE_KEY,
+            'seo_description'    => AdminBase::META_DESCRIPTION_KEY,
+            'social_title'       => AdminBase::SOCIAL_TITLE_META_KEY,
+            'social_description' => AdminBase::SOCIAL_DESCRIPTION_META_KEY,
+            'social_image'       => AdminBase::SOCIAL_IMAGE_META_KEY,
+            'canonical_url'      => AdminBase::CANONICAL_URL_META_KEY,
+            'robots_directives'  => AdminBase::ROBOTS_DIRECTIVES_META_KEY,
         );
 
         foreach ($this->get_yoast_import_candidate_ids() as $post_id) {
@@ -356,8 +356,8 @@ class Admin_Import_Export
                 }
             }
 
-            if ($imported_frontend_field && '1' !== (string) get_post_meta($post_id, Admin::FRONTEND_ENABLE_META_KEY, true)) {
-                update_post_meta($post_id, Admin::FRONTEND_ENABLE_META_KEY, '1');
+            if ($imported_frontend_field && '1' !== (string) get_post_meta($post_id, AdminBase::FRONTEND_ENABLE_META_KEY, true)) {
+                update_post_meta($post_id, AdminBase::FRONTEND_ENABLE_META_KEY, '1');
                 $frontend_enabled++;
             }
 

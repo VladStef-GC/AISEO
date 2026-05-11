@@ -2,8 +2,6 @@
 
 namespace AI_SEO_Keeper;
 
-require_once __DIR__ . '/class-history-store.php';
-
 class Discovery
 {
     public function __construct()

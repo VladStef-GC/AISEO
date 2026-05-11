@@ -219,7 +219,7 @@ class Admin_Rollout
                 continue;
             }
 
-            $currently_enabled = '1' === (string) get_post_meta((int) $post_id, Admin::FRONTEND_ENABLE_META_KEY, true);
+            $currently_enabled = '1' === (string) get_post_meta((int) $post_id, AdminBase::FRONTEND_ENABLE_META_KEY, true);
 
             if ($enabled) {
                 $approved_id             = $this->history_store->get_approved_suggestion_id((int) $post_id, 'post');
@@ -235,7 +235,7 @@ class Admin_Rollout
                     continue;
                 }
 
-                update_post_meta((int) $post_id, Admin::FRONTEND_ENABLE_META_KEY, '1');
+                update_post_meta((int) $post_id, AdminBase::FRONTEND_ENABLE_META_KEY, '1');
                 $updated++;
                 $urls[] = (string) get_permalink((int) $post_id);
                 continue;
@@ -246,7 +246,7 @@ class Admin_Rollout
                 continue;
             }
 
-            delete_post_meta((int) $post_id, Admin::FRONTEND_ENABLE_META_KEY);
+            delete_post_meta((int) $post_id, AdminBase::FRONTEND_ENABLE_META_KEY);
             $updated++;
         }
 

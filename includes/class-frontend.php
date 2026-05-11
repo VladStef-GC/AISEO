@@ -2,9 +2,6 @@
 
 namespace AI_SEO_Keeper;
 
-require_once __DIR__ . '/class-settings.php';
-require_once __DIR__ . '/class-history-store.php';
-
 class Frontend
 {
     public const FRONTEND_ENABLE_META_KEY = '_ai_seo_keeper_frontend_enabled';

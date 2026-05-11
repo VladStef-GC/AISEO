@@ -2,20 +2,6 @@
 
 namespace AI_SEO_Keeper;
 
-require_once __DIR__ . '/class-settings.php';
-require_once __DIR__ . '/class-content-indexer.php';
-require_once __DIR__ . '/class-ai-generator.php';
-require_once __DIR__ . '/class-history-store.php';
-require_once __DIR__ . '/class-frontend.php';
-require_once __DIR__ . '/class-audit-engine.php';
-require_once __DIR__ . '/class-indexnow.php';
-require_once __DIR__ . '/class-meta-keys.php';
-require_once __DIR__ . '/admin/class-admin-seo-analysis.php';
-require_once __DIR__ . '/admin/class-admin-taxonomy.php';
-require_once __DIR__ . '/admin/class-admin-import-export.php';
-require_once __DIR__ . '/admin/class-admin-rollout.php';
-require_once __DIR__ . '/admin/class-admin-ajax.php';
-
 use AI_SEO_Keeper\Admin\SEO_Analysis;
 use AI_SEO_Keeper\Admin\Admin_Taxonomy;
 use AI_SEO_Keeper\Admin\Admin_Import_Export;
@@ -3373,7 +3359,7 @@ HTML;
         return is_string($site_icon_url) ? $site_icon_url : '';
     }
 
-    private function has_saved_frontend_data(array $data): bool
+    public function has_saved_frontend_data(array $data): bool
     {
         foreach ($data as $value) {
             if ('' !== trim((string) $value)) {
@@ -3384,7 +3370,7 @@ HTML;
         return false;
     }
 
-    private function has_saved_frontend_data_for_post(int $post_id): bool
+    public function has_saved_frontend_data_for_post(int $post_id): bool
     {
         return $this->has_saved_frontend_data(
             array(

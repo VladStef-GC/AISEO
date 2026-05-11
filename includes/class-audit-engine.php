@@ -2,8 +2,6 @@
 
 namespace AI_SEO_Keeper;
 
-require_once __DIR__ . '/class-content-indexer.php';
-
 class Audit_Engine
 {
     private const META_TITLE_KEY = '_ai_seo_keeper_meta_title';
@@ -303,7 +301,7 @@ class Audit_Engine
         return array_slice($thin_rows, 0, $limit);
     }
 
-    private function map_grouped_rows($rows): array
+    private function map_grouped_rows(array $rows): array
     {
         if (! is_array($rows)) {
             return array();

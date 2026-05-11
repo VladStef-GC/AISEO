@@ -2,17 +2,6 @@
 
 namespace AI_SEO_Keeper;
 
-require_once __DIR__ . '/class-settings.php';
-require_once __DIR__ . '/class-content-indexer.php';
-require_once __DIR__ . '/class-ai-generator.php';
-require_once __DIR__ . '/class-history-store.php';
-require_once __DIR__ . '/class-indexnow.php';
-require_once __DIR__ . '/class-frontend.php';
-require_once __DIR__ . '/class-discovery.php';
-require_once __DIR__ . '/class-sitemap.php';
-require_once __DIR__ . '/class-redirects.php';
-require_once __DIR__ . '/class-admin.php';
-
 final class Plugin
 {
     private static ?Plugin $instance = null;
@@ -21,11 +10,11 @@ final class Plugin
 
     private ?Content_Indexer $content_indexer = null;
 
-    private $ai_generator = null;
+    private ?AI_Generator $ai_generator = null;
 
-    private $history_store = null;
+    private ?History_Store $history_store = null;
 
-    private $indexnow = null;
+    private ?IndexNow $indexnow = null;
 
     private $frontend = null;
 
