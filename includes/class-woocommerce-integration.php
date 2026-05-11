@@ -2,15 +2,6 @@
 
 namespace AI_SEO_Keeper;
 
-// WooCommerce global functions — imported so Intelephense resolves them inside this namespace.
-use function wc_get_product;
-use function wc_get_page_id;
-use function wc_get_page_permalink;
-use function get_woocommerce_currency;
-use function is_shop;
-use function is_product_category;
-use function is_product_tag;
-
 /**
  * WooCommerce Integration for AI SEO Keeper.
  *
@@ -26,17 +17,33 @@ use function is_product_tag;
 class WooCommerce_Integration
 {
     /**
-     * Boot the integration if WooCommerce is active.
+     * Boot the integration if WooCommerce is active and enabled in settings.
      * Called on 'plugins_loaded' after WC itself has initialised.
+     *
+     * @param array $options Plugin settings options.
      */
-    public static function maybe_boot(): void
+    public static function maybe_boot(array $options = array()): void
     {
+        // Disabled by the user in plugin settings.
+        if (empty($options['wc_integration_enabled'])) {
+            return;
+        }
+
+        // WooCommerce plugin is not installed / active.
         if (! self::is_woocommerce_active()) {
             return;
         }
 
-        $instance = new self();
+        $instance = new self($options);
         $instance->init();
+    }
+
+    /** @var array Plugin options passed at boot time. */
+    private array $options;
+
+    private function __construct(array $options)
+    {
+        $this->options = $options;
     }
 
     private static function is_woocommerce_active(): bool
@@ -55,12 +62,16 @@ class WooCommerce_Integration
         // Non-singular context for WC archives.
         add_filter('ai_seo_keeper_wc_archive_context', array($this, 'build_wc_archive_context'), 10, 3);
 
-        // Sitemap entries.
-        add_filter('ai_seo_keeper_sitemap_index_entries', array($this, 'add_sitemap_entries'), 10, 2);
-        add_filter('ai_seo_keeper_sitemap_urls', array($this, 'get_sitemap_urls'), 10, 2);
+        // Sitemap entries — only when sitemap is enabled.
+        if (! empty($this->options['sitemap_enabled'])) {
+            add_filter('ai_seo_keeper_sitemap_index_entries', array($this, 'add_sitemap_entries'), 10, 2);
+            add_filter('ai_seo_keeper_sitemap_urls', array($this, 'get_sitemap_urls'), 10, 2);
+        }
 
-        // AI generator context.
-        add_filter('ai_seo_keeper_product_context', array($this, 'get_ai_product_context'), 10, 2);
+        // AI generator context — only when AI context enrichment is enabled.
+        if (! empty($this->options['wc_ai_context_enabled'])) {
+            add_filter('ai_seo_keeper_product_context', array($this, 'get_ai_product_context'), 10, 2);
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -80,7 +91,7 @@ class WooCommerce_Integration
             return $entity;
         }
 
-        $product = wc_get_product($post->ID);
+        $product = \wc_get_product($post->ID);
 
         if (! $product instanceof \WC_Product) {
             return $entity;
@@ -151,13 +162,13 @@ class WooCommerce_Integration
             return $extra_tags;
         }
 
-        $product = wc_get_product($context['post']->ID);
+        $product = \wc_get_product($context['post']->ID);
         if (! $product instanceof \WC_Product) {
             return $extra_tags;
         }
 
         $extra_tags[] = array('name' => 'og:type',               'content' => 'product');
-        $extra_tags[] = array('name' => 'product:price:currency', 'content' => get_woocommerce_currency());
+        $extra_tags[] = array('name' => 'product:price:currency', 'content' => \get_woocommerce_currency());
 
         $price = $product->get_price();
         if ('' !== $price) {
@@ -196,8 +207,8 @@ class WooCommerce_Integration
     {
         $site_name = wp_specialchars_decode((string) get_bloginfo('name'), ENT_QUOTES);
 
-        if (function_exists('is_shop') && is_shop()) {
-            $shop_page_id  = (int) wc_get_page_id('shop');
+        if (function_exists('is_shop') && \is_shop()) {
+            $shop_page_id  = (int) \wc_get_page_id('shop');
             $archive_title = $shop_page_id > 0
                 ? wp_strip_all_tags((string) get_the_title($shop_page_id))
                 : __('Shop', 'ai-seo-keeper');
@@ -207,10 +218,10 @@ class WooCommerce_Integration
             $context['description']        = $shop_page_id > 0
                 ? wp_strip_all_tags((string) get_post_field('post_excerpt', $shop_page_id))
                 : '';
-            $context['canonical_url']      = (string) wc_get_page_permalink('shop');
+            $context['canonical_url']      = (string) \wc_get_page_permalink('shop');
             $context['schema_type']        = 'CollectionPage';
             $context['open_graph_type']    = 'website';
-        } elseif (function_exists('is_product_category') && is_product_category()) {
+        } elseif (function_exists('is_product_category') && \is_product_category()) {
             $term = get_queried_object();
             if (! $term instanceof \WP_Term) {
                 return $context;
@@ -235,7 +246,7 @@ class WooCommerce_Integration
             if ('1' === $noindex) {
                 $context['robots_directives'] = 'noindex,follow';
             }
-        } elseif (function_exists('is_product_tag') && is_product_tag()) {
+        } elseif (function_exists('is_product_tag') && \is_product_tag()) {
             $term = get_queried_object();
             if (! $term instanceof \WP_Term) {
                 return $context;
@@ -330,7 +341,7 @@ class WooCommerce_Integration
             return $wc_data;
         }
 
-        $product = wc_get_product($post->ID);
+        $product = \wc_get_product($post->ID);
         if (! $product instanceof \WC_Product) {
             return $wc_data;
         }
@@ -379,7 +390,7 @@ class WooCommerce_Integration
             '@type'         => 'Offer',
             'url'           => get_permalink($product->get_id()),
             'price'         => $price,
-            'priceCurrency' => get_woocommerce_currency(),
+            'priceCurrency' => \get_woocommerce_currency(),
             'availability'  => $product->is_in_stock()
                 ? 'https://schema.org/InStock'
                 : 'https://schema.org/OutOfStock',

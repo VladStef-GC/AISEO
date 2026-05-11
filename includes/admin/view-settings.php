@@ -339,6 +339,63 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                             </td>
                         </tr>
                         <tr>
+                            <th scope="row">WooCommerce Integration</th>
+                            <td>
+                                <?php $wc_active = class_exists('WooCommerce', false); ?>
+                                <?php if (! $wc_active) : ?>
+                                    <div class="notice notice-info inline" style="margin:0 0 12px;padding:8px 12px;">
+                                        <p style="margin:0;"><?php esc_html_e('WooCommerce is not installed or active. Install WooCommerce to enable this integration.', 'ai-seo-keeper'); ?></p>
+                                    </div>
+                                <?php endif; ?>
+                                <label style="display:block;margin-bottom:8px;">
+                                    <input type="checkbox" id="ai-seo-wc-enabled" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[wc_integration_enabled]" value="1" <?php checked(! empty($options['wc_integration_enabled'])); ?> <?php echo $wc_active ? '' : 'disabled'; ?> />
+                                    <strong><?php esc_html_e('Enable WooCommerce integration', 'ai-seo-keeper'); ?></strong>
+                                </label>
+                                <p class="description" style="margin:0 0 12px;"><?php esc_html_e('When enabled, AI SEO Keeper enriches product schema, Open Graph tags, WC archive pages, sitemaps, and AI-generated content with WooCommerce product data.', 'ai-seo-keeper'); ?></p>
+
+                                <fieldset id="ai-seo-wc-options" style="margin-left:16px;<?php echo empty($options['wc_integration_enabled']) ? 'opacity:.5;pointer-events:none;' : ''; ?>">
+                                    <legend style="font-weight:600;margin-bottom:8px;"><?php esc_html_e('Schema &amp; Open Graph', 'ai-seo-keeper'); ?></legend>
+                                    <label style="display:block;margin-bottom:6px;">
+                                        <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[wc_schema_enrichment_enabled]" value="1" <?php checked(! empty($options['wc_schema_enrichment_enabled'])); ?> />
+                                        <?php esc_html_e('Enrich Product schema with price, SKU, rating, brand, availability', 'ai-seo-keeper'); ?>
+                                    </label>
+                                    <label style="display:block;margin-bottom:6px;">
+                                        <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[wc_ai_context_enabled]" value="1" <?php checked(! empty($options['wc_ai_context_enabled'])); ?> />
+                                        <?php esc_html_e('Include product data in AI generation context (price, SKU, brand, categories)', 'ai-seo-keeper'); ?>
+                                    </label>
+
+                                    <?php if (! empty($options['sitemap_enabled'])) : ?>
+                                        <legend style="font-weight:600;margin:12px 0 8px;"><?php esc_html_e('Sitemap', 'ai-seo-keeper'); ?></legend>
+                                        <label style="display:block;margin-bottom:6px;">
+                                            <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_include_wc_products]" value="1" <?php checked(! empty($options['sitemap_include_wc_products'])); ?> />
+                                            <?php esc_html_e('Include products in sitemap', 'ai-seo-keeper'); ?>
+                                        </label>
+                                        <label style="display:block;margin-bottom:6px;">
+                                            <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_include_wc_product_cat]" value="1" <?php checked(! empty($options['sitemap_include_wc_product_cat'])); ?> />
+                                            <?php esc_html_e('Include product categories in sitemap', 'ai-seo-keeper'); ?>
+                                        </label>
+                                        <label style="display:block;margin-bottom:6px;">
+                                            <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_include_wc_product_tag]" value="1" <?php checked(! empty($options['sitemap_include_wc_product_tag'])); ?> />
+                                            <?php esc_html_e('Include product tags in sitemap', 'ai-seo-keeper'); ?>
+                                        </label>
+                                    <?php endif; ?>
+                                </fieldset>
+
+                                <script>
+                                (function(){
+                                    var toggle = document.getElementById('ai-seo-wc-enabled');
+                                    var panel  = document.getElementById('ai-seo-wc-options');
+                                    if (toggle && panel) {
+                                        toggle.addEventListener('change', function(){
+                                            panel.style.opacity = this.checked ? '1' : '.5';
+                                            panel.style.pointerEvents = this.checked ? '' : 'none';
+                                        });
+                                    }
+                                })();
+                                </script>
+                            </td>
+                        </tr>
+                        <tr>
                             <th scope="row"><label for="ai-seo-robots-txt">Robots.txt custom rules</label></th>
                             <td>
                                 <textarea id="ai-seo-robots-txt" class="large-text code" rows="5" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[robots_txt_custom]" placeholder="Disallow: /private-folder/&#10;Allow: /public/"><?php echo esc_textarea($options['robots_txt_custom'] ?? ''); ?></textarea>

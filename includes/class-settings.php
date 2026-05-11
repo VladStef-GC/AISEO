@@ -91,6 +91,9 @@ class Settings
             'sitemap_include_wc_products'    => 1,
             'sitemap_include_wc_product_cat' => 1,
             'sitemap_include_wc_product_tag' => 1,
+            'wc_integration_enabled'         => 0,
+            'wc_schema_enrichment_enabled'   => 1,
+            'wc_ai_context_enabled'          => 1,
             'indexnow_enabled' => 0,
             'indexnow_auto_submit' => 1,
             'indexnow_key' => '',
@@ -306,6 +309,12 @@ class Settings
         $output['sitemap_include_pages'] = empty($input['sitemap_include_pages']) ? 0 : 1;
         $output['sitemap_include_categories'] = empty($input['sitemap_include_categories']) ? 0 : 1;
         $output['sitemap_include_tags'] = empty($input['sitemap_include_tags']) ? 0 : 1;
+        $output['sitemap_include_wc_products']    = empty($input['sitemap_include_wc_products'])    ? 0 : 1;
+        $output['sitemap_include_wc_product_cat'] = empty($input['sitemap_include_wc_product_cat']) ? 0 : 1;
+        $output['sitemap_include_wc_product_tag'] = empty($input['sitemap_include_wc_product_tag']) ? 0 : 1;
+        $output['wc_integration_enabled']         = empty($input['wc_integration_enabled'])         ? 0 : 1;
+        $output['wc_schema_enrichment_enabled']   = empty($input['wc_schema_enrichment_enabled'])   ? 0 : 1;
+        $output['wc_ai_context_enabled']          = empty($input['wc_ai_context_enabled'])          ? 0 : 1;
         $output['indexnow_enabled'] = empty($input['indexnow_enabled']) ? 0 : 1;
         $output['indexnow_auto_submit'] = empty($input['indexnow_auto_submit']) ? 0 : 1;
         $output['indexnow_key'] = isset($input['indexnow_key']) ? preg_replace('/[^a-zA-Z0-9]/', '', (string) $input['indexnow_key']) : $current['indexnow_key'];
