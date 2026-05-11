@@ -195,9 +195,68 @@ class Admin
         // --- Taxonomy SEO fields → delegate ---
         add_action('admin_init', array($this->taxonomy, 'register'));
 
+        // --- REST API: expose post meta to the block editor ---
+        add_action('rest_api_init', array($this, 'register_gutenberg_meta'));
+
         // Show pending AI content changes in page builder editors (BeTheme, Elementor, etc.)
         // by intercepting their meta reads so the editor loads the modified content.
         add_filter('get_post_metadata', array($this, 'filter_admin_pending_builder_meta'), 1, 4);
+    }
+
+    /**
+     * Register core SEO post meta keys with the REST API so the Gutenberg
+     * block editor can read and track them via wp.data 'core/editor' store.
+     */
+    public function register_gutenberg_meta(): void
+    {
+        $post_types = get_post_types(array('public' => true), 'names');
+        unset($post_types['attachment']);
+
+        $meta_keys = array(
+            self::META_TITLE_KEY => array(
+                'type'         => 'string',
+                'description'  => 'AI SEO Keeper SEO title',
+                'single'       => true,
+                'default'      => '',
+            ),
+            self::META_DESCRIPTION_KEY => array(
+                'type'         => 'string',
+                'description'  => 'AI SEO Keeper meta description',
+                'single'       => true,
+                'default'      => '',
+            ),
+            self::FOCUS_KEYPHRASE_META_KEY => array(
+                'type'         => 'string',
+                'description'  => 'AI SEO Keeper focus keyphrase',
+                'single'       => true,
+                'default'      => '',
+            ),
+            self::ROBOTS_DIRECTIVES_META_KEY => array(
+                'type'         => 'string',
+                'description'  => 'AI SEO Keeper robots directives',
+                'single'       => true,
+                'default'      => '',
+            ),
+        );
+
+        foreach ($post_types as $post_type) {
+            foreach ($meta_keys as $key => $args) {
+                register_post_meta(
+                    $post_type,
+                    $key,
+                    array_merge(
+                        $args,
+                        array(
+                            'show_in_rest'      => true,
+                            'auth_callback'     => static function () {
+                                return current_user_can('edit_posts');
+                            },
+                            'sanitize_callback' => 'sanitize_text_field',
+                        )
+                    )
+                );
+            }
+        }
     }
 
     public function is_supported_post_type(string $post_type): bool
@@ -352,6 +411,109 @@ class Admin
         );
 
         wp_add_inline_script('jquery', $this->get_editor_script(), 'after');
+
+        // Gutenberg block editor sidebar — only when the block editor is active.
+        if (function_exists('use_block_editor_for_post_type') && use_block_editor_for_post_type($screen->post_type)) {
+            $this->enqueue_gutenberg_sidebar($screen->post_type);
+        }
+    }
+
+    /**
+     * Enqueue the Gutenberg sidebar plugin panel script and styles.
+     *
+     * Uses WordPress bundled wp-* packages — no build step required.
+     */
+    private function enqueue_gutenberg_sidebar(string $post_type): void
+    {
+        $url = AI_SEO_KEEPER_URL . 'assets/';
+        $ver = AI_SEO_KEEPER_VERSION;
+
+        wp_enqueue_style(
+            'ai-seo-keeper-gutenberg-sidebar',
+            $url . 'css/gutenberg-sidebar.css',
+            array(),
+            $ver
+        );
+
+        wp_enqueue_script(
+            'ai-seo-keeper-gutenberg-sidebar',
+            $url . 'js/gutenberg-sidebar.js',
+            array(
+                'wp-plugins',
+                'wp-edit-post',
+                'wp-element',
+                'wp-components',
+                'wp-data',
+                'wp-i18n',
+            ),
+            $ver,
+            true
+        );
+
+        $suffix     = $this->settings->get_branding_suffix();
+        $suffix_len = function_exists('mb_strlen') ? mb_strlen($suffix) : strlen($suffix);
+
+        wp_localize_script(
+            'ai-seo-keeper-gutenberg-sidebar',
+            'aiSeoKeeperGutenberg',
+            array(
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce'   => wp_create_nonce('ai_seo_keeper_nonce'),
+                'actions' => array(
+                    'save'     => self::AJAX_SAVE_ACTION,
+                    'generate' => self::AJAX_GENERATE_ACTION,
+                    'chat'     => self::AJAX_CHAT_ACTION,
+                ),
+                'metaKeys' => array(
+                    'title'       => self::META_TITLE_KEY,
+                    'description' => self::META_DESCRIPTION_KEY,
+                    'keyphrase'   => self::FOCUS_KEYPHRASE_META_KEY,
+                    'robots'      => self::ROBOTS_DIRECTIVES_META_KEY,
+                ),
+                'limits' => array(
+                    'titleMin'       => self::TITLE_MIN_LENGTH,
+                    'titleMax'       => self::TITLE_MAX_LENGTH,
+                    'descriptionMin' => self::DESCRIPTION_MIN_LENGTH,
+                    'descriptionMax' => self::DESCRIPTION_MAX_LENGTH,
+                ),
+                'brandingSuffix'       => $suffix,
+                'brandingSuffixLength' => $suffix_len,
+                'i18n' => array(
+                    'sidebarTitle'   => __('AI SEO Keeper', 'ai-seo-keeper'),
+                    'seoScore'       => __('SEO Score', 'ai-seo-keeper'),
+                    'snippetPreview' => __('Snippet Preview', 'ai-seo-keeper'),
+                    'seoFields'      => __('SEO Fields', 'ai-seo-keeper'),
+                    'seoChecks'      => __('SEO Checks', 'ai-seo-keeper'),
+                    'aiAssistant'    => __('AI Assistant', 'ai-seo-keeper'),
+                    'seoTitle'       => __('SEO Title', 'ai-seo-keeper'),
+                    'metaDescription' => __('Meta Description', 'ai-seo-keeper'),
+                    'focusKeyphrase' => __('Focus Keyphrase', 'ai-seo-keeper'),
+                    'noindex'        => __('Set to noindex', 'ai-seo-keeper'),
+                    'saveDraft'      => __('Save Draft', 'ai-seo-keeper'),
+                    'generateAi'     => __('Generate with AI', 'ai-seo-keeper'),
+                    'askAi'          => __('Ask AI', 'ai-seo-keeper'),
+                    'askQuestion'    => __('Ask the AI assistant', 'ai-seo-keeper'),
+                    'chatPlaceholder' => __('e.g. How can I improve the title for this page?', 'ai-seo-keeper'),
+                    'saved'          => __('SEO draft saved.', 'ai-seo-keeper'),
+                    'saveError'      => __('Could not save the SEO draft.', 'ai-seo-keeper'),
+                    'generated'      => __('AI suggestion loaded. Review and save to keep it.', 'ai-seo-keeper'),
+                    'generateError'  => __('Could not generate SEO suggestions.', 'ai-seo-keeper'),
+                    'chatError'      => __('Could not get an AI assistant reply.', 'ai-seo-keeper'),
+                    'noTitle'        => __('No SEO title set', 'ai-seo-keeper'),
+                    'noDescription'  => __('No meta description set', 'ai-seo-keeper'),
+                    'saveToContinue' => __('Save the post once to see SEO checks.', 'ai-seo-keeper'),
+                    'brandingNote'   => __('Branding suffix will be appended:', 'ai-seo-keeper'),
+                    'checks' => array(
+                        'titleLength' => __('SEO title is between 30–60 characters', 'ai-seo-keeper'),
+                        'descLength'  => __('Meta description is between 70–155 characters', 'ai-seo-keeper'),
+                        'titleFilled' => __('SEO title is set', 'ai-seo-keeper'),
+                        'descFilled'  => __('Meta description is set', 'ai-seo-keeper'),
+                        'kpInTitle'   => __('Focus keyphrase appears in the SEO title', 'ai-seo-keeper'),
+                        'kpInDesc'    => __('Focus keyphrase appears in the meta description', 'ai-seo-keeper'),
+                    ),
+                ),
+            )
+        );
     }
 
     /**
