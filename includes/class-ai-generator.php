@@ -669,6 +669,22 @@ class AI_Generator
         return implode("\n\n", $prompt_parts);
     }
 
+    /**
+     * Public bridge to the provider-specific API calls. Used by Site_Chat.
+     */
+    public function call_provider(string $provider, string $api_key, string $model, string $system_prompt, string $user_prompt, float $temperature): string
+    {
+        if ('openai' === $provider) {
+            return $this->call_openai($api_key, $model, $system_prompt, $user_prompt, $temperature);
+        }
+
+        if ('google' === $provider) {
+            return $this->call_google($api_key, $model, $system_prompt, $user_prompt, $temperature);
+        }
+
+        throw new \RuntimeException('Unsupported AI provider: ' . $provider);
+    }
+
     private function call_openai(string $api_key, string $model, string $system_prompt, string $user_prompt, float $temperature): string
     {
         $payload = array(

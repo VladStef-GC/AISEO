@@ -50,6 +50,9 @@ class Admin
     private const AJAX_CLEAR_CHAT_ACTION = 'ai_seo_keeper_clear_chat';
     private const AJAX_TEST_MODEL_ACTION = 'ai_seo_keeper_test_model';
 
+    private const AJAX_SITE_CHAT_ACTION = 'ai_seo_keeper_site_chat';
+    private const AJAX_SITE_CHAT_CLEAR_ACTION = 'ai_seo_keeper_site_chat_clear';
+
     public const CHAT_OBJECT_TYPE = 'post_chat';
 
     public const META_TITLE_KEY = '_ai_seo_keeper_meta_title';
@@ -135,6 +138,9 @@ class Admin
     private Admin_Rollout $rollout;
     private Admin_Ajax $ajax;
 
+    /** @var Site_Chat */
+    private $site_chat;
+
     /**
      * @param AI_Generator  $ai_generator
      * @param History_Store  $history_store
@@ -155,6 +161,7 @@ class Admin
         $this->import_export = new Admin_Import_Export($settings, $this);
         $this->rollout       = new Admin_Rollout($content_indexer, $ai_generator, $history_store, $this->audit_engine, $indexnow_service, $this);
         $this->ajax          = new Admin_Ajax($this, $settings, $ai_generator, $content_indexer, $history_store);
+        $this->site_chat     = new Site_Chat($settings, $content_indexer, $this->audit_engine, $ai_generator, $history_store);
 
         // --- Menu, assets, metabox ---
         add_action('admin_menu', array($this, 'register_menu'));
@@ -191,6 +198,10 @@ class Admin
         add_action('wp_ajax_ai_seo_keeper_delete_edit_plan', array($this->ajax, 'handle_delete_edit_plan'));
         add_action('wp_ajax_ai_seo_keeper_bulk_save_seo', array($this->ajax, 'handle_bulk_save_seo'));
         add_action('wp_ajax_ai_seo_keeper_save_image_alt', array($this->ajax, 'handle_save_image_alt'));
+
+        // --- Site Chat AJAX handlers ---
+        add_action('wp_ajax_' . self::AJAX_SITE_CHAT_ACTION, array($this->site_chat, 'handle_chat'));
+        add_action('wp_ajax_' . self::AJAX_SITE_CHAT_CLEAR_ACTION, array($this->site_chat, 'handle_clear_chat'));
 
         // --- Taxonomy SEO fields → delegate ---
         add_action('admin_init', array($this->taxonomy, 'register'));
@@ -355,6 +366,15 @@ class Admin
             'manage_options',
             'ai-seo-keeper-export-import',
             array($this, 'render_export_import_page')
+        );
+
+        add_submenu_page(
+            'ai-seo-keeper',
+            'AI SEO Strategist',
+            'AI Strategist',
+            'manage_options',
+            'ai-seo-keeper-site-chat',
+            array($this, 'render_site_chat_page')
         );
     }
 
@@ -544,6 +564,7 @@ class Admin
             'ai-seo-keeper-redirects'     => 'redirects',
             'ai-seo-keeper-export-import' => 'export-import',
             'ai-seo-keeper-setup'         => 'setup-wizard',
+            'ai-seo-keeper-site-chat'     => 'site-chat',
         );
 
         // Determine the page slug from the hook suffix.
@@ -1880,6 +1901,27 @@ JS;
         $import_msg    = isset($_GET['import_msg']) ? sanitize_text_field(wp_unslash($_GET['import_msg'])) : '';
 
         require __DIR__ . '/admin/view-export-import.php';
+    }
+
+    public function render_site_chat_page(): void
+    {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
+        $site_chat      = $this->site_chat;
+        $dashboard      = $site_chat->get_dashboard_data();
+        $chat_messages  = $site_chat->get_recent_messages(20);
+
+        // Localize the JS with AJAX data.
+        wp_localize_script('ai-seo-page-site-chat', 'aiSeoSiteChat', array(
+            'ajaxUrl'     => admin_url('admin-ajax.php'),
+            'nonce'       => wp_create_nonce('ai_seo_keeper_site_chat'),
+            'chatAction'  => self::AJAX_SITE_CHAT_ACTION,
+            'clearAction' => self::AJAX_SITE_CHAT_CLEAR_ACTION,
+        ));
+
+        require __DIR__ . '/admin/view-site-chat.php';
     }
 
     public function render_settings_page(): void
