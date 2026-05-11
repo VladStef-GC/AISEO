@@ -343,13 +343,13 @@ class AI_Generator
             $lines[] = '--- AI SEO Audit Results (score ' . $ctx['audit_score'] . '/100) ---';
             if (! empty($ctx['audit_issues'])) {
                 $lines[] = 'Issues found:';
-                foreach (array_slice($ctx['audit_issues'], 0, 10) as $issue) {
+                foreach ($ctx['audit_issues'] as $issue) {
                     $lines[] = '  - ' . $issue;
                 }
             }
             if (! empty($ctx['audit_suggestions'])) {
                 $lines[] = 'Suggestions:';
-                foreach (array_slice($ctx['audit_suggestions'], 0, 10) as $suggestion) {
+                foreach ($ctx['audit_suggestions'] as $suggestion) {
                     $lines[] = '  - ' . $suggestion;
                 }
             }
@@ -531,8 +531,13 @@ class AI_Generator
     private function build_chat_user_prompt(\WP_Post $post, string $message, array $recent_messages): string
     {
         $ctx = $this->get_seo_context($post);
-        $page_content = $this->truncate_text($this->normalize_text(Content_Helper::get_content($post)), 6000);
-        $page_excerpt = $this->truncate_text($this->normalize_text((string) $post->post_excerpt), 300);
+
+        // Send FULL page content — no truncation. AI needs every element for proper SEO analysis.
+        $page_content_raw = Content_Helper::get_content($post);
+        // Provide both: structured HTML (for heading/image/link analysis) and plain text version.
+        $page_html = strip_shortcodes($page_content_raw);
+        $page_content = $this->normalize_text($page_content_raw);
+        $page_excerpt = $this->normalize_text((string) $post->post_excerpt);
         $related_pages = $this->content_indexer->get_related_entries((int) $post->ID, (string) $post->post_type, (int) $post->post_parent, 5);
         $related_lines = array();
 
@@ -541,7 +546,7 @@ class AI_Generator
                 '- %s | /%s/ | %s',
                 trim((string) $related_page['title']) !== '' ? (string) $related_page['title'] : '(untitled)',
                 ltrim((string) $related_page['slug'], '/'),
-                $this->truncate_text($this->normalize_text((string) $related_page['excerpt']), 180)
+                $this->normalize_text((string) $related_page['excerpt'])
             );
         }
 
@@ -564,7 +569,7 @@ class AI_Generator
                 continue;
             }
 
-            $conversation_lines[] = strtoupper($role) . ': ' . $this->truncate_text($content, 300);
+            $conversation_lines[] = strtoupper($role) . ': ' . $content;
         }
 
         if (empty($conversation_lines)) {
@@ -581,15 +586,16 @@ class AI_Generator
 
         $prompt_parts = array(
             'Task: Answer the editor user as an SEO copilot for the current WordPress page.',
-            'Output format: {"reply":"...","suggested_title":"...","suggested_description":"...","notes":"..."}',
-            'Requirements: Ground advice in the real page content, related pages, and the current user question. Be concise and specific. When the user is not explicitly asking for metadata, keep suggested_title and suggested_description empty. You have FULL access to the page SEO data below — reference it precisely when the user asks about scores, issues, or metadata.',
+            'Output format: {"reply":"...","suggested_title":"...","suggested_description":"...","wants_edits":true/false,"notes":"..."}',
+            'Requirements: You receive the COMPLETE page content, ALL metadata fields, and the full audit results. Analyze every element — headings, images, links, word count, schema, keyphrase placement. Do not skip any data. Ground your advice in what you actually see below.',
             'Site: ' . get_bloginfo('name'),
             'Page type: ' . $post->post_type,
             'Current page title: ' . (string) $post->post_title,
             'Page URL: ' . (string) get_permalink($post),
             $this->format_seo_context_lines($ctx),
             'Existing excerpt: ' . ('' !== $page_excerpt ? $page_excerpt : 'None'),
-            'Main page content: ' . ('' !== $page_content ? $page_content : 'No body content is available.'),
+            "Page HTML structure (includes headings, images, links, all elements):\n" . ('' !== $page_html ? $page_html : 'No body content is available.'),
+            'Plain text content: ' . ('' !== $page_content ? $page_content : 'No body content is available.'),
             "Related pages to avoid overlapping with:\n" . implode("\n", $related_lines),
             "Recent conversation:\n" . implode("\n", $conversation_lines),
             'User question: ' . $message,
@@ -1038,7 +1044,8 @@ class AI_Generator
     private function build_page_audit_user_prompt(\WP_Post $post): string
     {
         $page_content_raw = Content_Helper::get_content($post);
-        $page_content = $this->truncate_text($this->normalize_text($page_content_raw), 6000);
+        // Send FULL content to AI for audit — no truncation.
+        $page_content = $this->normalize_text($page_content_raw);
 
         $img_count = preg_match_all('/<img\b/i', $page_content_raw);
         $img_no_alt = preg_match_all('/<img(?![^>]*\balt\s*=\s*"[^"]+")[^>]*>/i', $page_content_raw);
