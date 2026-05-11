@@ -1,0 +1,22 @@
+{
+    "name": "greencoders/ai-seo-keeper",
+    "description": "AI-assisted SEO copilot for WordPress",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "AI_SEO_Keeper\\": "includes/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AI_SEO_Keeper\\Tests\\": "tests/"
+        }
+    }
+}
