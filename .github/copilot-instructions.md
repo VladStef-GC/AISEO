@@ -104,7 +104,33 @@ Set-Content $file $content -Encoding UTF8       # adds BOM → PHP namespace err
 
 ---
 
-## 6. Testing
+## 7. View-Called Methods Must Be `public`
+
+**Problem (recurring — Intelephense P1080):** When a render method on `Admin` (or any class) is called
+from a view file via `$admin->someMethod(...)`, that method **must be `public`**. If it is `private`
+or `protected`, Intelephense reports *"Cannot access private method"* and PHP will fatal-error if
+called from outside the class scope (which `require`-based views are).
+
+**Wrong:**
+```php
+// class-admin.php
+private function render_audit_post_links(array $ids): string { ... }
+
+// view-audit.php — injected as $admin
+echo $admin->render_audit_post_links($group['ids']);  // P1080: cannot access private method
+```
+
+**Correct:**
+```php
+// class-admin.php
+public function render_audit_post_links(array $ids): string { ... }
+```
+
+**Rule:** Any method called from a `view-*.php` template through an injected object (`$admin`, etc.)
+must be declared `public`. Never inject `$this` as `$admin` and then call private helpers from the view.
+If a method is view-only and should not be part of the public API, prefix its name with `render_` to
+signal intent but keep it `public`.
+
 
 Run unit tests after every change:
 ```powershell

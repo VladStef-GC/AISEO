@@ -27,7 +27,7 @@ defined('ABSPATH') || exit;
 /** @var bool   $indexnow_auto_submit */
 /** @var string $indexnow_key_url */
 /** @var array  $indexnow_log */
-/** @var \AI_SEO_Keeper\Admin $admin */
+/** @var \AI_SEO_Keeper\Admin $admin Instance exposing render_audit_post_links() */
 /** @var string $generate_site_audit_action */
 /** @var string $submit_indexnow_action */
 /** @var string $bulk_frontend_action */

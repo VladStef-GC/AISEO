@@ -3898,7 +3898,7 @@ HTML;
         return SEO_Analysis::render_checks_markup($post, $focus_keyphrase, $seo_title, $seo_description);
     }
 
-    private function render_audit_post_links(array $ids): string
+    public function render_audit_post_links(array $ids): string
     {
         $links = array();
 
