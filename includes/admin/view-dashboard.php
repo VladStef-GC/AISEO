@@ -12,6 +12,18 @@
  */
 
 defined('ABSPATH') || exit;
+
+/** @var array  $summary */
+/** @var array  $audit_summary */
+/** @var array  $audit_rows */
+/** @var array  $options */
+/** @var int    $sync_count */
+/** @var bool   $frontend_conflict */
+/** @var bool   $frontend_enabled */
+/** @var bool   $frontend_override_conflicts */
+/** @var string $llms_url */
+/** @var string $llms_full_url */
+/** @var string $sitemap_url */
 ?>
 <div class="wrap">
     <h1><?php esc_html_e('AI SEO Keeper', 'ai-seo-keeper'); ?></h1>

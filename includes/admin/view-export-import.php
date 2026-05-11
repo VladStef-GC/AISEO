@@ -10,6 +10,9 @@
  */
 
 defined('ABSPATH') || exit;
+
+/** @var string $import_status */
+/** @var string $import_msg */
 ?>
 <div class="wrap">
     <h1><?php esc_html_e('Export / Import', 'ai-seo-keeper'); ?></h1>

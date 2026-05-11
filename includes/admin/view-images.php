@@ -12,6 +12,17 @@
  */
 
 defined('ABSPATH') || exit;
+
+/** @var int        $paged */
+/** @var int        $per_page */
+/** @var string     $filter */
+/** @var \WP_Query  $query */
+/** @var int        $total_pages */
+/** @var int        $total_images */
+/** @var int        $total_with_alt */
+/** @var int        $total_missing_alt */
+/** @var array      $used_on_map */
+/** @var string     $nonce */
 ?>
 <div class="wrap">
     <h1><?php esc_html_e('Image SEO', 'ai-seo-keeper'); ?></h1>

@@ -15,11 +15,33 @@
  */
 
 defined('ABSPATH') || exit;
+
+/** @var array  $options */
+/** @var bool   $has_api_key */
+/** @var array  $summary */
+/** @var bool   $has_index */
+/** @var bool   $has_metadata */
+/** @var int    $meta_count */
+/** @var string $published_ids_json */
+/** @var int    $audited_count */
+/** @var array  $existing_audits */
+/** @var array  $skipped_ids */
+/** @var string $existing_audits_json */
+/** @var string $skipped_ids_json */
+/** @var string $skip_patterns */
+/** @var int    $total_pages */
+/** @var bool   $step2_all_done */
+/** @var bool   $step3_all_done */
+/** @var string $ajax_setup_index_action */
+/** @var string $ajax_bulk_generate_action */
+/** @var string $ajax_page_audit_action */
+/** @var string $ajax_toggle_audit_skip_action */
+/** @var string $ajax_save_skip_patterns_action */
 ?>
 <div class="wrap aisk-wizard">
-    <h1><?php echo esc_html('\ud83d\ude80 ' . __('AI SEO Keeper \u2014 Setup Wizard', 'ai-seo-keeper')); ?></h1>
+    <h1>🚀 <?php esc_html_e('AI SEO Keeper — Setup Wizard', 'ai-seo-keeper'); ?></h1>
     <p style="font-size: 14px; max-width: 700px;">
-        <?php esc_html_e('This wizard indexes your site, generates AI-powered SEO metadata, and runs a full page audit \u2014 all in three easy steps.', 'ai-seo-keeper'); ?>
+        <?php esc_html_e('This wizard indexes your site, generates AI-powered SEO metadata, and runs a full page audit — all in three easy steps.', 'ai-seo-keeper'); ?>
     </p>
 
     <?php if (! $has_api_key) : ?>

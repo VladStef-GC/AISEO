@@ -14,6 +14,23 @@
  */
 
 defined('ABSPATH') || exit;
+
+/** @var array  $report */
+/** @var array  $summary */
+/** @var array  $readiness */
+/** @var array  $options */
+/** @var bool   $has_api_key */
+/** @var array  $site_audits */
+/** @var string $audit_status */
+/** @var string $audit_message */
+/** @var bool   $indexnow_enabled */
+/** @var bool   $indexnow_auto_submit */
+/** @var string $indexnow_key_url */
+/** @var array  $indexnow_log */
+/** @var \AI_SEO_Keeper\Admin $admin */
+/** @var string $generate_site_audit_action */
+/** @var string $submit_indexnow_action */
+/** @var string $bulk_frontend_action */
 ?>
 <div class="wrap">
     <h1><?php esc_html_e('AI SEO Keeper Audit', 'ai-seo-keeper'); ?></h1>

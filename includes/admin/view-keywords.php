@@ -11,6 +11,12 @@
  */
 
 defined('ABSPATH') || exit;
+
+/** @var array $keyphrase_map */
+/** @var int   $total_with_keyphrase */
+/** @var array $cannibalized */
+/** @var int   $total_published */
+/** @var int   $without_keyphrase */
 ?>
 <div class="wrap">
     <h1><?php esc_html_e('Keyword Tracking', 'ai-seo-keeper'); ?></h1>

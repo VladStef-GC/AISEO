@@ -11,6 +11,16 @@
  */
 
 defined('ABSPATH') || exit;
+
+/** @var string          $post_type_filter */
+/** @var int             $paged */
+/** @var int             $per_page */
+/** @var \WP_Post_Type[] $post_types */
+/** @var \WP_Query       $query */
+/** @var int             $total_pages */
+/** @var string          $nonce */
+/** @var string          $meta_title_key */
+/** @var string          $meta_desc_key */
 ?>
 <div class="wrap">
     <h1><?php esc_html_e('Bulk SEO Editor', 'ai-seo-keeper'); ?></h1>
