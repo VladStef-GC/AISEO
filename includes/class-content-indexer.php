@@ -673,15 +673,21 @@ class Content_Indexer
             return 'No published pages found.';
         }
 
-        // Fetch all published pages with their keyphrase.
+        // Fetch all published pages with their keyphrase and SEO meta.
         $rows = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT idx.object_id, idx.title, idx.slug, idx.parent_id, idx.post_type,
-                        COALESCE(pm_kp.meta_value, '') AS focus_keyphrase
+                        COALESCE(pm_kp.meta_value, '') AS focus_keyphrase,
+                        COALESCE(pm_title.meta_value, '') AS seo_title,
+                        COALESCE(pm_desc.meta_value, '') AS seo_description
                  FROM {$table_name} idx
                  LEFT JOIN {$postmeta} pm_kp ON pm_kp.post_id = idx.object_id AND pm_kp.meta_key = '_ai_seo_keeper_focus_keyphrase'
+                 LEFT JOIN {$postmeta} pm_title ON pm_title.post_id = idx.object_id AND pm_title.meta_key = %s
+                 LEFT JOIN {$postmeta} pm_desc ON pm_desc.post_id = idx.object_id AND pm_desc.meta_key = %s
                  WHERE idx.object_type = %s AND idx.status = %s
                  ORDER BY idx.parent_id ASC, idx.title ASC",
+                self::META_TITLE_KEY,
+                self::META_DESCRIPTION_KEY,
                 'post',
                 'publish'
             ),
@@ -821,7 +827,20 @@ class Content_Indexer
         $kp_label  = '' !== $keyphrase ? ' [kp: "' . $keyphrase . '"]' : '';
         $slug      = '/' . ltrim((string) $row['slug'], '/') . '/';
 
-        return $indent . $slug . ' "' . $row['title'] . '"' . $kp_label . $marker;
+        $line = $indent . $slug . ' "' . $row['title'] . '"' . $kp_label . $marker;
+
+        // Append SEO meta title and description when available.
+        $seo_title = trim((string) ($row['seo_title'] ?? ''));
+        $seo_desc  = trim((string) ($row['seo_description'] ?? ''));
+
+        if ('' !== $seo_title) {
+            $line .= "\n" . $indent . '  SEO title: "' . $seo_title . '"';
+        }
+        if ('' !== $seo_desc) {
+            $line .= "\n" . $indent . '  SEO desc: "' . $seo_desc . '"';
+        }
+
+        return $line;
     }
 
     public function sync(): int

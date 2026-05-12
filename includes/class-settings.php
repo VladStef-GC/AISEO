@@ -59,6 +59,7 @@ class Settings
             'ai_temperature'       => 0.3,
             'api_key'              => '',
             'system_prompt'        => 'You are the SEO copilot for this WordPress site. Suggest clear, differentiated, search-intent-aware metadata and explain tradeoffs briefly.',
+            'site_chat_context'    => '',
             'google_tracking_code' => '',
             'bing_tracking_code'   => '',
             'editor_chat_enabled'  => 1,
@@ -280,6 +281,7 @@ class Settings
             : $this->sanitize_temperature((string) ($current['ai_temperature'] ?? '0.3'));
         $output['api_key']              = isset($input['api_key']) ? sanitize_text_field($input['api_key']) : $current['api_key'];
         $output['system_prompt']        = isset($input['system_prompt']) ? sanitize_textarea_field($input['system_prompt']) : $current['system_prompt'];
+        $output['site_chat_context']    = isset($input['site_chat_context']) ? sanitize_textarea_field($input['site_chat_context']) : ($current['site_chat_context'] ?? '');
         $output['google_tracking_code'] = isset($input['google_tracking_code']) ? sanitize_text_field($input['google_tracking_code']) : '';
         $output['bing_tracking_code']   = isset($input['bing_tracking_code']) ? sanitize_text_field($input['bing_tracking_code']) : '';
         $output['editor_chat_enabled']  = empty($input['editor_chat_enabled']) ? 0 : 1;

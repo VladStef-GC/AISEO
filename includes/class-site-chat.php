@@ -199,6 +199,12 @@ class Site_Chat
         $parts[] = 'Site: ' . get_bloginfo('name') . ' (' . home_url('/') . ')';
         $parts[] = 'Data collected: ' . wp_date('Y-m-d H:i') . ' (server time)';
 
+        // --- Owner-provided site context ---
+        $site_context = trim((string) ($this->settings->get()['site_chat_context'] ?? ''));
+        if ('' !== $site_context) {
+            $parts[] = "Site owner's description of the business and goals:\n" . $site_context;
+        }
+
         // --- Audit summary ---
         $summary = $this->content_indexer->get_audit_summary();
         $parts[] = 'Audit summary: ' . wp_json_encode($summary);

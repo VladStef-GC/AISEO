@@ -156,6 +156,13 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                             </td>
                         </tr>
                         <tr>
+                            <th scope="row"><label for="ai-seo-site-chat-context"><?php esc_html_e('Site context for AI', 'ai-seo-keeper'); ?></label></th>
+                            <td>
+                                <textarea id="ai-seo-site-chat-context" class="large-text" rows="6" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[site_chat_context]" placeholder="Example: We are a B2B software company selling RPA automation tools and professional services. Our main goal is lead generation through product demos and contact forms. Target audience: enterprise IT managers and CIOs."><?php echo esc_textarea($options['site_chat_context'] ?? ''); ?></textarea>
+                                <p class="description">Describe your company, what the website is for (selling products, services, blog, etc.), and any specific instructions for the AI. This context is included in every Site Chat and Page Chat conversation so the AI understands your business goals.</p>
+                            </td>
+                        </tr>
+                        <tr>
                             <th scope="row"><?php esc_html_e('Model availability test', 'ai-seo-keeper'); ?></th>
                             <td>
                                 <button
