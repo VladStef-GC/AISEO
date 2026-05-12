@@ -4,12 +4,12 @@
 jQuery(function ($) {
     'use strict';
 
-    var $input   = $('#ai-seo-site-chat-input');
-    var $send    = $('#ai-seo-site-chat-send');
-    var $clear   = $('#ai-seo-site-chat-clear');
-    var $status  = $('#ai-seo-site-chat-status');
-    var $shell   = $('#ai-seo-site-chat-shell');
-    var busy     = false;
+    var $input = $('#ai-seo-site-chat-input');
+    var $send = $('#ai-seo-site-chat-send');
+    var $clear = $('#ai-seo-site-chat-clear');
+    var $status = $('#ai-seo-site-chat-status');
+    var $shell = $('#ai-seo-site-chat-shell');
+    var busy = false;
 
     function setStatus(text, isError) {
         $status.text(text).css('color', isError ? '#dc3232' : '#646970');
@@ -43,28 +43,28 @@ jQuery(function ($) {
             },
             timeout: 120000
         })
-        .done(function (response) {
-            if (response.success && response.data && response.data.chatHtml) {
-                $shell.html(response.data.chatHtml);
-                $input.val('');
-                setStatus('', false);
-                scrollToBottom();
-            } else {
-                setStatus(response.data && response.data.message ? response.data.message : 'Unexpected response.', true);
-            }
-        })
-        .fail(function (xhr) {
-            var msg = 'Request failed.';
-            try {
-                var resp = JSON.parse(xhr.responseText);
-                if (resp.data && resp.data.message) msg = resp.data.message;
-            } catch (e) { /* ignore */ }
-            setStatus(msg, true);
-        })
-        .always(function () {
-            busy = false;
-            $send.prop('disabled', false);
-        });
+            .done(function (response) {
+                if (response.success && response.data && response.data.chatHtml) {
+                    $shell.html(response.data.chatHtml);
+                    $input.val('');
+                    setStatus('', false);
+                    scrollToBottom();
+                } else {
+                    setStatus(response.data && response.data.message ? response.data.message : 'Unexpected response.', true);
+                }
+            })
+            .fail(function (xhr) {
+                var msg = 'Request failed.';
+                try {
+                    var resp = JSON.parse(xhr.responseText);
+                    if (resp.data && resp.data.message) msg = resp.data.message;
+                } catch (e) { /* ignore */ }
+                setStatus(msg, true);
+            })
+            .always(function () {
+                busy = false;
+                $send.prop('disabled', false);
+            });
     });
 
     // --- Send on Ctrl+Enter ---
@@ -91,17 +91,17 @@ jQuery(function ($) {
                 nonce: aiSeoSiteChat.nonce
             }
         })
-        .done(function (response) {
-            if (response.success && response.data && response.data.chatHtml !== undefined) {
-                $shell.html(response.data.chatHtml);
-                setStatus('Chat cleared.', false);
-            }
-        })
-        .fail(function () {
-            setStatus('Failed to clear chat.', true);
-        })
-        .always(function () {
-            busy = false;
-        });
+            .done(function (response) {
+                if (response.success && response.data && response.data.chatHtml !== undefined) {
+                    $shell.html(response.data.chatHtml);
+                    setStatus('Chat cleared.', false);
+                }
+            })
+            .fail(function () {
+                setStatus('Failed to clear chat.', true);
+            })
+            .always(function () {
+                busy = false;
+            });
     });
 });

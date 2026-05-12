@@ -162,23 +162,24 @@ class Site_Chat
     {
         return trim(
             'IDENTITY: You are the AI inside the "AI SEO Keeper" WordPress plugin. ' .
-            'You are in SITE-WIDE CHAT mode — the user is asking about overall site SEO, not a specific page. ' .
-            'Never mention Yoast, RankMath, or any other SEO plugin.' . "\n\n" .
-            'Return only valid JSON with exactly these keys: reply, notes.' . "\n" .
-            'reply should be a clear, actionable, and comprehensive answer using Markdown formatting (headings, lists, bold).' . "\n" .
-            'notes should be a one-sentence internal note about the analysis approach.' . "\n\n" .
-            'YOU HAVE FULL KNOWLEDGE of: the complete site tree with every page and its focus keyphrase, ' .
-            'audit summary scores, duplicate title issues, orphaned content, thin content pages, ' .
-            'keyphrase cannibalization, sitemap configuration, redirect/404 stats, and image usage. ' .
-            'Use ALL of this data to answer the user.' . "\n\n" .
-            'RESPONSE RULES:' . "\n" .
-            '1. Always reference specific pages by title and URL when discussing issues.' . "\n" .
-            '2. Prioritize actionable fixes over general advice.' . "\n" .
-            '3. When discussing site structure, reference the actual hierarchy tree you see.' . "\n" .
-            '4. Flag keyphrase cannibalization — pages competing for the same keyphrase.' . "\n" .
-            '5. Suggest internal linking opportunities based on the site tree.' . "\n" .
-            '6. When asked to improve the site, provide a numbered priority list of specific fixes.' . "\n" .
-            '7. Do not invent pages, URLs, or data that are not in the context below.'
+                'You are in SITE-WIDE CHAT mode — the user is asking about overall site SEO, not a specific page. ' .
+                'Never mention Yoast, RankMath, or any other SEO plugin.' . "\n\n" .
+                'Return only valid JSON with exactly these keys: reply, notes.' . "\n" .
+                'reply should be a clear, actionable, and comprehensive answer using Markdown formatting (headings, lists, bold).' . "\n" .
+                'notes should be a one-sentence internal note about the analysis approach.' . "\n\n" .
+                'YOU HAVE FULL KNOWLEDGE of: the complete site tree with every page and its focus keyphrase, ' .
+                'audit summary scores, duplicate title issues, orphaned content, thin content pages, ' .
+                'keyphrase cannibalization, sitemap configuration, redirect/404 stats, and image usage. ' .
+                'Use ALL of this data to answer the user.' . "\n\n" .
+                'RESPONSE RULES:' . "\n" .
+                '1. Always reference specific pages by title and URL when discussing issues.' . "\n" .
+                '2. Prioritize actionable fixes over general advice.' . "\n" .
+                '3. When discussing site structure, reference the actual hierarchy tree you see.' . "\n" .
+                '4. Flag keyphrase cannibalization — pages competing for the same keyphrase.' . "\n" .
+                '5. Suggest internal linking opportunities based on the site tree.' . "\n" .
+                '6. When asked to improve the site, provide a numbered priority list of specific fixes.' . "\n" .
+                '7. Do not invent pages, URLs, or data that are not in the context below.' . "\n" .
+                '8. When explaining scores or formulas, use ONLY the exact numbers, weights, and ranges provided in the data — never guess or approximate them.'
         );
     }
 
@@ -198,9 +199,11 @@ class Site_Chat
         $report = $this->audit_engine->get_report(10);
         if (! empty($report['readiness'])) {
             $parts[] = 'Readiness score: ' . (int) $report['readiness']['score'] . '/100 (' . $report['readiness']['label'] . ')' .
-                ' | Draft coverage: ' . (int) $report['readiness']['draft_coverage'] . '%' .
-                ' | Approval coverage: ' . (int) $report['readiness']['approval_coverage'] . '%' .
-                ' | Frontend coverage: ' . (int) $report['readiness']['frontend_coverage'] . '%';
+                ' | Formula: (draft_coverage × 50%) + (approval_coverage × 30%) + (frontend_coverage × 20%)' .
+                ' | Label ranges: Starting 0-29, Early 30-54, Building 55-79, Strong 80-100' .
+                ' | Draft coverage: ' . (int) $report['readiness']['draft_coverage'] . '% (weight 50%)' .
+                ' | Approval coverage: ' . (int) $report['readiness']['approval_coverage'] . '% (weight 30%)' .
+                ' | Frontend coverage: ' . (int) $report['readiness']['frontend_coverage'] . '% (weight 20%)';
         }
 
         // --- Priority rows (pages needing attention) ---
@@ -662,7 +665,7 @@ class Site_Chat
     {
         ob_start();
         if (empty($chat_messages)) :
-            ?>
+?>
             <p class="ai-seo-keeper-empty-state">No site-wide AI chat messages yet. Ask about your overall SEO performance, site structure, or keyphrase strategy.</p>
         <?php else : ?>
             <div class="ai-seo-keeper-stack">
@@ -691,7 +694,7 @@ class Site_Chat
                     </div>
                 <?php endforeach; ?>
             </div>
-        <?php endif;
+<?php endif;
 
         return (string) ob_get_clean();
     }

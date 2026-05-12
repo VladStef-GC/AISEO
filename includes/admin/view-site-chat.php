@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Site-wide AI Chat admin page view.
  *
@@ -56,7 +57,7 @@ defined('ABSPATH') || exit;
         </div>
 
         <textarea id="ai-seo-site-chat-input" class="widefat ai-seo-keeper-chat-input" rows="3"
-                  placeholder="<?php esc_attr_e('e.g. "What are my biggest SEO issues?" or "Which pages have keyphrase conflicts?"', 'ai-seo-keeper'); ?>"></textarea>
+            placeholder="<?php esc_attr_e('e.g. "What are my biggest SEO issues?" or "Which pages have keyphrase conflicts?"', 'ai-seo-keeper'); ?>"></textarea>
 
         <p class="ai-seo-keeper-chat-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <button type="button" id="ai-seo-site-chat-send" class="button button-primary"><?php esc_html_e('Ask AI', 'ai-seo-keeper'); ?></button>
@@ -65,7 +66,8 @@ defined('ABSPATH') || exit;
         </p>
 
         <div id="ai-seo-site-chat-shell" class="ai-seo-keeper-chat-shell">
-            <?php echo $site_chat->render_chat_html($chat_messages); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- rendered with escaping inside render_chat_html ?>
+            <?php echo $site_chat->render_chat_html($chat_messages); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- rendered with escaping inside render_chat_html 
+            ?>
         </div>
     </div>
 </div>
