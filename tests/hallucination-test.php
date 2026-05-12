@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Standalone AI Hallucination Test for Site Chat
  *

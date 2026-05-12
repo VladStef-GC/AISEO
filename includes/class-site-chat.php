@@ -179,7 +179,14 @@ class Site_Chat
                 '5. Suggest internal linking opportunities based on the site tree.' . "\n" .
                 '6. When asked to improve the site, provide a numbered priority list of specific fixes.' . "\n" .
                 '7. Do not invent pages, URLs, or data that are not in the context below.' . "\n" .
-                '8. When explaining scores or formulas, use ONLY the exact numbers, weights, and ranges provided in the data — never guess or approximate them.'
+                '8. When explaining scores or formulas, use ONLY the exact numbers, weights, and ranges provided in the data — never guess or approximate them.' . "\n" .
+                '9. Pages marked [template] are UI fragments (headers, footers, popups) — do NOT recommend adding SEO content to them or creating internal links TO them. They are not visitor-facing landing pages.' . "\n\n" .
+                'GLOSSARY:' . "\n" .
+                '- "approved" = the site owner has manually reviewed and accepted the AI-generated SEO title/description.' . "\n" .
+                '- "frontend" = the SEO metadata is actively served on the live site (visible to search engines).' . "\n" .
+                '- "draft coverage" = percentage of pages that have an AI-generated title + description draft.' . "\n" .
+                '- "approval coverage" = percentage of pages whose drafts have been approved by the owner.' . "\n" .
+                '- "frontend coverage" = percentage of pages whose approved SEO data is live on the frontend.'
         );
     }
 
@@ -190,13 +197,14 @@ class Site_Chat
         $parts[] = 'Task: Answer the site owner as a site-wide SEO strategist.';
         $parts[] = 'Output format: {"reply":"...","notes":"..."}';
         $parts[] = 'Site: ' . get_bloginfo('name') . ' (' . home_url('/') . ')';
+        $parts[] = 'Data collected: ' . wp_date('Y-m-d H:i') . ' (server time)';
 
         // --- Audit summary ---
         $summary = $this->content_indexer->get_audit_summary();
         $parts[] = 'Audit summary: ' . wp_json_encode($summary);
 
         // --- Readiness / scores ---
-        $report = $this->audit_engine->get_report(10);
+        $report = $this->audit_engine->get_report(500);
         if (! empty($report['readiness'])) {
             $parts[] = 'Readiness score: ' . (int) $report['readiness']['score'] . '/100 (' . $report['readiness']['label'] . ')' .
                 ' | Formula: (draft_coverage × 50%) + (approval_coverage × 30%) + (frontend_coverage × 20%)' .
@@ -210,10 +218,13 @@ class Site_Chat
         if (! empty($report['priority_rows'])) {
             $priority_lines = array();
             foreach ($report['priority_rows'] as $row) {
+                $permalink = (string) ($row['permalink'] ?? '');
+                $tag       = $this->is_template_page($permalink) ? ' [template]' : '';
                 $priority_lines[] = sprintf(
-                    '- "%s" (%s) | title draft: %s | desc draft: %s | approved: %s | frontend: %s',
+                    '- "%s"%s (%s) | title draft: %s | desc draft: %s | approved: %s | frontend: %s',
                     $row['title'] ?? '(untitled)',
-                    $row['permalink'] ?? '',
+                    $tag,
+                    $permalink,
                     ! empty($row['has_title_draft']) ? 'yes' : 'NO',
                     ! empty($row['has_description_draft']) ? 'yes' : 'NO',
                     ! empty($row['has_approved_suggestion']) ? 'yes' : 'no',
@@ -239,21 +250,23 @@ class Site_Chat
         if (! empty($report['thin_content_rows'])) {
             $thin_lines = array();
             foreach ($report['thin_content_rows'] as $row) {
-                $thin_lines[] = sprintf('- "%s" (%s) — %d words', $row['title'] ?? '', $row['permalink'] ?? '', $row['word_count'] ?? 0);
+                $permalink = (string) ($row['permalink'] ?? '');
+                $tag       = $this->is_template_page($permalink) ? ' [template]' : '';
+                $thin_lines[] = sprintf('- "%s"%s (%s) — %d words', $row['title'] ?? '', $tag, $permalink, $row['word_count'] ?? 0);
             }
             $parts[] = "Thin content pages (< 120 words):\n" . implode("\n", $thin_lines);
         }
 
-        // --- Orphaned content ---
-        if (! empty($report['orphaned_content'])) {
-            $orphan_data = $report['orphaned_content'];
-            if (! empty($orphan_data['orphans'])) {
-                $orphan_lines = array();
-                foreach ($orphan_data['orphans'] as $orphan) {
-                    $orphan_lines[] = sprintf('- "%s" (%s)', $orphan['title'] ?? '', $orphan['permalink'] ?? '');
-                }
-                $parts[] = 'Orphaned pages (no internal links pointing to them): ' . ($orphan_data['total_orphans'] ?? 0) . " total\n" . implode("\n", $orphan_lines);
+        // --- Orphaned content (full list, not truncated) ---
+        $orphan_data = $this->audit_engine->get_orphaned_content(200);
+        if (! empty($orphan_data['orphans'])) {
+            $orphan_lines = array();
+            foreach ($orphan_data['orphans'] as $orphan) {
+                $permalink = (string) ($orphan['permalink'] ?? '');
+                $tag       = $this->is_template_page($permalink) ? ' [template]' : '';
+                $orphan_lines[] = sprintf('- "%s"%s (%s)', $orphan['title'] ?? '', $tag, $permalink);
             }
+            $parts[] = 'Orphaned pages (no internal links pointing to them): ' . ($orphan_data['total_orphans'] ?? 0) . " total\n" . implode("\n", $orphan_lines);
         }
 
         // --- Site tree with keyphrases ---
@@ -267,9 +280,11 @@ class Site_Chat
         if (! empty($page_scores)) {
             $score_lines = array();
             foreach ($page_scores as $ps) {
+                $tag = $this->is_template_page($ps['permalink']) ? ' [template]' : '';
                 $score_lines[] = sprintf(
-                    '- "%s" (%s) — score: %d/100 | issues: %d',
+                    '- "%s"%s (%s) — score: %d/100 | issues: %d',
                     $ps['title'],
+                    $tag,
                     $ps['permalink'],
                     $ps['score'],
                     $ps['issue_count']
@@ -298,7 +313,7 @@ class Site_Chat
         $image_stats = $this->get_image_stats();
         if (! empty($image_stats)) {
             $parts[] = sprintf(
-                'Image usage: %d total images across all pages | %d missing alt text (%d%%)',
+                'Image usage: %d total images found in page content | %d missing alt text (%d%%) — NOTE: this counts only inline <img> tags in post content; images from page builders, featured images, and media library are not included in this count',
                 $image_stats['total'],
                 $image_stats['missing_alt'],
                 $image_stats['total'] > 0 ? (int) round($image_stats['missing_alt'] / $image_stats['total'] * 100) : 0
@@ -348,6 +363,14 @@ class Site_Chat
     // ------------------------------------------------------------------
     //  Data aggregation helpers
     // ------------------------------------------------------------------
+
+    /**
+     * Detect if a page is a template/UI fragment (not a real landing page).
+     */
+    private function is_template_page(string $permalink): bool
+    {
+        return (bool) preg_match('/template-item|popup|header|footer/i', $permalink);
+    }
 
     /**
      * Get audit scores for all pages that have been audited.

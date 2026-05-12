@@ -119,7 +119,7 @@ class Content_Indexer
 
         $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
         $postmeta_table = $wpdb->postmeta;
-        $limit = max(1, min(20, $limit));
+        $limit = max(1, $limit);
 
         $sql = $wpdb->prepare(
             "SELECT

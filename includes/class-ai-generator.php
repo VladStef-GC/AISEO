@@ -491,8 +491,8 @@ class AI_Generator
     private function build_user_prompt(\WP_Post $post, array $field_overrides = array()): string
     {
         $ctx = $this->get_seo_context($post, $field_overrides);
-        $page_content = $this->truncate_text($this->normalize_text(Content_Helper::get_content($post)), 5000);
-        $page_excerpt = $this->truncate_text($this->normalize_text((string) $post->post_excerpt), 400);
+        $page_content = $this->normalize_text(Content_Helper::get_content($post));
+        $page_excerpt = $this->normalize_text((string) $post->post_excerpt);
         $related_pages = $this->content_indexer->get_related_entries((int) $post->ID, (string) $post->post_type, (int) $post->post_parent, 5);
         $related_lines = array();
 
@@ -1059,7 +1059,7 @@ class AI_Generator
     {
         $ctx = $this->get_seo_context($post);
         $page_content_raw = Content_Helper::get_content($post);
-        $page_content = $this->truncate_text($page_content_raw, 30000);
+        $page_content = $page_content_raw;
 
         $conversation_lines = array();
         foreach ($recent_messages as $recent_message) {
@@ -1076,7 +1076,7 @@ class AI_Generator
                 continue;
             }
 
-            $conversation_lines[] = strtoupper($role) . ': ' . $this->truncate_text($content, 400);
+            $conversation_lines[] = strtoupper($role) . ': ' . $content;
         }
 
         $parts = array(

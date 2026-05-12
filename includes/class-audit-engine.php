@@ -82,7 +82,7 @@ class Audit_Engine
         global $wpdb;
 
         $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
-        $limit = max(1, min(12, $limit));
+        $limit = max(1, $limit);
 
         $sql = $wpdb->prepare(
             "SELECT MIN(title) AS label, GROUP_CONCAT(object_id ORDER BY object_id ASC) AS ids, COUNT(*) AS total_count
@@ -108,7 +108,7 @@ class Audit_Engine
 
         $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
         $postmeta_table = $wpdb->postmeta;
-        $limit = max(1, min(12, $limit));
+        $limit = max(1, $limit);
 
         $sql = $wpdb->prepare(
             "SELECT MIN(pm_title.meta_value) AS label, GROUP_CONCAT(idx.object_id ORDER BY idx.object_id ASC) AS ids, COUNT(*) AS total_count
@@ -136,7 +136,7 @@ class Audit_Engine
 
         $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
         $postmeta_table = $wpdb->postmeta;
-        $limit = max(1, min(12, $limit));
+        $limit = max(1, $limit);
 
         $sql = $wpdb->prepare(
             "SELECT
@@ -193,7 +193,7 @@ class Audit_Engine
 
         $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
         $postmeta_table = $wpdb->postmeta;
-        $limit = max(1, min(20, $limit));
+        $limit = max(1, $limit);
 
         $sql = $wpdb->prepare(
             "SELECT
@@ -244,7 +244,7 @@ class Audit_Engine
         global $wpdb;
 
         $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
-        $limit = max(1, min(12, $limit));
+        $limit = max(1, $limit);
         $rows = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT object_id, title, permalink, post_type
