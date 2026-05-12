@@ -1913,12 +1913,25 @@ JS;
         $dashboard      = $site_chat->get_dashboard_data();
         $chat_messages  = $site_chat->get_recent_messages(20);
 
+        // Calculate model capacity data for the UI.
+        $options       = $this->settings->get();
+        $active_model  = trim((string) ($options['model'] ?? ''));
+        $page_count    = $this->site_chat->get_published_page_count_via_indexer();
+        $max_pages     = Settings::get_max_pages_for_model($active_model);
+        $context_window = Settings::get_context_window($active_model);
+        $needs_focus   = $page_count > $max_pages;
+
         // Localize the JS with AJAX data.
         wp_localize_script('ai-seo-page-site-chat', 'aiSeoSiteChat', array(
-            'ajaxUrl'     => admin_url('admin-ajax.php'),
-            'nonce'       => wp_create_nonce('ai_seo_keeper_site_chat'),
-            'chatAction'  => self::AJAX_SITE_CHAT_ACTION,
-            'clearAction' => self::AJAX_SITE_CHAT_CLEAR_ACTION,
+            'ajaxUrl'       => admin_url('admin-ajax.php'),
+            'nonce'         => wp_create_nonce('ai_seo_keeper_site_chat'),
+            'chatAction'    => self::AJAX_SITE_CHAT_ACTION,
+            'clearAction'   => self::AJAX_SITE_CHAT_CLEAR_ACTION,
+            'activeModel'   => $active_model,
+            'contextWindow' => $context_window,
+            'pageCount'     => $page_count,
+            'maxPages'      => $max_pages,
+            'needsFocus'    => $needs_focus,
         ));
 
         require __DIR__ . '/admin/view-site-chat.php';

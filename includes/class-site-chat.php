@@ -68,11 +68,31 @@ class Site_Chat
         try {
             $recent_messages = $this->get_recent_messages(8);
 
-            // Focus pages mode — comma-separated post IDs from the UI.
+            // Focus pages mode — comma-separated post IDs or newline-separated URLs.
             $focus_ids = array();
             if (! empty($_POST['focus_pages'])) {
-                $raw_ids   = sanitize_text_field(wp_unslash($_POST['focus_pages']));
-                $focus_ids = array_filter(array_map('absint', explode(',', $raw_ids)));
+                $raw = sanitize_textarea_field(wp_unslash($_POST['focus_pages']));
+
+                // Support both comma-separated IDs and newline-separated URLs.
+                $items = preg_split('/[\n,]+/', $raw, -1, PREG_SPLIT_NO_EMPTY);
+
+                foreach ($items as $item) {
+                    $item = trim($item);
+                    if ('' === $item) {
+                        continue;
+                    }
+
+                    if (is_numeric($item)) {
+                        $focus_ids[] = absint($item);
+                    } elseif (filter_var($item, FILTER_VALIDATE_URL)) {
+                        $post_id = url_to_postid($item);
+                        if ($post_id > 0) {
+                            $focus_ids[] = $post_id;
+                        }
+                    }
+                }
+
+                $focus_ids = array_unique(array_filter($focus_ids));
             }
 
             $reply = $this->send_to_ai($message, $recent_messages, $options, $focus_ids);
@@ -138,9 +158,9 @@ class Site_Chat
                 $context_window = Settings::get_context_window($model);
                 throw new \RuntimeException(sprintf(
                     'Your site has %s pages but the selected model (%s, %s-token context) can safely analyze up to %s pages at once. ' .
-                    'Options: 1) Use Skip Patterns in Settings to exclude template/utility pages. ' .
-                    '2) Use Focus Pages mode to analyze a specific set of pages. ' .
-                    '3) Switch to a model with a larger context window.',
+                        'Options: 1) Use Skip Patterns in Settings to exclude template/utility pages. ' .
+                        '2) Use Focus Pages mode to analyze a specific set of pages. ' .
+                        '3) Switch to a model with a larger context window.',
                     number_format_i18n($page_count),
                     esc_html($model),
                     number_format_i18n($context_window),
@@ -814,6 +834,14 @@ class Site_Chat
     // ------------------------------------------------------------------
     //  Admin page data (for the view)
     // ------------------------------------------------------------------
+
+    /**
+     * Proxy to content_indexer for published page count (used by admin controller).
+     */
+    public function get_published_page_count_via_indexer(): int
+    {
+        return $this->content_indexer->get_published_page_count();
+    }
 
     /**
      * Get a summary array for the admin page header cards.

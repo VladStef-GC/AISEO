@@ -59,6 +59,25 @@ defined('ABSPATH') || exit;
         <textarea id="ai-seo-site-chat-input" class="widefat ai-seo-keeper-chat-input" rows="3"
             placeholder="<?php esc_attr_e('e.g. "What are my biggest SEO issues?" or "Which pages have keyphrase conflicts?"', 'ai-seo-keeper'); ?>"></textarea>
 
+        <!-- Focus Pages mode -->
+        <details id="ai-seo-focus-pages-toggle" class="ai-seo-keeper-focus-pages">
+            <summary style="cursor:pointer;user-select:none;font-weight:600;margin:8px 0 4px;color:#643d87;">
+                <?php esc_html_e('Focus Pages (optional — for large sites)', 'ai-seo-keeper'); ?>
+                <span id="ai-seo-capacity-badge" class="ai-seo-keeper-capacity-badge"></span>
+            </summary>
+            <div style="margin-top:8px;">
+                <p class="description" style="margin:0 0 6px;">
+                    <?php esc_html_e('Paste page URLs (one per line) to limit AI analysis to specific pages. This bypasses the context limit and lets you analyze any subset of your site.', 'ai-seo-keeper'); ?>
+                </p>
+                <div id="ai-seo-capacity-info" class="ai-seo-keeper-capacity-info" style="margin:0 0 8px;padding:8px 12px;border-radius:4px;font-size:13px;"></div>
+                <textarea id="ai-seo-focus-pages-input" class="widefat" rows="4"
+                    placeholder="<?php esc_attr_e("https://yoursite.com/page-1/\nhttps://yoursite.com/page-2/\nhttps://yoursite.com/page-3/", 'ai-seo-keeper'); ?>"></textarea>
+                <p class="description" style="margin:4px 0 0;">
+                    <span id="ai-seo-focus-count"><?php esc_html_e('0 pages selected', 'ai-seo-keeper'); ?></span>
+                </p>
+            </div>
+        </details>
+
         <p class="ai-seo-keeper-chat-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <button type="button" id="ai-seo-site-chat-send" class="button button-primary"><?php esc_html_e('Ask AI', 'ai-seo-keeper'); ?></button>
             <button type="button" id="ai-seo-site-chat-clear" class="button"><?php esc_html_e('Clear Chat', 'ai-seo-keeper'); ?></button>
