@@ -13,24 +13,24 @@ class Settings
      */
     private const PROVIDER_MODELS = array(
         'openai' => array(
-            'gpt-5.5' => array('label' => 'GPT-5.5', 'tier' => 'stable'),
-            'gpt-5.4' => array('label' => 'GPT-5.4', 'tier' => 'stable'),
-            'gpt-5.4-mini' => array('label' => 'GPT-5.4 Mini', 'tier' => 'stable'),
-            'gpt-5.4-nano' => array('label' => 'GPT-5.4 Nano', 'tier' => 'stable'),
-            'o3' => array('label' => 'o3', 'tier' => 'stable'),
-            'o4-mini' => array('label' => 'o4-mini', 'tier' => 'stable'),
-            'gpt-4.1' => array('label' => 'GPT-4.1', 'tier' => 'stable'),
-            'gpt-4.1-mini' => array('label' => 'GPT-4.1 Mini', 'tier' => 'stable'),
-            'gpt-4.1-nano' => array('label' => 'GPT-4.1 Nano', 'tier' => 'stable'),
+            'gpt-5.5'      => array('label' => 'GPT-5.5',      'tier' => 'stable',  'context_window' => 1050000),
+            'gpt-5.4'      => array('label' => 'GPT-5.4',      'tier' => 'stable',  'context_window' => 1000000),
+            'gpt-5.4-mini' => array('label' => 'GPT-5.4 Mini', 'tier' => 'stable',  'context_window' => 400000),
+            'gpt-5.4-nano' => array('label' => 'GPT-5.4 Nano', 'tier' => 'stable',  'context_window' => 1000000),
+            'o3'           => array('label' => 'o3',            'tier' => 'stable',  'context_window' => 200000),
+            'o4-mini'      => array('label' => 'o4-mini',       'tier' => 'stable',  'context_window' => 200000),
+            'gpt-4.1'      => array('label' => 'GPT-4.1',      'tier' => 'stable',  'context_window' => 1047576),
+            'gpt-4.1-mini' => array('label' => 'GPT-4.1 Mini', 'tier' => 'stable',  'context_window' => 1047576),
+            'gpt-4.1-nano' => array('label' => 'GPT-4.1 Nano', 'tier' => 'stable',  'context_window' => 1047576),
         ),
         'google' => array(
-            'gemini-3.1-pro-preview' => array('label' => 'Gemini 3.1 Pro', 'tier' => 'preview'),
-            'gemini-3-flash-preview' => array('label' => 'Gemini 3 Flash', 'tier' => 'preview'),
-            'gemini-3.1-flash-lite' => array('label' => 'Gemini 3.1 Flash-Lite', 'tier' => 'stable'),
-            'gemini-3.1-flash-lite-preview' => array('label' => 'Gemini 3.1 Flash-Lite', 'tier' => 'preview'),
-            'gemini-2.5-pro' => array('label' => 'Gemini 2.5 Pro', 'tier' => 'stable'),
-            'gemini-2.5-flash' => array('label' => 'Gemini 2.5 Flash', 'tier' => 'stable'),
-            'gemini-2.5-flash-lite' => array('label' => 'Gemini 2.5 Flash-Lite', 'tier' => 'stable'),
+            'gemini-3.1-pro-preview'        => array('label' => 'Gemini 3.1 Pro',        'tier' => 'preview', 'context_window' => 1048576),
+            'gemini-3-flash-preview'        => array('label' => 'Gemini 3 Flash',        'tier' => 'preview', 'context_window' => 1048576),
+            'gemini-3.1-flash-lite'         => array('label' => 'Gemini 3.1 Flash-Lite', 'tier' => 'stable',  'context_window' => 1048576),
+            'gemini-3.1-flash-lite-preview' => array('label' => 'Gemini 3.1 Flash-Lite', 'tier' => 'preview', 'context_window' => 1048576),
+            'gemini-2.5-pro'                => array('label' => 'Gemini 2.5 Pro',        'tier' => 'stable',  'context_window' => 1048576),
+            'gemini-2.5-flash'              => array('label' => 'Gemini 2.5 Flash',      'tier' => 'stable',  'context_window' => 1048576),
+            'gemini-2.5-flash-lite'         => array('label' => 'Gemini 2.5 Flash-Lite', 'tier' => 'stable',  'context_window' => 1048576),
         ),
     );
 
@@ -225,6 +225,35 @@ class Settings
         }
 
         return self::get_default_model_for_provider($provider);
+    }
+
+    /**
+     * Get the context window size (in tokens) for a given model ID.
+     *
+     * Falls back to a conservative 200,000 for unknown/custom models.
+     */
+    public static function get_context_window(string $model_id): int
+    {
+        foreach (self::PROVIDER_MODELS as $models) {
+            if (isset($models[$model_id]['context_window'])) {
+                return (int) $models[$model_id]['context_window'];
+            }
+        }
+
+        return 200000;
+    }
+
+    /**
+     * Calculate the maximum number of pages the given model can handle in Site Chat.
+     *
+     * Uses 60% of context window as safe input budget, with ~175 tokens per page.
+     */
+    public static function get_max_pages_for_model(string $model_id): int
+    {
+        $context_window = self::get_context_window($model_id);
+        $input_budget   = (int) ($context_window * 0.6);
+
+        return max(1, (int) floor($input_budget / 175));
     }
 
     public static function sanitize_custom_model_id(string $model): string

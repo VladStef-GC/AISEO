@@ -36,6 +36,20 @@ class Content_Indexer
         );
     }
 
+    public function get_published_page_count(): int
+    {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+
+        return (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$table_name} WHERE status = %s",
+                'publish'
+            )
+        );
+    }
+
     public function get_audit_summary(): array
     {
         global $wpdb;

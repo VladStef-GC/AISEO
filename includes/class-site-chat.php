@@ -67,7 +67,15 @@ class Site_Chat
 
         try {
             $recent_messages = $this->get_recent_messages(8);
-            $reply           = $this->send_to_ai($message, $recent_messages, $options);
+
+            // Focus pages mode — comma-separated post IDs from the UI.
+            $focus_ids = array();
+            if (! empty($_POST['focus_pages'])) {
+                $raw_ids   = sanitize_text_field(wp_unslash($_POST['focus_pages']));
+                $focus_ids = array_filter(array_map('absint', explode(',', $raw_ids)));
+            }
+
+            $reply = $this->send_to_ai($message, $recent_messages, $options, $focus_ids);
 
             $this->history_store->log_generation(
                 self::OBJECT_ID,
@@ -114,15 +122,35 @@ class Site_Chat
     //  AI call
     // ------------------------------------------------------------------
 
-    private function send_to_ai(string $message, array $recent_messages, array $options): array
+    private function send_to_ai(string $message, array $recent_messages, array $options, array $focus_ids = array()): array
     {
         $provider    = (string) $options['provider'];
         $model       = trim((string) $options['model']);
         $api_key     = (string) $options['api_key'];
         $temperature = isset($options['ai_temperature']) ? (float) $options['ai_temperature'] : 0.3;
 
+        // --- Page count gate: warn if site exceeds model capacity (skip in focus mode) ---
+        if (empty($focus_ids)) {
+            $page_count = $this->content_indexer->get_published_page_count();
+            $max_pages  = Settings::get_max_pages_for_model($model);
+
+            if ($page_count > $max_pages) {
+                $context_window = Settings::get_context_window($model);
+                throw new \RuntimeException(sprintf(
+                    'Your site has %s pages but the selected model (%s, %s-token context) can safely analyze up to %s pages at once. ' .
+                    'Options: 1) Use Skip Patterns in Settings to exclude template/utility pages. ' .
+                    '2) Use Focus Pages mode to analyze a specific set of pages. ' .
+                    '3) Switch to a model with a larger context window.',
+                    number_format_i18n($page_count),
+                    esc_html($model),
+                    number_format_i18n($context_window),
+                    number_format_i18n($max_pages)
+                ));
+            }
+        }
+
         $system_prompt = $this->build_system_prompt();
-        $user_prompt   = $this->build_user_prompt($message, $recent_messages);
+        $user_prompt   = $this->build_user_prompt($message, $recent_messages, $focus_ids);
 
         if ('openai' === $provider) {
             $raw = $this->ai_generator->call_provider($provider, $api_key, $model, $system_prompt, $user_prompt, $temperature);
@@ -190,7 +218,7 @@ class Site_Chat
         );
     }
 
-    private function build_user_prompt(string $message, array $recent_messages): string
+    private function build_user_prompt(string $message, array $recent_messages, array $focus_ids = array()): string
     {
         $parts = array();
 
@@ -198,6 +226,12 @@ class Site_Chat
         $parts[] = 'Output format: {"reply":"...","notes":"..."}';
         $parts[] = 'Site: ' . get_bloginfo('name') . ' (' . home_url('/') . ')';
         $parts[] = 'Data collected: ' . wp_date('Y-m-d H:i') . ' (server time)';
+
+        if (! empty($focus_ids)) {
+            $parts[] = 'MODE: Focus Pages — analysis is limited to ' . count($focus_ids) . ' selected pages (IDs: ' . implode(', ', $focus_ids) . '). All data below is filtered to these pages only.';
+        }
+
+        $focus_set = ! empty($focus_ids) ? array_flip($focus_ids) : array();
 
         // --- Owner-provided site context ---
         $site_context = trim((string) ($this->settings->get()['site_chat_context'] ?? ''));
@@ -224,6 +258,9 @@ class Site_Chat
         if (! empty($report['priority_rows'])) {
             $priority_lines = array();
             foreach ($report['priority_rows'] as $row) {
+                if (! empty($focus_set) && ! isset($focus_set[(int) ($row['object_id'] ?? 0)])) {
+                    continue;
+                }
                 $permalink = (string) ($row['permalink'] ?? '');
                 $tag       = $this->is_template_page($permalink) ? ' [template]' : '';
                 $priority_lines[] = sprintf(
@@ -256,6 +293,9 @@ class Site_Chat
         if (! empty($report['thin_content_rows'])) {
             $thin_lines = array();
             foreach ($report['thin_content_rows'] as $row) {
+                if (! empty($focus_set) && ! isset($focus_set[(int) ($row['object_id'] ?? 0)])) {
+                    continue;
+                }
                 $permalink = (string) ($row['permalink'] ?? '');
                 $tag       = $this->is_template_page($permalink) ? ' [template]' : '';
                 $thin_lines[] = sprintf('- "%s"%s (%s) — %d words', $row['title'] ?? '', $tag, $permalink, $row['word_count'] ?? 0);
@@ -268,6 +308,9 @@ class Site_Chat
         if (! empty($orphan_data['orphans'])) {
             $orphan_lines = array();
             foreach ($orphan_data['orphans'] as $orphan) {
+                if (! empty($focus_set) && ! isset($focus_set[(int) ($orphan['object_id'] ?? 0)])) {
+                    continue;
+                }
                 $permalink = (string) ($orphan['permalink'] ?? '');
                 $tag       = $this->is_template_page($permalink) ? ' [template]' : '';
                 $orphan_lines[] = sprintf('- "%s"%s (%s)', $orphan['title'] ?? '', $tag, $permalink);
@@ -275,10 +318,12 @@ class Site_Chat
             $parts[] = 'Orphaned pages (no internal links pointing to them): ' . ($orphan_data['total_orphans'] ?? 0) . " total\n" . implode("\n", $orphan_lines);
         }
 
-        // --- Site tree with keyphrases ---
-        $site_tree = $this->content_indexer->get_compact_site_tree(0);
-        if ('' !== $site_tree && 'No published pages found.' !== $site_tree) {
-            $parts[] = "Complete site structure (slug, title, focus keyphrase):\n" . $site_tree;
+        // --- Site tree with keyphrases (skip full tree in focus mode) ---
+        if (empty($focus_set)) {
+            $site_tree = $this->content_indexer->get_compact_site_tree(0);
+            if ('' !== $site_tree && 'No published pages found.' !== $site_tree) {
+                $parts[] = "Complete site structure (slug, title, focus keyphrase):\n" . $site_tree;
+            }
         }
 
         // --- Per-page audit scores ---
@@ -286,6 +331,9 @@ class Site_Chat
         if (! empty($page_scores)) {
             $score_lines = array();
             foreach ($page_scores as $ps) {
+                if (! empty($focus_set) && ! isset($focus_set[(int) ($ps['object_id'] ?? 0)])) {
+                    continue;
+                }
                 $tag = $this->is_template_page($ps['permalink']) ? ' [template]' : '';
                 $score_lines[] = sprintf(
                     '- "%s"%s (%s) — score: %d/100 | issues: %d',
@@ -304,6 +352,11 @@ class Site_Chat
         if (! empty($keyphrase_map)) {
             $kp_lines = array();
             foreach ($keyphrase_map as $kp => $pages) {
+                if (! empty($focus_set)) {
+                    $pages = array_filter($pages, function ($p) use ($focus_set) {
+                        return isset($focus_set[(int) ($p['object_id'] ?? 0)]);
+                    });
+                }
                 if (count($pages) > 1) {
                     $kp_lines[] = '- "' . $kp . '" → CONFLICT: ' . implode(', ', array_map(function ($p) {
                         return '"' . $p['title'] . '"';
@@ -415,6 +468,7 @@ class Site_Chat
                 continue;
             }
             $scores[] = array(
+                'object_id'   => (int) $row['object_id'],
                 'title'       => (string) $row['title'],
                 'permalink'   => (string) $row['permalink'],
                 'score'       => (int) $audit['score'],
