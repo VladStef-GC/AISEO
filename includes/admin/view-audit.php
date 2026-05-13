@@ -36,6 +36,8 @@ defined('ABSPATH') || exit;
     <h1><?php esc_html_e('AI SEO Keeper Audit', 'ai-seo-keeper'); ?></h1>
     <p><?php esc_html_e('Deterministic audit layer for content coverage, approval rollout, duplicate signals, and thin content. This page is the stable operational baseline before AI adds strategic prioritization.', 'ai-seo-keeper'); ?></p>
 
+    <?php echo $readiness_banner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+
     <?php if ('' !== $audit_message) : ?>
         <div class="notice <?php echo 'success' === $audit_status ? 'notice-success' : 'notice-error'; ?> is-dismissible">
             <p><?php echo esc_html($audit_message); ?></p>

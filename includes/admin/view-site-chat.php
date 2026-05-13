@@ -6,6 +6,7 @@
  * @var \AI_SEO_Keeper\Site_Chat $site_chat
  * @var array                    $dashboard
  * @var array                    $chat_messages
+ * @var array                    $readiness
  */
 
 defined('ABSPATH') || exit;
@@ -13,6 +14,10 @@ defined('ABSPATH') || exit;
 <div class="wrap ai-seo-keeper-site-chat-wrap">
     <h1><?php esc_html_e('AI SEO Strategist', 'ai-seo-keeper'); ?></h1>
     <p class="description"><?php esc_html_e('Chat with AI about your entire site — structure, keyphrase conflicts, audit results, and strategic recommendations.', 'ai-seo-keeper'); ?></p>
+
+    <?php echo $readiness_banner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in get_readiness_banner_html ?>
+
+    <div class="<?php echo ! $readiness['is_ready'] ? 'ai-seo-keeper-disabled-section' : ''; ?>">
 
     <!-- Summary cards -->
     <div class="ai-seo-keeper-site-chat-cards">
@@ -62,7 +67,7 @@ defined('ABSPATH') || exit;
         <!-- Focus Pages mode -->
         <details id="ai-seo-focus-pages-toggle" class="ai-seo-keeper-focus-pages">
             <summary style="cursor:pointer;user-select:none;font-weight:600;margin:8px 0 4px;color:#643d87;">
-                <?php esc_html_e('Focus Pages (optional — for large sites)', 'ai-seo-keeper'); ?>
+                <?php esc_html_e('Focus Pages (Audit — for large sites)', 'ai-seo-keeper'); ?>
                 <span id="ai-seo-capacity-badge" class="ai-seo-keeper-capacity-badge"></span>
             </summary>
             <div style="margin-top:8px;">
@@ -89,4 +94,5 @@ defined('ABSPATH') || exit;
             ?>
         </div>
     </div>
+    </div><!-- /.ai-seo-keeper-disabled-section -->
 </div>

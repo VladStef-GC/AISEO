@@ -23,6 +23,15 @@ jQuery(function ($) {
     var activeModel = conf.activeModel || '';
     var contextWindow = parseInt(conf.contextWindow, 10) || 0;
     var needsFocus = !!conf.needsFocus;
+    var isReady = !!conf.isReady;
+
+    // --- Block all interaction when plugin prerequisites are not met ---
+    if (!isReady) {
+        $send.prop('disabled', true);
+        $input.prop('disabled', true).attr('placeholder', 'Please complete site indexing and audit before using AI Strategist.');
+        $clear.prop('disabled', true);
+        return; // Stop all further JS initialization.
+    }
 
     function formatNumber(n) {
         return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');

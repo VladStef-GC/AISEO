@@ -28,6 +28,8 @@ defined('ABSPATH') || exit;
     <h1><?php esc_html_e('Image SEO', 'ai-seo-keeper'); ?></h1>
     <p class="description"><?php esc_html_e('Manage alt text across your published images. Only images attached to or used as featured image on published content are shown.', 'ai-seo-keeper'); ?></p>
 
+    <?php echo $readiness_banner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+
     <div style="display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:16px;max-width:700px;margin:20px 0;">
         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
             <p style="font-size:28px;margin:0;font-weight:600;"><?php echo $total_images; ?></p>

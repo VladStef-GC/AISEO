@@ -26,6 +26,8 @@ defined('ABSPATH') || exit;
     <h1><?php esc_html_e('Bulk SEO Editor', 'ai-seo-keeper'); ?></h1>
     <p class="description"><?php esc_html_e('Edit SEO titles and meta descriptions across all your content. Changes are saved via AJAX — no page reload needed.', 'ai-seo-keeper'); ?></p>
 
+    <?php echo $readiness_banner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+
     <form method="get" style="margin:16px 0;">
         <input type="hidden" name="page" value="ai-seo-keeper-bulk-editor" />
         <label for="ai-seo-bulk-pt"><strong><?php esc_html_e('Post type:', 'ai-seo-keeper'); ?></strong></label>

@@ -344,6 +344,39 @@ defined('ABSPATH') || exit;
 
         // ── Batch processor (reusable for Steps 2 and 3) ──────────────
 
+        var LARGE_SITE_THRESHOLD = 100;
+
+        /**
+         * Show a confirmation dialog for large-site operations.
+         * @param {string} operationName e.g. "SEO Metadata Generation" or "Full SEO Audit"
+         * @param {number} pageCount     Number of pages to process
+         * @param {number} secondsPerPage Estimated seconds per page
+         * @param {function} onConfirm   Called when user confirms
+         */
+        function confirmLargeOperation(operationName, pageCount, secondsPerPage, onConfirm) {
+            if (pageCount <= LARGE_SITE_THRESHOLD) {
+                onConfirm();
+                return;
+            }
+
+            var estMinutes = Math.ceil((pageCount * secondsPerPage) / 60);
+            var estHours = (estMinutes / 60).toFixed(1);
+            var timeStr = estMinutes > 120
+                ? '~' + estHours + ' hours'
+                : '~' + estMinutes + ' minutes';
+
+            var msg = '⚠ Large Site Detected\n\n' +
+                'Your site has ' + pageCount.toLocaleString() + ' pages.\n\n' +
+                'Running ' + operationName + ' will make ~' + pageCount.toLocaleString() + ' API calls.\n' +
+                'Estimated time: ' + timeStr + '\n\n' +
+                'You can pause or stop at any time.\n\n' +
+                'Continue?';
+
+            if (confirm(msg)) {
+                onConfirm();
+            }
+        }
+
         function BatchProcessor(config) {
             this.ids = config.ids;
             this.ajaxAction = config.ajaxAction;
@@ -554,6 +587,8 @@ defined('ABSPATH') || exit;
         var s2processor = null;
 
         $('#aisk-btn-generate').on('click', function() {
+            var self = this;
+            confirmLargeOperation('SEO Metadata Generation', publishedIds.length, 3, function() {
             $('#aisk-s2-log').show();
             $('#aisk-s2-done').hide();
             $('#aisk-s2-stopped').hide();
@@ -589,6 +624,7 @@ defined('ABSPATH') || exit;
             });
 
             s2processor.start();
+            }); // end confirmLargeOperation
         });
 
         // ── STEP 3: Page Audits ──────────────────────────────────────
@@ -850,6 +886,22 @@ defined('ABSPATH') || exit;
         $('#aisk-btn-audit').on('click', function() {
             var btn = $(this);
             var isRerun = btn.text().indexOf('Re-Run') !== -1;
+
+            // Calculate actual IDs before confirmation so we can show accurate count.
+            var idsForCount = publishedIds.filter(function(id) {
+                return skippedIds.indexOf(id) === -1;
+            });
+            if (!isRerun && allAudits.length > 0) {
+                var auditedCheck = {};
+                for (var c = 0; c < allAudits.length; c++) {
+                    auditedCheck[allAudits[c].post_id] = true;
+                }
+                idsForCount = idsForCount.filter(function(id) {
+                    return !auditedCheck[id];
+                });
+            }
+
+            confirmLargeOperation('Full SEO Audit', idsForCount.length, 5, function() {
             $('#aisk-s3-done').hide();
             $('#aisk-s3-stopped').hide();
             $('#aisk-s3-paused').hide();
@@ -912,6 +964,7 @@ defined('ABSPATH') || exit;
             });
 
             s3processor.start();
+            }); // end confirmLargeOperation
         });
 
     })(jQuery);

@@ -284,6 +284,85 @@ class Admin
         return isset($supported_post_types[$post_type]);
     }
 
+    // ------------------------------------------------------------------
+    //  Plugin Readiness Gate
+    // ------------------------------------------------------------------
+
+    /**
+     * Check whether the plugin's mandatory prerequisites are met.
+     *
+     * @return array{has_index: bool, page_count: int, has_any_audit: bool, has_api_key: bool, is_ready: bool}
+     */
+    public function get_plugin_readiness(): array
+    {
+        $page_count    = $this->content_indexer->get_published_page_count();
+        $has_index     = $page_count > 0;
+        $has_any_audit = $this->has_any_audit_data();
+        $options       = $this->settings->get();
+        $has_api_key   = ! empty($options['api_key']);
+
+        return array(
+            'has_index'     => $has_index,
+            'page_count'    => $page_count,
+            'has_any_audit' => $has_any_audit,
+            'has_api_key'   => $has_api_key,
+            'is_ready'      => $has_index && $has_any_audit,
+        );
+    }
+
+    /**
+     * Check if at least one page has been audited.
+     */
+    private function has_any_audit_data(): bool
+    {
+        global $wpdb;
+
+        $count = $wpdb->get_var(
+            "SELECT 1 FROM {$wpdb->postmeta} WHERE meta_key = '_ai_seo_keeper_page_audit' LIMIT 1"
+        );
+
+        return null !== $count;
+    }
+
+    /**
+     * Build the readiness banner HTML for the top of a plugin page.
+     *
+     * Pages that are always functional (Settings, Setup Wizard) should NOT use this.
+     *
+     * @param array $readiness Result of get_plugin_readiness().
+     * @return string Banner HTML, or empty string if everything is ready.
+     */
+    public function get_readiness_banner_html(array $readiness): string
+    {
+        if ($readiness['is_ready']) {
+            return '';
+        }
+
+        $setup_url = esc_url(admin_url('admin.php?page=ai-seo-keeper-setup'));
+        $html      = '<div class="ai-seo-keeper-readiness-banner">';
+
+        if (! $readiness['has_index']) {
+            $html .= '<span class="dashicons dashicons-warning"></span> ';
+            $html .= sprintf(
+                /* translators: %s: link to Setup Wizard */
+                esc_html__('Site not indexed. Please %s to enable all features.', 'ai-seo-keeper'),
+                '<a href="' . $setup_url . '">' . esc_html__('run site indexing', 'ai-seo-keeper') . '</a>'
+            );
+        } elseif (! $readiness['has_any_audit']) {
+            $html .= '<span class="dashicons dashicons-info"></span> ';
+            $html .= sprintf(
+                /* translators: 1: page count, 2: link to Setup Wizard */
+                esc_html__('Site indexed (%1$d pages). Please %2$s to enable AI features.', 'ai-seo-keeper'),
+                $readiness['page_count'],
+                '<a href="' . $setup_url . '">' . esc_html__('run a full audit or audit specific pages', 'ai-seo-keeper') . '</a>'
+            );
+        }
+
+        $html .= '</div>';
+
+        return $html;
+    }
+
     public function register_menu(): void
     {
         add_menu_page(
@@ -1640,6 +1719,8 @@ JS;
             return;
         }
 
+        $readiness                   = $this->get_plugin_readiness();
+        $readiness_banner              = $this->get_readiness_banner_html($readiness);
         $summary                     = $this->content_indexer->get_summary();
         $audit_summary               = $this->content_indexer->get_audit_summary();
         $audit_rows                  = $this->content_indexer->get_audit_rows(8);
@@ -1682,6 +1763,8 @@ JS;
             return;
         }
 
+        $readiness        = $this->get_plugin_readiness();
+        $readiness_banner = $this->get_readiness_banner_html($readiness);
         $post_type_filter = isset($_GET['pt']) ? sanitize_key($_GET['pt']) : 'page';
         $paged            = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
         $per_page         = 30;
@@ -1724,6 +1807,8 @@ JS;
             return;
         }
 
+        $readiness = $this->get_plugin_readiness();
+        $readiness_banner = $this->get_readiness_banner_html($readiness);
         $paged    = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
         $per_page = 40;
         $filter   = isset($_GET['filter']) ? sanitize_key($_GET['filter']) : 'all';
@@ -1839,6 +1924,9 @@ JS;
             return;
         }
 
+        $readiness = $this->get_plugin_readiness();
+        $readiness_banner = $this->get_readiness_banner_html($readiness);
+
         global $wpdb;
 
         $keyphrase_rows = $wpdb->get_results(
@@ -1909,6 +1997,8 @@ JS;
             return;
         }
 
+        $readiness      = $this->get_plugin_readiness();
+        $readiness_banner = $this->get_readiness_banner_html($readiness);
         $site_chat      = $this->site_chat;
         $dashboard      = $site_chat->get_dashboard_data();
         $chat_messages  = $site_chat->get_recent_messages(20);
@@ -1932,6 +2022,7 @@ JS;
             'pageCount'     => $page_count,
             'maxPages'      => $max_pages,
             'needsFocus'    => $needs_focus,
+            'isReady'       => $readiness['is_ready'],
         ));
 
         require __DIR__ . '/admin/view-site-chat.php';
@@ -1961,6 +2052,8 @@ JS;
             return;
         }
 
+        $readiness     = $this->get_plugin_readiness();
+        $readiness_banner = $this->get_readiness_banner_html($readiness);
         $report        = $this->audit_engine->get_report(12);
         $summary       = $report['summary'];
         $readiness     = $report['readiness'];

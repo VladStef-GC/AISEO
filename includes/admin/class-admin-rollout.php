@@ -7,6 +7,7 @@ use AI_SEO_Keeper\AI_Generator;
 use AI_SEO_Keeper\History_Store;
 use AI_SEO_Keeper\IndexNow;
 use AI_SEO_Keeper\Audit_Engine;
+use AI_SEO_Keeper\Settings;
 use AI_SEO_Keeper\Admin as AdminBase;
 
 /**
@@ -77,7 +78,10 @@ class Admin_Rollout
         check_admin_referer('ai_seo_keeper_generate_site_audit');
 
         try {
-            $report = $this->content_indexer->build_site_audit_report(10);
+            $options   = get_option(Settings::OPTION_NAME, array());
+            $model     = trim((string) ($options['model'] ?? ''));
+            $max_pages = Settings::get_max_pages_for_model($model);
+            $report    = $this->content_indexer->build_site_audit_report($max_pages);
             $audit  = $this->ai_generator->generate_site_audit($report);
 
             $this->history_store->log_generation(

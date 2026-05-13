@@ -14,7 +14,7 @@
 
 .ai-seo-card {
     background: #fff;
-    border: 1px solid #ddd;
+    border: 2px solid #ddd;
     border-radius: 6px;
     padding: 14px 18px;
     min-width: 110px;
@@ -23,15 +23,15 @@
 }
 
 .ai-seo-card.is-good {
-    border-left: 4px solid #46b450;
+    border: 2px solid #46b450;
 }
 
 .ai-seo-card.is-warning {
-    border-left: 4px solid #ffb900;
+    border: 2px solid #ffb900;
 }
 
 .ai-seo-card.is-bad {
-    border-left: 4px solid #dc3232;
+    border: 2px solid #dc3232;
 }
 
 .ai-seo-card-number {
