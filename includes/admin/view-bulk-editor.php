@@ -112,171 +112,171 @@ defined('ABSPATH') || exit;
 
     <!-- SITE STRUCTURE TREE -->
     <?php if (! empty($tree_data)) : ?>
-    <div style="background:#fff;border:1px solid #dcdcde;border-radius:4px;padding:20px;margin-top:30px;max-width:1120px;">
-        <h2 style="margin:0 0 4px;"><?php esc_html_e('Site Structure', 'ai-seo-keeper'); ?></h2>
-        <p class="description" style="margin:0 0 16px;"><?php esc_html_e('Visual hierarchy of your indexed pages. Click +/− to expand or collapse branches.', 'ai-seo-keeper'); ?></p>
-        <div style="display:flex;gap:8px;margin-bottom:12px;">
-            <button type="button" id="aisk-tree-expand-all" class="button button-small"><?php esc_html_e('Expand All', 'ai-seo-keeper'); ?></button>
-            <button type="button" id="aisk-tree-collapse-all" class="button button-small"><?php esc_html_e('Collapse All', 'ai-seo-keeper'); ?></button>
+        <div style="background:#fff;border:1px solid #dcdcde;border-radius:4px;padding:20px;margin-top:30px;max-width:1120px;">
+            <h2 style="margin:0 0 4px;"><?php esc_html_e('Site Structure', 'ai-seo-keeper'); ?></h2>
+            <p class="description" style="margin:0 0 16px;"><?php esc_html_e('Visual hierarchy of your indexed pages. Click +/− to expand or collapse branches.', 'ai-seo-keeper'); ?></p>
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <button type="button" id="aisk-tree-expand-all" class="button button-small"><?php esc_html_e('Expand All', 'ai-seo-keeper'); ?></button>
+                <button type="button" id="aisk-tree-collapse-all" class="button button-small"><?php esc_html_e('Collapse All', 'ai-seo-keeper'); ?></button>
+            </div>
+            <div id="aisk-site-tree" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;font-size:13px;line-height:1.6;"></div>
         </div>
-        <div id="aisk-site-tree" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;font-size:13px;line-height:1.6;"></div>
-    </div>
-    <script type="text/javascript">
-    (function(){
-        var treeData = <?php echo wp_json_encode($tree_data); ?>;
+        <script type="text/javascript">
+            (function() {
+                var treeData = <?php echo wp_json_encode($tree_data); ?>;
 
-        // Group by parent_id.
-        var byParent = {};
-        var byId = {};
-        for (var i = 0; i < treeData.length; i++) {
-            var node = treeData[i];
-            byId[node.id] = node;
-            var pid = node.parent_id || 0;
-            if (!byParent[pid]) byParent[pid] = [];
-            byParent[pid].push(node);
-        }
-
-        // Post type icons.
-        var typeIcons = {
-            page: '📄',
-            post: '📝',
-            product: '🛒'
-        };
-
-        function esc(s) {
-            var d = document.createElement('div');
-            d.textContent = s;
-            return d.innerHTML;
-        }
-
-        function buildTree(parentId, depth) {
-            var children = byParent[parentId];
-            if (!children || children.length === 0) return '';
-
-            var html = '<ul style="list-style:none;margin:0;padding-left:' + (depth > 0 ? '20' : '0') + 'px;">';
-            for (var i = 0; i < children.length; i++) {
-                var n = children[i];
-                var hasKids = byParent[n.id] && byParent[n.id].length > 0;
-                var icon = typeIcons[n.post_type] || '📎';
-                var statusBadge = n.status !== 'publish' ? ' <span style="font-size:11px;color:#dba617;font-weight:600;">(' + esc(n.status) + ')</span>' : '';
-                var slug = '/' + n.slug;
-
-                html += '<li style="margin:2px 0;">';
-                if (hasKids) {
-                    html += '<span class="aisk-tree-toggle" style="cursor:pointer;display:inline-block;width:18px;text-align:center;font-weight:700;color:#2271b1;user-select:none;" data-expanded="1">−</span>';
-                } else {
-                    html += '<span style="display:inline-block;width:18px;text-align:center;color:#c3c4c7;">·</span>';
+                // Group by parent_id.
+                var byParent = {};
+                var byId = {};
+                for (var i = 0; i < treeData.length; i++) {
+                    var node = treeData[i];
+                    byId[node.id] = node;
+                    var pid = node.parent_id || 0;
+                    if (!byParent[pid]) byParent[pid] = [];
+                    byParent[pid].push(node);
                 }
-                html += icon + ' ';
-                html += '<a href="' + esc(n.permalink) + '" target="_blank" style="text-decoration:none;color:#1d2327;">' + esc(n.title) + '</a>';
-                html += ' <span style="color:#787c82;font-size:12px;">' + esc(slug) + '</span>';
-                html += statusBadge;
-                if (hasKids) {
-                    html += '<div class="aisk-tree-children">' + buildTree(n.id, depth + 1) + '</div>';
+
+                // Post type icons.
+                var typeIcons = {
+                    page: '📄',
+                    post: '📝',
+                    product: '🛒'
+                };
+
+                function esc(s) {
+                    var d = document.createElement('div');
+                    d.textContent = s;
+                    return d.innerHTML;
                 }
-                html += '</li>';
-            }
-            html += '</ul>';
-            return html;
-        }
 
-        // Separate tree roots: pages (hierarchical) vs flat types (posts, products).
-        var pageTree = buildTree(0, 0);
+                function buildTree(parentId, depth) {
+                    var children = byParent[parentId];
+                    if (!children || children.length === 0) return '';
 
-        // Flat post types that aren't in the hierarchical tree.
-        var flatTypes = {};
-        for (var j = 0; j < treeData.length; j++) {
-            var nd = treeData[j];
-            if (nd.post_type !== 'page' && nd.parent_id === 0) {
-                if (!flatTypes[nd.post_type]) flatTypes[nd.post_type] = [];
-                flatTypes[nd.post_type].push(nd);
-            }
-        }
+                    var html = '<ul style="list-style:none;margin:0;padding-left:' + (depth > 0 ? '20' : '0') + 'px;">';
+                    for (var i = 0; i < children.length; i++) {
+                        var n = children[i];
+                        var hasKids = byParent[n.id] && byParent[n.id].length > 0;
+                        var icon = typeIcons[n.post_type] || '📎';
+                        var statusBadge = n.status !== 'publish' ? ' <span style="font-size:11px;color:#dba617;font-weight:600;">(' + esc(n.status) + ')</span>' : '';
+                        var slug = '/' + n.slug;
 
-        var flatHtml = '';
-        for (var pt in flatTypes) {
-            if (!flatTypes.hasOwnProperty(pt)) continue;
-            var icon = typeIcons[pt] || '📎';
-            var label = pt.charAt(0).toUpperCase() + pt.slice(1) + 's';
-            flatHtml += '<div style="margin-top:12px;">';
-            flatHtml += '<span class="aisk-tree-toggle" style="cursor:pointer;display:inline-block;width:18px;text-align:center;font-weight:700;color:#2271b1;user-select:none;" data-expanded="1">−</span>';
-            flatHtml += '<strong>' + icon + ' ' + esc(label) + ' (' + flatTypes[pt].length + ')</strong>';
-            flatHtml += '<div class="aisk-tree-children"><ul style="list-style:none;margin:0;padding-left:20px;">';
-            for (var k = 0; k < flatTypes[pt].length; k++) {
-                var fn = flatTypes[pt][k];
-                var statusB = fn.status !== 'publish' ? ' <span style="font-size:11px;color:#dba617;font-weight:600;">(' + esc(fn.status) + ')</span>' : '';
-                flatHtml += '<li style="margin:2px 0;"><span style="display:inline-block;width:18px;text-align:center;color:#c3c4c7;">·</span>' + icon + ' <a href="' + esc(fn.permalink) + '" target="_blank" style="text-decoration:none;color:#1d2327;">' + esc(fn.title) + '</a> <span style="color:#787c82;font-size:12px;">/' + esc(fn.slug) + '</span>' + statusB + '</li>';
-            }
-            flatHtml += '</ul></div></div>';
-        }
+                        html += '<li style="margin:2px 0;">';
+                        if (hasKids) {
+                            html += '<span class="aisk-tree-toggle" style="cursor:pointer;display:inline-block;width:18px;text-align:center;font-weight:700;color:#2271b1;user-select:none;" data-expanded="1">−</span>';
+                        } else {
+                            html += '<span style="display:inline-block;width:18px;text-align:center;color:#c3c4c7;">·</span>';
+                        }
+                        html += icon + ' ';
+                        html += '<a href="' + esc(n.permalink) + '" target="_blank" style="text-decoration:none;color:#1d2327;">' + esc(n.title) + '</a>';
+                        html += ' <span style="color:#787c82;font-size:12px;">' + esc(slug) + '</span>';
+                        html += statusBadge;
+                        if (hasKids) {
+                            html += '<div class="aisk-tree-children">' + buildTree(n.id, depth + 1) + '</div>';
+                        }
+                        html += '</li>';
+                    }
+                    html += '</ul>';
+                    return html;
+                }
 
-        document.getElementById('aisk-site-tree').innerHTML = pageTree + flatHtml;
+                // Separate tree roots: pages (hierarchical) vs flat types (posts, products).
+                var pageTree = buildTree(0, 0);
 
-        // Toggle expand/collapse.
-        document.getElementById('aisk-site-tree').addEventListener('click', function(e) {
-            var toggle = e.target.closest('.aisk-tree-toggle');
-            if (!toggle) return;
-            var children = toggle.parentElement.querySelector('.aisk-tree-children');
-            if (!children) return;
-            var expanded = toggle.getAttribute('data-expanded') === '1';
-            if (expanded) {
-                children.style.display = 'none';
-                toggle.textContent = '+';
-                toggle.setAttribute('data-expanded', '0');
-            } else {
-                children.style.display = '';
-                toggle.textContent = '−';
-                toggle.setAttribute('data-expanded', '1');
-            }
-        });
+                // Flat post types that aren't in the hierarchical tree.
+                var flatTypes = {};
+                for (var j = 0; j < treeData.length; j++) {
+                    var nd = treeData[j];
+                    if (nd.post_type !== 'page' && nd.parent_id === 0) {
+                        if (!flatTypes[nd.post_type]) flatTypes[nd.post_type] = [];
+                        flatTypes[nd.post_type].push(nd);
+                    }
+                }
 
-        // Expand All / Collapse All.
-        document.getElementById('aisk-tree-expand-all').addEventListener('click', function() {
-            var toggles = document.querySelectorAll('#aisk-site-tree .aisk-tree-toggle');
-            for (var t = 0; t < toggles.length; t++) {
-                toggles[t].textContent = '−';
-                toggles[t].setAttribute('data-expanded', '1');
-                var ch = toggles[t].parentElement.querySelector('.aisk-tree-children');
-                if (ch) ch.style.display = '';
-            }
-        });
-        document.getElementById('aisk-tree-collapse-all').addEventListener('click', function() {
-            var toggles = document.querySelectorAll('#aisk-site-tree .aisk-tree-toggle');
-            for (var t = 0; t < toggles.length; t++) {
-                toggles[t].textContent = '+';
-                toggles[t].setAttribute('data-expanded', '0');
-                var ch = toggles[t].parentElement.querySelector('.aisk-tree-children');
-                if (ch) ch.style.display = 'none';
-            }
-        });
-    })();
-    </script>
+                var flatHtml = '';
+                for (var pt in flatTypes) {
+                    if (!flatTypes.hasOwnProperty(pt)) continue;
+                    var icon = typeIcons[pt] || '📎';
+                    var label = pt.charAt(0).toUpperCase() + pt.slice(1) + 's';
+                    flatHtml += '<div style="margin-top:12px;">';
+                    flatHtml += '<span class="aisk-tree-toggle" style="cursor:pointer;display:inline-block;width:18px;text-align:center;font-weight:700;color:#2271b1;user-select:none;" data-expanded="1">−</span>';
+                    flatHtml += '<strong>' + icon + ' ' + esc(label) + ' (' + flatTypes[pt].length + ')</strong>';
+                    flatHtml += '<div class="aisk-tree-children"><ul style="list-style:none;margin:0;padding-left:20px;">';
+                    for (var k = 0; k < flatTypes[pt].length; k++) {
+                        var fn = flatTypes[pt][k];
+                        var statusB = fn.status !== 'publish' ? ' <span style="font-size:11px;color:#dba617;font-weight:600;">(' + esc(fn.status) + ')</span>' : '';
+                        flatHtml += '<li style="margin:2px 0;"><span style="display:inline-block;width:18px;text-align:center;color:#c3c4c7;">·</span>' + icon + ' <a href="' + esc(fn.permalink) + '" target="_blank" style="text-decoration:none;color:#1d2327;">' + esc(fn.title) + '</a> <span style="color:#787c82;font-size:12px;">/' + esc(fn.slug) + '</span>' + statusB + '</li>';
+                    }
+                    flatHtml += '</ul></div></div>';
+                }
+
+                document.getElementById('aisk-site-tree').innerHTML = pageTree + flatHtml;
+
+                // Toggle expand/collapse.
+                document.getElementById('aisk-site-tree').addEventListener('click', function(e) {
+                    var toggle = e.target.closest('.aisk-tree-toggle');
+                    if (!toggle) return;
+                    var children = toggle.parentElement.querySelector('.aisk-tree-children');
+                    if (!children) return;
+                    var expanded = toggle.getAttribute('data-expanded') === '1';
+                    if (expanded) {
+                        children.style.display = 'none';
+                        toggle.textContent = '+';
+                        toggle.setAttribute('data-expanded', '0');
+                    } else {
+                        children.style.display = '';
+                        toggle.textContent = '−';
+                        toggle.setAttribute('data-expanded', '1');
+                    }
+                });
+
+                // Expand All / Collapse All.
+                document.getElementById('aisk-tree-expand-all').addEventListener('click', function() {
+                    var toggles = document.querySelectorAll('#aisk-site-tree .aisk-tree-toggle');
+                    for (var t = 0; t < toggles.length; t++) {
+                        toggles[t].textContent = '−';
+                        toggles[t].setAttribute('data-expanded', '1');
+                        var ch = toggles[t].parentElement.querySelector('.aisk-tree-children');
+                        if (ch) ch.style.display = '';
+                    }
+                });
+                document.getElementById('aisk-tree-collapse-all').addEventListener('click', function() {
+                    var toggles = document.querySelectorAll('#aisk-site-tree .aisk-tree-toggle');
+                    for (var t = 0; t < toggles.length; t++) {
+                        toggles[t].textContent = '+';
+                        toggles[t].setAttribute('data-expanded', '0');
+                        var ch = toggles[t].parentElement.querySelector('.aisk-tree-children');
+                        if (ch) ch.style.display = 'none';
+                    }
+                });
+            })();
+        </script>
     <?php endif; ?>
 
     <!-- Search filter script -->
     <script type="text/javascript">
-    (function(){
-        var searchInput = document.getElementById('aisk-bulk-search');
-        if (!searchInput) return;
-        var table = document.getElementById('ai-seo-bulk-table');
-        if (!table) return;
+        (function() {
+            var searchInput = document.getElementById('aisk-bulk-search');
+            if (!searchInput) return;
+            var table = document.getElementById('ai-seo-bulk-table');
+            if (!table) return;
 
-        searchInput.addEventListener('input', function() {
-            var term = this.value.toLowerCase().trim();
-            var rows = table.querySelectorAll('tbody tr');
-            var visibleCount = 0;
-            for (var i = 0; i < rows.length; i++) {
-                var titleCell = rows[i].querySelector('td:nth-child(2)');
-                var title = titleCell ? titleCell.textContent.toLowerCase() : '';
-                if (term === '' || title.indexOf(term) !== -1) {
-                    rows[i].style.display = '';
-                    visibleCount++;
-                    rows[i].querySelector('.aisk-row-num').textContent = visibleCount;
-                } else {
-                    rows[i].style.display = 'none';
+            searchInput.addEventListener('input', function() {
+                var term = this.value.toLowerCase().trim();
+                var rows = table.querySelectorAll('tbody tr');
+                var visibleCount = 0;
+                for (var i = 0; i < rows.length; i++) {
+                    var titleCell = rows[i].querySelector('td:nth-child(2)');
+                    var title = titleCell ? titleCell.textContent.toLowerCase() : '';
+                    if (term === '' || title.indexOf(term) !== -1) {
+                        rows[i].style.display = '';
+                        visibleCount++;
+                        rows[i].querySelector('.aisk-row-num').textContent = visibleCount;
+                    } else {
+                        rows[i].style.display = 'none';
+                    }
                 }
-            }
-        });
-    })();
+            });
+        })();
     </script>
 </div>

@@ -1,16 +1,16 @@
 # AI SEO Keeper Project Handoff
 
-Snapshot date: 2026-05-09
+Snapshot date: 2026-05-14
 
 Plugin root: `wp-content/plugins/ai-seo-keeper`
 
-Plugin version header: `1.2.0`
+Plugin version header: `1.3.1`
 
 Purpose: this is the fast-start handoff document for any new chat session. Read this together with `PLAN.md` before making new changes.
 
 ## One-paragraph brief
 
-AI SEO Keeper is a hybrid AI plus deterministic SEO plugin for WordPress. The current objective is not to be a helper next to another SEO plugin, but to become the main standalone SEO layer for this site. Deterministic code owns the live frontend behavior, schema, discovery documents, sitemaps, audits, and signaling. AI is used for drafting metadata, answering editor questions, and generating site-wide audit guidance. The plugin now covers both singular and non-singular content with configurable search appearance, XML sitemaps, and full frontend SEO output.
+AI SEO Keeper is a hybrid AI plus deterministic SEO plugin for WordPress. It is the main standalone SEO layer for this site — not a helper beside another SEO plugin. Deterministic code owns the live frontend behavior, schema, discovery documents, sitemaps, audits, and signaling. AI is used for drafting metadata, answering editor questions, site-wide strategic audits, and the AI Strategist chat. The plugin covers both singular and non-singular content with configurable search appearance, XML sitemaps, and full frontend SEO output. A scale-aware Runs system allows large sites to work in manageable batches.
 
 ## Current mission
 
@@ -18,14 +18,22 @@ AI SEO Keeper is a hybrid AI plus deterministic SEO plugin for WordPress. The cu
 - Keep the plugin useful even when no AI suggestion has been approved yet.
 - Prefer standalone frontend behavior over migration convenience.
 - Keep AI as an assistant and drafter, not the only route to usable SEO output.
+- Support scale-aware workflows for sites of any size via the Runs system.
 
 ## What is shipped today
 
-- Plugin bootstrap, service wiring, activation, uninstall cleanup, and namespaced runtime.
-- Settings page with provider, model, API key, system prompt, feature flags, frontend toggles, search appearance controls, Google/Bing verification fields, and IndexNow controls.
+- Plugin bootstrap, service wiring, activation, uninstall cleanup, PSR-4 autoloader, and namespaced runtime.
+- **Modular admin architecture**: slim `class-admin.php` coordinator delegating to `class-admin-ajax.php` (AJAX handlers), `class-admin-rollout.php` (sync/submit/audit actions), `class-admin-import-export.php` (export, import, Yoast migration), `class-admin-taxonomy.php` (taxonomy SEO fields), and `class-seo-analysis.php` (deterministic SEO checks).
+- Settings page with provider, model, API key, system prompt, feature flags, frontend toggles, search appearance controls, Google/Bing verification fields, and IndexNow controls (107 UI controls audited and verified).
+- **Setup Wizard** with 3-step guided flow: Index → Generate → Audit. Includes cost/time warning modal (always shown), pause/resume/stop controls, WooCommerce Products filter, skip rules, runs system, and "View Full Page List" link to Bulk Editor.
 - Content indexing into dedicated SQL tables for inventory, audits, and AI context.
 - Page-level editor metabox with snippet analysis, readability and SEO checks, social previews, schema and advanced fields, AI drafting, approval, history, and chat.
-- Audit dashboard with readiness scoring, duplicate detection, thin-content reporting, rollout candidate views, and site-audit generation.
+- **Gutenberg sidebar panel** with dedicated JS and CSS assets.
+- Audit dashboard with readiness scoring, duplicate detection, thin-content reporting, rollout candidate views, site-audit generation, collapsible history sections with load-more and export buttons.
+- **AI SEO Strategist** — dedicated site-wide AI chat page with focus-page scoping, run awareness, capacity display, and persistent conversations.
+- **Bulk SEO Editor** with row counter, real-time search filtering, WooCommerce-aware post type filter, inline AJAX save, and visual site structure tree.
+- **Image SEO** dashboard with alt text management, inline editing, "Used on" toggle, filter by alt status.
+- **Keyword Tracking** with cannibalization detection, coverage stats synced with content index, sortable table.
 - Frontend output for title, meta description, canonical, robots, Open Graph, Twitter cards, schema, breadcrumb schema, visible breadcrumbs, and sitewide webmaster verification tags.
 - Automatic search appearance baseline for public singular content when explicit metadata is missing.
 - Non-singular search appearance for category, tag, author, date, search, home/posts page, post type archive, and 404 contexts with configurable title templates and per-context noindex controls.
@@ -33,23 +41,31 @@ AI SEO Keeper is a hybrid AI plus deterministic SEO plugin for WordPress. The cu
 - AI discovery documents at `llms.txt` and `llms-full.txt`.
 - IndexNow key serving, logging, manual submission, and auto-submit hooks.
 - Non-destructive Yoast metadata import for migration without overwriting existing AI SEO Keeper values.
+- **Export/Import** — JSON export/import of settings, metadata, and redirects with selective checkboxes.
 - Title branding system: automatic ` | Brand` suffix on page-specific SEO titles, configurable site brand setting, per-page opt-out, and AI prompt budget enforcement.
-- AI generation context intelligence: live browser field overrides, preserve-if-good evaluation, keyphrase enforcement in both title and description, full tab data (social, schema, canonical, robots, cornerstone) in AI prompts, and keyphrase write-back to editor.
-- GreenCoders design identity in the editor metabox: promoted accordion style with purple-to-green gradient, branded button styles, and custom help-tip iconography.
-
-## What is not finished yet
+- AI generation context intelligence: live browser field overrides, preserve-if-good evaluation, keyphrase enforcement in both title and description, full tab data in AI prompts, and keyphrase write-back to editor.
+- AI Content Editor with changeset-based editing, preview, apply/discard, backup/restore, and multi-builder support.
+- **Redirects & 404 Monitor** with 301/302/307 redirect management, 404 error logging, hit counters, and AJAX-based add/delete.
+- **Scale-aware Runs system**: saved named page lists, `completed_steps` tracking per run, create/delete runs via AJAX.
+- **Skip Rules**: URL pattern matching to exclude pages from both metadata generation and full audits; server-side enforced in `handle_bulk_generate()`.
+- **Data Management**: scope-based clearing (metadata, audits, everything) with confirmation modals; deletes 17 post meta keys + 4 term meta keys + conversations + messages + IndexNow log + runs + active_runs user meta.
+- **WooCommerce integration**: automatic detection, product-aware filtering in wizard modal, bulk editor, and site structure tree.
+- **Automated test suite**: 81 PHPUnit tests, 141 assertions, all passing.
+- GreenCoders design identity in the editor metabox with promoted accordion style, branded button styles, and custom help-tip iconography.
 
 ## What is not finished yet
 
 - AI site-structure assistant: dedicated admin page where AI can view the full sitemap, propose URL restructuring, rename slugs, and manage redirects.
-- Taxonomy-level SEO fields (title/description per individual category/tag) beyond template-based defaults.
 - Broader schema enrichment from trusted site-specific data sources such as product price, SKU, and organization/contact details where available.
+- AI-powered alt text generation for images from page context and image analysis.
+- RankMath and SEOPress import wizards (currently only Yoast is supported).
 
 ## Architecture graph
 
 ```mermaid
 flowchart TD
     WP[WordPress boot] --> Bootstrap[ai-seo-keeper.php]
+    Bootstrap --> Autoload[autoload.php PSR-4]
     Bootstrap --> Activator[class-activator.php]
     Bootstrap --> Plugin[class-plugin.php]
 
@@ -57,19 +73,30 @@ flowchart TD
     Plugin --> History[class-history-store.php]
     Plugin --> IndexNow[class-indexnow.php]
     Plugin --> Discovery[class-discovery.php]
+    Plugin --> RunManager[class-run-manager.php]
+    Plugin --> SiteChat[class-site-chat.php]
 
     Plugin -->|is_admin()| Indexer[class-content-indexer.php]
     Plugin -->|is_admin()| AIGenerator[class-ai-generator.php]
-    Plugin -->|is_admin()| Admin[class-admin.php]
+    Plugin -->|is_admin()| Admin[class-admin.php slim coordinator]
+    Admin --> AdminAjax[class-admin-ajax.php]
+    Admin --> AdminRollout[class-admin-rollout.php]
+    Admin --> AdminImportExport[class-admin-import-export.php]
+    Admin --> AdminTaxonomy[class-admin-taxonomy.php]
+    Admin --> SEOAnalysis[class-seo-analysis.php]
     Admin --> Audit[class-audit-engine.php]
 
     Plugin -->|public frontend| Frontend[class-frontend.php]
     Plugin --> Sitemap[class-sitemap.php]
+    Plugin --> Redirects[class-redirects.php]
+    Plugin --> WooCommerce[class-woocommerce-integration.php]
 
     Settings --> Options[(wp_options)]
     Indexer --> ContentIndex[(ai_seo_keeper_content_index)]
     History --> Conversations[(ai_seo_keeper_conversations)]
     History --> Messages[(ai_seo_keeper_messages)]
+    RunManager --> Runs[(ai_seo_keeper_runs)]
+    Redirects --> RedirectsTable[(ai_seo_keeper_redirects)]
     Admin --> PostMeta[(wp_postmeta)]
     Frontend --> PostMeta
 
@@ -100,20 +127,33 @@ flowchart TD
 
 | File | Responsibility |
 | --- | --- |
-| `ai-seo-keeper.php` | Bootstrap, constants, class loading, activation hook, boot entrypoint |
+| `ai-seo-keeper.php` | Bootstrap, constants, autoloader trigger, activation hook, DB auto-upgrade, boot entrypoint |
+| `includes/autoload.php` | PSR-4 autoloader for `AI_SEO_Keeper` namespace |
 | `includes/class-plugin.php` | Runtime composition and admin/frontend boot split |
-| `includes/class-activator.php` | SQL table creation and default option initialization |
+| `includes/class-activator.php` | SQL table creation (5 tables), default option initialization, `completed_steps` column |
 | `includes/class-settings.php` | Settings defaults, registration, sanitization, title branding helpers |
-| `includes/class-admin.php` | Dashboard, settings, audit page, editor metabox, AJAX handlers, rollout actions, Yoast import |
-| `includes/class-content-indexer.php` | Content inventory, audit summary SQL, readiness counts |
+| `includes/class-admin.php` | Slim coordinator: menu registration, asset enqueuing, editor metabox, delegation to sub-modules |
+| `includes/admin/class-admin-ajax.php` | All AJAX handlers (generate, chat, approve, bulk save, image alt, setup, skip, runs, clear data) |
+| `includes/admin/class-admin-rollout.php` | Sync index, submit IndexNow, generate site audit, bulk frontend rollout |
+| `includes/admin/class-admin-import-export.php` | Export/import settings+metadata (JSON), Yoast migration |
+| `includes/admin/class-admin-taxonomy.php` | Taxonomy term SEO fields (render + save) |
+| `includes/admin/class-seo-analysis.php` | Deterministic SEO checks: keyphrase density, readability, link analysis, content structure |
+| `includes/class-content-indexer.php` | Content inventory, audit summary SQL, readiness counts, `get_all_indexed_pages()` |
 | `includes/class-audit-engine.php` | Higher-level audit report assembly for admin |
 | `includes/class-ai-generator.php` | Provider calls, prompt building with live context overrides and preserve-if-good logic, AI response parsing |
 | `includes/class-history-store.php` | Conversation storage, suggestion history, approvals, site audit history |
+| `includes/class-content-writer.php` | Pending content changes workflow (changeset pattern) |
+| `includes/class-content-helper.php` | Content extraction helper for AI prompts |
+| `includes/class-meta-keys.php` | Centralized post/term meta key constants |
+| `includes/class-run-manager.php` | Runs CRUD, `mark_step_complete()`, `has_completed_step()`, `get_indexed_pages_for_selector()` |
+| `includes/class-site-chat.php` | AI Strategist chat handler (send, clear, focus pages) |
 | `includes/class-frontend.php` | Document title with branding suffix, head tags, schema, breadcrumbs, automatic search appearance for singular and non-singular contexts, verification tags |
 | `includes/class-sitemap.php` | XML Sitemap index, per-type sitemaps, XSL stylesheet, robots.txt directive, WordPress core sitemap replacement |
+| `includes/class-redirects.php` | 301/302/307 redirect manager, 404 logging, hit counter |
 | `includes/class-discovery.php` | `llms.txt` and `llms-full.txt` generation |
 | `includes/class-indexnow.php` | IndexNow key file handling, submissions, log storage |
-| `uninstall.php` | Drops plugin tables, deletes options, removes post meta |
+| `includes/class-woocommerce-integration.php` | WooCommerce detection and product-aware features |
+| `uninstall.php` | Drops plugin tables, deletes options, removes all post/term meta keys, cleans user meta |
 
 ## Storage model
 
@@ -121,15 +161,20 @@ flowchart TD
 
 - Option name: `ai_seo_keeper_options`
 - IndexNow log option: `ai_seo_keeper_indexnow_log`
+- DB version option: `ai_seo_keeper_db_version`
 
 ### SQL tables
 
 - `wp_ai_seo_keeper_content_index`
   - Site inventory used for audits and AI context.
 - `wp_ai_seo_keeper_conversations`
-  - Conversation containers for per-post chat and site-audit sessions.
+  - Conversation containers for per-post chat, site-chat, and site-audit sessions.
 - `wp_ai_seo_keeper_messages`
   - Stored user and assistant messages, including AI suggestion payloads.
+- `wp_ai_seo_keeper_redirects`
+  - Redirect rules (source, target, type, hits, created_at).
+- `wp_ai_seo_keeper_runs`
+  - Saved page lists for batch processing (name, page_ids, page_count, model_used, status, completed_steps).
 
 ### Important post meta keys
 
@@ -144,6 +189,20 @@ flowchart TD
 - `_ai_seo_keeper_schema_type`
 - `_ai_seo_keeper_approved_message_id`
 - `_ai_seo_keeper_frontend_enabled`
+- `_ai_seo_keeper_page_audit`
+- `_ai_seo_keeper_audit_skip`
+- `_ai_seo_keeper_pending_content_changes`
+- `_ai_seo_keeper_content_backup`
+- `_ai_seo_keeper_cornerstone`
+- `_ai_seo_keeper_title_branding_off`
+- `_ai_seo_keeper_hreflang`
+
+### Term meta keys
+
+- `_ai_seo_keeper_term_title`
+- `_ai_seo_keeper_term_description`
+- `_ai_seo_keeper_term_canonical`
+- `_ai_seo_keeper_term_noindex`
 
 ## Runtime flow
 
@@ -202,24 +261,26 @@ flowchart TD
 - Workspace root: `c:/xampp/htdocs/greencoders`
 - Plugin root: `c:/xampp/htdocs/greencoders/wp-content/plugins/ai-seo-keeper`
 - Environment: local WordPress under XAMPP on Windows
-- PHP executable typically used for validation: `c:/xampp/php/php.exe`
-- There is no git repository in this workspace.
-- The `assets` folder is currently empty.
-- Inline editor JavaScript is intentionally kept inside `class-admin.php`.
-- Uninstall currently performs hard cleanup of plugin tables, options, logs, and post meta.
+- PHP executable: `c:/xampp/php/php.exe`
+- Git repository: `https://github.com/VladStef-GC/AISEO.git` (branch `main`)
+- PSR-4 autoloader: `includes/autoload.php` (`AI_SEO_Keeper\ClassName` → `includes/class-classname.php`)
+- Admin JS/CSS auto-loading: create `assets/js/page-{slug}.js` or `assets/css/page-{slug}.css` — no code changes needed.
+- Uninstall performs hard cleanup: all 5 plugin tables, all options, all post/term meta keys, user meta.
 
 ## Validation patterns that have been used successfully
 
 - `php -l` against changed PHP files.
+- `php -d extension=php_zip.dll vendor/bin/phpunit --testsuite Unit` for automated tests (81 tests, 141 assertions).
 - WordPress runtime probes via `wp-load.php` with direct class instantiation and buffered HTML/head output checks.
 - Admin render checks that include `wp-admin/includes/template.php` when needed.
 - SQL checks for readiness counts when UI sampling is capped.
+- Full UI audit across all 9 admin pages verifying every control has a working backend handler.
 
 ## Current priorities for the next session
 
-1. AI Content Editor Phase 2: "Apply" button for chat suggestions, snippet score metrics in chat prompt, page audit data in chat prompt.
-2. AI site-structure assistant: dedicated admin page where AI can view the full sitemap, propose URL restructuring, rename slugs, and manage redirects.
-3. Taxonomy-level SEO fields (title/description per individual category/tag) beyond template-based defaults.
+1. AI site-structure assistant: dedicated admin page where AI can view the full sitemap, propose URL restructuring, rename slugs, and manage redirects.
+2. AI-powered image alt text generation from page context and image analysis.
+3. RankMath and SEOPress import wizards.
 4. Broader schema enrichment from trusted site-specific data sources.
 
 ## New chat briefing
@@ -229,14 +290,18 @@ Use this as the starting brief for a new chat:
 ```text
 Read wp-content/plugins/ai-seo-keeper/PLAN.md and wp-content/plugins/ai-seo-keeper/PROJECT-HANDOFF.md first.
 
-We are building AI SEO Keeper as a standalone WordPress SEO plugin that should replace the need for another free SEO plugin on this site.
+We are building AI SEO Keeper (v1.3.1) as a standalone WordPress SEO plugin that replaces the need for another free SEO plugin.
 
 Current state:
-- strong singular-content frontend SEO output already exists
-- manual metadata, approved AI suggestions, and automatic search appearance all feed the frontend
-- breadcrumbs, schema, llms documents, IndexNow, and verification tags are already implemented
-- the biggest remaining gap is non-singular search appearance and frontend coverage
+- Full standalone SEO layer for both singular and non-singular content
+- Modular admin architecture (slim class-admin.php + 5 sub-modules)
+- Scale-aware Runs system for large sites
+- AI Strategist (site-wide chat), per-page AI chat, AI content editor
+- Setup Wizard with cost/time warnings, skip rules, WooCommerce awareness
+- Bulk Editor with search, row counter, site structure tree
+- 81 PHPUnit tests passing
+- All 9 admin pages audited: 0 orphaned controls
 
 Working rule:
-prioritize standalone frontend behavior over additional importer or migration work.
+Prioritize standalone frontend behavior. Module changes go in /modules/ or existing admin sub-classes.
 ```

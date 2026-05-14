@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.2.0-blue?style=flat-square" alt="Version 1.2.0" />
+  <img src="https://img.shields.io/badge/version-1.3.1-blue?style=flat-square" alt="Version 1.3.1" />
   <img src="https://img.shields.io/badge/WordPress-6.7%2B-21759b?style=flat-square&logo=wordpress" alt="WordPress 6.7+" />
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777BB4?style=flat-square&logo=php&logoColor=white" alt="PHP 7.4+" />
   <img src="https://img.shields.io/badge/license-proprietary-lightgrey?style=flat-square" alt="License" />
@@ -21,13 +21,16 @@ AI SEO Keeper uses artificial intelligence to generate, manage, and optimize eve
 | 🏷️ | **Title Branding** | Automatic ` | Brand` suffix on all SEO titles with per-page opt-out |
 | ✅ | **Approval Workflow** | AI suggestions stay as drafts until you approve — nothing goes live without your say |
 | 📊 | **Full Page Audits with Scoring** | Every page gets an SEO score (0-100) with specific issues and actionable suggestions |
-| 💬 | **Per-Page AI Chat** | Ask the AI questions about any page's SEO directly from the post editor |
+| 💬 | **AI SEO Strategist** | Dedicated site-wide AI chat with focus-page scoping and run-based context |
 | 🔄 | **Yoast SEO Migration** | One-click import of all Yoast metadata — switch without losing anything |
 | 🗺️ | **Advanced XML Sitemaps** | Standard, News, and Video sitemaps with browser-friendly XSL styling |
 | 🔗 | **301/302/307 Redirects + 404 Monitor** | Manage redirects and catch broken links before they hurt rankings |
 | ⚡ | **IndexNow Integration** | Instantly notify search engines when content changes — no waiting for crawlers |
 | 🧠 | **AI Discovery Documents** | Auto-generated `llms.txt` makes your site discoverable by AI search agents |
 | 🏢 | **Local SEO & Business Schema** | Full local business markup with address, hours, map, and price range |
+| 📋 | **Scale-Aware Runs System** | Saved page lists let large sites audit and generate in manageable batches |
+| 🛒 | **WooCommerce Integration** | Product-aware filtering in wizard, bulk editor, and keyword tracking |
+| 🔍 | **Skip Rules** | Exclude pages by URL pattern from both metadata generation and audits |
 
 ---
 
@@ -41,6 +44,7 @@ AI SEO Keeper uses artificial intelligence to generate, manage, and optimize eve
   - [Bulk Editor](#-bulk-editor)
   - [Image SEO](#-image-seo)
   - [Keyword Tracking](#-keyword-tracking)
+  - [AI SEO Strategist](#-ai-seo-strategist)
   - [XML Sitemaps](#-xml-sitemaps)
   - [IndexNow](#-indexnow-integration)
   - [Redirects & 404 Monitor](#-redirects--404-monitor)
@@ -58,9 +62,13 @@ AI SEO Keeper uses artificial intelligence to generate, manage, and optimize eve
   - [Page Builder Compatibility](#-page-builder-compatibility)
   - [Export & Import](#-export--import)
   - [Yoast SEO Migration](#-yoast-seo-migration)
+  - [Data Management](#-data-management)
+  - [WooCommerce Integration](#-woocommerce-integration)
+  - [Gutenberg Sidebar](#-gutenberg-sidebar)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Configuration](#configuration)
+- [Testing](#testing)
 - [For Developers](#for-developers)
 - [Support](#support)
 
@@ -72,11 +80,18 @@ AI SEO Keeper uses artificial intelligence to generate, manage, and optimize eve
 
 Get your entire site SEO-ready in three guided steps:
 
-1. **Index Your Site** — Scans all published pages and builds the content index
+1. **Index Your Site** — Scans all published pages and builds the content index (fast, free, no API calls)
 2. **Generate SEO Metadata** — AI reads every page and writes optimized titles and descriptions (pages with existing metadata are skipped automatically)
 3. **Full SEO Audit** — AI analyzes each page individually for issues: missing alt tags, heading structure problems, thin content, and more
 
 Each step includes real-time progress bars, pause/resume/stop controls, and a detailed processing log. Previously audited pages load from cache instantly.
+
+**Scale-aware features:**
+- **Cost/time warning modal** — always shown before bulk operations, displaying page count and estimated API calls
+- **Runs system** — save named page lists for partial-site processing; create custom lists or use "Full Site"
+- **WooCommerce products filter** — when WooCommerce is active, filter the page selector by Products
+- **Skip Rules** — define URL patterns (e.g. `/experiments/*`) to exclude pages from both metadata generation and audits; server-side enforced
+- **"View Full Page List" button** — after indexing, jump directly to the Bulk Editor to review all indexed pages
 
 ---
 
@@ -117,8 +132,10 @@ Every page receives an **SEO score from 0 to 100** based on AI analysis:
 - **Actionable suggestions:** Specific improvements the AI recommends for each page
 - **Audit Overview dashboard:** Score distribution cards, average score, top 10 / bottom 10 pages
 - **Detailed reports:** Sortable and filterable by score range, with expandable issue/suggestion lists
-- **Skip rules:** Exclude pages by pattern (`/experiments/*`, `/test-pages/**`) or individually
+- **Skip rules:** Exclude pages by pattern (`/experiments/*`, `/test-pages/**`) or individually — enforced server-side in both metadata generation and audits
 - **Cached results:** Previously audited pages load instantly without re-calling the AI
+- **Collapsible history sections:** Recent AI Site Audits and Recent IndexNow Activity are collapsible with entry counts, "Load More" (5 at a time), and "Export All (.txt)" download buttons
+- **Approved Rollout Queue:** Bulk enable/disable frontend output for approved pages via checkboxes
 
 **Site-wide readiness scoring:**
 - Draft coverage (50% weight) — How many pages have AI-generated metadata
@@ -129,13 +146,15 @@ Every page receives an **SEO score from 0 to 100** based on AI analysis:
 
 ### 📝 Bulk Editor
 
-Edit SEO titles and meta descriptions for all your pages in one table view:
+Edit SEO titles and meta descriptions for all your content in one table view:
 
-- Filter by post type (posts, pages, products, custom types)
+- **Row counter** — sequential `#` column for easy reference
+- **Real-time search** — filter pages by title as you type
+- Filter by post type (posts, pages, products, custom types) — WooCommerce products hidden when WooCommerce is inactive
 - Paginated table with inline editing
 - Character count indicators
 - Individual row save via AJAX — no full page reload
-- See at a glance which pages need attention
+- **Site Structure tree** — visual hierarchical view of your site showing parent/child relationships with expand/collapse and icons per content type (📄 pages, 📝 posts, 🛒 products)
 
 ---
 
@@ -157,8 +176,22 @@ Monitor focus keyphrase usage across your site:
 
 - **Keyphrase map:** See which pages target which keywords
 - **Cannibalization detection:** Automatically flags when multiple pages target the same keyphrase
-- **Coverage stats:** Total pages with keyphrases, pages without, cannibalized count
+- **Coverage stats:** Total pages with keyphrases, pages without, cannibalized count — synced with the content index for accuracy
+- Sortable table with keyphrase, page, and post type columns
 - Helps prevent keyword competition between your own pages
+
+---
+
+### 🧠 AI SEO Strategist
+
+A dedicated site-wide AI chat assistant for strategic SEO planning:
+
+- **Focus page scoping** — select specific pages to include in the AI conversation context
+- **Run-aware** — sees your saved Runs and their completion status
+- **Full audit context** — AI receives all audit scores, issues, and suggestions for selected pages
+- **Capacity display** — shows how much context is being sent to the AI
+- **Persistent conversations** — chat history is saved and can be cleared when needed
+- Accessible from the main plugin menu as "AI Strategist"
 
 ---
 
@@ -392,7 +425,7 @@ Full backup and restore of all plugin data:
 - Redirect rules
 - Cornerstone content flags
 
-**Format:** Single JSON file download
+**Format:** Single JSON file download — select what to include via checkboxes (settings, metadata, redirects)
 
 ---
 
@@ -409,6 +442,39 @@ Seamless one-click migration from Yoast SEO:
 
 ---
 
+### 🗑️ Data Management
+
+Comprehensive data cleanup with scope-based clearing:
+
+- **Clear SEO Metadata** — removes 14 post meta keys (focus keyphrase, social fields, canonical URL, robots directives, schema type, title branding, cornerstone, hreflang, pending content changes, content backup, meta title, meta description) plus 4 term meta keys
+- **Clear Audits** — removes page audit data and audit skip flags
+- **Clear Everything** — all of the above plus approved message IDs, frontend enabled flags, AI conversations, messages, IndexNow log, runs, and active runs user meta
+- Confirmation modal always shown before any destructive operation
+- Cleanup also runs on plugin uninstall via `uninstall.php`
+
+---
+
+### 🛒 WooCommerce Integration
+
+Product-aware SEO management when WooCommerce is active:
+
+- **Setup Wizard** — Products filter button in the page selector modal
+- **Bulk Editor** — Post type dropdown includes "Products" only when WooCommerce is detected
+- **Site Structure tree** — Products shown with 🛒 icon in a separate group
+- WooCommerce detection is automatic — no configuration needed
+
+---
+
+### 📐 Gutenberg Sidebar
+
+Native block editor integration:
+
+- **Sidebar panel** — SEO fields accessible directly from the Gutenberg sidebar
+- Dedicated JS (`gutenberg-sidebar.js`) and CSS (`gutenberg-sidebar.css`) assets
+- Auto-enqueued only on block editor screens
+
+---
+
 ## Requirements
 
 | Requirement | Minimum |
@@ -416,6 +482,7 @@ Seamless one-click migration from Yoast SEO:
 | WordPress | 6.7+ |
 | PHP | 7.4+ |
 | AI API Key | OpenAI or Google Gemini |
+| WooCommerce | Optional — enables product-specific features |
 
 ---
 
@@ -445,13 +512,29 @@ After activation, configure the plugin in **AI SEO Keeper → Settings**:
 
 ---
 
+## Testing
+
+The plugin includes a PHPUnit test suite:
+
+```bash
+php -d extension=php_zip.dll vendor/bin/phpunit --testsuite Unit
+```
+
+- **81 tests, 141 assertions** — all passing
+- Test stubs in `tests/stubs/` mock WordPress functions for isolated unit testing
+- Additional tools: `tests/hallucination-test.php` (AI output validation), `tests/prompt-inspector.php` (prompt debugging)
+
+---
+
 ## For Developers
 
 - **Code Architecture:** See [`docs/CODE-MAP.md`](docs/CODE-MAP.md) for the complete codebase map
-- **Namespace:** `AI_SEO_Keeper`
-- **Adding new admin pages:** Create a render stub + view file + optional CSS/JS (auto-detected)
+- **Namespace:** `AI_SEO_Keeper` with PSR-4 autoloader (`includes/autoload.php`)
+- **Modular admin:** `class-admin.php` is a slim coordinator delegating to focused sub-modules in `includes/admin/` (AJAX, rollout, import/export, taxonomy, SEO analysis)
+- **Adding new admin pages:** Create a render stub + view file + optional CSS/JS (auto-detected by filename convention)
 - **All AJAX handlers** use WordPress nonces for security
 - **All user inputs** are sanitized via `sanitize_text_field()`, `wp_unslash()`, and `esc_*()` functions
+- **DB auto-upgrade:** `plugins_loaded` hook checks `ai_seo_keeper_db_version` vs `AI_SEO_KEEPER_VERSION` and runs `Activator::activate()` on version mismatch
 
 ---
 

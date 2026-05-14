@@ -900,7 +900,7 @@ jQuery(function ($) {
         var scoreSummary = 'Tune the draft length and keyphrase placement to get closer to a search-friendly snippet.';
         var $score = $analyzer.find('.ai-seo-keeper-snippet-score');
 
-        if (! titleLength) {
+        if (! title.length) {
             setSnippetMetricState(
                 $analyzer.find('[data-snippet-metric="title-length"]'),
                 'is-neutral',
@@ -1199,12 +1199,20 @@ jQuery(function ($) {
             current_schema_type: $('#ai-seo-keeper-schema-type').val(),
             current_canonical_url: $('#ai-seo-keeper-canonical-url').val(),
             current_robots_directives: $('#ai-seo-keeper-robots-directives').val(),
-            current_cornerstone: $('#ai-seo-keeper-cornerstone').is(':checked') ? '1' : '0'
+            current_cornerstone: $('#ai-seo-keeper-cornerstone').is(':checked') ? '1' : '0',
+            deep_analysis: $('#ai-seo-keeper-deep-analysis').is(':checked') ? '1' : '0'
         })
             .done(function (response) {
                 if (response && response.success && response.data) {
                     $('#ai-seo-keeper-meta-title').val(response.data.seoTitle || '');
                     $('#ai-seo-keeper-meta-description').val(response.data.metaDescription || '');
+
+                    if (response.data.socialTitle) {
+                        $('#ai-seo-keeper-social-title').val(response.data.socialTitle).trigger('input');
+                    }
+                    if (response.data.socialDescription) {
+                        $('#ai-seo-keeper-social-description').val(response.data.socialDescription).trigger('input');
+                    }
 
                     if (response.data.focusKeyphrase) {
                         var $kw = $('#ai-seo-keeper-focus-keyphrase');
@@ -1334,7 +1342,8 @@ jQuery(function ($) {
             action: aiSeoKeeperEditor.chatAction,
             nonce: $('#ai_seo_keeper_editor_nonce').val(),
             post_id: postId,
-            message: message
+            message: message,
+            deep_analysis: $('#ai-seo-keeper-deep-analysis').is(':checked') ? '1' : '0'
         })
             .done(function (response) {
                 if (response && response.success && response.data) {
@@ -2246,7 +2255,11 @@ JS;
         $approved_suggestion = $this->history_store->get_approved_suggestion((int) $post->ID, 'post');
         $has_api_key      = ! empty($options['api_key']);
         $chat_is_enabled  = ! empty($options['editor_chat_enabled']);
-        $chat_messages = $chat_is_enabled ? $this->history_store->get_recent_chat_messages((int) $post->ID, 8) : array();
+        // Determine chat readiness: 0 = no metadata, 1 = has metadata but no audit, 2 = full insights.
+        $has_seo_metadata = '' !== trim($seo_title) || '' !== trim($seo_description) || '' !== trim($focus_keyphrase);
+        $has_page_audit   = is_array(get_post_meta($post->ID, '_ai_seo_keeper_page_audit', true));
+        $chat_readiness   = $has_page_audit ? 2 : ($has_seo_metadata ? 1 : 0);
+        $chat_messages = ($chat_is_enabled && $chat_readiness > 0) ? $this->history_store->get_recent_chat_messages((int) $post->ID, 8) : array();
         $frontend_enabled = ! empty($options['frontend_output_enabled']);
         $frontend_override_conflicts = ! empty($options['frontend_override_conflicts']);
         $search_appearance_auto_enabled = ! empty($options['search_appearance_auto_enabled']);
@@ -2315,6 +2328,14 @@ JS;
                 <span class="ai-seo-keeper-save-status" aria-live="polite"></span>
             </div>
             <p class="ai-seo-keeper-toolbar-note">Generate fills the draft fields only. Save SEO draft persists them without publishing or updating the main page content.</p>
+
+            <div style="margin:6px 0 10px;padding:6px 10px;background:#f6f7f7;border:1px solid #dcdcde;border-radius:4px;">
+                <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;">
+                    <input type="checkbox" id="ai-seo-keeper-deep-analysis" value="1" />
+                    <strong><?php esc_html_e('Deep analysis', 'ai-seo-keeper'); ?></strong>
+                    <span style="color:#50575e;">&mdash; <?php esc_html_e('AI will read body content from topically related pages across the site (uses more tokens).', 'ai-seo-keeper'); ?></span>
+                </label>
+            </div>
 
             <?php if (! empty($pending_changes['changes'])) : ?>
                 <div class="ai-seo-keeper-pending-notice" style="background:#fff8e1;border-left:4px solid #ffb300;padding:8px 12px;margin:8px 0;font-size:13px;">
@@ -2452,29 +2473,54 @@ JS;
                     <div class="ai-seo-keeper-accordion-group">
                         <?php if ($chat_is_enabled) : ?>
                             <?php
-                            $ai_assistant_content =
-                                '<div class="ai-seo-keeper-chat-intro">Your AI SEO copilot — ask questions, get metadata suggestions, or request page content edits. Everything happens in one conversation. <span class="ai-seo-keeper-help-tip" data-tip="AI sees your full page content, SEO title, meta description, focus keyphrase, snippet scores, audit results, related pages, and the full conversation history."></span></div>' .
+                            // Chat readiness banner.
+                            $chat_readiness_banner = '';
+                            if (0 === $chat_readiness) {
+                                $chat_readiness_banner =
+                                    '<div style="background:#fff3cd;border-left:4px solid #ffb300;padding:10px 14px;margin-bottom:12px;font-size:13px;border-radius:4px;">' .
+                                    '<strong>⚠ AI Assistant unavailable</strong><br>' .
+                                    'No SEO metadata has been generated for this page yet. Use <strong>Generate with AI</strong> or fill in SEO fields manually, then save to enable the AI assistant.' .
+                                    '</div>';
+                            } elseif (1 === $chat_readiness) {
+                                $chat_readiness_banner =
+                                    '<div style="background:#fef8ee;border-left:4px solid #dba617;padding:10px 14px;margin-bottom:12px;font-size:13px;border-radius:4px;">' .
+                                    '<strong>ℹ Limited context</strong> — AI can see SEO metadata fields only. ' .
+                                    'Run a <strong>full AI Audit</strong> on this page (in the SEO tab) for deeper content analysis and better recommendations.' .
+                                    '</div>';
+                            } else {
+                                $chat_readiness_banner =
+                                    '<div style="background:#edf7ee;border-left:4px solid #00a32a;padding:10px 14px;margin-bottom:12px;font-size:13px;border-radius:4px;">' .
+                                    '<strong>✓ Full page insights available</strong> — AI has access to SEO metadata and audit results for the most accurate analysis.' .
+                                    '</div>';
+                            }
 
-                                '<div class="ai-seo-keeper-assistant-tabs" style="display:flex;gap:0;border-bottom:2px solid #dcdcde;margin-bottom:12px;">' .
-                                '<button type="button" class="ai-seo-keeper-assistant-tab is-active" data-target="chat" style="padding:8px 16px;font-size:14px;font-weight:600;background:none;border:none;border-bottom:2px solid #643d87;margin-bottom:-2px;cursor:pointer;color:#1d2327;">💬 Chat</button>' .
-                                '<button type="button" class="ai-seo-keeper-assistant-tab" data-target="history" style="padding:8px 16px;font-size:14px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:#787c82;">📋 History</button>' .
-                                '</div>' .
+                            $ai_assistant_content = $chat_readiness_banner;
 
-                                '<div class="ai-seo-keeper-assistant-panel" data-panel="chat">' .
-                                '<textarea class="widefat ai-seo-keeper-chat-input" rows="3" placeholder="Ask about SEO, request content edits, or follow up on previous advice — AI handles it all in one conversation…"></textarea>' .
-                                '<p class="ai-seo-keeper-chat-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' .
-                                '<button type="button" class="button button-primary ai-seo-keeper-send-chat" ' . disabled(! $has_api_key, true, false) . '>Send</button>' .
-                                '<span class="ai-seo-keeper-help-tip" data-tip="AI reads your full page content, SEO data, audit results, and conversation history. Ask questions, request metadata changes, or ask for page content edits \u2014 AI decides what to do automatically. When edits are needed, you get BEFORE/AFTER diffs to review before anything is saved."></span>' .
-                                '<button type="button" class="button ai-seo-keeper-clear-chat" style="margin-left:auto;color:#8a2424;" ' . disabled(empty($chat_messages), true, false) . '>🗑 Clear</button>' .
-                                '</p>' .
-                                '<span class="ai-seo-keeper-chat-status" aria-live="polite" style="display:block;font-size:13px;margin:4px 0 8px;"></span>' .
-                                '<div class="ai-seo-keeper-chat-shell">' . $this->render_chat_history_markup($chat_messages) . '</div>' .
-                                '<div class="ai-seo-keeper-content-review"></div>' .
-                                '</div>' .
+                            if ($chat_readiness > 0) {
+                                $ai_assistant_content .=
+                                    '<div class="ai-seo-keeper-chat-intro">Your AI SEO copilot — ask questions, get metadata suggestions, or request page content edits. Everything happens in one conversation. <span class="ai-seo-keeper-help-tip" data-tip="AI sees your full page content, SEO title, meta description, focus keyphrase, snippet scores, audit results, related pages, and the full conversation history."></span></div>' .
 
-                                '<div class="ai-seo-keeper-assistant-panel" data-panel="history" style="display:none;">' .
-                                '<div class="ai-seo-keeper-history-shell">' . $this->render_history_markup($recent_suggestions, $recent_content_edits) . '</div>' .
-                                '</div>';
+                                    '<div class="ai-seo-keeper-assistant-tabs" style="display:flex;gap:0;border-bottom:2px solid #dcdcde;margin-bottom:12px;">' .
+                                    '<button type="button" class="ai-seo-keeper-assistant-tab is-active" data-target="chat" style="padding:8px 16px;font-size:14px;font-weight:600;background:none;border:none;border-bottom:2px solid #643d87;margin-bottom:-2px;cursor:pointer;color:#1d2327;">💬 Chat</button>' .
+                                    '<button type="button" class="ai-seo-keeper-assistant-tab" data-target="history" style="padding:8px 16px;font-size:14px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:#787c82;">📋 History</button>' .
+                                    '</div>' .
+
+                                    '<div class="ai-seo-keeper-assistant-panel" data-panel="chat">' .
+                                    '<textarea class="widefat ai-seo-keeper-chat-input" rows="3" placeholder="Ask about SEO, request content edits, or follow up on previous advice — AI handles it all in one conversation…"></textarea>' .
+                                    '<p class="ai-seo-keeper-chat-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' .
+                                    '<button type="button" class="button button-primary ai-seo-keeper-send-chat" ' . disabled(! $has_api_key, true, false) . '>Send</button>' .
+                                    '<span class="ai-seo-keeper-help-tip" data-tip="AI reads your full page content, SEO data, audit results, and conversation history. Ask questions, request metadata changes, or ask for page content edits \u2014 AI decides what to do automatically. When edits are needed, you get BEFORE/AFTER diffs to review before anything is saved."></span>' .
+                                    '<button type="button" class="button ai-seo-keeper-clear-chat" style="margin-left:auto;color:#8a2424;" ' . disabled(empty($chat_messages), true, false) . '>🗑 Clear</button>' .
+                                    '</p>' .
+                                    '<span class="ai-seo-keeper-chat-status" aria-live="polite" style="display:block;font-size:13px;margin:4px 0 8px;"></span>' .
+                                    '<div class="ai-seo-keeper-chat-shell">' . $this->render_chat_history_markup($chat_messages) . '</div>' .
+                                    '<div class="ai-seo-keeper-content-review"></div>' .
+                                    '</div>' .
+
+                                    '<div class="ai-seo-keeper-assistant-panel" data-panel="history" style="display:none;">' .
+                                    '<div class="ai-seo-keeper-history-shell">' . $this->render_history_markup($recent_suggestions, $recent_content_edits) . '</div>' .
+                                    '</div>';
+                            }
 
                             echo $this->render_accordion_section(
                                 $chat_accordion_id,

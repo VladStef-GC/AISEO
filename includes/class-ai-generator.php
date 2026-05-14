@@ -47,6 +47,8 @@ class AI_Generator
         $seo_title = isset($payload['seo_title']) ? sanitize_text_field((string) $payload['seo_title']) : '';
         $meta_description = isset($payload['meta_description']) ? sanitize_textarea_field((string) $payload['meta_description']) : '';
         $focus_keyphrase = isset($payload['focus_keyphrase']) ? sanitize_text_field((string) $payload['focus_keyphrase']) : '';
+        $social_title = isset($payload['social_title']) ? sanitize_text_field((string) $payload['social_title']) : '';
+        $social_description = isset($payload['social_description']) ? sanitize_textarea_field((string) $payload['social_description']) : '';
         $notes = isset($payload['notes']) ? sanitize_textarea_field((string) $payload['notes']) : '';
 
         if ('' === $seo_title || '' === $meta_description) {
@@ -57,6 +59,8 @@ class AI_Generator
             'seo_title' => $seo_title,
             'meta_description' => $meta_description,
             'focus_keyphrase' => $focus_keyphrase,
+            'social_title' => $social_title,
+            'social_description' => $social_description,
             'notes' => $notes,
             'provider' => $provider,
             'model' => $model,
@@ -112,7 +116,7 @@ class AI_Generator
         );
     }
 
-    public function chat_for_post(int $post_id, string $message, array $recent_messages = array()): array
+    public function chat_for_post(int $post_id, string $message, array $recent_messages = array(), bool $deep_analysis = false): array
     {
         $post = get_post($post_id);
 
@@ -136,7 +140,7 @@ class AI_Generator
         $model = trim((string) $options['model']);
         $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_chat_system_prompt((string) $options['system_prompt']);
-        $user_prompt = $this->build_chat_user_prompt($post, $message, $recent_messages);
+        $user_prompt = $this->build_chat_user_prompt($post, $message, $recent_messages, $deep_analysis);
 
         if ('openai' === $provider) {
             $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
@@ -187,9 +191,11 @@ class AI_Generator
         return trim(
             $base_prompt . "\n\n" .
                 'IDENTITY: You are the AI inside the "AI SEO Keeper" WordPress plugin. This plugin handles ALL SEO. The user does NOT use Yoast, RankMath, or any other SEO plugin — never mention them.' . "\n" .
-                'Return only valid JSON with exactly these keys: seo_title, meta_description, focus_keyphrase, notes. ' .
+                'Return only valid JSON with exactly these keys: seo_title, meta_description, focus_keyphrase, social_title, social_description, notes. ' .
                 'Do not use markdown fences. Keep the title at or under 60 characters (total including branding). ' .
                 'Keep the meta description at or under 155 characters, ideally around 140-155. ' .
+                'social_title is the Open Graph / Twitter sharing title — more engaging and attention-grabbing than seo_title, up to 70 characters. ' .
+                'social_description is the social sharing description — a compelling hook for clicks, up to 200 characters. ' .
                 'Be specific to the real page content and avoid generic claims. ' .
                 'CRITICAL: If a focus keyphrase is provided, it MUST appear naturally in both the seo_title and meta_description. ' .
                 'If the existing drafts are already well-optimized, return them unchanged — do not rewrite good content unnecessarily.' .
@@ -258,6 +264,7 @@ class AI_Generator
 
     private function get_seo_context(\WP_Post $post, array $overrides = array()): array
     {
+        $deep_analysis = ! empty($overrides['deep_analysis']);
         // Use browser values if provided, otherwise fall back to saved meta.
         $focus_keyphrase = isset($overrides['focus_keyphrase']) && '' !== $overrides['focus_keyphrase']
             ? trim(wp_strip_all_tags($overrides['focus_keyphrase']))
@@ -318,6 +325,23 @@ class AI_Generator
         // Compact site tree for structural awareness.
         $site_tree = $this->content_indexer->get_compact_site_tree((int) $post->ID);
 
+        // Topically related pages: keyword-based cross-hierarchy search.
+        $exclude_ids = array();
+        if (! empty($hierarchy['siblings'])) {
+            foreach ($hierarchy['siblings'] as $sib) {
+                $exclude_ids[] = (int) $sib['object_id'];
+            }
+        }
+        if (! empty($hierarchy['children'])) {
+            foreach ($hierarchy['children'] as $child) {
+                $exclude_ids[] = (int) $child['object_id'];
+            }
+        }
+        if (is_array($hierarchy['parent'] ?? null)) {
+            $exclude_ids[] = (int) $hierarchy['parent']['object_id'];
+        }
+        $topical_pages = $this->content_indexer->get_topically_related_pages((int) $post->ID, $exclude_ids, $deep_analysis, 10);
+
         return array(
             'focus_keyphrase' => $focus_keyphrase,
             'seo_title_draft' => $seo_title_draft,
@@ -340,6 +364,7 @@ class AI_Generator
             'hierarchy' => $hierarchy,
             'keyphrase_conflicts' => $keyphrase_conflicts,
             'site_tree' => $site_tree,
+            'topical_pages' => $topical_pages,
         );
     }
 
@@ -479,6 +504,23 @@ class AI_Generator
             $lines[] = 'ACTION REQUIRED: Recommend unique keyphrases for this page to avoid SEO cannibalization.';
         }
 
+        // Topically related pages (cross-hierarchy, keyword-based).
+        if (! empty($ctx['topical_pages'])) {
+            $lines[] = '--- Topically Related Pages (keyword match across site) ---';
+            $lines[] = 'These pages share keywords with the current page but are NOT structural siblings/children. Watch for topic overlap and cannibalization:';
+            foreach ($ctx['topical_pages'] as $tp) {
+                $tp_line = '  - "' . $tp['title'] . '" /' . ltrim($tp['slug'], '/') . '/'
+                    . ' | type: ' . $tp['post_type']
+                    . ('' !== trim((string) $tp['focus_keyphrase']) ? ' | kp: "' . $tp['focus_keyphrase'] . '"' : '')
+                    . ('' !== trim((string) $tp['seo_title']) ? ' | SEO: "' . $tp['seo_title'] . '"' : '')
+                    . ('' !== trim((string) $tp['meta_description']) ? ' | desc: "' . $tp['meta_description'] . '"' : '');
+                $lines[] = $tp_line;
+                if (! empty($tp['excerpt_content'])) {
+                    $lines[] = '    Content preview: ' . $tp['excerpt_content'];
+                }
+            }
+        }
+
         // Compact site tree.
         if (! empty($ctx['site_tree'])) {
             $lines[] = '--- Site Structure (titles + keyphrases) ---';
@@ -530,8 +572,8 @@ class AI_Generator
 
         $prompt_parts = array(
             'Task: Generate or refine the SEO title and meta description for the current WordPress page.',
-            'Output format: {"seo_title":"...","meta_description":"...","focus_keyphrase":"...","notes":"..."}',
-            'Requirements: Make the draft clearly differentiated from the related pages. Keep seo_title at or under ' . ('' !== $branding_suffix ? (string) $page_title_budget : '60') . ' characters and meta_description at or under 155 characters. Do not invent services, guarantees, or facts not present on the page. The focus_keyphrase should be the single most important 2-4 word phrase this page should rank for. When a focus keyphrase is already provided, keep it in your output AND ensure it appears naturally in both seo_title and meta_description. Notes should be one or two short sentences explaining the positioning choice or why the existing draft was kept.',
+            'Output format: {"seo_title":"...","meta_description":"...","focus_keyphrase":"...","social_title":"...","social_description":"...","notes":"..."}',
+            'Requirements: Make the draft clearly differentiated from the related pages. Keep seo_title at or under ' . ('' !== $branding_suffix ? (string) $page_title_budget : '60') . ' characters and meta_description at or under 155 characters. social_title is the Open Graph / Twitter sharing title — it can be more engaging and attention-grabbing than seo_title, up to 70 characters. social_description is the social sharing description — a compelling hook for clicks, up to 200 characters. Do not invent services, guarantees, or facts not present on the page. The focus_keyphrase should be the single most important 2-4 word phrase this page should rank for. When a focus keyphrase is already provided, keep it in your output AND ensure it appears naturally in both seo_title and meta_description. Notes should be one or two short sentences explaining the positioning choice or why the existing draft was kept.',
             'Site: ' . get_bloginfo('name'),
             'Page type: ' . $post->post_type,
             'Current page title: ' . (string) $post->post_title,
@@ -605,9 +647,9 @@ class AI_Generator
         return implode("\n\n", $prompt_parts);
     }
 
-    private function build_chat_user_prompt(\WP_Post $post, string $message, array $recent_messages): string
+    private function build_chat_user_prompt(\WP_Post $post, string $message, array $recent_messages, bool $deep_analysis = false): string
     {
-        $ctx = $this->get_seo_context($post);
+        $ctx = $this->get_seo_context($post, $deep_analysis ? array('deep_analysis' => true) : array());
 
         // Send FULL page content — no truncation. AI needs every element for proper SEO analysis.
         $page_content_raw = Content_Helper::get_content($post);

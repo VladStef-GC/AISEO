@@ -1,6 +1,6 @@
 # AI SEO Keeper — Code Architecture Map
 
-> **Version:** 1.2.0 · **Last updated:** May 2026
+> **Version:** 1.3.1 · **Last updated:** May 2026
 
 This document maps the entire codebase for developers working on the plugin.
 Use it to quickly locate any feature, page, handler, or asset file.
@@ -11,17 +11,18 @@ Use it to quickly locate any feature, page, handler, or asset file.
 
 ```
 ai-seo-keeper/
-├── ai-seo-keeper.php              ← Plugin bootstrap (constants, autoloader, activation hook)
-├── uninstall.php                  ← Cleanup on plugin deletion
+├── ai-seo-keeper.php              ← Plugin bootstrap (constants, autoloader, activation hook, DB auto-upgrade)
+├── uninstall.php                  ← Cleanup on plugin deletion (5 tables, all meta, options, user meta)
 │
 ├── includes/                      ← All PHP classes (PSR-4 style, AI_SEO_Keeper namespace)
+│   ├── autoload.php               ← PSR-4 autoloader (AI_SEO_Keeper\ClassName → class-classname.php)
 │   ├── class-plugin.php           ← Singleton controller — wires all modules together
 │   ├── class-settings.php         ← Options registry, defaults, get/save, title branding helpers
-│   ├── class-admin.php            ← Admin UI, AJAX handlers, editor metabox, GreenCoders design (~5,200 lines)
+│   ├── class-admin.php            ← Slim coordinator: menus, assets, metabox, delegation to sub-modules
 │   ├── class-frontend.php         ← Frontend SEO output (meta tags, schema, OG, crawl, title branding)
 │   ├── class-ai-generator.php     ← AI provider integration (OpenAI / Google), live context overrides, preserve-if-good logic
-│   ├── class-content-indexer.php  ← Site content indexing & summary stats
-│   ├── class-content-writer.php   ← Pending content changes workflow
+│   ├── class-content-indexer.php  ← Site content indexing, summary stats, get_all_indexed_pages()
+│   ├── class-content-writer.php   ← Pending content changes workflow (changeset pattern)
 │   ├── class-content-helper.php   ← Content extraction helper for AI prompts
 │   ├── class-audit-engine.php     ← Readiness scoring, coverage, duplicate detection
 │   ├── class-history-store.php    ← Conversation & message logging (chat + generation)
@@ -29,9 +30,18 @@ ai-seo-keeper/
 │   ├── class-redirects.php        ← 301/302/307 redirect manager + 404 logging
 │   ├── class-indexnow.php         ← IndexNow refresh signaling integration
 │   ├── class-discovery.php        ← AI discovery documents (llms.txt)
-│   ├── class-activator.php        ← Database table creation on activation
+│   ├── class-activator.php        ← Database table creation (5 tables) on activation
+│   ├── class-meta-keys.php        ← Centralized post/term meta key constants
+│   ├── class-run-manager.php      ← Runs CRUD, step tracking, page selector data
+│   ├── class-site-chat.php        ← AI Strategist chat handler (send, clear, focus pages)
+│   ├── class-woocommerce-integration.php ← WooCommerce detection and product-aware features
 │   │
-│   └── admin/                     ← Extracted view templates (HTML + inline JS where needed)
+│   └── admin/                     ← Extracted view templates and admin sub-modules
+│       ├── class-admin-ajax.php          ← All AJAX handlers (generate, chat, bulk, setup, runs, clear)
+│       ├── class-admin-rollout.php       ← Sync index, submit IndexNow, site audit, bulk frontend
+│       ├── class-admin-import-export.php ← Export/import (JSON), Yoast migration
+│       ├── class-admin-taxonomy.php      ← Taxonomy term SEO fields (render + save)
+│       ├── class-seo-analysis.php        ← Deterministic SEO checks (keyphrase, readability, links)
 │       ├── view-dashboard.php
 │       ├── view-settings.php
 │       ├── view-audit.php
@@ -39,24 +49,38 @@ ai-seo-keeper/
 │       ├── view-images.php
 │       ├── view-keywords.php
 │       ├── view-export-import.php
-│       └── view-setup-wizard.php
+│       ├── view-setup-wizard.php
+│       └── view-site-chat.php
 │
 ├── assets/
 │   ├── css/
 │   │   ├── admin-common.css       ← Shared styles (accordions, stat cards, tables, boxes)
 │   │   ├── page-settings.css      ← Settings page styles
-│   │   └── page-setup-wizard.css  ← Setup Wizard page styles
+│   │   ├── page-setup-wizard.css  ← Setup Wizard page styles
+│   │   ├── page-site-chat.css     ← AI Strategist page styles
+│   │   └── gutenberg-sidebar.css  ← Gutenberg sidebar panel styles
 │   ├── img/
 │   │   └── info-icon.svg          ← Purple-to-green gradient info icon
 │   └── js/
 │       ├── admin-common.js        ← Shared JS (accordion toggle, sortable table headers)
 │       ├── page-bulk-editor.js    ← Bulk Editor AJAX save per row
 │       ├── page-images.js         ← Image SEO alt-text save, "Used on" toggle
-│       └── page-settings.js       ← Settings page interactions
+│       ├── page-settings.js       ← Settings page interactions
+│       ├── page-site-chat.js      ← AI Strategist chat interface, focus pages, runs
+│       └── gutenberg-sidebar.js   ← Gutenberg sidebar panel registration
+│
+├── tests/
+│   ├── bootstrap.php              ← PHPUnit bootstrap with WP stubs
+│   ├── hallucination-test.php     ← AI output validation tool
+│   ├── prompt-inspector.php       ← Prompt debugging tool
+│   ├── stubs/                     ← WordPress function mocks
+│   └── unit/                      ← PHPUnit test cases (81 tests, 141 assertions)
 │
 └── docs/
     ├── CODE-MAP.md                ← This file
-    └── plan-ai-content-editor.md  ← Feature planning notes
+    ├── UPDATE-PLAN-v1.3.md        ← v1.3 refactoring plan (completed)
+    ├── PRIORITY-PLAN-SCALE-AWARE.md ← Scale-aware architecture plan (completed)
+    └── plan-ai-content-editor.md  ← AI Content Editor feature plan (completed)
 ```
 
 ---
@@ -67,19 +91,31 @@ ai-seo-keeper/
 ai-seo-keeper.php
   └── class-plugin.php (singleton)
         ├── class-settings.php
-        ├── class-admin.php
-        │     ├── class-ai-generator.php
-        │     ├── class-content-indexer.php
-        │     ├── class-content-writer.php
-        │     ├── class-content-helper.php
-        │     ├── class-audit-engine.php
-        │     ├── class-history-store.php
-        │     └── class-redirects.php
+        ├── class-admin.php (slim coordinator)
+        │     ├── admin/class-admin-ajax.php
+        │     │     ├── class-ai-generator.php
+        │     │     ├── class-content-indexer.php
+        │     │     ├── class-content-writer.php
+        │     │     ├── class-content-helper.php
+        │     │     ├── class-history-store.php
+        │     │     └── class-run-manager.php
+        │     ├── admin/class-admin-rollout.php
+        │     │     ├── class-content-indexer.php
+        │     │     └── class-indexnow.php
+        │     ├── admin/class-admin-import-export.php
+        │     ├── admin/class-admin-taxonomy.php
+        │     ├── admin/class-seo-analysis.php
+        │     └── class-audit-engine.php
+        ├── class-site-chat.php
+        │     └── class-history-store.php
+        ├── class-run-manager.php
         ├── class-frontend.php
         │     └── class-settings.php
         ├── class-sitemap.php
+        ├── class-redirects.php
         ├── class-indexnow.php
-        └── class-discovery.php
+        ├── class-discovery.php
+        └── class-woocommerce-integration.php
 ```
 
 ---
@@ -100,11 +136,12 @@ Each admin page follows the **thin-stub pattern**:
 | Dashboard | `ai-seo-keeper` | `render_dashboard()` | `view-dashboard.php` | — | — |
 | Audit | `ai-seo-keeper-audit` | `render_audit_page()` | `view-audit.php` | — | — |
 | Setup Wizard | `ai-seo-keeper-setup` | `render_setup_wizard_page()` | `view-setup-wizard.php` | `page-setup-wizard.css` | *(inline)* |
-| Settings | `ai-seo-keeper-settings` | `render_settings_page()` | `view-settings.php` | — | — |
+| Settings | `ai-seo-keeper-settings` | `render_settings_page()` | `view-settings.php` | `page-settings.css` | `page-settings.js` |
 | Redirects | `ai-seo-keeper-redirects` | `render_redirects_page()` | *(delegated to Redirects class)* | — | — |
 | Bulk Editor | `ai-seo-keeper-bulk-editor` | `render_bulk_editor_page()` | `view-bulk-editor.php` | — | `page-bulk-editor.js` |
 | Image SEO | `ai-seo-keeper-images` | `render_image_seo_page()` | `view-images.php` | — | `page-images.js` |
 | Keywords | `ai-seo-keeper-keywords` | `render_keyword_tracking_page()` | `view-keywords.php` | — | — |
+| AI Strategist | `ai-seo-keeper-site-chat` | `render_site_chat_page()` | `view-site-chat.php` | `page-site-chat.css` | `page-site-chat.js` |
 | Export/Import | `ai-seo-keeper-export-import` | `render_export_import_page()` | `view-export-import.php` | — | — |
 
 ### Asset Loading
@@ -119,36 +156,53 @@ To add CSS/JS for a new page: just create the file — no code changes needed.
 
 ## AJAX Handlers
 
-All handlers are in `class-admin.php`, registered via `wp_ajax_{action}`.
+All AJAX handlers are registered in `class-admin.php` via `wp_ajax_{action}` and delegated to sub-module classes.
 
-### Editor AJAX
-
-| Action | Method | Purpose |
-|--------|--------|---------|
-| `ai_seo_keeper_save_meta` | `handle_ajax_save_editor_meta()` | Save SEO draft from editor |
-| `ai_seo_keeper_generate_meta` | `handle_ajax_generate_editor_meta()` | Generate AI SEO suggestions |
-| `ai_seo_keeper_approve_suggestion` | `handle_ajax_approve_suggestion()` | Approve suggestion for frontend |
-| `ai_seo_keeper_chat` | `handle_ajax_chat_for_post()` | AI chat assistant per page |
-| `ai_seo_keeper_clear_chat` | `handle_ajax_clear_chat()` | Clear chat history |
-| `ai_seo_keeper_content_edit` | `handle_ajax_content_edit()` | Plan AI content changes |
-| `ai_seo_keeper_apply_changes` | `handle_ajax_apply_changes()` | Apply pending content edits |
-| `ai_seo_keeper_apply_suggestion` | `handle_ajax_apply_suggestion()` | Apply SEO suggestion to post |
-| `ai_seo_keeper_restore_backup` | `handle_ajax_restore_backup()` | Restore content backup |
-| `ai_seo_keeper_delete_edit_plan` | `handle_ajax_delete_edit_plan()` | Delete pending edit plan |
-
-### Bulk & Page-Level AJAX
+### Editor AJAX (class-admin-ajax.php)
 
 | Action | Method | Purpose |
 |--------|--------|---------|
-| `ai_seo_keeper_bulk_save_seo` | `handle_ajax_bulk_save_seo()` | Save row in Bulk Editor |
-| `ai_seo_keeper_save_image_alt` | `handle_ajax_save_image_alt()` | Save image alt text |
-| `ai_seo_keeper_bulk_generate` | `handle_ajax_bulk_generate()` | Wizard: batch AI generation |
-| `ai_seo_keeper_page_audit` | `handle_ajax_page_audit()` | Wizard: single page audit |
-| `ai_seo_keeper_setup_index` | `handle_ajax_setup_index()` | Wizard: index site |
-| `ai_seo_keeper_toggle_audit_skip` | `handle_ajax_toggle_audit_skip()` | Toggle audit skip flag |
-| `ai_seo_keeper_save_skip_patterns` | `handle_ajax_save_skip_patterns()` | Save audit skip patterns |
+| `ai_seo_keeper_save_meta` | `handle_save_editor_meta()` | Save SEO draft from editor |
+| `ai_seo_keeper_generate_meta` | `handle_generate_editor_meta()` | Generate AI SEO suggestions |
+| `ai_seo_keeper_approve_suggestion` | `handle_approve_suggestion()` | Approve suggestion for frontend |
+| `ai_seo_keeper_chat` | `handle_chat_for_post()` | AI chat assistant per page |
+| `ai_seo_keeper_clear_chat` | `handle_clear_chat()` | Clear chat history |
+| `ai_seo_keeper_content_edit` | `handle_content_edit()` | Plan AI content changes |
+| `ai_seo_keeper_apply_changes` | `handle_apply_changes()` | Apply pending content edits |
+| `ai_seo_keeper_apply_suggestion` | `handle_apply_suggestion()` | Apply SEO suggestion to post |
+| `ai_seo_keeper_restore_backup` | `handle_restore_backup()` | Restore content backup |
+| `ai_seo_keeper_delete_edit_plan` | `handle_delete_edit_plan()` | Delete pending edit plan |
 
-### Redirects AJAX
+### Bulk & Page-Level AJAX (class-admin-ajax.php)
+
+| Action | Method | Purpose |
+|--------|--------|---------|
+| `ai_seo_keeper_bulk_save_seo` | `handle_bulk_save_seo()` | Save row in Bulk Editor |
+| `ai_seo_keeper_save_image_alt` | `handle_save_image_alt()` | Save image alt text |
+| `ai_seo_keeper_bulk_generate` | `handle_bulk_generate()` | Wizard: batch AI generation (skip-rules enforced) |
+| `ai_seo_keeper_page_audit` | `handle_page_audit()` | Wizard: single page audit |
+| `ai_seo_keeper_setup_index` | `handle_setup_index()` | Wizard: index site |
+| `ai_seo_keeper_toggle_audit_skip` | `handle_toggle_audit_skip()` | Toggle audit skip flag |
+| `ai_seo_keeper_save_skip_patterns` | `handle_save_skip_patterns()` | Save audit skip patterns |
+| `ai_seo_keeper_clear_seo_data` | `handle_clear_seo_data()` | Scope-based data clearing |
+
+### Runs AJAX (class-admin-ajax.php)
+
+| Action | Method | Purpose |
+|--------|--------|---------|
+| `ai_seo_keeper_create_run` | `handle_create_run()` | Create a saved page list |
+| `ai_seo_keeper_delete_run` | `handle_delete_run()` | Delete a saved page list |
+| `ai_seo_keeper_get_pages_for_selector` | `handle_get_pages_for_selector()` | Fetch indexed pages for modal |
+| `ai_seo_keeper_mark_run_step` | `handle_mark_run_step()` | Mark run step complete |
+
+### Site Chat AJAX (class-site-chat.php)
+
+| Action | Method | Purpose |
+|--------|--------|---------|
+| `ai_seo_keeper_site_chat` | `handle_chat()` | Send message to AI Strategist |
+| `ai_seo_keeper_site_chat_clear` | `handle_clear_chat()` | Clear Strategist chat history |
+
+### Redirects AJAX (class-redirects.php)
 
 | Action | Method | Purpose |
 |--------|--------|---------|
@@ -160,23 +214,23 @@ All handlers are in `class-admin.php`, registered via `wp_ajax_{action}`.
 
 ## Admin POST Actions
 
-Non-AJAX form submissions handled via `admin_post_{action}`.
+Non-AJAX form submissions handled via `admin_post_{action}`, delegated to sub-modules.
 
-| Action | Method | Purpose |
-|--------|--------|---------|
-| `ai_seo_keeper_sync_index` | `handle_sync_index()` | Re-index all published content |
-| `ai_seo_keeper_submit_indexnow` | `handle_submit_indexnow()` | Submit URLs to IndexNow |
-| `ai_seo_keeper_import_yoast_metadata` | `handle_import_yoast_metadata()` | Migrate from Yoast SEO |
-| `ai_seo_keeper_bulk_frontend_rollout` | `handle_bulk_frontend_rollout()` | Bulk enable/disable frontend |
-| `ai_seo_keeper_generate_site_audit` | `handle_generate_site_audit()` | Generate AI site-wide audit |
-| `ai_seo_keeper_export` | `handle_export()` | Export settings + metadata (JSON) |
-| `ai_seo_keeper_import` | `handle_import()` | Import settings + metadata (JSON) |
+| Action | Handler Class | Method | Purpose |
+|--------|---------------|--------|---------|
+| `ai_seo_keeper_sync_index` | `Admin_Rollout` | `handle_sync_index()` | Re-index all published content |
+| `ai_seo_keeper_submit_indexnow` | `Admin_Rollout` | `handle_submit_indexnow()` | Submit URLs to IndexNow |
+| `ai_seo_keeper_generate_site_audit` | `Admin_Rollout` | `handle_generate_site_audit()` | Generate AI site-wide audit |
+| `ai_seo_keeper_bulk_frontend_rollout` | `Admin_Rollout` | `handle_bulk_frontend_rollout()` | Bulk enable/disable frontend |
+| `ai_seo_keeper_import_yoast_metadata` | `Admin_Import_Export` | `handle_import_yoast()` | Migrate from Yoast SEO |
+| `ai_seo_keeper_export` | `Admin_Import_Export` | `handle_export()` | Export settings + metadata (JSON) |
+| `ai_seo_keeper_import` | `Admin_Import_Export` | `handle_import()` | Import settings + metadata (JSON) |
 
 ---
 
 ## Database Tables
 
-Created by `class-activator.php` on plugin activation.
+Created by `class-activator.php` on plugin activation. Auto-upgraded via `plugins_loaded` hook.
 
 | Table | Purpose |
 |-------|---------|
@@ -184,7 +238,7 @@ Created by `class-activator.php` on plugin activation.
 | `{prefix}_ai_seo_keeper_conversations` | Chat/generation session tracking |
 | `{prefix}_ai_seo_keeper_messages` | Individual chat/generation messages |
 | `{prefix}_ai_seo_keeper_redirects` | Redirect rules (source, target, type, hits) |
-| `{prefix}_ai_seo_keeper_redirects_404_log` | 404 error tracking (URL, referrer, timestamp) |
+| `{prefix}_ai_seo_keeper_runs` | Saved page lists (name, page_ids, page_count, model_used, status, completed_steps) |
 
 ---
 
@@ -205,9 +259,20 @@ Created by `class-activator.php` on plugin activation.
 | `_ai_seo_keeper_approved_message_id` | Approved AI suggestion message ID |
 | `_ai_seo_keeper_page_audit` | Page-level audit data (score, issues, suggestions) |
 | `_ai_seo_keeper_pending_content_changes` | Pending AI content edits |
+| `_ai_seo_keeper_content_backup` | Content backup before AI edits |
 | `_ai_seo_keeper_cornerstone` | Cornerstone content flag |
 | `_ai_seo_keeper_audit_skip` | Audit skip flag |
 | `_ai_seo_keeper_title_branding_off` | Per-page title branding opt-out |
+| `_ai_seo_keeper_hreflang` | Hreflang entries |
+
+## Term Meta Keys
+
+| Meta Key | Purpose |
+|----------|---------|
+| `_ai_seo_keeper_term_title` | Taxonomy term SEO title |
+| `_ai_seo_keeper_term_description` | Taxonomy term meta description |
+| `_ai_seo_keeper_term_canonical` | Taxonomy term canonical URL |
+| `_ai_seo_keeper_term_noindex` | Taxonomy term noindex override |
 
 ---
 
@@ -234,7 +299,7 @@ Defined in `ai-seo-keeper.php`:
 
 | Constant | Value |
 |----------|-------|
-| `AI_SEO_KEEPER_VERSION` | `'1.2.0'` |
+| `AI_SEO_KEEPER_VERSION` | `'1.3.1'` |
 | `AI_SEO_KEEPER_FILE` | Main plugin file path |
 | `AI_SEO_KEEPER_PATH` | Plugin directory path |
 | `AI_SEO_KEEPER_URL` | Plugin directory URL |

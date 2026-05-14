@@ -47,10 +47,15 @@ defined('ABSPATH') || exit;
         </div>
     </div>
 
-    <div style="margin:16px 0;">
-        <a href="<?php echo esc_url(add_query_arg('filter', 'all', remove_query_arg('paged'))); ?>" class="button <?php echo 'all' === $filter ? 'button-primary' : ''; ?>"><?php echo esc_html(sprintf(__('All images (%d)', 'ai-seo-keeper'), $total_images)); ?></a>
-        <a href="<?php echo esc_url(add_query_arg('filter', 'missing_alt', remove_query_arg('paged'))); ?>" class="button <?php echo 'missing_alt' === $filter ? 'button-primary' : ''; ?>"><?php echo esc_html(sprintf(__('Missing alt (%d)', 'ai-seo-keeper'), $total_missing_alt)); ?></a>
-        <a href="<?php echo esc_url(add_query_arg('filter', 'with_alt', remove_query_arg('paged'))); ?>" class="button <?php echo 'with_alt' === $filter ? 'button-primary' : ''; ?>"><?php echo esc_html(sprintf(__('With alt (%d)', 'ai-seo-keeper'), $total_with_alt)); ?></a>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:16px 0;">
+        <div style="display:flex;gap:6px;">
+            <a href="<?php echo esc_url(add_query_arg('filter', 'all', remove_query_arg('paged'))); ?>" class="button <?php echo 'all' === $filter ? 'button-primary' : ''; ?>"><?php echo esc_html(sprintf(__('All images (%d)', 'ai-seo-keeper'), $total_images)); ?></a>
+            <a href="<?php echo esc_url(add_query_arg('filter', 'missing_alt', remove_query_arg('paged'))); ?>" class="button <?php echo 'missing_alt' === $filter ? 'button-primary' : ''; ?>"><?php echo esc_html(sprintf(__('Missing alt (%d)', 'ai-seo-keeper'), $total_missing_alt)); ?></a>
+            <a href="<?php echo esc_url(add_query_arg('filter', 'with_alt', remove_query_arg('paged'))); ?>" class="button <?php echo 'with_alt' === $filter ? 'button-primary' : ''; ?>"><?php echo esc_html(sprintf(__('With alt (%d)', 'ai-seo-keeper'), $total_with_alt)); ?></a>
+        </div>
+        <div style="flex:1;min-width:200px;max-width:400px;">
+            <input type="text" id="aisk-image-search" placeholder="<?php esc_attr_e('Search images by filename…', 'ai-seo-keeper'); ?>" style="width:100%;padding:6px 10px;font-size:13px;border:1px solid #8c8f94;border-radius:4px;" />
+        </div>
     </div>
 
     <?php if ($query->have_posts()) : ?>
@@ -141,4 +146,24 @@ defined('ABSPATH') || exit;
     <?php else : ?>
         <p><?php echo 'missing_alt' === $filter ? esc_html__('All images have alt text — great!', 'ai-seo-keeper') : ('with_alt' === $filter ? esc_html__('No images have alt text yet.', 'ai-seo-keeper') : esc_html__('No published images found.', 'ai-seo-keeper')); ?></p>
     <?php endif; ?>
+
+    <!-- Search filter script -->
+    <script type="text/javascript">
+        (function() {
+            var searchInput = document.getElementById('aisk-image-search');
+            if (!searchInput) return;
+            var table = document.getElementById('ai-seo-image-table');
+            if (!table) return;
+
+            searchInput.addEventListener('input', function() {
+                var term = this.value.toLowerCase().trim();
+                var rows = table.querySelectorAll('tbody tr');
+                for (var i = 0; i < rows.length; i++) {
+                    var fileCell = rows[i].querySelector('td:nth-child(2)');
+                    var filename = fileCell ? fileCell.textContent.toLowerCase() : '';
+                    rows[i].style.display = (term === '' || filename.indexOf(term) !== -1) ? '' : 'none';
+                }
+            });
+        })();
+    </script>
 </div>

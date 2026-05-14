@@ -97,10 +97,14 @@ Set-Content $file $content -Encoding UTF8       # adds BOM → PHP namespace err
 ## 5. Plugin Architecture
 
 - **Namespace:** `AI_SEO_Keeper`
-- **PSR-4 autoloader root:** `includes/` → `AI_SEO_Keeper\`
+- **PSR-4 autoloader:** `includes/autoload.php` maps `AI_SEO_Keeper\ClassName` → `includes/class-classname.php`
+- **Admin sub-modules:** `includes/admin/class-admin-ajax.php`, `class-admin-rollout.php`, `class-admin-import-export.php`, `class-admin-taxonomy.php`, `class-seo-analysis.php`
 - **View files** are in `includes/admin/view-*.php` — they are pure output templates, no business logic.
 - **Do not modify** core WordPress files. All plugin code lives under `wp-content/plugins/ai-seo-keeper/`.
 - **Module pattern:** New features go in `includes/` sub-classes, registered via `class-admin.php` hooks.
+- **Asset auto-loading:** Create `assets/js/page-{slug}.js` or `assets/css/page-{slug}.css` — auto-enqueued by slug.
+- **DB auto-upgrade:** `plugins_loaded` checks `ai_seo_keeper_db_version` vs `AI_SEO_KEEPER_VERSION`.
+- **Current version:** 1.3.1 with 5 SQL tables, 17 post meta keys, 4 term meta keys, 10 admin pages.
 
 ---
 
@@ -138,4 +142,4 @@ cd "wp-content/plugins/ai-seo-keeper"
 c:\xampp\php\php.exe -d extension=php_zip.dll vendor\bin\phpunit --testsuite Unit
 ```
 
-All 74 tests must pass before committing.
+All 81 tests must pass before committing.

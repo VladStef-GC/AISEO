@@ -573,7 +573,7 @@ class Content_Indexer
             $grandparent = $this->fetch_page_with_seo_meta($table_name, $postmeta, (int) $parent['parent_id']);
         }
 
-        // Fetch siblings (same parent, same post_type, excluding current).
+        // Fetch siblings (same parent, same post_type, excluding current). Capped at 20; keyphrase-bearing pages first.
         $siblings = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT idx.object_id, idx.title, idx.slug, idx.permalink, idx.status, idx.parent_id,
@@ -589,7 +589,8 @@ class Content_Indexer
                    AND idx.parent_id   = %d
                    AND idx.object_id  != %d
                    AND idx.status      = %s
-                 ORDER BY idx.title ASC",
+                 ORDER BY CASE WHEN COALESCE(pm_kp.meta_value, '') != '' THEN 0 ELSE 1 END, idx.title ASC
+                 LIMIT 20",
                 self::META_TITLE_KEY,
                 self::META_DESCRIPTION_KEY,
                 'post',
@@ -601,7 +602,7 @@ class Content_Indexer
             ARRAY_A
         );
 
-        // Fetch children of the current page.
+        // Fetch children of the current page. Capped at 20; keyphrase-bearing pages first.
         $children = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT idx.object_id, idx.title, idx.slug, idx.permalink, idx.status, idx.parent_id,
@@ -616,7 +617,8 @@ class Content_Indexer
                    AND idx.post_type   = %s
                    AND idx.parent_id   = %d
                    AND idx.status      = %s
-                 ORDER BY idx.title ASC",
+                 ORDER BY CASE WHEN COALESCE(pm_kp.meta_value, '') != '' THEN 0 ELSE 1 END, idx.title ASC
+                 LIMIT 20",
                 self::META_TITLE_KEY,
                 self::META_DESCRIPTION_KEY,
                 'post',
@@ -627,19 +629,48 @@ class Content_Indexer
             ARRAY_A
         );
 
-        // Build a human-readable position string.
+        // Build a human-readable position string. Use actual total counts (queries above are capped to 20).
+        $total_sibling_count = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$table_name}
+                 WHERE object_type = %s AND post_type = %s AND parent_id = %d AND object_id != %d AND status = %s",
+                'post',
+                $post_type,
+                $parent_id,
+                $post_id,
+                'publish'
+            )
+        );
+        $total_child_count = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$table_name}
+                 WHERE object_type = %s AND post_type = %s AND parent_id = %d AND status = %s",
+                'post',
+                $post_type,
+                $post_id,
+                'publish'
+            )
+        );
         $sibling_count = is_array($siblings) ? count($siblings) : 0;
         $child_count   = is_array($children) ? count($children) : 0;
 
         $position_parts = array();
         if (is_array($parent)) {
             $position_parts[] = 'Child of "' . $parent['title'] . '"';
-            $position_parts[] = ($sibling_count + 1) . ' page(s) at this level';
+            $level_label = ($total_sibling_count + 1) . ' page(s) at this level';
+            if ($total_sibling_count > $sibling_count) {
+                $level_label .= ' (showing top ' . $sibling_count . ')';
+            }
+            $position_parts[] = $level_label;
         } else {
             $position_parts[] = 'Top-level page';
         }
-        if ($child_count > 0) {
-            $position_parts[] = $child_count . ' child page(s) below';
+        if ($total_child_count > 0) {
+            $child_label = $total_child_count . ' child page(s) below';
+            if ($total_child_count > $child_count) {
+                $child_label .= ' (showing top ' . $child_count . ')';
+            }
+            $position_parts[] = $child_label;
         }
 
         return array(
@@ -697,6 +728,234 @@ class Content_Indexer
         );
 
         return is_array($conflicts) ? $conflicts : array();
+    }
+
+    /**
+     * Find pages that are topically related to the given post based on keyword overlap
+     * in titles, keyphrases, and meta descriptions — regardless of hierarchy.
+     *
+     * @param int   $post_id     The current post ID.
+     * @param array $exclude_ids Post IDs to exclude (e.g., siblings already included).
+     * @param bool  $deep        When true, also fetch a truncated excerpt of each page's body content.
+     * @param int   $limit       Maximum pages to return.
+     * @return array List of topically related pages with metadata (and optionally content excerpt).
+     */
+    public function get_topically_related_pages(int $post_id, array $exclude_ids = array(), bool $deep = false, int $limit = 10): array
+    {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $postmeta   = $wpdb->postmeta;
+
+        // Collect keyword sources: page title, focus keyphrase, meta description.
+        $post_title       = (string) get_the_title($post_id);
+        $focus_keyphrase  = trim((string) get_post_meta($post_id, '_ai_seo_keeper_focus_keyphrase', true));
+        $meta_description = trim((string) get_post_meta($post_id, self::META_DESCRIPTION_KEY, true));
+
+        // Extract keywords: split all sources into words, filter short/stop words.
+        $raw_text = $post_title . ' ' . $focus_keyphrase . ' ' . $meta_description;
+        $words    = preg_split('/[\s\-_\/\|,;:\.!?\(\)\[\]]+/', strtolower($raw_text), -1, PREG_SPLIT_NO_EMPTY);
+        $words    = array_unique($words);
+
+        // Remove common stop words and very short words.
+        $stop_words = array(
+            'the',
+            'a',
+            'an',
+            'and',
+            'or',
+            'but',
+            'is',
+            'in',
+            'on',
+            'at',
+            'to',
+            'for',
+            'of',
+            'with',
+            'by',
+            'from',
+            'as',
+            'into',
+            'that',
+            'this',
+            'it',
+            'are',
+            'was',
+            'were',
+            'be',
+            'been',
+            'has',
+            'have',
+            'had',
+            'do',
+            'does',
+            'did',
+            'will',
+            'would',
+            'could',
+            'should',
+            'may',
+            'might',
+            'can',
+            'not',
+            'no',
+            'so',
+            'if',
+            'then',
+            'than',
+            'too',
+            'very',
+            'just',
+            'about',
+            'up',
+            'out',
+            'our',
+            'your',
+            'my',
+            'we',
+            'you',
+            'he',
+            'she',
+            'they',
+            'its',
+            'his',
+            'her',
+            'their',
+            'all',
+            'each',
+            'how',
+            'what',
+            'which',
+            'who',
+            'when',
+            'where',
+            'why',
+            'any',
+            'some',
+            'more',
+        );
+
+        $keywords = array();
+        foreach ($words as $word) {
+            if (strlen($word) >= 3 && ! in_array($word, $stop_words, true)) {
+                $keywords[] = $word;
+            }
+        }
+
+        if (empty($keywords)) {
+            return array();
+        }
+
+        // Keep the keyphrase as a whole phrase for matching too.
+        $phrases = array();
+        if ('' !== $focus_keyphrase) {
+            $phrases[] = strtolower($focus_keyphrase);
+        }
+
+        // Build exclusion list.
+        $exclude_ids[] = $post_id;
+        $exclude_ids   = array_unique(array_filter(array_map('intval', $exclude_ids)));
+        $exclude_in    = implode(',', $exclude_ids);
+
+        // Build LIKE conditions: match any keyword in title, keyphrase, or SEO description.
+        $like_conditions = array();
+        $like_params     = array();
+
+        // Prioritize full keyphrase matching, then individual keywords (take top keywords only).
+        $search_terms = array_merge($phrases, array_slice($keywords, 0, 8));
+        $search_terms = array_unique($search_terms);
+
+        foreach ($search_terms as $term) {
+            $escaped = '%' . $wpdb->esc_like($term) . '%';
+            $like_conditions[] = 'LOWER(idx.title) LIKE %s';
+            $like_params[]     = $escaped;
+            $like_conditions[] = 'LOWER(COALESCE(pm_kp.meta_value, \'\')) LIKE %s';
+            $like_params[]     = $escaped;
+            $like_conditions[] = 'LOWER(COALESCE(pm_desc.meta_value, \'\')) LIKE %s';
+            $like_params[]     = $escaped;
+        }
+
+        if (empty($like_conditions)) {
+            return array();
+        }
+
+        $where_likes = '(' . implode(' OR ', $like_conditions) . ')';
+
+        // Build a relevance score: count how many search terms match.
+        $score_parts  = array();
+        $score_params = array();
+        foreach ($search_terms as $term) {
+            $escaped = '%' . $wpdb->esc_like($term) . '%';
+            $score_parts[]  = 'CASE WHEN LOWER(idx.title) LIKE %s THEN 2 ELSE 0 END';
+            $score_params[] = $escaped;
+            $score_parts[]  = 'CASE WHEN LOWER(COALESCE(pm_kp.meta_value, \'\')) LIKE %s THEN 3 ELSE 0 END';
+            $score_params[] = $escaped;
+            $score_parts[]  = 'CASE WHEN LOWER(COALESCE(pm_desc.meta_value, \'\')) LIKE %s THEN 1 ELSE 0 END';
+            $score_params[] = $escaped;
+        }
+
+        $score_expr = '(' . implode(' + ', $score_parts) . ')';
+
+        $sql = "SELECT idx.object_id, idx.title, idx.slug, idx.permalink, idx.post_type, idx.status, idx.parent_id,
+                       COALESCE(pm_kp.meta_value, '')    AS focus_keyphrase,
+                       COALESCE(pm_title.meta_value, '') AS seo_title,
+                       COALESCE(pm_desc.meta_value, '')  AS meta_description,
+                       {$score_expr} AS relevance_score
+                FROM {$table_name} idx
+                LEFT JOIN {$postmeta} pm_kp    ON pm_kp.post_id    = idx.object_id AND pm_kp.meta_key = '_ai_seo_keeper_focus_keyphrase'
+                LEFT JOIN {$postmeta} pm_title ON pm_title.post_id = idx.object_id AND pm_title.meta_key = %s
+                LEFT JOIN {$postmeta} pm_desc  ON pm_desc.post_id  = idx.object_id AND pm_desc.meta_key  = %s
+                WHERE idx.object_type = %s
+                  AND idx.status      = %s
+                  AND idx.object_id NOT IN ({$exclude_in})
+                  AND {$where_likes}
+                ORDER BY relevance_score DESC, idx.title ASC
+                LIMIT %d";
+
+        $all_params = array_merge($score_params, array(self::META_TITLE_KEY, self::META_DESCRIPTION_KEY, 'post', 'publish'), $like_params, array($limit));
+
+        $results = $wpdb->get_results(
+            $wpdb->prepare($sql, $all_params), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            ARRAY_A
+        );
+
+        if (! is_array($results)) {
+            return array();
+        }
+
+        // If deep mode, fetch truncated body content for each matched page.
+        if ($deep && ! empty($results)) {
+            foreach ($results as &$row) {
+                $related_post = get_post((int) $row['object_id']);
+                if ($related_post instanceof \WP_Post) {
+                    $full_content    = Content_Helper::get_content($related_post);
+                    $row['excerpt_content'] = $this->truncate_text($full_content, 300);
+                } else {
+                    $row['excerpt_content'] = '';
+                }
+            }
+            unset($row);
+        }
+
+        return $results;
+    }
+
+    /**
+     * Truncate text to a maximum character length, breaking at word boundary.
+     */
+    private function truncate_text(string $text, int $max_chars): string
+    {
+        $text = trim(wp_strip_all_tags($text));
+        if (mb_strlen($text) <= $max_chars) {
+            return $text;
+        }
+        $truncated = mb_substr($text, 0, $max_chars);
+        $last_space = strrpos($truncated, ' ');
+        if (false !== $last_space && $last_space > ($max_chars * 0.7)) {
+            $truncated = substr($truncated, 0, $last_space);
+        }
+        return $truncated . '…';
     }
 
     /**

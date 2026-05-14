@@ -107,6 +107,7 @@ class Admin_Ajax
             'canonical_url'      => isset($_POST['current_canonical_url']) ? esc_url_raw(wp_unslash($_POST['current_canonical_url'])) : null,
             'robots_directives'  => isset($_POST['current_robots_directives']) ? sanitize_text_field(wp_unslash($_POST['current_robots_directives'])) : null,
             'cornerstone'        => isset($_POST['current_cornerstone']) ? sanitize_text_field(wp_unslash($_POST['current_cornerstone'])) : null,
+            'deep_analysis'      => ! empty($_POST['deep_analysis']) && '1' === $_POST['deep_analysis'],
         );
 
         try {
@@ -162,6 +163,8 @@ class Admin_Ajax
                 'seoTitle'        => $suggestion['seo_title'],
                 'metaDescription' => $suggestion['meta_description'],
                 'focusKeyphrase'  => $suggestion['focus_keyphrase'] ?? '',
+                'socialTitle'     => $suggestion['social_title'] ?? '',
+                'socialDescription' => $suggestion['social_description'] ?? '',
                 'notes'           => $suggestion['notes'],
                 'provider'        => $suggestion['provider'],
                 'model'           => $suggestion['model'],
@@ -266,7 +269,8 @@ class Admin_Ajax
 
         try {
             $recent_messages = $this->history_store->get_recent_chat_messages($post_id, 8);
-            $reply           = $this->ai_generator->chat_for_post($post_id, $message, $recent_messages);
+            $deep_analysis   = ! empty($_POST['deep_analysis']) && '1' === $_POST['deep_analysis'];
+            $reply           = $this->ai_generator->chat_for_post($post_id, $message, $recent_messages, $deep_analysis);
 
             $this->history_store->log_generation(
                 $post_id,
@@ -420,6 +424,18 @@ class Admin_Ajax
         if ('' === $existing_keyphrase && ! empty($suggestion['focus_keyphrase'])) {
             update_post_meta($post_id, AdminBase::FOCUS_KEYPHRASE_META_KEY, $suggestion['focus_keyphrase']);
         }
+        if (! empty($suggestion['social_title'])) {
+            $existing_social_title = trim((string) get_post_meta($post_id, AdminBase::SOCIAL_TITLE_META_KEY, true));
+            if ('' === $existing_social_title) {
+                update_post_meta($post_id, AdminBase::SOCIAL_TITLE_META_KEY, $suggestion['social_title']);
+            }
+        }
+        if (! empty($suggestion['social_description'])) {
+            $existing_social_desc = trim((string) get_post_meta($post_id, AdminBase::SOCIAL_DESCRIPTION_META_KEY, true));
+            if ('' === $existing_social_desc) {
+                update_post_meta($post_id, AdminBase::SOCIAL_DESCRIPTION_META_KEY, $suggestion['social_description']);
+            }
+        }
 
         try {
             $this->history_store->log_generation(
@@ -445,14 +461,16 @@ class Admin_Ajax
         }
 
         wp_send_json_success(array(
-            'message'          => 'Generated metadata for: ' . $post->post_title,
-            'skipped'          => false,
-            'post_id'          => $post_id,
-            'title'            => $post->post_title,
-            'seo_title'        => $suggestion['seo_title'],
-            'meta_description' => $suggestion['meta_description'],
-            'focus_keyphrase'  => $suggestion['focus_keyphrase'] ?? '',
-            'notes'            => $suggestion['notes'],
+            'message'            => 'Generated metadata for: ' . $post->post_title,
+            'skipped'            => false,
+            'post_id'            => $post_id,
+            'title'              => $post->post_title,
+            'seo_title'          => $suggestion['seo_title'],
+            'meta_description'   => $suggestion['meta_description'],
+            'focus_keyphrase'    => $suggestion['focus_keyphrase'] ?? '',
+            'social_title'       => $suggestion['social_title'] ?? '',
+            'social_description' => $suggestion['social_description'] ?? '',
+            'notes'              => $suggestion['notes'],
         ));
     }
 
