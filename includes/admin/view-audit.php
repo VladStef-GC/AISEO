@@ -28,6 +28,7 @@ defined('ABSPATH') || exit;
 /** @var string $indexnow_key_url */
 /** @var array  $indexnow_log */
 /** @var \AI_SEO_Keeper\Admin $admin Instance exposing render_audit_post_links() */
+/** @var string $readiness_banner */
 /** @var string $generate_site_audit_action */
 /** @var string $submit_indexnow_action */
 /** @var string $bulk_frontend_action */
@@ -36,7 +37,8 @@ defined('ABSPATH') || exit;
     <h1><?php esc_html_e('AI SEO Keeper Audit', 'ai-seo-keeper'); ?></h1>
     <p><?php esc_html_e('Deterministic audit layer for content coverage, approval rollout, duplicate signals, and thin content. This page is the stable operational baseline before AI adds strategic prioritization.', 'ai-seo-keeper'); ?></p>
 
-    <?php echo $readiness_banner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+    <?php echo $readiness_banner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped 
+    ?>
 
     <?php if ('' !== $audit_message) : ?>
         <div class="notice <?php echo 'success' === $audit_status ? 'notice-success' : 'notice-error'; ?> is-dismissible">
@@ -106,18 +108,28 @@ defined('ABSPATH') || exit;
         </div>
 
         <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
-            <h2 style="margin-top:0;"><?php esc_html_e('Recent IndexNow Activity', 'ai-seo-keeper'); ?></h2>
-            <?php if (empty($indexnow_log)) : ?>
-                <p style="margin:0;"><?php esc_html_e('No IndexNow submissions or skips have been logged yet.', 'ai-seo-keeper'); ?></p>
-            <?php else : ?>
-                <?php foreach ($indexnow_log as $entry) : ?>
-                    <div style="padding:12px;border:1px solid #dcdcde;background:#f6f7f7;margin-bottom:12px;">
-                        <p style="margin:0 0 8px;"><strong><?php echo esc_html(strtoupper((string) $entry['status'])); ?></strong> | <?php echo esc_html((string) $entry['reason']); ?></p>
-                        <p style="margin:0 0 8px;"><?php echo esc_html((string) $entry['message']); ?></p>
-                        <p style="margin:0;color:#50575e;"><?php esc_html_e('URLs:', 'ai-seo-keeper'); ?> <?php echo esc_html((string) $entry['url_count']); ?><?php if (! empty($entry['created_at'])) : ?> | <?php echo esc_html((string) $entry['created_at']); ?><?php endif; ?></p>
+            <details id="aisk-indexnow-details" open>
+                <summary style="cursor:pointer;font-size:14px;font-weight:600;margin-bottom:12px;"><?php esc_html_e('Recent IndexNow Activity', 'ai-seo-keeper'); ?> (<?php echo count($indexnow_log); ?>)</summary>
+                <?php if (empty($indexnow_log)) : ?>
+                    <p style="margin:0;"><?php esc_html_e('No IndexNow submissions or skips have been logged yet.', 'ai-seo-keeper'); ?></p>
+                <?php else : ?>
+                    <div id="aisk-indexnow-entries">
+                        <?php foreach ($indexnow_log as $idx => $entry) : ?>
+                            <div class="aisk-indexnow-entry" style="padding:12px;border:1px solid #dcdcde;background:#f6f7f7;margin-bottom:12px;<?php echo $idx >= 3 ? 'display:none;' : ''; ?>">
+                                <p style="margin:0 0 8px;"><strong><?php echo esc_html(strtoupper((string) $entry['status'])); ?></strong> | <?php echo esc_html((string) $entry['reason']); ?></p>
+                                <p style="margin:0 0 8px;"><?php echo esc_html((string) $entry['message']); ?></p>
+                                <p style="margin:0;color:#50575e;"><?php esc_html_e('URLs:', 'ai-seo-keeper'); ?> <?php echo esc_html((string) $entry['url_count']); ?><?php if (! empty($entry['created_at'])) : ?> | <?php echo esc_html((string) $entry['created_at']); ?><?php endif; ?></p>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
+                    <div style="display:flex;gap:8px;margin-top:8px;">
+                        <?php if (count($indexnow_log) > 3) : ?>
+                            <button type="button" id="aisk-indexnow-loadmore" class="button button-secondary" style="font-size:12px;"><?php esc_html_e('Load More', 'ai-seo-keeper'); ?></button>
+                        <?php endif; ?>
+                        <button type="button" id="aisk-indexnow-export" class="button button-secondary" style="font-size:12px;"><?php esc_html_e('Export All (.txt)', 'ai-seo-keeper'); ?></button>
+                    </div>
+                <?php endif; ?>
+            </details>
         </div>
     </div>
 
@@ -138,45 +150,55 @@ defined('ABSPATH') || exit;
         </div>
 
         <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
-            <h2 style="margin-top:0;"><?php esc_html_e('Recent AI Site Audits', 'ai-seo-keeper'); ?></h2>
-            <?php if (empty($site_audits)) : ?>
-                <p style="margin:0;"><?php esc_html_e('No AI site audits have been generated yet.', 'ai-seo-keeper'); ?></p>
-            <?php else : ?>
-                <?php foreach ($site_audits as $audit) : ?>
-                    <div style="padding:12px;border:1px solid #dcdcde;background:#f6f7f7;margin-bottom:12px;">
-                        <p style="margin:0 0 8px;"><strong><?php echo esc_html($audit['audit_title']); ?></strong></p>
-                        <p style="margin:0 0 8px;"><?php echo esc_html($audit['executive_summary']); ?></p>
-                        <?php if (! empty($audit['priority_actions'])) : ?>
-                            <p style="margin:0 0 8px;"><strong><?php esc_html_e('Priority actions', 'ai-seo-keeper'); ?></strong></p>
-                            <ul style="margin:0 0 8px;padding-left:20px;">
-                                <?php foreach ($audit['priority_actions'] as $item) : ?>
-                                    <li><?php echo esc_html((string) $item); ?></li>
-                                <?php endforeach; ?>
-                            </ul>
-                        <?php endif; ?>
-                        <?php if (! empty($audit['quick_wins'])) : ?>
-                            <p style="margin:0 0 8px;"><strong><?php esc_html_e('Quick wins', 'ai-seo-keeper'); ?></strong></p>
-                            <ul style="margin:0 0 8px;padding-left:20px;">
-                                <?php foreach ($audit['quick_wins'] as $item) : ?>
-                                    <li><?php echo esc_html((string) $item); ?></li>
-                                <?php endforeach; ?>
-                            </ul>
-                        <?php endif; ?>
-                        <?php if ('' !== $audit['notes']) : ?>
-                            <p style="margin:0 0 8px;"><em><?php echo esc_html($audit['notes']); ?></em></p>
-                        <?php endif; ?>
-                        <p style="margin:0;color:#50575e;">
-                            <?php echo esc_html(strtoupper($audit['provider'])); ?>
-                            <?php if ('' !== $audit['model']) : ?>
-                                <?php echo ' | ' . esc_html($audit['model']); ?>
-                            <?php endif; ?>
-                            <?php if ('' !== $audit['created_at']) : ?>
-                                <?php echo ' | ' . esc_html($audit['created_at']); ?>
-                            <?php endif; ?>
-                        </p>
+            <details id="aisk-siteaudits-details" open>
+                <summary style="cursor:pointer;font-size:14px;font-weight:600;margin-bottom:12px;"><?php esc_html_e('Recent AI Site Audits', 'ai-seo-keeper'); ?> (<?php echo count($site_audits); ?>)</summary>
+                <?php if (empty($site_audits)) : ?>
+                    <p style="margin:0;"><?php esc_html_e('No AI site audits have been generated yet.', 'ai-seo-keeper'); ?></p>
+                <?php else : ?>
+                    <div id="aisk-siteaudits-entries">
+                        <?php foreach ($site_audits as $idx => $audit) : ?>
+                            <div class="aisk-siteaudit-entry" style="padding:12px;border:1px solid #dcdcde;background:#f6f7f7;margin-bottom:12px;<?php echo $idx >= 3 ? 'display:none;' : ''; ?>">
+                                <p style="margin:0 0 8px;"><strong><?php echo esc_html($audit['audit_title']); ?></strong></p>
+                                <p style="margin:0 0 8px;"><?php echo esc_html($audit['executive_summary']); ?></p>
+                                <?php if (! empty($audit['priority_actions'])) : ?>
+                                    <p style="margin:0 0 8px;"><strong><?php esc_html_e('Priority actions', 'ai-seo-keeper'); ?></strong></p>
+                                    <ul style="margin:0 0 8px;padding-left:20px;">
+                                        <?php foreach ($audit['priority_actions'] as $item) : ?>
+                                            <li><?php echo esc_html((string) $item); ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                <?php endif; ?>
+                                <?php if (! empty($audit['quick_wins'])) : ?>
+                                    <p style="margin:0 0 8px;"><strong><?php esc_html_e('Quick wins', 'ai-seo-keeper'); ?></strong></p>
+                                    <ul style="margin:0 0 8px;padding-left:20px;">
+                                        <?php foreach ($audit['quick_wins'] as $item) : ?>
+                                            <li><?php echo esc_html((string) $item); ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                <?php endif; ?>
+                                <?php if ('' !== $audit['notes']) : ?>
+                                    <p style="margin:0 0 8px;"><em><?php echo esc_html($audit['notes']); ?></em></p>
+                                <?php endif; ?>
+                                <p style="margin:0;color:#50575e;">
+                                    <?php echo esc_html(strtoupper($audit['provider'])); ?>
+                                    <?php if ('' !== $audit['model']) : ?>
+                                        <?php echo ' | ' . esc_html($audit['model']); ?>
+                                    <?php endif; ?>
+                                    <?php if ('' !== $audit['created_at']) : ?>
+                                        <?php echo ' | ' . esc_html($audit['created_at']); ?>
+                                    <?php endif; ?>
+                                </p>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
+                    <div style="display:flex;gap:8px;margin-top:8px;">
+                        <?php if (count($site_audits) > 3) : ?>
+                            <button type="button" id="aisk-siteaudits-loadmore" class="button button-secondary" style="font-size:12px;"><?php esc_html_e('Load More', 'ai-seo-keeper'); ?></button>
+                        <?php endif; ?>
+                        <button type="button" id="aisk-siteaudits-export" class="button button-secondary" style="font-size:12px;"><?php esc_html_e('Export All (.txt)', 'ai-seo-keeper'); ?></button>
+                    </div>
+                <?php endif; ?>
+            </details>
         </div>
     </div>
 
@@ -368,4 +390,63 @@ defined('ABSPATH') || exit;
             <?php endif; ?>
         <?php endif; ?>
     </div>
+
+    <script type="text/javascript">
+        (function() {
+            /* ---------- Load More helper ---------- */
+            function initLoadMore(btnId, entrySelector) {
+                var btn = document.getElementById(btnId);
+                if (!btn) return;
+                btn.addEventListener('click', function() {
+                    var entries = document.querySelectorAll(entrySelector);
+                    var shown = 0,
+                        newlyShown = 0;
+                    for (var i = 0; i < entries.length; i++) {
+                        if (entries[i].style.display === 'none') {
+                            if (newlyShown < 5) {
+                                entries[i].style.display = '';
+                                newlyShown++;
+                            }
+                        } else {
+                            shown++;
+                        }
+                    }
+                    if (newlyShown === 0 || shown + newlyShown >= entries.length) {
+                        btn.style.display = 'none';
+                    }
+                });
+            }
+
+            initLoadMore('aisk-indexnow-loadmore', '.aisk-indexnow-entry');
+            initLoadMore('aisk-siteaudits-loadmore', '.aisk-siteaudit-entry');
+
+            /* ---------- Export to .txt helper ---------- */
+            function initExport(btnId, entrySelector, filename) {
+                var btn = document.getElementById(btnId);
+                if (!btn) return;
+                btn.addEventListener('click', function() {
+                    var entries = document.querySelectorAll(entrySelector);
+                    var lines = [];
+                    for (var i = 0; i < entries.length; i++) {
+                        lines.push('--- Entry ' + (i + 1) + ' ---');
+                        lines.push(entries[i].textContent.trim());
+                        lines.push('');
+                    }
+                    var blob = new Blob([lines.join('\n')], {
+                        type: 'text/plain'
+                    });
+                    var a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(a.href);
+                });
+            }
+
+            initExport('aisk-indexnow-export', '.aisk-indexnow-entry', 'indexnow-activity.txt');
+            initExport('aisk-siteaudits-export', '.aisk-siteaudit-entry', 'ai-site-audits.txt');
+        })();
+    </script>
 </div>

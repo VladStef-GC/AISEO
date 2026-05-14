@@ -11,6 +11,7 @@ $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}ai_seo_keeper_messages");
 $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}ai_seo_keeper_conversations");
 $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}ai_seo_keeper_content_index");
 $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}ai_seo_keeper_redirects");
+$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}ai_seo_keeper_runs");
 
 // Options.
 delete_option('ai_seo_keeper_options');
@@ -33,6 +34,7 @@ $meta_keys = array(
     '_ai_seo_keeper_title_branding_off',
     '_ai_seo_keeper_cornerstone',
     '_ai_seo_keeper_page_audit',
+    '_ai_seo_keeper_audit_skip',
     '_ai_seo_keeper_pending_content_changes',
     '_ai_seo_keeper_content_backup',
     '_ai_seo_keeper_hreflang',
@@ -53,3 +55,6 @@ $term_meta_keys = array(
 foreach ($term_meta_keys as $meta_key) {
     $wpdb->delete($wpdb->termmeta, array('meta_key' => $meta_key), array('%s'));
 }
+
+// User meta (active runs selection).
+$wpdb->delete($wpdb->usermeta, array('meta_key' => '_ai_seo_keeper_active_runs'), array('%s'));

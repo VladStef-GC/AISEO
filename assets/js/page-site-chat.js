@@ -9,7 +9,6 @@ jQuery(function ($) {
     var $clear = $('#ai-seo-site-chat-clear');
     var $status = $('#ai-seo-site-chat-status');
     var $shell = $('#ai-seo-site-chat-shell');
-    var $focusInput = $('#ai-seo-focus-pages-input');
     var $focusCount = $('#ai-seo-focus-count');
     var $capacityInfo = $('#ai-seo-capacity-info');
     var $capacityBadge = $('#ai-seo-capacity-badge');
@@ -24,6 +23,56 @@ jQuery(function ($) {
     var contextWindow = parseInt(conf.contextWindow, 10) || 0;
     var needsFocus = !!conf.needsFocus;
     var isReady = !!conf.isReady;
+
+    // --- Render Lists panel (always, even when chat is disabled) ---
+    (function renderListsGrid() {
+        var runs = conf.runs || [];
+        var $grid = $('#aisk-lists-grid');
+        if (!$grid.length) return;
+        if (runs.length === 0) return;
+
+        var html = '';
+        for (var i = 0; i < runs.length; i++) {
+            var r = runs[i];
+            var pc = parseInt(r.page_count, 10) || 0;
+            var steps = (r.completed_steps || '').split(',');
+            var metaDone = steps.indexOf('metadata') !== -1;
+            var auditDone = steps.indexOf('audit') !== -1;
+            var bothDone = metaDone && auditDone;
+
+            // Status reflects BOTH steps completion.
+            var statusClass = bothDone ? 'is-complete' : ((metaDone || auditDone) ? 'is-partial' : 'is-pending');
+            var statusIcon = bothDone ? '✓' : ((metaDone || auditDone) ? '◐' : '○');
+
+            // Build status text showing what's missing.
+            var statusText;
+            if (bothDone) {
+                statusText = 'Ready — Both steps complete';
+            } else {
+                var missing = [];
+                if (!metaDone) missing.push('Metadata');
+                if (!auditDone) missing.push('Audit');
+                statusText = 'Incomplete — Missing: ' + missing.join(', ');
+            }
+
+            html += '<div class="aisk-list-card ' + statusClass + '" data-run-id="' + parseInt(r.id, 10) + '">' +
+                '<div class="aisk-list-card__header">' +
+                '<span class="aisk-list-card__status">' + statusIcon + '</span>' +
+                '<strong class="aisk-list-card__name">' + $('<span>').text(r.name).html() + '</strong>' +
+                '</div>' +
+                '<div class="aisk-list-card__stats">' +
+                '<span>' + pc + ' pages</span>' +
+                '<span class="aisk-list-card__sep">&middot;</span>' +
+                '<span class="' + (metaDone ? 'aisk-stat-done' : 'aisk-stat-missing') + '">Metadata: ' + (metaDone ? 'Done ✓' : 'Pending') + '</span>' +
+                '<span class="aisk-list-card__sep">&middot;</span>' +
+                '<span class="' + (auditDone ? 'aisk-stat-done' : 'aisk-stat-missing') + '">Audit: ' + (auditDone ? 'Done ✓' : 'Pending') + '</span>' +
+                '</div>' +
+                '<div class="aisk-list-card__status-text">' + statusText + '</div>' +
+                '<div class="aisk-list-card__date">Created: ' + (r.created_at || '').substring(0, 10) + '</div>' +
+                '</div>';
+        }
+        $grid.html(html);
+    })();
 
     // --- Block all interaction when plugin prerequisites are not met ---
     if (!isReady) {
@@ -66,18 +115,49 @@ jQuery(function ($) {
 
     updateCapacityDisplay();
 
-    // --- Focus pages line counter ---
-    function getFocusUrls() {
-        var text = $.trim($focusInput.val());
-        if (!text) return [];
-        return text.split(/\n+/).map(function (l) { return $.trim(l); }).filter(function (l) { return l.length > 0; });
-    }
+    // --- Focus Pages: audited page picker (cross-list) ---
+    var auditedPages = conf.auditedPages || [];
 
-    $focusInput.on('input', function () {
-        var urls = getFocusUrls();
-        var n = urls.length;
-        $focusCount.text(n + (n === 1 ? ' page selected' : ' pages selected'));
+    (function renderFocusPicker() {
+        var $list = $('#ai-seo-focus-list');
+        if (!$list.length || auditedPages.length === 0) {
+            $list.html('<div class="aisk-focus-selector__empty">No audited pages yet. Run a Full SEO Audit from the Setup Wizard first.</div>');
+            return;
+        }
+        var html = '';
+        for (var i = 0; i < auditedPages.length; i++) {
+            var p = auditedPages[i];
+            var listLabels = (p.lists && p.lists.length > 0) ? p.lists.join(', ') : 'Full Site';
+            html += '<label class="aisk-focus-selector__row">' +
+                '<input type="checkbox" value="' + parseInt(p.id, 10) + '" />' +
+                '<span class="aisk-focus-selector__title">' + $('<span>').text(p.title).html() + '</span>' +
+                '<span class="aisk-focus-selector__list-label">' + $('<span>').text(listLabels).html() + '</span>' +
+                '</label>';
+        }
+        $list.html(html);
+    })();
+
+    // Search filter for focus pages
+    $('#ai-seo-focus-search').on('input', function () {
+        var term = $(this).val().toLowerCase();
+        $('#ai-seo-focus-list .aisk-focus-selector__row').each(function () {
+            $(this).toggle($(this).text().toLowerCase().indexOf(term) !== -1);
+        });
     });
+
+    // Count selected focus pages
+    $('#ai-seo-focus-list').on('change', 'input[type="checkbox"]', function () {
+        var count = $('#ai-seo-focus-list input:checked').length;
+        $focusCount.text(count + (count === 1 ? ' page selected' : ' pages selected'));
+    });
+
+    function getSelectedFocusIds() {
+        var ids = [];
+        $('#ai-seo-focus-list input:checked').each(function () {
+            ids.push(parseInt($(this).val(), 10));
+        });
+        return ids;
+    }
 
     function setStatus(text, isError) {
         $status.text(text).css('color', isError ? '#dc3232' : '#646970');
@@ -98,11 +178,10 @@ jQuery(function ($) {
         }
 
         // Check if focus mode is required but no pages are provided.
-        var focusUrls = getFocusUrls();
-        if (needsFocus && focusUrls.length === 0) {
-            setStatus('Your site exceeds the model limit. Add page URLs in Focus Pages below, or switch to a larger model.', true);
+        var focusIds = getSelectedFocusIds();
+        if (needsFocus && focusIds.length === 0) {
+            setStatus('Your site exceeds the model limit. Select pages in Focus Pages below, or switch to a larger model.', true);
             $focusToggle.attr('open', '');
-            $focusInput.focus();
             return;
         }
 
@@ -116,9 +195,9 @@ jQuery(function ($) {
             message: message
         };
 
-        // Send focus pages if any are entered.
-        if (focusUrls.length > 0) {
-            ajaxData.focus_pages = focusUrls.join('\n');
+        // Send focus page IDs if any are selected.
+        if (focusIds.length > 0) {
+            ajaxData.focus_page_ids = JSON.stringify(focusIds);
         }
 
         $.ajax({

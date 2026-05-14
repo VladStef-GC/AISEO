@@ -141,6 +141,9 @@ class Admin
     /** @var Site_Chat */
     private $site_chat;
 
+    /** @var Run_Manager */
+    private $run_manager;
+
     /**
      * @param AI_Generator  $ai_generator
      * @param History_Store  $history_store
@@ -157,10 +160,11 @@ class Admin
         $this->indexnow_service = $indexnow_service;
 
         // Instantiate delegates.
+        $this->run_manager   = new Run_Manager();
         $this->taxonomy      = new Admin_Taxonomy();
         $this->import_export = new Admin_Import_Export($settings, $this);
         $this->rollout       = new Admin_Rollout($content_indexer, $ai_generator, $history_store, $this->audit_engine, $indexnow_service, $this);
-        $this->ajax          = new Admin_Ajax($this, $settings, $ai_generator, $content_indexer, $history_store);
+        $this->ajax          = new Admin_Ajax($this, $settings, $ai_generator, $content_indexer, $history_store, $this->run_manager);
         $this->site_chat     = new Site_Chat($settings, $content_indexer, $this->audit_engine, $ai_generator, $history_store);
 
         // --- Menu, assets, metabox ---
@@ -202,6 +206,15 @@ class Admin
         // --- Site Chat AJAX handlers ---
         add_action('wp_ajax_' . self::AJAX_SITE_CHAT_ACTION, array($this->site_chat, 'handle_chat'));
         add_action('wp_ajax_' . self::AJAX_SITE_CHAT_CLEAR_ACTION, array($this->site_chat, 'handle_clear_chat'));
+
+        // --- Runs (Lists) AJAX handlers ---
+        add_action('wp_ajax_ai_seo_keeper_create_run', array($this->ajax, 'handle_create_run'));
+        add_action('wp_ajax_ai_seo_keeper_get_runs', array($this->ajax, 'handle_get_runs'));
+        add_action('wp_ajax_ai_seo_keeper_delete_run', array($this->ajax, 'handle_delete_run'));
+        add_action('wp_ajax_ai_seo_keeper_set_active_runs', array($this->ajax, 'handle_set_active_runs'));
+        add_action('wp_ajax_ai_seo_keeper_get_pages_for_selector', array($this->ajax, 'handle_get_pages_for_selector'));
+        add_action('wp_ajax_ai_seo_keeper_mark_run_step', array($this->ajax, 'handle_mark_run_step'));
+        add_action('wp_ajax_ai_seo_keeper_clear_seo_data', array($this->ajax, 'handle_clear_seo_data'));
 
         // --- Taxonomy SEO fields → delegate ---
         add_action('admin_init', array($this->taxonomy, 'register'));
@@ -339,28 +352,37 @@ class Admin
         }
 
         $setup_url = esc_url(admin_url('admin.php?page=ai-seo-keeper-setup'));
-        $html      = '<div class="ai-seo-keeper-readiness-banner">';
 
         if (! $readiness['has_index']) {
-            $html .= '<span class="dashicons dashicons-warning"></span> ';
-            $html .= sprintf(
+            $severity = 'is-error';
+            $icon     = 'dashicons-warning';
+            $title    = esc_html__('Site Not Indexed', 'ai-seo-keeper');
+            $text     = sprintf(
                 /* translators: %s: link to Setup Wizard */
-                esc_html__('Site not indexed. Please %s to enable all features.', 'ai-seo-keeper'),
-                '<a href="' . $setup_url . '">' . esc_html__('run site indexing', 'ai-seo-keeper') . '</a>'
+                esc_html__('Your site content has not been indexed yet. Please %s to enable all plugin features.', 'ai-seo-keeper'),
+                '<a href="' . $setup_url . '">' . esc_html__('run the Setup Wizard', 'ai-seo-keeper') . '</a>'
             );
-        } elseif (! $readiness['has_any_audit']) {
-            $html .= '<span class="dashicons dashicons-info"></span> ';
-            $html .= sprintf(
-                /* translators: 1: page count, 2: link to Setup Wizard */
-                esc_html__('Site indexed (%1$d pages). Please %2$s to enable AI features.', 'ai-seo-keeper'),
-                $readiness['page_count'],
+        } else {
+            $severity = 'is-warning';
+            $icon     = 'dashicons-info-outline';
+            $title    = sprintf(
+                /* translators: %d: page count */
+                esc_html__('Site Indexed — %d Pages', 'ai-seo-keeper'),
+                $readiness['page_count']
+            );
+            $text = sprintf(
+                /* translators: %s: link to Setup Wizard */
+                esc_html__('No audit data found. Please %s to unlock AI-powered features like the AI Strategist.', 'ai-seo-keeper'),
                 '<a href="' . $setup_url . '">' . esc_html__('run a full audit or audit specific pages', 'ai-seo-keeper') . '</a>'
             );
         }
 
-        $html .= '</div>';
-
-        return $html;
+        return '<div class="ai-seo-keeper-notice ' . $severity . '">'
+            . '<span class="dashicons ' . $icon . ' ai-seo-keeper-notice__icon"></span>'
+            . '<div class="ai-seo-keeper-notice__body">'
+            . '<strong class="ai-seo-keeper-notice__title">' . $title . '</strong>'
+            . '<span class="ai-seo-keeper-notice__text">' . $text . '</span>'
+            . '</div></div>';
     }
 
     public function register_menu(): void
@@ -1789,6 +1811,8 @@ JS;
         $nonce          = wp_create_nonce('ai_seo_keeper_nonce');
         $meta_title_key = self::META_TITLE_KEY;
         $meta_desc_key  = self::META_DESCRIPTION_KEY;
+        $has_woo        = class_exists('WooCommerce') && (int) wp_count_posts('product')->publish > 0;
+        $tree_data      = $this->content_indexer->get_all_indexed_pages();
 
         // Pass nonce to external JS via wp_localize_script.
         wp_localize_script('ai-seo-keeper-page-bulk-editor', 'aiSeoBulkEditor', array(
@@ -1968,10 +1992,8 @@ JS;
             return count($group['pages']) > 1;
         });
 
-        $total_published   = (int) $wpdb->get_var(
-            "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status = 'publish' AND post_type IN ('post','page') AND post_type != 'attachment'"
-        );
-        $without_keyphrase = $total_published - $total_with_keyphrase;
+        $total_published   = $this->content_indexer->get_published_page_count();
+        $without_keyphrase = max(0, $total_published - $total_with_keyphrase);
 
         require __DIR__ . '/admin/view-keywords.php';
     }
@@ -1997,11 +2019,109 @@ JS;
             return;
         }
 
-        $readiness      = $this->get_plugin_readiness();
+        $readiness        = $this->get_plugin_readiness();
         $readiness_banner = $this->get_readiness_banner_html($readiness);
-        $site_chat      = $this->site_chat;
-        $dashboard      = $site_chat->get_dashboard_data();
-        $chat_messages  = $site_chat->get_recent_messages(20);
+        $site_chat        = $this->site_chat;
+        $dashboard        = $site_chat->get_dashboard_data();
+        $chat_messages    = $site_chat->get_recent_messages(20);
+
+        // Runs (Lists) data — enriched with metadata/audit counts.
+        $runs           = $this->run_manager->get_runs_with_status();
+        $active_run_ids = $this->run_manager->get_active_run_ids();
+
+        // Build Focus Pages list — only pages from lists with BOTH steps completed.
+        $audited_pages = array();
+        if ($readiness['has_index']) {
+            global $wpdb;
+
+            // Collect page IDs from fully-complete lists (both metadata + audit steps).
+            $eligible_page_ids = array();
+            $page_to_lists     = array();
+            foreach ($runs as $run) {
+                $fully_done = Run_Manager::is_fully_complete($run);
+                if (! empty($run['page_ids'])) {
+                    foreach ($run['page_ids'] as $pid) {
+                        $page_to_lists[(int) $pid][] = array(
+                            'name' => $run['name'],
+                            'done' => $fully_done,
+                        );
+                        if ($fully_done) {
+                            $eligible_page_ids[] = (int) $pid;
+                        }
+                    }
+                }
+            }
+
+            // Also include "Full Site" pages (not in any list) that have both postmeta keys.
+            $step2_all_done = (bool) get_option('ai_seo_keeper_step2_all_done', false);
+            $step3_all_done = (bool) get_option('ai_seo_keeper_step3_all_done', false);
+
+            if ($step2_all_done && $step3_all_done) {
+                // Full site processing completed both steps — include all pages with both postmeta.
+                $full_site_rows = $wpdb->get_results(
+                    "SELECT audit.post_id, p.post_title
+                     FROM {$wpdb->postmeta} audit
+                     INNER JOIN {$wpdb->posts} p ON p.ID = audit.post_id
+                     INNER JOIN {$wpdb->postmeta} meta ON meta.post_id = audit.post_id
+                        AND meta.meta_key = '_ai_seo_keeper_meta_title'
+                        AND meta.meta_value != ''
+                     WHERE audit.meta_key = '_ai_seo_keeper_page_audit'
+                     ORDER BY p.post_title ASC",
+                    ARRAY_A
+                );
+                foreach ($full_site_rows as $row) {
+                    $pid = (int) $row['post_id'];
+                    $list_names = array();
+                    if (isset($page_to_lists[$pid])) {
+                        foreach ($page_to_lists[$pid] as $entry) {
+                            if ($entry['done']) {
+                                $list_names[] = $entry['name'];
+                            }
+                        }
+                    }
+                    if (empty($list_names)) {
+                        $list_names[] = 'Full Site';
+                    }
+                    $audited_pages[] = array(
+                        'id'    => $pid,
+                        'title' => $row['post_title'],
+                        'lists' => $list_names,
+                    );
+                }
+            } elseif (! empty($eligible_page_ids)) {
+                // Only include pages from fully-complete lists.
+                $eligible_page_ids = array_values(array_unique($eligible_page_ids));
+                $placeholders      = implode(',', array_fill(0, count($eligible_page_ids), '%d'));
+
+                $rows = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT p.ID AS post_id, p.post_title
+                         FROM {$wpdb->posts} p
+                         WHERE p.ID IN ($placeholders)
+                         ORDER BY p.post_title ASC",
+                        ...$eligible_page_ids
+                    ),
+                    ARRAY_A
+                );
+
+                foreach ($rows as $row) {
+                    $pid = (int) $row['post_id'];
+                    $list_names = array();
+                    if (isset($page_to_lists[$pid])) {
+                        foreach ($page_to_lists[$pid] as $entry) {
+                            if ($entry['done']) {
+                                $list_names[] = $entry['name'];
+                            }
+                        }
+                    }
+                    $audited_pages[] = array(
+                        'id'    => $pid,
+                        'title' => $row['post_title'],
+                        'lists' => $list_names,
+                    );
+                }
+            }
+        }
 
         // Calculate model capacity data for the UI.
         $options       = $this->settings->get();
@@ -2023,6 +2143,9 @@ JS;
             'maxPages'      => $max_pages,
             'needsFocus'    => $needs_focus,
             'isReady'       => $readiness['is_ready'],
+            'runs'          => $runs,
+            'activeRunIds'  => $active_run_ids,
+            'auditedPages'  => $audited_pages,
         ));
 
         require __DIR__ . '/admin/view-site-chat.php';
@@ -2059,13 +2182,13 @@ JS;
         $readiness     = $report['readiness'];
         $options       = $this->settings->get();
         $has_api_key   = ! empty($options['api_key']);
-        $site_audits   = $this->history_store->get_recent_site_audits(3);
+        $site_audits   = $this->history_store->get_recent_site_audits(10);
         $audit_status  = isset($_GET['audit_status']) ? sanitize_key((string) wp_unslash($_GET['audit_status'])) : '';
         $audit_message = isset($_GET['audit_message']) ? sanitize_text_field((string) wp_unslash($_GET['audit_message'])) : '';
         $indexnow_enabled     = ! empty($options['indexnow_enabled']);
         $indexnow_auto_submit = ! empty($options['indexnow_auto_submit']);
         $indexnow_key_url     = $this->indexnow_service ? $this->indexnow_service->get_key_url() : '';
-        $indexnow_log         = $this->indexnow_service ? $this->indexnow_service->get_log(5) : array();
+        $indexnow_log         = $this->indexnow_service ? $this->indexnow_service->get_log(20) : array();
 
         $admin                      = $this;
         $generate_site_audit_action = self::GENERATE_SITE_AUDIT_ACTION;
@@ -3853,6 +3976,13 @@ HTML;
         $ajax_page_audit_action       = self::AJAX_PAGE_AUDIT_ACTION;
         $ajax_toggle_audit_skip_action = self::AJAX_TOGGLE_AUDIT_SKIP_ACTION;
         $ajax_save_skip_patterns_action = self::AJAX_SAVE_SKIP_PATTERNS_ACTION;
+
+        // Runs (Lists) with completion status.
+        $runs_with_status = $this->run_manager->get_runs_with_status();
+
+        // Model capacity — same calc as site-chat so wizard uses dynamic threshold.
+        $active_model = trim((string) ($options['model'] ?? ''));
+        $max_pages    = Settings::get_max_pages_for_model($active_model);
 
         require __DIR__ . '/admin/view-setup-wizard.php';
     }

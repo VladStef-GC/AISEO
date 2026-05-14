@@ -24,12 +24,14 @@ defined('ABSPATH') || exit;
 /** @var string $llms_url */
 /** @var string $llms_full_url */
 /** @var string $sitemap_url */
+/** @var string $readiness_banner */
 ?>
 <div class="wrap">
     <h1><?php esc_html_e('AI SEO Keeper', 'ai-seo-keeper'); ?></h1>
     <p><?php esc_html_e('AI SEO Keeper now covers AI-assisted metadata workflows, saved page-level SEO overrides, audit workflows, discovery documents, richer schema, and refresh signaling without silently fighting the existing SEO stack.', 'ai-seo-keeper'); ?></p>
 
-    <?php echo $readiness_banner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+    <?php echo $readiness_banner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped 
+    ?>
 
     <?php if ($sync_count > 0) : ?>
         <div class="notice notice-success is-dismissible">

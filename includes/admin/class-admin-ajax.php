@@ -6,6 +6,7 @@ use AI_SEO_Keeper\AI_Generator;
 use AI_SEO_Keeper\Content_Indexer;
 use AI_SEO_Keeper\Content_Writer;
 use AI_SEO_Keeper\History_Store;
+use AI_SEO_Keeper\Run_Manager;
 use AI_SEO_Keeper\Settings;
 use AI_SEO_Keeper\Admin as AdminBase;
 
@@ -20,19 +21,22 @@ class Admin_Ajax
     private AI_Generator    $ai_generator;
     private Content_Indexer $content_indexer;
     private History_Store   $history_store;
+    private Run_Manager     $run_manager;
 
     public function __construct(
         AdminBase       $admin,
         Settings        $settings,
         AI_Generator    $ai_generator,
         Content_Indexer $content_indexer,
-        History_Store   $history_store
+        History_Store   $history_store,
+        Run_Manager     $run_manager
     ) {
         $this->admin           = $admin;
         $this->settings        = $settings;
         $this->ai_generator    = $ai_generator;
         $this->content_indexer = $content_indexer;
         $this->history_store   = $history_store;
+        $this->run_manager     = $run_manager;
     }
 
     // ------------------------------------------------------------------
@@ -361,6 +365,17 @@ class Admin_Ajax
 
         if (! $post instanceof \WP_Post) {
             wp_send_json_error(array('message' => __('Page not found.', 'ai-seo-keeper')), 404);
+        }
+
+        // Respect skip rules (individual skip + path patterns).
+        if ($this->admin->is_audit_skipped($post_id)) {
+            wp_send_json_success(array(
+                'message' => 'Skipped by skip rules.',
+                'skipped' => true,
+                'post_id' => $post_id,
+                'title'   => $post->post_title,
+            ));
+            return;
         }
 
         $existing_title     = trim((string) get_post_meta($post_id, AdminBase::META_TITLE_KEY, true));
@@ -880,5 +895,234 @@ class Admin_Ajax
         update_post_meta($attachment_id, '_wp_attachment_image_alt', $alt_text);
 
         wp_send_json_success(array('message' => __('Alt text saved.', 'ai-seo-keeper')));
+    }
+
+    // ------------------------------------------------------------------
+    //  Runs (Lists) — create, list, delete
+    // ------------------------------------------------------------------
+
+    public function handle_create_run(): void
+    {
+        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
+        }
+
+        $name = isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '';
+        if (empty($name)) {
+            wp_send_json_error(array('message' => __('List name is required.', 'ai-seo-keeper')), 400);
+        }
+
+        $page_ids_raw = isset($_POST['page_ids']) ? wp_unslash($_POST['page_ids']) : '[]';
+        $page_ids     = json_decode($page_ids_raw, true);
+        if (! is_array($page_ids) || empty($page_ids)) {
+            wp_send_json_error(array('message' => __('Select at least one page.', 'ai-seo-keeper')), 400);
+        }
+
+        $page_ids = array_map('intval', $page_ids);
+
+        $run_id = $this->run_manager->create_run($name, $page_ids);
+
+        if (! $run_id) {
+            wp_send_json_error(array('message' => __('Failed to create list.', 'ai-seo-keeper')));
+        }
+
+        // Auto-activate this run.
+        $this->run_manager->set_active_run_ids(array($run_id));
+
+        wp_send_json_success(array(
+            'run_id'     => $run_id,
+            'name'       => $name,
+            'page_count' => count($page_ids),
+            'page_ids'   => $page_ids,
+            'message'    => sprintf(
+                /* translators: 1: list name, 2: page count */
+                __('List "%1$s" created with %2$d pages.', 'ai-seo-keeper'),
+                $name,
+                count($page_ids)
+            ),
+        ));
+    }
+
+    public function handle_get_runs(): void
+    {
+        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
+        }
+
+        $runs       = $this->run_manager->get_all_runs();
+        $active_ids = $this->run_manager->get_active_run_ids();
+
+        wp_send_json_success(array(
+            'runs'       => $runs,
+            'active_ids' => $active_ids,
+        ));
+    }
+
+    public function handle_delete_run(): void
+    {
+        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
+        }
+
+        $run_id = isset($_POST['run_id']) ? (int) $_POST['run_id'] : 0;
+        if (! $run_id) {
+            wp_send_json_error(array('message' => __('Invalid list ID.', 'ai-seo-keeper')), 400);
+        }
+
+        $this->run_manager->delete_run($run_id);
+
+        // Remove from active list.
+        $active = $this->run_manager->get_active_run_ids();
+        $active = array_values(array_diff($active, array($run_id)));
+        $this->run_manager->set_active_run_ids($active);
+
+        wp_send_json_success(array('message' => __('List deleted.', 'ai-seo-keeper')));
+    }
+
+    public function handle_set_active_runs(): void
+    {
+        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
+        }
+
+        $ids_raw = isset($_POST['run_ids']) ? wp_unslash($_POST['run_ids']) : '[]';
+        $ids     = json_decode($ids_raw, true);
+        if (! is_array($ids)) {
+            $ids = array();
+        }
+
+        $this->run_manager->set_active_run_ids(array_map('intval', $ids));
+
+        wp_send_json_success(array('active_ids' => array_map('intval', $ids)));
+    }
+
+    public function handle_get_pages_for_selector(): void
+    {
+        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
+        }
+
+        $pages = $this->run_manager->get_indexed_pages_for_selector();
+
+        wp_send_json_success(array('pages' => $pages));
+    }
+
+    public function handle_mark_run_step(): void
+    {
+        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
+        }
+
+        $run_id = isset($_POST['run_id']) ? (int) $_POST['run_id'] : 0;
+        $step   = isset($_POST['step']) ? sanitize_text_field(wp_unslash($_POST['step'])) : '';
+
+        if (! $run_id || ! in_array($step, array('metadata', 'audit'), true)) {
+            wp_send_json_error(array('message' => __('Invalid parameters.', 'ai-seo-keeper')), 400);
+        }
+
+        $this->run_manager->mark_step_complete($run_id, $step);
+
+        wp_send_json_success(array('message' => 'Step marked complete.'));
+    }
+
+    public function handle_clear_seo_data(): void
+    {
+        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
+        }
+
+        $scope = isset($_POST['scope']) ? sanitize_text_field(wp_unslash($_POST['scope'])) : '';
+
+        if (! in_array($scope, array('metadata', 'audits', 'all'), true)) {
+            wp_send_json_error(array('message' => __('Invalid scope.', 'ai-seo-keeper')), 400);
+        }
+
+        global $wpdb;
+        $deleted = 0;
+
+        if ($scope === 'metadata' || $scope === 'all') {
+            $deleted += (int) $wpdb->query(
+                "DELETE FROM {$wpdb->postmeta} WHERE meta_key IN (
+                    '_ai_seo_keeper_meta_title',
+                    '_ai_seo_keeper_meta_description',
+                    '_ai_seo_keeper_focus_keyphrase',
+                    '_ai_seo_keeper_social_title',
+                    '_ai_seo_keeper_social_description',
+                    '_ai_seo_keeper_social_image',
+                    '_ai_seo_keeper_canonical_url',
+                    '_ai_seo_keeper_robots_directives',
+                    '_ai_seo_keeper_schema_type',
+                    '_ai_seo_keeper_title_branding_off',
+                    '_ai_seo_keeper_cornerstone',
+                    '_ai_seo_keeper_hreflang',
+                    '_ai_seo_keeper_pending_content_changes',
+                    '_ai_seo_keeper_content_backup'
+                )"
+            );
+        }
+
+        if ($scope === 'audits' || $scope === 'all') {
+            $deleted += (int) $wpdb->query(
+                "DELETE FROM {$wpdb->postmeta} WHERE meta_key IN (
+                    '_ai_seo_keeper_page_audit',
+                    '_ai_seo_keeper_audit_skip'
+                )"
+            );
+        }
+
+        if ($scope === 'all') {
+            // Clear approval and frontend toggles.
+            $deleted += (int) $wpdb->query(
+                "DELETE FROM {$wpdb->postmeta} WHERE meta_key IN (
+                    '_ai_seo_keeper_approved_message_id',
+                    '_ai_seo_keeper_frontend_enabled'
+                )"
+            );
+
+            // Clear term meta (taxonomy SEO fields).
+            $wpdb->query(
+                "DELETE FROM {$wpdb->termmeta} WHERE meta_key IN (
+                    '_ai_seo_keeper_seo_title',
+                    '_ai_seo_keeper_meta_description',
+                    '_ai_seo_keeper_canonical',
+                    '_ai_seo_keeper_noindex'
+                )"
+            );
+
+            // Delete all lists.
+            $runs_table = $wpdb->prefix . 'ai_seo_keeper_runs';
+            $wpdb->query("DELETE FROM {$runs_table}");
+
+            // Clear conversations and messages.
+            $messages_table      = $wpdb->prefix . 'ai_seo_keeper_messages';
+            $conversations_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
+            $wpdb->query("DELETE FROM {$messages_table}");
+            $wpdb->query("DELETE FROM {$conversations_table}");
+
+            // Clear site audit log and IndexNow log.
+            delete_option('ai_seo_keeper_indexnow_log');
+
+            // Clear active runs user meta for current user.
+            delete_user_meta(get_current_user_id(), '_ai_seo_keeper_active_runs');
+        }
+
+        wp_send_json_success(array(
+            'message' => sprintf(__('%d entries cleared.', 'ai-seo-keeper'), $deleted),
+            'deleted' => $deleted,
+        ));
     }
 }

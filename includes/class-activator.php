@@ -72,6 +72,23 @@ class Activator
 			KEY type (type)
 		) {$charset_collate};";
 
+		$runs_table = $wpdb->prefix . 'ai_seo_keeper_runs';
+		$sql .= "\n\n		CREATE TABLE {$runs_table} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			name varchar(255) NOT NULL,
+			description text NOT NULL,
+			page_ids longtext NOT NULL,
+			page_count int unsigned NOT NULL DEFAULT 0,
+			completed_steps varchar(100) NOT NULL DEFAULT '',
+			status varchar(20) NOT NULL DEFAULT 'active',
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			KEY user_id (user_id),
+			KEY status (status)
+		) {$charset_collate};";
+
 		dbDelta($sql);
 
 		$options = get_option(Settings::OPTION_NAME, array());

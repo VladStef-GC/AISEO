@@ -50,6 +50,44 @@ class Content_Indexer
         );
     }
 
+    /**
+     * Get all indexed pages as a flat array with parent info for tree building.
+     *
+     * @return array<int, array{id: int, title: string, slug: string, post_type: string, parent_id: int, permalink: string, status: string}>
+     */
+    public function get_all_indexed_pages(): array
+    {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+
+        $rows = $wpdb->get_results(
+            "SELECT object_id, title, slug, post_type, parent_id, permalink, status
+             FROM {$table_name}
+             ORDER BY post_type ASC, parent_id ASC, title ASC",
+            ARRAY_A
+        );
+
+        if (! is_array($rows)) {
+            return array();
+        }
+
+        $result = array();
+        foreach ($rows as $row) {
+            $result[] = array(
+                'id'        => (int) $row['object_id'],
+                'title'     => (string) $row['title'],
+                'slug'      => (string) $row['slug'],
+                'post_type' => (string) $row['post_type'],
+                'parent_id' => (int) $row['parent_id'],
+                'permalink' => (string) $row['permalink'],
+                'status'    => (string) $row['status'],
+            );
+        }
+
+        return $result;
+    }
+
     public function get_audit_summary(): array
     {
         global $wpdb;

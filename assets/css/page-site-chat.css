@@ -170,3 +170,242 @@
     box-shadow: 0 0 0 1px #643d87;
     outline: none;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   LISTS PANEL — Strategist page
+   ══════════════════════════════════════════════════════════════════════ */
+.aisk-strategist-lists {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+}
+
+.aisk-strategist-lists__header h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 4px;
+    font-size: 16px;
+    color: #1d2327;
+}
+
+.aisk-strategist-lists__header h3 .dashicons {
+    color: #2271b1;
+}
+
+.aisk-strategist-lists__header .description {
+    margin: 0 0 14px;
+}
+
+.aisk-strategist-lists__empty {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #787c82;
+    font-size: 13px;
+    font-style: italic;
+}
+
+.aisk-strategist-lists__empty .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: #a7aaad;
+}
+
+/* List cards grid */
+.aisk-strategist-lists__grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.aisk-list-card {
+    flex: 0 0 calc(50% - 6px);
+    min-width: 260px;
+    padding: 14px 16px;
+    border-radius: 6px;
+    border: 1px solid #dcdcde;
+    background: #f6f7f7;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.aisk-list-card:hover {
+    border-color: #a7aaad;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.aisk-list-card.is-complete {
+    border-color: #28a745;
+    background: #f0faf3;
+}
+
+.aisk-list-card.is-partial {
+    border-color: #f0c36d;
+    background: #fffbf0;
+}
+
+.aisk-list-card.is-pending {
+    border-color: #c3c4c7;
+    background: #f6f7f7;
+}
+
+.aisk-list-card__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.aisk-list-card__status {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.aisk-list-card.is-complete .aisk-list-card__status {
+    color: #28a745;
+}
+
+.aisk-list-card.is-partial .aisk-list-card__status {
+    color: #d68308;
+}
+
+.aisk-list-card.is-pending .aisk-list-card__status {
+    color: #a7aaad;
+}
+
+.aisk-list-card__name {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.aisk-list-card__delete {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #a7aaad;
+    cursor: pointer;
+    padding: 0 2px;
+    line-height: 1;
+}
+
+.aisk-list-card__delete:hover {
+    color: #d63638;
+}
+
+.aisk-list-card__stats {
+    font-size: 12px;
+    color: #50575e;
+    margin-bottom: 4px;
+}
+
+.aisk-list-card__sep {
+    margin: 0 4px;
+    color: #c3c4c7;
+}
+
+.aisk-stat-done {
+    color: #00a32a;
+    font-weight: 600;
+}
+
+.aisk-stat-missing {
+    color: #b32d2e;
+    font-weight: 600;
+}
+
+.aisk-list-card__status-text {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.aisk-list-card.is-complete .aisk-list-card__status-text {
+    color: #28a745;
+}
+
+.aisk-list-card.is-partial .aisk-list-card__status-text {
+    color: #d68308;
+}
+
+.aisk-list-card.is-pending .aisk-list-card__status-text {
+    color: #787c82;
+}
+
+.aisk-list-card__date {
+    font-size: 11px;
+    color: #a7aaad;
+    margin-top: 2px;
+}
+
+/* --- Focus Pages picker --- */
+.aisk-focus-selector {
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.aisk-focus-selector__search {
+    padding: 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.aisk-focus-selector__search input {
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+.aisk-focus-selector__list {
+    max-height: 240px;
+    overflow-y: auto;
+    padding: 4px 0;
+}
+
+.aisk-focus-selector__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.1s;
+}
+
+.aisk-focus-selector__row:hover {
+    background: #f0f6fc;
+}
+
+.aisk-focus-selector__row input[type="checkbox"] {
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.aisk-focus-selector__title {
+    flex: 1;
+    color: #1d2327;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.aisk-focus-selector__list-label {
+    font-size: 11px;
+    color: #787c82;
+    white-space: nowrap;
+    flex-shrink: 0;
+    background: #f6f7f7;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.aisk-focus-selector__empty {
+    padding: 16px;
+    text-align: center;
+    color: #787c82;
+    font-size: 13px;
+    font-style: italic;
+}

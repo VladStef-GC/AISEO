@@ -17,12 +17,14 @@ defined('ABSPATH') || exit;
 /** @var array $cannibalized */
 /** @var int   $total_published */
 /** @var int   $without_keyphrase */
+/** @var string $readiness_banner */
 ?>
 <div class="wrap">
     <h1><?php esc_html_e('Keyword Tracking', 'ai-seo-keeper'); ?></h1>
     <p class="description"><?php esc_html_e('See which focus keyphrases are used across your site and detect keyword cannibalization (same keyphrase targeting multiple pages).', 'ai-seo-keeper'); ?></p>
 
-    <?php echo $readiness_banner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+    <?php echo $readiness_banner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped 
+    ?>
 
     <div style="display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:16px;max-width:900px;margin:20px 0;">
         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">

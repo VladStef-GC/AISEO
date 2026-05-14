@@ -68,9 +68,14 @@ class Site_Chat
         try {
             $recent_messages = $this->get_recent_messages(8);
 
-            // Focus pages mode — comma-separated post IDs or newline-separated URLs.
+            // Focus pages mode — JSON array of post IDs or legacy URL/ID format.
             $focus_ids = array();
-            if (! empty($_POST['focus_pages'])) {
+            if (! empty($_POST['focus_page_ids'])) {
+                $decoded = json_decode(sanitize_text_field(wp_unslash($_POST['focus_page_ids'])), true);
+                if (is_array($decoded)) {
+                    $focus_ids = array_map('absint', $decoded);
+                }
+            } elseif (! empty($_POST['focus_pages'])) {
                 $raw = sanitize_textarea_field(wp_unslash($_POST['focus_pages']));
 
                 // Support both comma-separated IDs and newline-separated URLs.

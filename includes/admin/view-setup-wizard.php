@@ -9,7 +9,8 @@
  *   $existing_audits_json, $skipped_ids_json, $skip_patterns, $total_pages,
  *   $step2_all_done, $step3_all_done,
  *   $ajax_setup_index_action, $ajax_bulk_generate_action, $ajax_page_audit_action,
- *   $ajax_toggle_audit_skip_action, $ajax_save_skip_patterns_action
+ *   $ajax_toggle_audit_skip_action, $ajax_save_skip_patterns_action,
+ *   $runs_with_status
  *
  * CSS loaded via: assets/css/page-setup-wizard.css (enqueue_page_assets)
  */
@@ -37,6 +38,8 @@ defined('ABSPATH') || exit;
 /** @var string $ajax_page_audit_action */
 /** @var string $ajax_toggle_audit_skip_action */
 /** @var string $ajax_save_skip_patterns_action */
+/** @var array  $runs_with_status */
+/** @var int    $max_pages */
 ?>
 <div class="wrap aisk-wizard">
     <h1>🚀 <?php esc_html_e('AI SEO Keeper — Setup Wizard', 'ai-seo-keeper'); ?></h1>
@@ -70,6 +73,7 @@ defined('ABSPATH') || exit;
         </div>
         <div id="aisk-s1-done" class="aisk-done-banner success">
             <strong>&#10003; <?php esc_html_e('Indexing complete.', 'ai-seo-keeper'); ?></strong> <span id="aisk-s1-result"></span>
+            <a href="<?php echo esc_url(admin_url('admin.php?page=ai-seo-keeper-bulk-editor')); ?>" class="button button-small" style="margin-left:12px;"><?php esc_html_e('View Full Page List', 'ai-seo-keeper'); ?></a>
         </div>
         <div id="aisk-s1-error" class="aisk-error-banner"></div>
     </div>
@@ -109,6 +113,26 @@ defined('ABSPATH') || exit;
             <strong>&#9632; Stopped.</strong> <span id="aisk-s2-stopped-info"></span> You can restart or continue later.
         </div>
         <div id="aisk-s2-error" class="aisk-error-banner"></div>
+
+        <?php if (! empty($runs_with_status)) : ?>
+            <div class="aisk-runs-summary" id="aisk-s2-runs">
+                <h4 class="aisk-runs-title"><span class="dashicons dashicons-list-view"></span> <?php esc_html_e('Lists (Metadata)', 'ai-seo-keeper'); ?></h4>
+                <?php foreach ($runs_with_status as $run) :
+                    $meta_done = in_array('metadata', explode(',', $run['completed_steps'] ?? ''), true);
+                    $badge_class = $meta_done ? 'is-complete' : 'is-pending';
+                    $badge_label = $meta_done ? 'Done' : 'Pending';
+                ?>
+                    <div class="aisk-run-badge <?php echo $badge_class; ?>" data-run-id="<?php echo (int) $run['id']; ?>">
+                        <strong><?php echo esc_html($run['name']); ?></strong>
+                        <span><?php echo esc_html($badge_label); ?></span>
+                        <?php if ($meta_done) : ?>
+                            <span class="dashicons dashicons-yes-alt"></span>
+                        <?php endif; ?>
+                        <button type="button" class="aisk-run-delete" data-run-id="<?php echo (int) $run['id']; ?>" title="<?php esc_attr_e('Delete list', 'ai-seo-keeper'); ?>">&times;</button>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     </div>
 
     <!-- STEP 3: PAGE AUDITS -->
@@ -156,6 +180,26 @@ defined('ABSPATH') || exit;
             <strong>&#9632; Stopped.</strong> <span id="aisk-s3-stopped-info"></span> You can restart or continue later.
         </div>
         <div id="aisk-s3-error" class="aisk-error-banner"></div>
+
+        <?php if (! empty($runs_with_status)) : ?>
+            <div class="aisk-runs-summary" id="aisk-s3-runs">
+                <h4 class="aisk-runs-title"><span class="dashicons dashicons-list-view"></span> <?php esc_html_e('Lists (Audit)', 'ai-seo-keeper'); ?></h4>
+                <?php foreach ($runs_with_status as $run) :
+                    $audit_done = in_array('audit', explode(',', $run['completed_steps'] ?? ''), true);
+                    $badge_class = $audit_done ? 'is-complete' : 'is-pending';
+                    $badge_label = $audit_done ? 'Done' : 'Pending';
+                ?>
+                    <div class="aisk-run-badge <?php echo $badge_class; ?>" data-run-id="<?php echo (int) $run['id']; ?>">
+                        <strong><?php echo esc_html($run['name']); ?></strong>
+                        <span><?php echo esc_html($badge_label); ?></span>
+                        <?php if ($audit_done) : ?>
+                            <span class="dashicons dashicons-yes-alt"></span>
+                        <?php endif; ?>
+                        <button type="button" class="aisk-run-delete" data-run-id="<?php echo (int) $run['id']; ?>" title="<?php esc_attr_e('Delete list', 'ai-seo-keeper'); ?>">&times;</button>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
 
         <!-- Collapsible Tabs -->
         <div id="aisk-s3-tabs" style="margin-top:20px;<?php echo $audited_count === 0 ? 'display:none;' : ''; ?>">
@@ -234,36 +278,61 @@ defined('ABSPATH') || exit;
                 </div>
             </details>
 
-            <!-- TAB 3: Skip Patterns -->
-            <details id="aisk-tab-skip" style="border:1px solid #dcdcde;border-radius:4px;margin-top:12px;background:#fff;">
-                <summary style="cursor:pointer;padding:14px 18px;font-weight:600;font-size:14px;background:#f6f7f7;border-radius:4px 4px 0 0;user-select:none;">
-                    &#128683; Skip Rules
-                    <span id="aisk-tab-skip-count" style="font-weight:400;font-size:13px;color:#787c82;margin-left:8px;"></span>
-                </summary>
-                <div style="padding:18px;">
-                    <p style="font-size:13px;margin:0 0 12px;color:#50575e;">
-                        Pages skipped here are excluded from future audits only. SEO metadata, sitemaps, and all other features remain active.
-                        Use the <strong>&#128683;</strong> button on any page card to skip/unskip individually, or define path patterns below.
-                    </p>
-                    <div style="margin-bottom:16px;">
-                        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px;">Path patterns (one per line):</label>
-                        <textarea id="aisk-skip-patterns" rows="5" style="width:100%;max-width:500px;font-family:monospace;font-size:13px;" placeholder="/experiments/*&#10;/test-pages/**&#10;/landing/*/thank-you"><?php echo esc_textarea($skip_patterns); ?></textarea>
-                        <p style="font-size:12px;color:#787c82;margin:6px 0 0;">
-                            Use <code>*</code> to match one path segment, <code>**</code> to match any depth. Lines starting with <code>#</code> are comments.<br>
-                            Examples: <code>/experiments/*</code> skips all direct children &bull; <code>/experiments/**</code> skips all descendants &bull; <code>/*/thank-you</code> skips any "thank-you" page.
-                        </p>
-                    </div>
-                    <div style="display:flex;gap:10px;align-items:center;">
-                        <button id="aisk-btn-save-patterns" class="button button-primary" type="button">Save Patterns</button>
-                        <span id="aisk-patterns-feedback" style="font-size:13px;color:#00a32a;display:none;"></span>
-                    </div>
-                    <div id="aisk-skip-list" style="margin-top:16px;">
-                        <h4 style="margin:0 0 8px;">Individually Skipped Pages:</h4>
-                        <div id="aisk-skipped-pages-list" style="font-size:13px;color:#50575e;"></div>
-                    </div>
-                </div>
-            </details>
+        </div>
+    </div>
 
+    <!-- SKIP RULES (visible once index exists, affects both metadata and audits) -->
+    <div id="aisk-skip-section" class="aisk-step" style="<?php echo ! $has_index ? 'display:none;' : ''; ?>">
+        <details id="aisk-tab-skip" style="border:1px solid #dcdcde;border-radius:4px;background:#fff;">
+            <summary style="cursor:pointer;padding:14px 18px;font-weight:600;font-size:14px;background:#f6f7f7;border-radius:4px 4px 0 0;user-select:none;">
+                &#128683; <?php esc_html_e('Skip Rules', 'ai-seo-keeper'); ?>
+                <span id="aisk-tab-skip-count" style="font-weight:400;font-size:13px;color:#787c82;margin-left:8px;"></span>
+            </summary>
+            <div style="padding:18px;">
+                <p style="font-size:13px;margin:0 0 12px;color:#50575e;">
+                    <?php esc_html_e('Pages skipped here are excluded from both SEO Metadata generation and Full SEO Audits.', 'ai-seo-keeper'); ?>
+                    <?php esc_html_e('Use the skip button on any page card to skip/unskip individually, or define path patterns below.', 'ai-seo-keeper'); ?>
+                </p>
+                <div style="margin-bottom:16px;">
+                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px;"><?php esc_html_e('Path patterns (one per line):', 'ai-seo-keeper'); ?></label>
+                    <textarea id="aisk-skip-patterns" rows="5" style="width:100%;max-width:500px;font-family:monospace;font-size:13px;" placeholder="/experiments/*&#10;/test-pages/**&#10;/landing/*/thank-you"><?php echo esc_textarea($skip_patterns); ?></textarea>
+                    <p style="font-size:12px;color:#787c82;margin:6px 0 0;">
+                        <?php esc_html_e('Use * to match one path segment, ** to match any depth. Lines starting with # are comments.', 'ai-seo-keeper'); ?><br>
+                        <?php esc_html_e('Examples:', 'ai-seo-keeper'); ?> <code>/experiments/*</code> <?php esc_html_e('skips all direct children', 'ai-seo-keeper'); ?> &bull; <code>/experiments/**</code> <?php esc_html_e('skips all descendants', 'ai-seo-keeper'); ?> &bull; <code>/*/thank-you</code> <?php esc_html_e('skips any "thank-you" page.', 'ai-seo-keeper'); ?>
+                    </p>
+                </div>
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <button id="aisk-btn-save-patterns" class="button button-primary" type="button"><?php esc_html_e('Save Patterns', 'ai-seo-keeper'); ?></button>
+                    <span id="aisk-patterns-feedback" style="font-size:13px;color:#00a32a;display:none;"></span>
+                </div>
+                <div id="aisk-skip-list" style="margin-top:16px;">
+                    <h4 style="margin:0 0 8px;"><?php esc_html_e('Individually Skipped Pages:', 'ai-seo-keeper'); ?></h4>
+                    <div id="aisk-skipped-pages-list" style="font-size:13px;color:#50575e;"></div>
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- DATA MANAGEMENT -->
+    <div class="aisk-data-management" style="margin-top:30px;padding:20px;background:#fff;border:1px solid #dcdcde;border-radius:4px;">
+        <h3 style="margin:0 0 8px;font-size:15px;color:#50575e;">
+            <span class="dashicons dashicons-database-remove" style="margin-right:4px;"></span>
+            <?php esc_html_e('Data Management', 'ai-seo-keeper'); ?>
+        </h3>
+        <p style="font-size:13px;color:#787c82;margin:0 0 16px;">
+            <?php esc_html_e('Clear generated SEO data from the database. This cannot be undone — you will need to re-run the affected steps.', 'ai-seo-keeper'); ?>
+        </p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <button type="button" class="button aisk-clear-data-btn" data-scope="metadata" style="color:#b32d2e;border-color:#b32d2e;">
+                <?php esc_html_e('Clear All Metadata', 'ai-seo-keeper'); ?>
+            </button>
+            <button type="button" class="button aisk-clear-data-btn" data-scope="audits" style="color:#b32d2e;border-color:#b32d2e;">
+                <?php esc_html_e('Clear All Audits', 'ai-seo-keeper'); ?>
+            </button>
+            <button type="button" class="button aisk-clear-data-btn" data-scope="all" style="color:#fff;background:#b32d2e;border-color:#b32d2e;">
+                <?php esc_html_e('Clear Everything (Metadata + Audits + Lists)', 'ai-seo-keeper'); ?>
+            </button>
+            <span id="aisk-clear-feedback" style="font-size:13px;color:#00a32a;display:none;"></span>
         </div>
     </div>
 </div>
@@ -274,6 +343,10 @@ defined('ABSPATH') || exit;
         var ajaxUrl = <?php echo wp_json_encode(admin_url('admin-ajax.php')); ?>;
         var publishedIds = <?php echo $published_ids_json; ?>;
         var skippedIds = <?php echo $skipped_ids_json; ?>;
+        var runsData = <?php echo wp_json_encode($runs_with_status); ?>;
+        var step2AllDone = <?php echo $step2_all_done ? 'true' : 'false'; ?>;
+        var step3AllDone = <?php echo $step3_all_done ? 'true' : 'false'; ?>;
+        var hasWooProducts = <?php echo (class_exists('WooCommerce') && (int) wp_count_posts('product')->publish > 0) ? 'true' : 'false'; ?>;
 
         // ── Helpers ──────────────────────────────────────────────────
 
@@ -344,37 +417,366 @@ defined('ABSPATH') || exit;
 
         // ── Batch processor (reusable for Steps 2 and 3) ──────────────
 
-        var LARGE_SITE_THRESHOLD = 100;
+        /**
+         * Dynamically add a run badge to the runs summary under a step.
+         * If the runs-summary container doesn't exist yet, creates it.
+         */
+        function addRunBadge(stepPrefix, runId, name, isDone) {
+            var containerId = stepPrefix + '-runs';
+            var $container = $('#' + containerId);
+            if ($container.length === 0) {
+                // Create the runs summary container after the error banner.
+                var titleLabel = (stepPrefix === 'aisk-s2') ? 'Lists (Metadata)' : 'Lists (Audit)';
+                $container = $('<div class="aisk-runs-summary" id="' + containerId + '">' +
+                    '<h4 class="aisk-runs-title"><span class="dashicons dashicons-list-view"></span> ' + esc(titleLabel) + '</h4>' +
+                    '</div>');
+                $('#' + stepPrefix + '-error').after($container);
+            }
+            // Remove existing badge for same run (if re-created).
+            $container.find('.aisk-run-badge[data-run-id="' + runId + '"]').remove();
+            var statusClass = isDone ? 'is-complete' : 'is-pending';
+            var statusLabel = isDone ? 'Done' : 'Pending';
+            var checkmark = isDone ? ' <span class="dashicons dashicons-yes-alt"></span>' : '';
+            var badge = $('<div class="aisk-run-badge ' + statusClass + '" data-run-id="' + runId + '">' +
+                '<strong>' + esc(name) + '</strong> ' +
+                '<span>' + statusLabel + '</span>' +
+                checkmark +
+                ' <button type="button" class="aisk-run-delete" data-run-id="' + runId + '" title="Delete list">&times;</button>' +
+                '</div>');
+            $container.append(badge);
+        }
+
+        function markRunBadgeDone(stepPrefix, runId) {
+            var $badge = $('#' + stepPrefix + '-runs .aisk-run-badge[data-run-id="' + runId + '"]');
+            if ($badge.length) {
+                $badge.removeClass('is-pending is-partial').addClass('is-complete');
+                $badge.find('span').first().text('Done');
+                if (!$badge.find('.dashicons-yes-alt').length) {
+                    $badge.find('.aisk-run-delete').before(' <span class="dashicons dashicons-yes-alt"></span> ');
+                }
+            }
+            // Update runsData so redo modal reflects new status.
+            for (var i = 0; i < runsData.length; i++) {
+                if (parseInt(runsData[i].id, 10) === runId) {
+                    var step = (stepPrefix === 'aisk-s2') ? 'metadata' : 'audit';
+                    var steps = (runsData[i].completed_steps || '').split(',').filter(Boolean);
+                    if (steps.indexOf(step) === -1) steps.push(step);
+                    runsData[i].completed_steps = steps.join(',');
+                    break;
+                }
+            }
+        }
+
+        var LARGE_SITE_THRESHOLD = <?php echo (int) $max_pages; ?>;
 
         /**
-         * Show a confirmation dialog for large-site operations.
-         * @param {string} operationName e.g. "SEO Metadata Generation" or "Full SEO Audit"
-         * @param {number} pageCount     Number of pages to process
+         * Show a proper modal for large-site operations.
+         * Shows "Redo" section for existing lists / full-site, and "New" for fresh processing.
+         *
+         * @param {string} operationName e.g. "SEO Metadata Generation"
+         * @param {number} pageCount Number of pages to process
          * @param {number} secondsPerPage Estimated seconds per page
-         * @param {function} onConfirm   Called when user confirms
+         * @param {string} stepType 'metadata' or 'audit'
+         * @param {function} onConfirm Called with page IDs array (all or subset)
          */
-        function confirmLargeOperation(operationName, pageCount, secondsPerPage, onConfirm) {
-            if (pageCount <= LARGE_SITE_THRESHOLD) {
-                onConfirm();
-                return;
-            }
+        function confirmLargeOperation(operationName, pageCount, secondsPerPage, stepType, onConfirm) {
+            // Always show the modal so the user can choose Lists vs Full Site.
+            var fullSiteDone = (stepType === 'metadata') ? step2AllDone : step3AllDone;
+            var hasExistingRuns = runsData && runsData.length > 0;
 
             var estMinutes = Math.ceil((pageCount * secondsPerPage) / 60);
-            var estHours = (estMinutes / 60).toFixed(1);
-            var timeStr = estMinutes > 120
-                ? '~' + estHours + ' hours'
-                : '~' + estMinutes + ' minutes';
+            var timeStr = estMinutes > 120 ?
+                '~' + (estMinutes / 60).toFixed(1) + ' hours' :
+                '~' + estMinutes + ' minutes';
 
-            var msg = '⚠ Large Site Detected\n\n' +
-                'Your site has ' + pageCount.toLocaleString() + ' pages.\n\n' +
-                'Running ' + operationName + ' will make ~' + pageCount.toLocaleString() + ' API calls.\n' +
-                'Estimated time: ' + timeStr + '\n\n' +
-                'You can pause or stop at any time.\n\n' +
-                'Continue?';
-
-            if (confirm(msg)) {
-                onConfirm();
+            // Build "Redo" section items.
+            var redoHtml = '';
+            if (fullSiteDone || hasExistingRuns) {
+                redoHtml += '<div class="aisk-modal__section-label">Redo:</div>';
+                redoHtml += '<div class="aisk-modal__redo-list">';
+                if (fullSiteDone) {
+                    redoHtml += '<button type="button" class="aisk-modal__redo-item" data-action="redo-full">' +
+                        '<span class="dashicons dashicons-admin-site-alt3"></span>' +
+                        '<span class="aisk-modal__redo-info">' +
+                        '<strong>Full Site</strong>' +
+                        '<small>' + publishedIds.length + ' pages &middot; Re-run ' + esc(operationName) + '</small>' +
+                        '</span>' +
+                        '<span class="aisk-modal__redo-badge is-complete">&#10003; Done</span>' +
+                        '</button>';
+                }
+                if (hasExistingRuns) {
+                    for (var r = 0; r < runsData.length; r++) {
+                        var run = runsData[r];
+                        var steps = (run.completed_steps || '').split(',');
+                        var stepDone = steps.indexOf(stepType) !== -1;
+                        var statusClass = stepDone ? 'is-complete' : 'is-pending';
+                        var statusLabel = stepDone ? '&#10003; Done' : 'Pending';
+                        redoHtml += '<button type="button" class="aisk-modal__redo-item" data-action="redo-run" data-run-id="' + parseInt(run.id, 10) + '">' + '<span class="dashicons dashicons-list-view"></span>' + '<span class="aisk-modal__redo-info">' + '<strong>' + esc(run.name) + '</strong>' + '<small>' + parseInt(run.page_count, 10) + ' pages &middot; Re-run ' + esc(operationName) + '</small>' + '</span>' + '<span class="aisk-modal__redo-badge ' + statusClass + '">' + statusLabel + '</span>' + '</button>';
+                    }
+                }
+                redoHtml += '</div>';
             }
+
+            // Build the modal.
+            var $overlay = $('<div class="aisk-modal-overlay"></div>');
+            var $modal = $(
+                '<div class="aisk-modal">' +
+                '<div class="aisk-modal__header">' +
+                '<h2>' + esc(operationName) + '</h2>' +
+                '<button type="button" class="aisk-modal__close" title="Close">&times;</button>' +
+                '</div>' +
+                '<div class="aisk-modal__body">' +
+                '<div class="aisk-modal__info-banner">' +
+                '<span class="dashicons dashicons-info-outline"></span>' +
+                '<div>' +
+                '<strong>Your site has ' + pageCount.toLocaleString() + ' pages</strong><br>' +
+                'Estimated: ~' + pageCount.toLocaleString() + ' API calls &middot; ' + timeStr +
+                '</div>' +
+                '</div>' +
+                '<p class="aisk-modal__prompt">How would you like to proceed?</p>' +
+                redoHtml +
+                '<div class="aisk-modal__section-label">New:</div>' +
+                '<div class="aisk-modal__options">' +
+                '<button type="button" class="aisk-modal__option-btn is-primary" data-action="all">' +
+                '<span class="dashicons dashicons-admin-site-alt3"></span>' +
+                '<span><strong>Process All Pages</strong><br><small>Run ' + esc(operationName) + ' on all ' + pageCount.toLocaleString() + ' pages</small></span>' +
+                '</button>' +
+                '<button type="button" class="aisk-modal__option-btn is-secondary" data-action="list">' +
+                '<span class="dashicons dashicons-list-view"></span>' +
+                '<span><strong>Create a List</strong><br><small>Select specific pages and save as a reusable list</small></span>' +
+                '</button>' +
+                '</div>' +
+                '<div class="aisk-modal__list-panel" style="display:none;">' +
+                '<div class="aisk-modal__list-header">' +
+                '<label>List Name: <input type="text" class="aisk-modal__list-name" placeholder="e.g. Priority Pages, Blog Posts..." maxlength="100" /></label>' +
+                '</div>' +
+                '<div class="aisk-modal__search-bar">' +
+                '<input type="text" class="aisk-modal__search" placeholder="Search pages..." />' +
+                '<div class="aisk-modal__filters">' +
+                '<button type="button" class="button aisk-modal__filter is-active" data-filter="all">All</button>' +
+                '<button type="button" class="button aisk-modal__filter" data-filter="page">Pages</button>' +
+                '<button type="button" class="button aisk-modal__filter" data-filter="post">Posts</button>' +
+                (hasWooProducts ? '<button type="button" class="button aisk-modal__filter" data-filter="product">Products</button>' : '') +
+                '</div>' +
+                '<div class="aisk-modal__bulk">' +
+                '<button type="button" class="button-link aisk-modal__select-all">Select All</button>' +
+                ' | <button type="button" class="button-link aisk-modal__deselect-all">Deselect All</button>' +
+                ' <span class="aisk-modal__count">0 selected</span>' +
+                '</div>' +
+                '</div>' +
+                '<div class="aisk-modal__page-list"><div class="aisk-modal__loading">Loading pages...</div></div>' +
+                '<div class="aisk-modal__list-footer">' +
+                '<button type="button" class="button aisk-modal__back">&larr; Back</button>' +
+                '<button type="button" class="button button-primary aisk-modal__create-list" disabled>Create List &amp; Process</button>' +
+                '</div>' +
+                '</div>' +
+                '</div>' +
+                '</div>'
+            );
+
+            $('body').append($overlay).append($modal);
+
+            // Focus trap
+            setTimeout(function() {
+                $overlay.addClass('is-visible');
+                $modal.addClass('is-visible');
+            }, 10);
+
+            function closeModal() {
+                $overlay.removeClass('is-visible');
+                $modal.removeClass('is-visible');
+                setTimeout(function() {
+                    $overlay.remove();
+                    $modal.remove();
+                }, 200);
+            }
+
+            $overlay.on('click', closeModal);
+            $modal.find('.aisk-modal__close').on('click', closeModal);
+
+            // ── Redo: Full site ──
+            $modal.on('click', '[data-action="redo-full"]', function() {
+                closeModal();
+                onConfirm({
+                    ids: publishedIds,
+                    runId: null
+                });
+            });
+
+            // ── Redo: Existing list ──
+            $modal.on('click', '[data-action="redo-run"]', function() {
+                var redoRunId = parseInt($(this).data('run-id'), 10);
+                for (var i = 0; i < runsData.length; i++) {
+                    if (parseInt(runsData[i].id, 10) === redoRunId) {
+                        var pageIds = runsData[i].page_ids;
+                        if (typeof pageIds === 'string') {
+                            pageIds = JSON.parse(pageIds);
+                        }
+                        closeModal();
+                        onConfirm({
+                            ids: pageIds,
+                            runId: redoRunId
+                        });
+                        return;
+                    }
+                }
+            });
+
+            // ── New: Process All ──
+            $modal.find('[data-action="all" ]').on('click', function() {
+                closeModal();
+                onConfirm({
+                    ids: publishedIds,
+                    runId: null
+                });
+            });
+
+            // ── New: Create a List ──
+            var allPages = [];
+            var loadedPages = false;
+
+            $modal.find('[data-action="list" ]').on('click', function() {
+                $modal.find('.aisk-modal__options').slideUp(200);
+                $modal.find('.aisk-modal__redo-list').slideUp(200);
+                $modal.find('.aisk-modal__section-label').slideUp(200);
+                $modal.find('.aisk-modal__prompt').slideUp(200);
+                $modal.find('.aisk-modal__list-panel').slideDown(300);
+                $modal.find('.aisk-modal__list-name').focus();
+
+                if (!loadedPages) {
+                    loadedPages = true;
+                    $.post(ajaxUrl, {
+                        action: 'ai_seo_keeper_get_pages_for_selector',
+                        nonce: nonce
+                    }, function(response) {
+                        if (response.success) {
+                            allPages = response.data.pages;
+                            renderPageList(allPages);
+                        } else {
+                            $modal.find('.aisk-modal__page-list').html('<div class="aisk-modal__loading" style="color:#d63638;">Failed to load pages.</div>');
+                        }
+                    });
+                }
+            });
+
+            // Render page checkboxes
+            function renderPageList(pages) {
+                var $list = $modal.find('.aisk-modal__page-list');
+                if (pages.length === 0) {
+                    $list.html('<div class="aisk-modal__loading">No pages match your filter.</div>');
+                    return;
+                }
+                var html = '';
+                for (var i = 0; i < pages.length; i++) {
+                    var p = pages[i];
+                    var auditBadge = parseInt(p.has_audit, 10) ? '<span class="aisk-modal__badge is-good">Audited</span>' : '<span class="aisk-modal__badge is-pending">Not audited</span>';
+                    html += '<label class="aisk-modal__page-row" data-type="' + esc(p.post_type) + '">' + '<input type="checkbox" value="' + parseInt(p.id, 10) + '" /> ' + '<span class="aisk-modal__page-title">' + esc(p.title) + '</span>' + '<span class="aisk-modal__page-meta">' + esc(p.post_type) + ' &middot; /' + esc(p.slug) + '</span>' +
+                        auditBadge + '</label>';
+                }
+                $list.html(html);
+            }
+
+            // Search filter
+            $modal.on('input', '.aisk-modal__search', function() {
+                var term = $(this).val().toLowerCase();
+                $modal.find('.aisk-modal__page-row').each(function() {
+                    var text = $(this).text().toLowerCase();
+                    $(this).toggle(text.indexOf(term) !== -1);
+                });
+            });
+
+            // Post type filter
+            $modal.on('click', '.aisk-modal__filter', function() {
+                $modal.find('.aisk-modal__filter').removeClass('is-active');
+                $(this).addClass('is-active');
+                var filter = $(this).data('filter');
+                $modal.find('.aisk-modal__page-row').each(function() {
+                    if (filter === 'all') {
+                        $(this).show();
+                    } else {
+                        $(this).toggle($(this).data('type') === filter);
+                    }
+                });
+            });
+
+            // Select / Deselect all
+            $modal.on('click', '.aisk-modal__select-all', function() {
+                $modal.find('.aisk-modal__page-row:visible input[type="checkbox" ]').prop('checked', true).trigger('change');
+            });
+            $modal.on('click', '.aisk-modal__deselect-all', function() {
+                $modal.find('.aisk-modal__page-row input[type="checkbox" ]').prop('checked', false).trigger('change');
+            });
+
+            // Count selected
+            $modal.on('change', 'input[type="checkbox"]', function() {
+                var count = $modal.find('.aisk-modal__page-row input:checked').length;
+                $modal.find('.aisk-modal__count').text(count + ' selected');
+                var hasName = $.trim($modal.find('.aisk-modal__list-name').val()).length > 0;
+                $modal.find('.aisk-modal__create-list').prop('disabled', count === 0 || !hasName);
+            });
+
+            // List name validation
+            $modal.on('input', '.aisk-modal__list-name', function() {
+                var count = $modal.find('.aisk-modal__page-row input:checked').length;
+                var hasName = $.trim($(this).val()).length > 0;
+                $modal.find('.aisk-modal__create-list').prop('disabled', count === 0 || !hasName);
+            });
+
+            // Back button
+            $modal.on('click', '.aisk-modal__back', function() {
+                $modal.find('.aisk-modal__list-panel').slideUp(200);
+                $modal.find('.aisk-modal__options').slideDown(300);
+                $modal.find('.aisk-modal__redo-list').slideDown(300);
+                $modal.find('.aisk-modal__section-label').slideDown(300);
+                $modal.find('.aisk-modal__prompt').slideDown(300);
+            });
+
+            // Create List & Process
+            $modal.on('click', '.aisk-modal__create-list', function() {
+                var $btn = $(this);
+                var name = $.trim($modal.find('.aisk-modal__list-name').val());
+                var selectedIds = [];
+                $modal.find('.aisk-modal__page-row input:checked').each(function() {
+                    selectedIds.push(parseInt($(this).val(), 10));
+                });
+
+                if (!name || selectedIds.length === 0) return;
+
+                $btn.prop('disabled', true).text('Creating...');
+
+                $.post(ajaxUrl, {
+                    action: 'ai_seo_keeper_create_run',
+                    nonce: nonce,
+                    name: name,
+                    page_ids: JSON.stringify(selectedIds)
+                }, function(response) {
+                    if (response.success) {
+                        var rd = response.data;
+                        // Add to runsData for redo modal.
+                        runsData.push({
+                            id: rd.run_id,
+                            name: rd.name,
+                            page_count: rd.page_count,
+                            page_ids: rd.page_ids,
+                            completed_steps: ''
+                        });
+                        // Add badges to both steps.
+                        addRunBadge('aisk-s2', rd.run_id, rd.name, false);
+                        addRunBadge('aisk-s3', rd.run_id, rd.name, false);
+                        closeModal();
+                        onConfirm({
+                            ids: selectedIds,
+                            runId: rd.run_id
+                        });
+                    } else {
+                        $btn.prop('disabled', false).text('Create List & Process');
+                        alert(response.data.message || 'Error creating list.');
+                    }
+                }).fail(function() {
+                    $btn.prop('disabled', false).text('Create List & Process');
+                    alert('Network error. Please try again.');
+                });
+            });
         }
 
         function BatchProcessor(config) {
@@ -480,9 +882,9 @@ defined('ABSPATH') || exit;
             $(this.prefix + '-bar').css('width', pct + '%');
             $(this.prefix + '-status').text('Processing ' + (this.current + 1) + ' of ' + this.ids.length + '...');
             $(this.prefix + '-counts').text(
-                '✓ ' + this.stats.processed + '  ⏭ ' + this.stats.skipped +
-                (this.stats.cached > 0 ? '  📋 ' + this.stats.cached : '') +
-                '  ✗ ' + this.stats.errors
+                '✓ ' + this.stats.processed + ' ⏭ ' + this.stats.skipped +
+                (this.stats.cached > 0 ? ' 📋 ' + this.stats.cached : '') +
+                ' ✗ ' + this.stats.errors
             );
 
             $.post(ajaxUrl, {
@@ -535,6 +937,7 @@ defined('ABSPATH') || exit;
             $('#aisk-s1-done').show();
             $('#aisk-s1-result').text('<?php echo esc_js((string) $summary['total_items']); ?> pages indexed.');
             unlockStep(2);
+            $('#aisk-skip-section').show();
         <?php endif; ?>
         <?php if ($has_index && $has_metadata) : ?>
             <?php if ($step2_all_done) : ?>
@@ -550,6 +953,35 @@ defined('ABSPATH') || exit;
             $('#aisk-s3-done').show();
             $('#aisk-s3-result').text('All <?php echo (int) $total_pages; ?> pages audited.');
         <?php endif; ?>
+
+        // ── Delete list handler (delegated) ───────────────────────
+        $(document).on('click', '.aisk-run-delete', function(e) {
+            e.stopPropagation();
+            var btn = $(this);
+            var runId = parseInt(btn.data('run-id'), 10);
+            if (!confirm('Delete this list? The pages and their SEO data will NOT be affected.')) return;
+            btn.prop('disabled', true).text('…');
+            $.post(ajaxUrl, {
+                action: 'ai_seo_keeper_delete_run',
+                nonce: nonce,
+                run_id: runId
+            }, function(response) {
+                if (response.success) {
+                    // Remove from both Step 2 and Step 3 lists.
+                    $('.aisk-run-badge[data-run-id="' + runId + '"]').fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                    // Remove from runsData array.
+                    runsData = runsData.filter(function(r) {
+                        return parseInt(r.id, 10) !== runId;
+                    });
+                } else {
+                    btn.prop('disabled', false).text('×');
+                }
+            }).fail(function() {
+                btn.prop('disabled', false).text('×');
+            });
+        });
 
         $('#aisk-btn-index').on('click', function() {
             var btn = $(this);
@@ -572,6 +1004,7 @@ defined('ABSPATH') || exit;
                     $('#aisk-s1-result').text(response.data.count + ' pages indexed.');
                     markStepDone(1);
                     unlockStep(2);
+                    $('#aisk-skip-section').show();
                 } else {
                     showError('#aisk-s1', response.data && response.data.message ? response.data.message : 'Unknown error');
                     btn.prop('disabled', false).text('Retry Indexing');
@@ -588,42 +1021,53 @@ defined('ABSPATH') || exit;
 
         $('#aisk-btn-generate').on('click', function() {
             var self = this;
-            confirmLargeOperation('SEO Metadata Generation', publishedIds.length, 3, function() {
-            $('#aisk-s2-log').show();
-            $('#aisk-s2-done').hide();
-            $('#aisk-s2-stopped').hide();
-            $('#aisk-s2-paused').hide();
+            confirmLargeOperation('SEO Metadata Generation', publishedIds.length, 3, 'metadata', function(result) {
+                var idsToUse = result.ids;
+                var s2RunId = result.runId;
+                $('#aisk-s2-log').show();
+                $('#aisk-s2-done').hide();
+                $('#aisk-s2-stopped').hide();
+                $('#aisk-s2-paused').hide();
 
-            s2processor = new BatchProcessor({
-                ids: publishedIds,
-                ajaxAction: <?php echo wp_json_encode($ajax_bulk_generate_action); ?>,
-                prefix: '#aisk-s2',
-                btnStart: '#aisk-btn-generate',
-                btnPause: '#aisk-btn-s2-pause',
-                btnStop: '#aisk-btn-s2-stop',
-                timerEl: '#aisk-s2-elapsed',
-                onItem: function(response) {
-                    var d = response.data;
-                    if (d.skipped) {
-                        $('#aisk-s2-log').prepend('<div class="aisk-log-entry" style="color:#50575e;">⏭ <strong>' + esc(d.title) + '</strong> — skipped (already has metadata)</div>');
-                    } else {
-                        $('#aisk-s2-log').prepend('<div class="aisk-log-entry" style="color:#00a32a;">✓ <strong>' + esc(d.title) + '</strong> — ' + esc(d.seo_title) + '</div>');
+                s2processor = new BatchProcessor({
+                    ids: idsToUse,
+                    ajaxAction: <?php echo wp_json_encode($ajax_bulk_generate_action); ?>,
+                    prefix: '#aisk-s2',
+                    btnStart: '#aisk-btn-generate',
+                    btnPause: '#aisk-btn-s2-pause',
+                    btnStop: '#aisk-btn-s2-stop',
+                    timerEl: '#aisk-s2-elapsed',
+                    onItem: function(response) {
+                        var d = response.data;
+                        if (d.skipped) {
+                            $('#aisk-s2-log').prepend('<div class="aisk-log-entry" style="color:#50575e;">⏭ <strong>' + esc(d.title) + '</strong> — skipped (already has metadata)</div>');
+                        } else {
+                            $('#aisk-s2-log').prepend('<div class="aisk-log-entry" style="color:#00a32a;">✓ <strong>' + esc(d.title) + '</strong> — ' + esc(d.seo_title) + '</div>');
+                        }
+                    },
+                    onDone: function(stats) {
+                        $('#aisk-s2-status').text('Done in ' + s2processor.timer.getText() + '.');
+                        $('#aisk-s2-done').show();
+                        $('#aisk-s2-result').text(stats.processed + ' generated, ' + stats.skipped + ' skipped, ' + stats.errors + ' errors.');
+                        $('#aisk-btn-generate').prop('disabled', false).text('Re-Generate All');
+                        markStepDone(2);
+                        unlockStep(3);
+                        if (s2RunId) {
+                            markRunBadgeDone('aisk-s2', s2RunId);
+                            $.post(ajaxUrl, {
+                                action: 'ai_seo_keeper_mark_run_step',
+                                nonce: nonce,
+                                run_id: s2RunId,
+                                step: 'metadata'
+                            });
+                        }
+                    },
+                    onError: function(postId, title, msg) {
+                        $('#aisk-s2-log').prepend('<div class="aisk-log-entry" style="color:#d63638;">✗ <strong>' + esc(title) + '</strong> — ' + esc(msg) + '</div>');
                     }
-                },
-                onDone: function(stats) {
-                    $('#aisk-s2-status').text('Done in ' + s2processor.timer.getText() + '.');
-                    $('#aisk-s2-done').show();
-                    $('#aisk-s2-result').text(stats.processed + ' generated, ' + stats.skipped + ' skipped, ' + stats.errors + ' errors.');
-                    $('#aisk-btn-generate').prop('disabled', false).text('Re-Generate All');
-                    markStepDone(2);
-                    unlockStep(3);
-                },
-                onError: function(postId, title, msg) {
-                    $('#aisk-s2-log').prepend('<div class="aisk-log-entry" style="color:#d63638;">✗ <strong>' + esc(title) + '</strong> — ' + esc(msg) + '</div>');
-                }
-            });
+                });
 
-            s2processor.start();
+                s2processor.start();
             }); // end confirmLargeOperation
         });
 
@@ -659,12 +1103,12 @@ defined('ABSPATH') || exit;
             if (d.heading_structure) html += 'Headings: ' + esc(d.heading_structure) + ' · ';
             html += 'Words: ' + d.word_count + ' · Missing alt: ' + d.missing_alt_tags + '</p>';
             if (d.issues && d.issues.length > 0) {
-                html += '<details style="margin-top:8px;"><summary style="cursor:pointer;font-weight:600;color:#d63638;font-size:13px;">Issues (' + d.issues.length + ')</summary><ul style="margin:4px 0 0 16px;padding:0;">';
+                html += '<details style="margin-top:8px;"><summary style="cursor:pointer;font-weight:600;color:#d63638;font-size:13px;">Issues(' + d.issues.length + ')</summary><ul style="margin:4px 0 0 16px;padding:0;">';
                 for (var i = 0; i < d.issues.length; i++) html += '<li style="font-size:13px;margin:2px 0;">' + esc(d.issues[i]) + '</li>';
                 html += '</ul></details>';
             }
             if (d.suggestions && d.suggestions.length > 0) {
-                html += '<details style="margin-top:6px;"><summary style="cursor:pointer;font-weight:600;color:#2271b1;font-size:13px;">Suggestions (' + d.suggestions.length + ')</summary><ul style="margin:4px 0 0 16px;padding:0;">';
+                html += '<details style="margin-top:6px;"><summary style="cursor:pointer;font-weight:600;color:#2271b1;font-size:13px;">Suggestions(' + d.suggestions.length + ')</summary><ul style="margin:4px 0 0 16px;padding:0;">';
                 for (var i = 0; i < d.suggestions.length; i++) html += '<li style="font-size:13px;margin:2px 0;">' + esc(d.suggestions[i]) + '</li>';
                 html += '</ul></details>';
             }
@@ -734,9 +1178,7 @@ defined('ABSPATH') || exit;
             var top10 = sorted.slice(0, 10);
             var top10html = '';
             for (var i = 0; i < top10.length; i++) {
-                top10html += '<tr><td>' + (i + 1) + '</td><td><a href="' + esc(top10[i].permalink) + '" target="_blank">' + esc(top10[i].title) + '</a></td>' +
-                    '<td style="text-align:center;">' + scoreBadge(top10[i].score) + '</td>' +
-                    '<td style="text-align:center;">' + (top10[i].issues ? top10[i].issues.length : 0) + '</td></tr>';
+                top10html += '<tr><td>' + (i + 1) + '</td><td><a href="' + esc(top10[i].permalink) + '" target="_blank">' + esc(top10[i].title) + '</a></td>' + '<td style="text-align:center;">' + scoreBadge(top10[i].score) + '</td>' + '<td style="text-align:center;">' + (top10[i].issues ? top10[i].issues.length : 0) + '</td></tr>';
             }
             $('#aisk-top10-table tbody').html(top10html);
 
@@ -744,9 +1186,7 @@ defined('ABSPATH') || exit;
             var bottom10 = sorted.slice(-10).reverse();
             var bottom10html = '';
             for (var i = 0; i < bottom10.length; i++) {
-                bottom10html += '<tr><td>' + (i + 1) + '</td><td><a href="' + esc(bottom10[i].permalink) + '" target="_blank">' + esc(bottom10[i].title) + '</a></td>' +
-                    '<td style="text-align:center;">' + scoreBadge(bottom10[i].score) + '</td>' +
-                    '<td style="text-align:center;">' + (bottom10[i].issues ? bottom10[i].issues.length : 0) + '</td></tr>';
+                bottom10html += '<tr><td>' + (i + 1) + '</td><td><a href="' + esc(bottom10[i].permalink) + '" target="_blank">' + esc(bottom10[i].title) + '</a></td>' + '<td style="text-align:center;">' + scoreBadge(bottom10[i].score) + '</td>' + '<td style="text-align:center;">' + (bottom10[i].issues ? bottom10[i].issues.length : 0) + '</td></tr>';
             }
             $('#aisk-bottom10-table tbody').html(bottom10html);
         }
@@ -901,70 +1341,174 @@ defined('ABSPATH') || exit;
                 });
             }
 
-            confirmLargeOperation('Full SEO Audit', idsForCount.length, 5, function() {
-            $('#aisk-s3-done').hide();
-            $('#aisk-s3-stopped').hide();
-            $('#aisk-s3-paused').hide();
+            confirmLargeOperation('Full SEO Audit', idsForCount.length, 5, 'audit', function(result) {
+                var idsFromModal = result.ids;
+                var s3RunId = result.runId;
+                $('#aisk-s3-done').hide();
+                $('#aisk-s3-stopped').hide();
+                $('#aisk-s3-paused').hide();
 
-            // For "Continue": only process pages not yet audited.
-            // For "Re-Run": process all pages.
-            // Always exclude individually-skipped pages.
-            var idsToProcess = publishedIds.filter(function(id) {
-                return skippedIds.indexOf(id) === -1;
-            });
-            if (!isRerun && allAudits.length > 0) {
-                var auditedIds = {};
-                for (var i = 0; i < allAudits.length; i++) {
-                    auditedIds[allAudits[i].post_id] = true;
+                // If modal returned a subset (list), use those IDs directly.
+                // Otherwise apply the skip/already-audited logic.
+                var idsToProcess;
+                if (idsFromModal.length < publishedIds.length) {
+                    // User created a list — use exactly those IDs.
+                    idsToProcess = idsFromModal;
+                } else {
+                    // "Process All" — apply skip + continue logic.
+                    idsToProcess = publishedIds.filter(function(id) {
+                        return skippedIds.indexOf(id) === -1;
+                    });
+                    if (!isRerun && allAudits.length > 0) {
+                        var auditedIds = {};
+                        for (var i = 0; i < allAudits.length; i++) {
+                            auditedIds[allAudits[i].post_id] = true;
+                        }
+                        idsToProcess = idsToProcess.filter(function(id) {
+                            return !auditedIds[id];
+                        });
+                    }
                 }
-                idsToProcess = idsToProcess.filter(function(id) {
-                    return !auditedIds[id];
-                });
-            }
 
-            if (idsToProcess.length === 0) {
-                $('#aisk-s3-done').show();
-                $('#aisk-s3-result').text('All ' + publishedIds.length + ' pages already audited. Click "Re-Run Audits" to refresh all scores.');
-                btn.prop('disabled', false).text('Re-Run Audits');
-                markStepDone(3);
-                return;
-            }
-
-            s3processor = new BatchProcessor({
-                ids: idsToProcess,
-                ajaxAction: <?php echo wp_json_encode($ajax_page_audit_action); ?>,
-                prefix: '#aisk-s3',
-                btnStart: '#aisk-btn-audit',
-                btnPause: '#aisk-btn-s3-pause',
-                btnStop: '#aisk-btn-s3-stop',
-                timerEl: '#aisk-s3-elapsed',
-                onItem: function(response) {
-                    addOrUpdateAudit(response.data);
-                    refreshSummaryTab();
-                    refreshDetailsTab();
-                },
-                onDone: function(stats) {
-                    var total = stats.processed + stats.cached;
-                    $('#aisk-s3-status').text('Done in ' + s3processor.timer.getText() + '.');
+                if (idsToProcess.length === 0) {
                     $('#aisk-s3-done').show();
-                    $('#aisk-s3-result').text(total + ' pages audited' +
-                        (stats.cached > 0 ? ' (' + stats.cached + ' from cache)' : '') +
-                        ', ' + stats.errors + ' errors. Total: ' + allAudits.length + ' pages.');
+                    $('#aisk-s3-result').text('All ' + publishedIds.length + ' pages already audited. Click "Re-Run Audits" to refresh all scores.');
                     btn.prop('disabled', false).text('Re-Run Audits');
                     markStepDone(3);
-                    refreshSummaryTab();
-                    refreshDetailsTab();
-                },
-                onError: function(postId, title, msg) {
-                    $('#aisk-s3-results').prepend(
-                        '<div style="border:1px solid #d63638;padding:12px;margin-bottom:12px;background:#fcf0f1;border-radius:4px;">' +
-                        '<strong>' + esc(title) + '</strong> — <span style="color:#d63638;">' + esc(msg) + '</span></div>'
-                    );
+                    if (s3RunId) {
+                        markRunBadgeDone('aisk-s3', s3RunId);
+                        $.post(ajaxUrl, {
+                            action: 'ai_seo_keeper_mark_run_step',
+                            nonce: nonce,
+                            run_id: s3RunId,
+                            step: 'audit'
+                        });
+                    }
+                    return;
                 }
-            });
 
-            s3processor.start();
+                s3processor = new BatchProcessor({
+                    ids: idsToProcess,
+                    ajaxAction: <?php echo wp_json_encode($ajax_page_audit_action); ?>,
+                    prefix: '#aisk-s3',
+                    btnStart: '#aisk-btn-audit',
+                    btnPause: '#aisk-btn-s3-pause',
+                    btnStop: '#aisk-btn-s3-stop',
+                    timerEl: '#aisk-s3-elapsed',
+                    onItem: function(response) {
+                        addOrUpdateAudit(response.data);
+                        refreshSummaryTab();
+                        refreshDetailsTab();
+                    },
+                    onDone: function(stats) {
+                        var total = stats.processed + stats.cached;
+                        $('#aisk-s3-status').text('Done in ' + s3processor.timer.getText() + ' .');
+                        $('#aisk-s3-done').show();
+                        $('#aisk-s3-result').text(total + ' pages audited' +
+                            (stats.cached > 0 ? ' (' + stats.cached + ' from cache)' : '') +
+                            ', ' + stats.errors + ' errors. Total: ' + allAudits.length + ' pages.');
+                        btn.prop('disabled', false).text('Re-Run Audits');
+                        markStepDone(3);
+                        refreshSummaryTab();
+                        refreshDetailsTab();
+                        if (s3RunId) {
+                            markRunBadgeDone('aisk-s3', s3RunId);
+                            $.post(ajaxUrl, {
+                                action: 'ai_seo_keeper_mark_run_step',
+                                nonce: nonce,
+                                run_id: s3RunId,
+                                step: 'audit'
+                            });
+                        }
+                    },
+                    onError: function(postId, title, msg) {
+                        $('#aisk-s3-results').prepend(
+                            '<div style="border:1px solid #d63638;padding:12px;margin-bottom:12px;background:#fcf0f1;border-radius:4px;">' +
+                            '<strong>' + esc(title) + '</strong> — <span style="color:#d63638;">' + esc(msg) + '</span></div>'
+                        );
+                    }
+                });
+
+                s3processor.start();
             }); // end confirmLargeOperation
+        });
+
+        // ── Data Management: Clear SEO Data ──────────────────────────
+
+        $('.aisk-clear-data-btn').on('click', function() {
+            var $btn = $(this);
+            var scope = $btn.data('scope');
+            var labels = {
+                metadata: 'all AI-generated SEO titles and descriptions',
+                audits: 'all page audit data',
+                all: 'ALL SEO data (metadata, audits, and lists)'
+            };
+            var warningColors = {
+                metadata: '#dba617',
+                audits: '#dba617',
+                all: '#d63638'
+            };
+
+            // Build confirmation modal.
+            var $confirmOverlay = $('<div class="aisk-modal-overlay"></div>');
+            var $confirmModal = $(
+                '<div class="aisk-modal" style="max-width:480px;">' +
+                '<div class="aisk-modal__header" style="background:' + warningColors[scope] + ';color:#fff;">' +
+                '<h2 style="color:#fff;"><span class="dashicons dashicons-warning" style="margin-right:6px;"></span> Confirm Deletion</h2>' +
+                '<button type="button" class="aisk-modal__close" title="Close" style="color:#fff;">&times;</button>' +
+                '</div>' +
+                '<div class="aisk-modal__body" style="padding:24px;">' +
+                '<p style="font-size:14px;margin:0 0 12px;">You are about to permanently delete:</p>' +
+                '<p style="font-size:15px;font-weight:700;color:' + warningColors[scope] + ';margin:0 0 16px;">' + labels[scope] + '</p>' +
+                '<p style="font-size:13px;color:#787c82;margin:0 0 20px;">This action cannot be undone. You will need to re-run the affected wizard steps to regenerate this data.</p>' +
+                '<div style="display:flex;gap:10px;justify-content:flex-end;">' +
+                '<button type="button" class="button aisk-confirm-cancel">Cancel</button>' +
+                '<button type="button" class="button aisk-confirm-proceed" style="background:' + warningColors[scope] + ';border-color:' + warningColors[scope] + ';color:#fff;">Yes, Delete</button>' +
+                '</div>' +
+                '</div>' +
+                '</div>'
+            );
+
+            $('body').append($confirmOverlay).append($confirmModal);
+            setTimeout(function() {
+                $confirmOverlay.addClass('is-visible');
+                $confirmModal.addClass('is-visible');
+            }, 10);
+
+            function closeConfirm() {
+                $confirmOverlay.removeClass('is-visible');
+                $confirmModal.removeClass('is-visible');
+                setTimeout(function() {
+                    $confirmOverlay.remove();
+                    $confirmModal.remove();
+                }, 200);
+            }
+
+            $confirmOverlay.on('click', closeConfirm);
+            $confirmModal.find('.aisk-modal__close, .aisk-confirm-cancel').on('click', closeConfirm);
+
+            $confirmModal.find('.aisk-confirm-proceed').on('click', function() {
+                closeConfirm();
+                $btn.prop('disabled', true).text('Clearing...');
+                $.post(ajaxUrl, {
+                    action: 'ai_seo_keeper_clear_seo_data',
+                    nonce: nonce,
+                    scope: scope
+                }, function(response) {
+                    if (response.success) {
+                        $('#aisk-clear-feedback').text('✓ ' + response.data.message).show();
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1200);
+                    } else {
+                        $('#aisk-clear-feedback').text('✗ ' + (response.data.message || 'Error')).css('color', '#d63638').show();
+                        $btn.prop('disabled', false);
+                    }
+                }).fail(function() {
+                    $('#aisk-clear-feedback').text('✗ Network error.').css('color', '#d63638').show();
+                    $btn.prop('disabled', false);
+                });
+            });
         });
 
     })(jQuery);
