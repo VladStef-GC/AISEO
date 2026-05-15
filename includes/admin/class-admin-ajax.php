@@ -915,6 +915,81 @@ class Admin_Ajax
         wp_send_json_success(array('message' => __('Alt text saved.', 'ai-seo-keeper')));
     }
 
+    /**
+     * Save video SEO title/description.
+     * For self-hosted videos: updates attachment post_title + post_excerpt.
+     * For embedded videos: stores per-post meta keyed by video hash.
+     */
+    public function handle_save_video_seo(): void
+    {
+        check_ajax_referer('ai_seo_keeper_nonce', '_nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized');
+        }
+
+        $video_key = isset($_POST['video_key']) ? sanitize_text_field(wp_unslash($_POST['video_key'])) : '';
+        $post_id   = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
+        $seo_title = isset($_POST['seo_title']) ? sanitize_text_field(wp_unslash($_POST['seo_title'])) : '';
+        $seo_desc  = isset($_POST['seo_description']) ? sanitize_textarea_field(wp_unslash($_POST['seo_description'])) : '';
+
+        if ('' === $video_key) {
+            wp_send_json_error('Missing video key.');
+        }
+
+        // Self-hosted: key starts with "sh_".
+        if (0 === strpos($video_key, 'sh_')) {
+            $att_id = (int) substr($video_key, 3);
+            if ($att_id <= 0 || 'attachment' !== get_post_type($att_id)) {
+                wp_send_json_error('Invalid attachment.');
+            }
+            wp_update_post(array(
+                'ID'           => $att_id,
+                'post_title'   => $seo_title,
+                'post_excerpt' => $seo_desc,
+            ));
+        } else {
+            // Embedded video: store on the parent post.
+            if ($post_id <= 0) {
+                wp_send_json_error('Missing post ID.');
+            }
+            $hash = md5($video_key);
+            update_post_meta($post_id, '_ai_seo_keeper_video_title_' . $hash, $seo_title);
+            update_post_meta($post_id, '_ai_seo_keeper_video_desc_' . $hash, $seo_desc);
+        }
+
+        wp_send_json_success(array('message' => __('Video SEO data saved.', 'ai-seo-keeper')));
+    }
+
+    /**
+     * Save document SEO title and description (attachment post_title + post_excerpt).
+     */
+    public function handle_save_doc_seo(): void
+    {
+        check_ajax_referer('ai_seo_keeper_nonce', '_nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized');
+        }
+
+        $attachment_id = isset($_POST['attachment_id']) ? (int) $_POST['attachment_id'] : 0;
+
+        if ($attachment_id <= 0 || 'attachment' !== get_post_type($attachment_id)) {
+            wp_send_json_error('Invalid attachment.');
+        }
+
+        $seo_title = isset($_POST['seo_title']) ? sanitize_text_field(wp_unslash($_POST['seo_title'])) : '';
+        $seo_desc  = isset($_POST['seo_description']) ? sanitize_textarea_field(wp_unslash($_POST['seo_description'])) : '';
+
+        wp_update_post(array(
+            'ID'           => $attachment_id,
+            'post_title'   => $seo_title,
+            'post_excerpt' => $seo_desc,
+        ));
+
+        wp_send_json_success(array('message' => __('Document SEO data saved.', 'ai-seo-keeper')));
+    }
+
     // ------------------------------------------------------------------
     //  Runs (Lists) — create, list, delete
     // ------------------------------------------------------------------

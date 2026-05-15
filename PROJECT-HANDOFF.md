@@ -33,6 +33,8 @@ AI SEO Keeper is a hybrid AI plus deterministic SEO plugin for WordPress. It is 
 - **AI SEO Strategist** — dedicated site-wide AI chat page with focus-page scoping, run awareness, capacity display, and persistent conversations.
 - **Bulk SEO Editor** with row counter, real-time search filtering, WooCommerce-aware post type filter, inline AJAX save, and visual site structure tree.
 - **Image SEO** dashboard with alt text management, inline editing, "Used on" toggle, filter by alt status.
+- **Video SEO** dashboard with auto-detection of YouTube, Vimeo, and self-hosted videos (9 formats), inline SEO title/description editing, provider badges (color-coded), filters by source and description status, "Used on" column, thumbnail previews.
+- **Document SEO** dashboard supporting PDF, Word, Excel, PowerPoint, OpenDocument, RTF, TXT with inline title/description editing, format icons, file size display, "Used on" tracking with expandable toggle, filters by format and title status.
 - **Keyword Tracking** with cannibalization detection, coverage stats synced with content index, sortable table.
 - Frontend output for title, meta description, canonical, robots, Open Graph, Twitter cards, schema, breadcrumb schema, visible breadcrumbs, and sitewide webmaster verification tags.
 - Automatic search appearance baseline for public singular content when explicit metadata is missing.
@@ -44,8 +46,7 @@ AI SEO Keeper is a hybrid AI plus deterministic SEO plugin for WordPress. It is 
 - **Export/Import** — JSON export/import of settings, metadata, and redirects with selective checkboxes.
 - Title branding system: automatic ` | Brand` suffix on page-specific SEO titles, configurable site brand setting, per-page opt-out, and AI prompt budget enforcement.
 - AI generation context intelligence: live browser field overrides, preserve-if-good evaluation, keyphrase enforcement in both title and description, full tab data in AI prompts, and keyphrase write-back to editor.
-- AI Content Editor with changeset-based editing, preview, apply/discard, backup/restore, and multi-builder support.
-- **Redirects & 404 Monitor** with 301/302/307 redirect management, 404 error logging, hit counters, and AJAX-based add/delete.
+- AI Content Editor with changeset-based editing, preview, apply/discard, backup/restore, and multi-builder support.- AI audit context includes per-page video embed counts and linked document counts for comprehensive media awareness.- **Redirects & 404 Monitor** with 301/302/307 redirect management, 404 error logging, hit counters, and AJAX-based add/delete.
 - **Scale-aware Runs system**: saved named page lists, `completed_steps` tracking per run, create/delete runs via AJAX.
 - **Skip Rules**: URL pattern matching to exclude pages from both metadata generation and full audits; server-side enforced in `handle_bulk_generate()`.
 - **Data Management**: scope-based clearing (metadata, audits, everything) with confirmation modals; deletes 17 post meta keys + 4 term meta keys + conversations + messages + IndexNow log + runs + active_runs user meta.

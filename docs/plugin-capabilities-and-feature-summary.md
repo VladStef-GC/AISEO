@@ -138,6 +138,8 @@ Plus site-wide: **orphaned content**, **duplicate titles**, **keyword cannibaliz
 | **Yoast Migration** | One-click import of Yoast titles, descriptions, keyphrases, social |
 | **Bulk Editor** | Spreadsheet-style inline edit for all posts/pages |
 | **Image SEO Dashboard** | Alt text editor with filter/search/sort |
+| **Video SEO Dashboard** | SEO title/description for YouTube, Vimeo, and self-hosted videos; provider badges; filters by source/status |
+| **Document SEO Dashboard** | SEO title/description for PDF, Word, Excel, PowerPoint, OpenDocument, RTF, TXT; format icons; "Used on" tracking |
 | **Keyword Tracking** | Keyphrase distribution, cannibalization detection |
 | **Clear SEO Data** | Scope-based clearing (metadata, audits, history, all) |
 | **Runs (Named Batches)** | Create/track named page lists for repeated batch operations |
@@ -169,6 +171,8 @@ Plus site-wide: **orphaned content**, **duplicate titles**, **keyword cannibaliz
 | **Bulk Editor** | Inline table editor for all posts/pages |
 | **AI Strategist** | Strategic AI conversation (site-wide or focused pages) |
 | **Image SEO** | Alt text editor with filter/search/sort |
+| **Video SEO** | Video SEO metadata: YouTube, Vimeo, self-hosted (9 formats) |
+| **Document SEO** | Document metadata: PDF, Word, Excel, PPT, OpenDocument, RTF, TXT |
 | **Keywords** | Keyphrase analysis, distribution, conflicts |
 | **Export/Import** | Data migration, Yoast import |
 | **Redirects** | Redirect manager + 404 monitor |

@@ -202,6 +202,8 @@ class Admin
         add_action('wp_ajax_ai_seo_keeper_delete_edit_plan', array($this->ajax, 'handle_delete_edit_plan'));
         add_action('wp_ajax_ai_seo_keeper_bulk_save_seo', array($this->ajax, 'handle_bulk_save_seo'));
         add_action('wp_ajax_ai_seo_keeper_save_image_alt', array($this->ajax, 'handle_save_image_alt'));
+        add_action('wp_ajax_ai_seo_keeper_save_video_seo', array($this->ajax, 'handle_save_video_seo'));
+        add_action('wp_ajax_ai_seo_keeper_save_doc_seo', array($this->ajax, 'handle_save_doc_seo'));
 
         // --- Site Chat AJAX handlers ---
         add_action('wp_ajax_' . self::AJAX_SITE_CHAT_ACTION, array($this->site_chat, 'handle_chat'));
@@ -453,6 +455,24 @@ class Admin
 
         add_submenu_page(
             'ai-seo-keeper',
+            'Video SEO',
+            'Video SEO',
+            'manage_options',
+            'ai-seo-keeper-videos',
+            array($this, 'render_video_seo_page')
+        );
+
+        add_submenu_page(
+            'ai-seo-keeper',
+            'Document SEO',
+            'Document SEO',
+            'manage_options',
+            'ai-seo-keeper-documents',
+            array($this, 'render_document_seo_page')
+        );
+
+        add_submenu_page(
+            'ai-seo-keeper',
             'Keyword Tracking',
             'Keywords',
             'manage_options',
@@ -661,6 +681,8 @@ class Admin
             'toplevel_page_ai-seo-keeper' => 'dashboard',
             'ai-seo-keeper-bulk-editor'   => 'bulk-editor',
             'ai-seo-keeper-images'        => 'images',
+            'ai-seo-keeper-videos'        => 'videos',
+            'ai-seo-keeper-documents'     => 'documents',
             'ai-seo-keeper-keywords'      => 'keywords',
             'ai-seo-keeper-redirects'     => 'redirects',
             'ai-seo-keeper-export-import' => 'export-import',
@@ -1824,7 +1846,7 @@ JS;
         $tree_data      = $this->content_indexer->get_all_indexed_pages();
 
         // Pass nonce to external JS via wp_localize_script.
-        wp_localize_script('ai-seo-keeper-page-bulk-editor', 'aiSeoBulkEditor', array(
+        wp_localize_script('ai-seo-page-bulk-editor', 'aiSeoBulkEditor', array(
             'nonce' => $nonce,
         ));
 
@@ -1941,11 +1963,352 @@ JS;
 
         $nonce = wp_create_nonce('ai_seo_keeper_nonce');
 
-        wp_localize_script('ai-seo-keeper-page-images', 'aiSeoImages', array(
+        wp_localize_script('ai-seo-page-images', 'aiSeoImages', array(
             'nonce' => $nonce,
         ));
 
         require __DIR__ . '/admin/view-images.php';
+    }
+
+    /**
+     * Render the Video SEO dashboard — site-wide video inventory with SEO metadata editing.
+     */
+    public function render_video_seo_page(): void
+    {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
+        $readiness        = $this->get_plugin_readiness();
+        $readiness_banner = $this->get_readiness_banner_html($readiness);
+        $paged            = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
+        $per_page         = 40;
+        $filter           = isset($_GET['filter']) ? sanitize_key($_GET['filter']) : 'all';
+
+        global $wpdb;
+
+        // --- 1. Self-hosted video attachments ---
+        $video_mime_types = array(
+            'video/mp4',
+            'video/webm',
+            'video/ogg',
+            'video/quicktime',
+            'video/x-msvideo',
+            'video/x-ms-wmv',
+            'video/x-flv',
+            'video/3gpp',
+            'video/x-matroska',
+        );
+        $mime_placeholders = implode(',', array_fill(0, count($video_mime_types), '%s'));
+
+        $self_hosted = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT a.ID AS att_id, a.post_title, a.post_excerpt, a.post_parent, a.post_mime_type,
+                        parent.post_title AS parent_title
+                 FROM {$wpdb->posts} a
+                 LEFT JOIN {$wpdb->posts} parent ON a.post_parent = parent.ID AND parent.post_status = 'publish'
+                 WHERE a.post_type = 'attachment' AND a.post_status = 'inherit'
+                   AND a.post_mime_type IN ({$mime_placeholders})
+                 ORDER BY a.post_title ASC",
+                ...$video_mime_types
+            ),
+            ARRAY_A
+        );
+
+        // --- 2. Embedded videos (YouTube / Vimeo) from published content ---
+        $embed_rows = $wpdb->get_results(
+            "SELECT ID, post_title, post_content
+             FROM {$wpdb->posts}
+             WHERE post_status = 'publish'
+               AND post_type IN ('post','page','product')
+               AND (post_content LIKE '%youtube.com%' OR post_content LIKE '%youtu.be%' OR post_content LIKE '%vimeo.com%')
+             ORDER BY post_title ASC
+             LIMIT 2000",
+            ARRAY_A
+        );
+
+        // Build unified video list.
+        $all_videos    = array();
+        $seen_embedded = array();
+
+        // Self-hosted.
+        foreach ($self_hosted as $sh) {
+            $att_id   = (int) $sh['att_id'];
+            $filepath = get_attached_file($att_id);
+            $filename = $filepath ? basename($filepath) : '';
+            $ext      = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+            $filesize = $filepath && file_exists($filepath) ? (int) filesize($filepath) : 0;
+            $thumb    = wp_get_attachment_image_url($att_id, 'thumbnail');
+
+            $all_videos[] = array(
+                'key'             => 'sh_' . $att_id,
+                'provider'        => 'self_hosted',
+                'label'           => '' !== $sh['post_title'] ? $sh['post_title'] : $filename,
+                'thumbnail'       => $thumb ?: '',
+                'format'          => $ext,
+                'filesize'        => $filesize,
+                'seo_title'       => (string) $sh['post_title'],
+                'seo_description' => (string) $sh['post_excerpt'],
+                'post_id'         => (int) $sh['post_parent'],
+                'page_title'      => (string) $sh['parent_title'],
+                'att_id'          => $att_id,
+            );
+        }
+
+        // Embedded videos.
+        foreach ($embed_rows as $er) {
+            $embeds = $this->extract_video_embeds_for_seo($er['post_content']);
+            foreach ($embeds as $emb) {
+                $unique = $emb['provider'] . '_' . $emb['id'];
+                if (isset($seen_embedded[$unique])) {
+                    continue;
+                }
+                $seen_embedded[$unique] = true;
+
+                $meta_key_title = '_ai_seo_keeper_video_title_' . md5($unique);
+                $meta_key_desc  = '_ai_seo_keeper_video_desc_' . md5($unique);
+                $seo_title      = (string) get_post_meta((int) $er['ID'], $meta_key_title, true);
+                $seo_desc       = (string) get_post_meta((int) $er['ID'], $meta_key_desc, true);
+
+                $all_videos[] = array(
+                    'key'             => $unique,
+                    'provider'        => $emb['provider'],
+                    'label'           => ucfirst($emb['provider']) . ': ' . $emb['id'],
+                    'thumbnail'       => $emb['thumbnail'],
+                    'format'          => '',
+                    'filesize'        => 0,
+                    'seo_title'       => $seo_title,
+                    'seo_description' => $seo_desc,
+                    'post_id'         => (int) $er['ID'],
+                    'page_title'      => (string) $er['post_title'],
+                    'att_id'          => 0,
+                );
+            }
+        }
+
+        // Compute totals and apply filters.
+        $total_videos      = count($all_videos);
+        $total_with_desc   = 0;
+        $total_missing_desc = 0;
+        foreach ($all_videos as $v) {
+            if ('' !== $v['seo_description']) {
+                $total_with_desc++;
+            } else {
+                $total_missing_desc++;
+            }
+        }
+
+        // Filter.
+        if ('missing_desc' === $filter) {
+            $all_videos = array_filter($all_videos, function ($v) {
+                return '' === $v['seo_description'];
+            });
+        } elseif ('with_desc' === $filter) {
+            $all_videos = array_filter($all_videos, function ($v) {
+                return '' !== $v['seo_description'];
+            });
+        } elseif ('youtube' === $filter) {
+            $all_videos = array_filter($all_videos, function ($v) {
+                return 'youtube' === $v['provider'];
+            });
+        } elseif ('vimeo' === $filter) {
+            $all_videos = array_filter($all_videos, function ($v) {
+                return 'vimeo' === $v['provider'];
+            });
+        } elseif ('self_hosted' === $filter) {
+            $all_videos = array_filter($all_videos, function ($v) {
+                return 'self_hosted' === $v['provider'];
+            });
+        }
+
+        // Paginate.
+        $all_videos  = array_values($all_videos);
+        $total_pages = (int) ceil(count($all_videos) / $per_page);
+        $offset      = ($paged - 1) * $per_page;
+        $videos      = array_slice($all_videos, $offset, $per_page);
+
+        $nonce = wp_create_nonce('ai_seo_keeper_nonce');
+
+        wp_localize_script('ai-seo-page-videos', 'aiSeoVideos', array(
+            'nonce' => $nonce,
+        ));
+
+        require __DIR__ . '/admin/view-videos.php';
+    }
+
+    /**
+     * Extract YouTube/Vimeo video embeds for the Video SEO page.
+     */
+    private function extract_video_embeds_for_seo(string $content): array
+    {
+        $videos = array();
+
+        // YouTube.
+        if (preg_match_all('/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/', $content, $yt)) {
+            $seen = array();
+            foreach ($yt[1] as $id) {
+                if (isset($seen[$id])) continue;
+                $seen[$id] = true;
+                $videos[] = array(
+                    'provider'  => 'youtube',
+                    'id'        => $id,
+                    'thumbnail' => 'https://img.youtube.com/vi/' . $id . '/hqdefault.jpg',
+                );
+            }
+        }
+
+        // Vimeo.
+        if (preg_match_all('/vimeo\.com\/(?:video\/)?(\d{6,11})/', $content, $vm)) {
+            $seen = array();
+            foreach ($vm[1] as $id) {
+                if (isset($seen[$id])) continue;
+                $seen[$id] = true;
+                $videos[] = array(
+                    'provider'  => 'vimeo',
+                    'id'        => $id,
+                    'thumbnail' => '',
+                );
+            }
+        }
+
+        return $videos;
+    }
+
+    /**
+     * Render the Document SEO dashboard — site-wide document inventory with title/description editing.
+     */
+    public function render_document_seo_page(): void
+    {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
+        $readiness        = $this->get_plugin_readiness();
+        $readiness_banner = $this->get_readiness_banner_html($readiness);
+        $paged            = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
+        $per_page         = 40;
+        $filter           = isset($_GET['filter']) ? sanitize_key($_GET['filter']) : 'all';
+
+        global $wpdb;
+
+        // Document MIME types.
+        $doc_mimes = array(
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'text/csv',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/vnd.oasis.opendocument.text',
+            'application/vnd.oasis.opendocument.spreadsheet',
+            'application/vnd.oasis.opendocument.presentation',
+            'application/rtf',
+            'text/plain',
+        );
+
+        // Build MIME filter for WP_Query.
+        $mime_query = implode(',', $doc_mimes);
+
+        // Format-based sub-filters.
+        $format_mimes = array(
+            'pdf'          => array('application/pdf'),
+            'word'         => array('application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
+            'spreadsheet'  => array('application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/csv'),
+            'presentation' => array('application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'),
+        );
+
+        $active_mimes = $doc_mimes;
+        if (isset($format_mimes[$filter])) {
+            $active_mimes = $format_mimes[$filter];
+            $mime_query   = implode(',', $active_mimes);
+        }
+
+        // Used-on map: find posts linking to documents.
+        $used_on_map = array();
+        $doc_ids     = $wpdb->get_col(
+            "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_mime_type IN ('" . implode("','", array_map('esc_sql', $doc_mimes)) . "')"
+        );
+        if (! empty($doc_ids)) {
+            // Check post_content for links to document URLs.
+            $attachment_urls = array();
+            foreach ($doc_ids as $did) {
+                $url = wp_get_attachment_url((int) $did);
+                if ($url) {
+                    $attachment_urls[(int) $did] = basename($url);
+                }
+            }
+            if (! empty($attachment_urls)) {
+                $published_posts = $wpdb->get_results(
+                    "SELECT ID, post_title, post_content
+                     FROM {$wpdb->posts}
+                     WHERE post_status = 'publish'
+                       AND post_type NOT IN ('attachment','revision','nav_menu_item')
+                       AND post_content LIKE '%wp-content/uploads%'",
+                    ARRAY_A
+                );
+                foreach ($published_posts as $pp) {
+                    foreach ($attachment_urls as $aid => $fname) {
+                        if (false !== strpos($pp['post_content'], $fname)) {
+                            $used_on_map[$aid][(int) $pp['ID']] = $pp['post_title'];
+                        }
+                    }
+                }
+            }
+        }
+
+        // WP_Query for documents.
+        $args = array(
+            'post_type'      => 'attachment',
+            'post_mime_type' => $mime_query,
+            'post_status'    => 'inherit',
+            'posts_per_page' => $per_page,
+            'paged'          => $paged,
+            'orderby'        => 'title',
+            'order'          => 'ASC',
+        );
+
+        // Title-based filters.
+        if ('missing_title' === $filter) {
+            $args['post_title'] = '';
+            // WP_Query doesn't support empty post_title directly — use a filter.
+            add_filter('posts_where', function ($where) use ($wpdb) {
+                $where .= " AND ({$wpdb->posts}.post_title = '' OR {$wpdb->posts}.post_title = {$wpdb->posts}.post_name)";
+                return $where;
+            });
+        } elseif ('with_title' === $filter) {
+            add_filter('posts_where', function ($where) use ($wpdb) {
+                $where .= " AND {$wpdb->posts}.post_title != '' AND {$wpdb->posts}.post_title != {$wpdb->posts}.post_name";
+                return $where;
+            });
+        }
+
+        $query       = new \WP_Query($args);
+        $total_pages = $query->max_num_pages;
+
+        // Count stats across all document types.
+        $total_docs = (int) $wpdb->get_var(
+            "SELECT COUNT(*) FROM {$wpdb->posts}
+             WHERE post_type = 'attachment' AND post_status = 'inherit'
+               AND post_mime_type IN ('" . implode("','", array_map('esc_sql', $doc_mimes)) . "')"
+        );
+
+        $total_with_title = (int) $wpdb->get_var(
+            "SELECT COUNT(*) FROM {$wpdb->posts}
+             WHERE post_type = 'attachment' AND post_status = 'inherit'
+               AND post_mime_type IN ('" . implode("','", array_map('esc_sql', $doc_mimes)) . "')
+               AND post_title != '' AND post_title != post_name"
+        );
+        $total_missing_title = $total_docs - $total_with_title;
+
+        $nonce = wp_create_nonce('ai_seo_keeper_nonce');
+
+        wp_localize_script('ai-seo-page-documents', 'aiSeoDocs', array(
+            'nonce' => $nonce,
+        ));
+
+        require __DIR__ . '/admin/view-documents.php';
     }
 
     /**

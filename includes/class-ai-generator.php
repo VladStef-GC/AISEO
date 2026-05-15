@@ -1186,6 +1186,13 @@ class AI_Generator
         $external_links_total = preg_match_all('/href=["\'](https?:\/\/)/i', $page_content_raw);
         $external_links = max(0, $external_links_total - $internal_links);
 
+        // Count embedded videos.
+        $video_count = preg_match_all('/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/|vimeo\.com\/(?:video\/)?\d)/i', $page_content_raw);
+        $video_count += preg_match_all('/<video\b/i', $page_content_raw);
+
+        // Count linked documents.
+        $doc_count = preg_match_all('/href=["\'][^"\']*\.(?:pdf|docx?|xlsx?|pptx?|odt|ods|odp|csv|rtf)["\s>]/i', $page_content_raw);
+
         return implode(
             "\n\n",
             array(
@@ -1197,6 +1204,8 @@ class AI_Generator
                 'Page URL: ' . (string) get_permalink($post),
                 'Word count: ' . $word_count,
                 'Images total: ' . $img_count . ', Images missing alt text: ' . $img_no_alt,
+                'Videos embedded: ' . $video_count,
+                'Documents linked: ' . $doc_count,
                 'Heading structure found: ' . ('' !== $heading_summary ? $heading_summary : 'No headings found'),
                 'Internal links: ' . $internal_links . ', External links: ' . $external_links,
                 'Main page content: ' . ('' !== $page_content ? $page_content : 'No body content is available.'),

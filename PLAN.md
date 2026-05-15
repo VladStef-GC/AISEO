@@ -21,7 +21,7 @@ The working model is hybrid by design:
 - Plugin version: **1.3.1** with modular admin architecture and PSR-4 autoloader.
 - The plugin is a complete standalone SEO layer for both singular and non-singular content.
 - **Modular admin**: `class-admin.php` is a slim coordinator delegating to 5 sub-modules (`class-admin-ajax.php`, `class-admin-rollout.php`, `class-admin-import-export.php`, `class-admin-taxonomy.php`, `class-seo-analysis.php`).
-- **10 admin pages**: Dashboard, Settings, Setup Wizard, Audit, Bulk Editor, Image SEO, Keywords, AI Strategist (Site Chat), Export/Import, Redirects.
+- **10 admin pages**: Dashboard, Settings, Setup Wizard, Audit, Bulk Editor, Image SEO, Video SEO, Document SEO, Keywords, AI Strategist (Site Chat), Export/Import, Redirects.
 - **Scale-aware Runs system**: saved page lists for batch processing on large sites, with `completed_steps` tracking.
 - **Setup Wizard**: 3-step guided flow with cost/time warning modal (always shown), pause/resume/stop, WooCommerce Products filter, skip rules, runs system.
 - **Bulk Editor**: row counter, real-time search, WooCommerce-aware post type filter, site structure tree.
@@ -44,6 +44,9 @@ The working model is hybrid by design:
 - Redirects & 404 Monitor with 301/302/307 management, 404 logging, hit counters.
 - Export/Import with selective JSON export/import (settings, metadata, redirects).
 - WooCommerce integration for product-aware filtering.
+- **Video SEO** dashboard: auto-detects YouTube, Vimeo, and self-hosted videos; inline SEO title/description editing; provider badges; filters by source/description status.
+- **Document SEO** dashboard: supports PDF, Word, Excel, PowerPoint, OpenDocument, RTF, TXT; inline title/description editing; format icons; "Used on" tracking; filters by format/title status.
+- **AI audit context** includes video embed counts and linked document counts per page.
 - **81 PHPUnit tests, 141 assertions** — all passing.
 - **Full production audit**: all 9 admin pages verified, 0 orphaned controls, 0 broken handlers.
 - GreenCoders design identity applied to the editor metabox.

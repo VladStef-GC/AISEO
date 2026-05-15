@@ -29,6 +29,8 @@ AI SEO Keeper uses artificial intelligence to generate, manage, and optimize eve
 | 🧠 | **AI Discovery Documents** | Auto-generated `llms.txt` makes your site discoverable by AI search agents |
 | 🏢 | **Local SEO & Business Schema** | Full local business markup with address, hours, map, and price range |
 | 📋 | **Scale-Aware Runs System** | Saved page lists let large sites audit and generate in manageable batches |
+| 🎬 | **Video SEO** | Manage SEO titles and descriptions for YouTube, Vimeo, and self-hosted videos across your site |
+| 📄 | **Document SEO** | Optimize PDF, Word, Excel, PowerPoint, and other document metadata for search |
 | 🛒 | **WooCommerce Integration** | Product-aware filtering in wizard, bulk editor, and keyword tracking |
 | 🔍 | **Skip Rules** | Exclude pages by URL pattern from both metadata generation and audits |
 
@@ -43,6 +45,8 @@ AI SEO Keeper uses artificial intelligence to generate, manage, and optimize eve
   - [Page Audits & Scoring](#-page-audits--scoring)
   - [Bulk Editor](#-bulk-editor)
   - [Image SEO](#-image-seo)
+  - [Video SEO](#-video-seo)
+  - [Document SEO](#-document-seo)
   - [Keyword Tracking](#-keyword-tracking)
   - [AI SEO Strategist](#-ai-seo-strategist)
   - [XML Sitemaps](#-xml-sitemaps)
@@ -167,6 +171,36 @@ Dedicated dashboard for managing image alt text across your entire site:
 - Inline alt text editing with AJAX save
 - "Used on" toggle showing which pages use each image
 - Stats bar: total images, images with alt text, missing alt text count
+
+---
+
+### 🎬 Video SEO
+
+Dedicated dashboard for managing video SEO metadata across your entire site:
+
+- **Auto-detection:** Finds YouTube embeds, Vimeo embeds, and self-hosted videos (MP4, WebM, OGG, MOV, AVI, WMV, FLV, 3GP, MKV)
+- **Provider badges:** Color-coded labels (YouTube = red, Vimeo = blue, Self-hosted = gray) with format and file size details
+- **Thumbnail preview:** YouTube thumbnails auto-loaded, self-hosted video thumbnails from Media Library
+- **Inline editing:** SEO title and description per video with AJAX save
+- **Filters:** All / Missing description / With description / YouTube / Vimeo / Self-hosted
+- **Stats bar:** Total videos, videos with descriptions, missing descriptions
+- **"Used on" column:** Shows which page each video appears on
+- **AI-aware:** Video counts are included in page audit prompts so AI can flag missing video metadata
+
+---
+
+### 📄 Document SEO
+
+Dedicated dashboard for managing document metadata for search engines:
+
+- **Supported formats:** PDF, Word (DOC/DOCX), Excel (XLS/XLSX/CSV), PowerPoint (PPT/PPTX), OpenDocument (ODT/ODS/ODP), RTF, TXT
+- **Format icons:** Visual emoji icons per document type (📕 PDF, 📘 Word, 📗 Excel, 📙 PowerPoint, 📄 Other)
+- **File details:** Format label, file size, direct "View file" and "Edit in Media Library" links
+- **Inline editing:** SEO title and description per document with AJAX save
+- **Filters:** All / Missing title / With title / PDF / Word / Spreadsheet / Presentation
+- **Stats bar:** Total documents, documents with titles, missing titles
+- **"Used on" column:** Shows which pages link to each document, with expandable "+N" toggle for multiple references
+- **AI-aware:** Document link counts are included in page audit prompts
 
 ---
 

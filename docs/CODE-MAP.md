@@ -47,6 +47,8 @@ ai-seo-keeper/
 │       ├── view-audit.php
 │       ├── view-bulk-editor.php
 │       ├── view-images.php
+│       ├── view-videos.php
+│       ├── view-documents.php
 │       ├── view-keywords.php
 │       ├── view-export-import.php
 │       ├── view-setup-wizard.php
@@ -65,6 +67,8 @@ ai-seo-keeper/
 │       ├── admin-common.js        ← Shared JS (accordion toggle, sortable table headers)
 │       ├── page-bulk-editor.js    ← Bulk Editor AJAX save per row
 │       ├── page-images.js         ← Image SEO alt-text save, "Used on" toggle
+│       ├── page-videos.js         ← Video SEO title/description save
+│       ├── page-documents.js      ← Document SEO title/description save, "Used on" toggle
 │       ├── page-settings.js       ← Settings page interactions
 │       ├── page-site-chat.js      ← AI Strategist chat interface, focus pages, runs
 │       └── gutenberg-sidebar.js   ← Gutenberg sidebar panel registration
