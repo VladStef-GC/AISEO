@@ -43,4 +43,19 @@
         });
     });
 
+    // Search filter.
+    var searchInput = document.getElementById('aisk-doc-search');
+    var table = document.getElementById('ai-seo-doc-table');
+    if (searchInput && table) {
+        searchInput.addEventListener('input', function () {
+            var term = this.value.toLowerCase().trim();
+            var rows = table.querySelectorAll('tbody tr');
+            for (var i = 0; i < rows.length; i++) {
+                var cell = rows[i].querySelector('td:nth-child(2)');
+                var text = cell ? cell.textContent.toLowerCase() : '';
+                rows[i].style.display = (term === '' || text.indexOf(term) !== -1) ? '' : 'none';
+            }
+        });
+    }
+
 })(jQuery);

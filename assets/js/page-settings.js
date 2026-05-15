@@ -204,4 +204,14 @@ jQuery(function ($) {
     renderModelsForProvider($provider.val(), true);
     updateCustomModeVisibility();
     updateTemperatureHint();
+
+    // WooCommerce panel toggle.
+    var wcToggle = document.getElementById('ai-seo-wc-enabled');
+    var wcPanel = document.getElementById('ai-seo-wc-options');
+    if (wcToggle && wcPanel) {
+        wcToggle.addEventListener('change', function () {
+            wcPanel.style.opacity = this.checked ? '1' : '.5';
+            wcPanel.style.pointerEvents = this.checked ? '' : 'none';
+        });
+    }
 });

@@ -147,23 +147,4 @@ defined('ABSPATH') || exit;
         <p><?php echo 'missing_alt' === $filter ? esc_html__('All images have alt text — great!', 'ai-seo-keeper') : ('with_alt' === $filter ? esc_html__('No images have alt text yet.', 'ai-seo-keeper') : esc_html__('No published images found.', 'ai-seo-keeper')); ?></p>
     <?php endif; ?>
 
-    <!-- Search filter script -->
-    <script type="text/javascript">
-        (function() {
-            var searchInput = document.getElementById('aisk-image-search');
-            if (!searchInput) return;
-            var table = document.getElementById('ai-seo-image-table');
-            if (!table) return;
-
-            searchInput.addEventListener('input', function() {
-                var term = this.value.toLowerCase().trim();
-                var rows = table.querySelectorAll('tbody tr');
-                for (var i = 0; i < rows.length; i++) {
-                    var fileCell = rows[i].querySelector('td:nth-child(2)');
-                    var filename = fileCell ? fileCell.textContent.toLowerCase() : '';
-                    rows[i].style.display = (term === '' || filename.indexOf(term) !== -1) ? '' : 'none';
-                }
-            });
-        })();
-    </script>
 </div>

@@ -1847,7 +1847,8 @@ JS;
 
         // Pass nonce to external JS via wp_localize_script.
         wp_localize_script('ai-seo-page-bulk-editor', 'aiSeoBulkEditor', array(
-            'nonce' => $nonce,
+            'nonce'    => $nonce,
+            'treeData' => $tree_data,
         ));
 
         require __DIR__ . '/admin/view-bulk-editor.php';
@@ -3221,24 +3222,9 @@ JS;
                 </div>
             <?php endif; ?>
         </div>
-        <script>
-            (function($) {
-                $(document).on('click', '.ai-seo-keeper-copy-link', function() {
-                    var url = $(this).data('url');
-                    var title = $(this).data('title');
-                    var html = '<a href="' + url + '">' + title + '</a>';
-                    if (navigator.clipboard) {
-                        navigator.clipboard.writeText(html).then(function() {});
-                    }
-                    var btn = $(this);
-                    btn.text('Copied!');
-                    setTimeout(function() {
-                        btn.text('Copy link');
-                    }, 1500);
-                });
-            })(jQuery);
-        </script>
-    <?php
+        <?php
+        wp_add_inline_script('ai-seo-admin-common', '(function($){$(document).on("click",".ai-seo-keeper-copy-link",function(){var u=$(this).data("url"),t=$(this).data("title"),h=\'<a href="\'+u+\'">\'+t+"</a>";if(navigator.clipboard){navigator.clipboard.writeText(h)}var b=$(this);b.text("Copied!");setTimeout(function(){b.text("Copy link")},1500)})})(jQuery);');
+
         return ob_get_clean();
     }
 
@@ -4392,6 +4378,30 @@ HTML;
         // Model capacity — same calc as site-chat so wizard uses dynamic threshold.
         $active_model = trim((string) ($options['model'] ?? ''));
         $max_pages    = Settings::get_max_pages_for_model($active_model);
+
+        // Pass all data to external JS via wp_localize_script.
+        wp_localize_script('ai-seo-page-setup-wizard', 'aiskWizard', array(
+            'nonce'                    => wp_create_nonce('ai_seo_keeper_setup_wizard'),
+            'ajaxUrl'                  => admin_url('admin-ajax.php'),
+            'publishedIds'             => array_map('intval', $published_ids ?: array()),
+            'skippedIds'               => $skipped_ids,
+            'runsData'                 => $runs_with_status,
+            'step2AllDone'             => $step2_all_done,
+            'step3AllDone'             => $step3_all_done,
+            'hasWooProducts'           => class_exists('WooCommerce') && (int) wp_count_posts('product')->publish > 0,
+            'settingsUrl'              => admin_url('admin.php?page=ai-seo-keeper-settings'),
+            'maxPages'                 => $max_pages,
+            'hasIndex'                 => $has_index,
+            'hasMetadata'              => $has_metadata,
+            'totalItems'               => (string) $summary['total_items'],
+            'totalPages'               => $total_pages,
+            'existingAudits'           => $existing_audits,
+            'ajaxIndexAction'          => $ajax_setup_index_action,
+            'ajaxBulkGenerateAction'   => $ajax_bulk_generate_action,
+            'ajaxPageAuditAction'      => $ajax_page_audit_action,
+            'ajaxToggleSkipAction'     => $ajax_toggle_audit_skip_action,
+            'ajaxSaveSkipPatternsAction' => $ajax_save_skip_patterns_action,
+        ));
 
         require __DIR__ . '/admin/view-setup-wizard.php';
     }

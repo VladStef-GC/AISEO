@@ -376,9 +376,9 @@ class History_Store
             return 0;
         }
 
-        $ids_in = implode(',', array_map('intval', $conversation_ids));
-        $deleted = (int) $wpdb->query("DELETE FROM {$messages_table} WHERE conversation_id IN ({$ids_in})");
-        $wpdb->query("DELETE FROM {$conversations_table} WHERE id IN ({$ids_in})");
+        $placeholders = implode(',', array_fill(0, count($conversation_ids), '%d'));
+        $deleted = (int) $wpdb->query($wpdb->prepare("DELETE FROM {$messages_table} WHERE conversation_id IN ({$placeholders})", ...$conversation_ids));
+        $wpdb->query($wpdb->prepare("DELETE FROM {$conversations_table} WHERE id IN ({$placeholders})", ...$conversation_ids));
 
         return $deleted;
     }

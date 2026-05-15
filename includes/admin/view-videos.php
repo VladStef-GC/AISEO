@@ -147,23 +147,4 @@ defined('ABSPATH') || exit;
         <p><?php echo 'missing_desc' === $filter ? esc_html__('All videos have descriptions — great!', 'ai-seo-keeper') : ('with_desc' === $filter ? esc_html__('No videos have descriptions yet.', 'ai-seo-keeper') : esc_html__('No videos found in published content.', 'ai-seo-keeper')); ?></p>
     <?php endif; ?>
 
-    <!-- Search filter script -->
-    <script type="text/javascript">
-        (function() {
-            var searchInput = document.getElementById('aisk-video-search');
-            if (!searchInput) return;
-            var table = document.getElementById('ai-seo-video-table');
-            if (!table) return;
-
-            searchInput.addEventListener('input', function() {
-                var term = this.value.toLowerCase().trim();
-                var rows = table.querySelectorAll('tbody tr');
-                for (var i = 0; i < rows.length; i++) {
-                    var cell = rows[i].querySelector('td:nth-child(2)');
-                    var text = cell ? cell.textContent.toLowerCase() : '';
-                    rows[i].style.display = (term === '' || text.indexOf(term) !== -1) ? '' : 'none';
-                }
-            });
-        })();
-    </script>
 </div>

@@ -40,4 +40,19 @@
         });
     });
 
+    // Search filter.
+    var searchInput = document.getElementById('aisk-image-search');
+    var table = document.getElementById('ai-seo-image-table');
+    if (searchInput && table) {
+        searchInput.addEventListener('input', function () {
+            var term = this.value.toLowerCase().trim();
+            var rows = table.querySelectorAll('tbody tr');
+            for (var i = 0; i < rows.length; i++) {
+                var fileCell = rows[i].querySelector('td:nth-child(2)');
+                var filename = fileCell ? fileCell.textContent.toLowerCase() : '';
+                rows[i].style.display = (term === '' || filename.indexOf(term) !== -1) ? '' : 'none';
+            }
+        });
+    }
+
 })(jQuery);
