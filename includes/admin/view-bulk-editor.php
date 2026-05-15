@@ -48,27 +48,48 @@ defined('ABSPATH') || exit;
         <div style="flex:1;min-width:200px;max-width:400px;">
             <input type="text" id="aisk-bulk-search" placeholder="<?php esc_attr_e('Search pages by title...', 'ai-seo-keeper'); ?>" style="width:100%;padding:6px 10px;font-size:13px;border:1px solid #8c8f94;border-radius:4px;" />
         </div>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" id="aisk-bulk-col-keyphrase" /> <?php esc_html_e('Keyphrase', 'ai-seo-keeper'); ?>
+        </label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" id="aisk-bulk-col-keywords" /> <?php esc_html_e('Keywords', 'ai-seo-keeper'); ?>
+        </label>
     </div>
 
     <?php if ($query->have_posts()) : ?>
-        <table class="widefat striped ai-seo-sortable" id="ai-seo-bulk-table">
+        <table class="widefat striped ai-seo-sortable" id="ai-seo-bulk-table" style="table-layout:fixed;">
             <thead>
                 <tr>
                     <th style="width:40px;text-align:center;">#</th>
-                    <th style="width:28%;" class="ai-seo-sort" data-col="1"><?php esc_html_e('Title', 'ai-seo-keeper'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                    <th style="width:33%;" class="ai-seo-sort" data-col="2"><?php esc_html_e('SEO Title', 'ai-seo-keeper'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                    <th style="width:30%;" class="ai-seo-sort" data-col="3"><?php esc_html_e('Meta Description', 'ai-seo-keeper'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                    <th style="width:5%;"></th>
+                    <th class="ai-seo-sort aisk-col-title" data-col="1"><?php esc_html_e('Title', 'ai-seo-keeper'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th class="ai-seo-sort aisk-col-seotitle" data-col="2"><?php esc_html_e('SEO Title', 'ai-seo-keeper'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th class="ai-seo-sort aisk-col-desc" data-col="3"><?php esc_html_e('Meta Description', 'ai-seo-keeper'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th class="aisk-col-keyphrase ai-seo-sort" data-col="4" style="display:none;"><?php esc_html_e('Keyphrase', 'ai-seo-keeper'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th class="aisk-col-keywords ai-seo-sort" data-col="5" style="display:none;"><?php esc_html_e('Keywords', 'ai-seo-keeper'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th style="width:50px;"></th>
                 </tr>
             </thead>
             <tbody>
                 <?php
+                $keyphrase_meta_key = \AI_SEO_Keeper\Admin::FOCUS_KEYPHRASE_META_KEY;
                 $row_counter = ($paged - 1) * $per_page;
                 while ($query->have_posts()) : $query->the_post();
                     $row_counter++;
                     $post_id = get_the_ID();
                     $seo_title_val = get_post_meta($post_id, $meta_title_key, true);
                     $seo_desc_val = get_post_meta($post_id, $meta_desc_key, true);
+                    $keyphrase_val = get_post_meta($post_id, $keyphrase_meta_key, true);
+                    $post_terms = array();
+                    foreach (get_object_taxonomies(get_post_type(), 'objects') as $tax) {
+                        if (! $tax->public) continue;
+                        $terms = get_the_terms($post_id, $tax->name);
+                        if (! empty($terms) && ! is_wp_error($terms)) {
+                            foreach ($terms as $t) {
+                                $post_terms[] = $t->name;
+                            }
+                        }
+                    }
+                    $keywords_val = implode(', ', $post_terms);
                 ?>
                     <tr data-post-id="<?php echo (int) $post_id; ?>">
                         <td style="text-align:center;color:#787c82;font-size:12px;" class="aisk-row-num"><?php echo (int) $row_counter; ?></td>
@@ -82,6 +103,8 @@ defined('ABSPATH') || exit;
                         <td data-sort-value="<?php echo esc_attr(strtolower($seo_desc_val)); ?>">
                             <textarea class="large-text ai-seo-bulk-desc" rows="2" data-original="<?php echo esc_attr($seo_desc_val); ?>"><?php echo esc_textarea($seo_desc_val); ?></textarea>
                         </td>
+                        <td class="aisk-col-keyphrase" style="display:none;font-size:13px;color:#1d2327;" data-sort-value="<?php echo esc_attr(strtolower($keyphrase_val)); ?>"><?php echo esc_html($keyphrase_val); ?></td>
+                        <td class="aisk-col-keywords" style="display:none;font-size:13px;color:#50575e;" data-sort-value="<?php echo esc_attr(strtolower($keywords_val)); ?>"><?php echo esc_html($keywords_val); ?></td>
                         <td>
                             <button type="button" class="button button-small ai-seo-bulk-save" disabled><?php esc_html_e('Save', 'ai-seo-keeper'); ?></button>
                         </td>
@@ -277,6 +300,81 @@ defined('ABSPATH') || exit;
                     }
                 }
             });
+        })();
+    </script>
+
+    <!-- Column toggle script (persistent via localStorage) -->
+    <script type="text/javascript">
+        (function() {
+            var table = document.getElementById('ai-seo-bulk-table');
+            if (!table) return;
+
+            var storageKey = 'aisk_bulk_columns';
+
+            // Column width presets: [title, seoTitle, metaDesc, keyphrase, keywords]
+            var widthPresets = {
+                '00': ['30%', '33%', '30%', '', ''],
+                '10': ['22%', '26%', '26%', '20%', ''],
+                '01': ['22%', '26%', '26%', '', '20%'],
+                '11': ['18%', '22%', '22%', '16%', '16%']
+            };
+
+            function applyWidths(showKeyphrase, showKeywords) {
+                var key = (showKeyphrase ? '1' : '0') + (showKeywords ? '1' : '0');
+                var w = widthPresets[key];
+                var titleTh = table.querySelector('.aisk-col-title');
+                var seoTh = table.querySelector('.aisk-col-seotitle');
+                var descTh = table.querySelector('.aisk-col-desc');
+                if (titleTh) titleTh.style.width = w[0];
+                if (seoTh) seoTh.style.width = w[1];
+                if (descTh) descTh.style.width = w[2];
+            }
+
+            function toggleColumn(className, show) {
+                var cells = table.querySelectorAll('.' + className);
+                for (var i = 0; i < cells.length; i++) {
+                    cells[i].style.display = show ? '' : 'none';
+                }
+            }
+
+            function saveState(keyphrase, keywords) {
+                try {
+                    localStorage.setItem(storageKey, JSON.stringify({
+                        keyphrase: keyphrase,
+                        keywords: keywords
+                    }));
+                } catch (e) {}
+            }
+
+            function loadState() {
+                try {
+                    var raw = localStorage.getItem(storageKey);
+                    return raw ? JSON.parse(raw) : {};
+                } catch (e) {
+                    return {};
+                }
+            }
+
+            function refresh() {
+                var kp = keyphraseToggle ? keyphraseToggle.checked : false;
+                var kw = keywordsToggle ? keywordsToggle.checked : false;
+                toggleColumn('aisk-col-keyphrase', kp);
+                toggleColumn('aisk-col-keywords', kw);
+                applyWidths(kp, kw);
+                saveState(kp, kw);
+            }
+
+            var keyphraseToggle = document.getElementById('aisk-bulk-col-keyphrase');
+            var keywordsToggle = document.getElementById('aisk-bulk-col-keywords');
+            var saved = loadState();
+
+            // Restore saved state on page load.
+            if (keyphraseToggle && saved.keyphrase) keyphraseToggle.checked = true;
+            if (keywordsToggle && saved.keywords) keywordsToggle.checked = true;
+            refresh();
+
+            if (keyphraseToggle) keyphraseToggle.addEventListener('change', refresh);
+            if (keywordsToggle) keywordsToggle.addEventListener('change', refresh);
         })();
     </script>
 </div>
