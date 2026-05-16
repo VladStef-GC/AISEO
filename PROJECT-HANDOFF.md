@@ -1,8 +1,8 @@
-# AI SEO Keeper Project Handoff
+# SEO Captain Project Handoff
 
 Snapshot date: 2026-05-14
 
-Plugin root: `wp-content/plugins/ai-seo-keeper`
+Plugin root: `wp-content/plugins/ai-seo-captain`
 
 Plugin version header: `1.3.1`
 
@@ -10,7 +10,7 @@ Purpose: this is the fast-start handoff document for any new chat session. Read 
 
 ## One-paragraph brief
 
-AI SEO Keeper is a hybrid AI plus deterministic SEO plugin for WordPress. It is the main standalone SEO layer for this site — not a helper beside another SEO plugin. Deterministic code owns the live frontend behavior, schema, discovery documents, sitemaps, audits, and signaling. AI is used for drafting metadata, answering editor questions, site-wide strategic audits, and the AI Strategist chat. The plugin covers both singular and non-singular content with configurable search appearance, XML sitemaps, and full frontend SEO output. A scale-aware Runs system allows large sites to work in manageable batches.
+SEO Captain is a hybrid AI plus deterministic SEO plugin for WordPress. It is the main standalone SEO layer for this site — not a helper beside another SEO plugin. Deterministic code owns the live frontend behavior, schema, discovery documents, sitemaps, audits, and signaling. AI is used for drafting metadata, answering editor questions, site-wide strategic audits, and the AI Strategist chat. The plugin covers both singular and non-singular content with configurable search appearance, XML sitemaps, and full frontend SEO output. A scale-aware Runs system allows large sites to work in manageable batches.
 
 ## Current mission
 
@@ -42,7 +42,7 @@ AI SEO Keeper is a hybrid AI plus deterministic SEO plugin for WordPress. It is 
 - XML Sitemap engine with sitemap index at `/sitemap_index.xml`, per-type sitemaps, XSL stylesheet, robots.txt directive, WordPress core sitemap replacement, and noindex-aware filtering.
 - AI discovery documents at `llms.txt` and `llms-full.txt`.
 - IndexNow key serving, logging, manual submission, and auto-submit hooks.
-- Non-destructive Yoast metadata import for migration without overwriting existing AI SEO Keeper values.
+- Non-destructive Yoast metadata import for migration without overwriting existing SEO Captain values.
 - **Export/Import** — JSON export/import of settings, metadata, and redirects with selective checkboxes.
 - Title branding system: automatic ` | Brand` suffix on page-specific SEO titles, configurable site brand setting, per-page opt-out, and AI prompt budget enforcement.
 - AI generation context intelligence: live browser field overrides, preserve-if-good evaluation, keyphrase enforcement in both title and description, full tab data in AI prompts, and keyphrase write-back to editor.
@@ -65,7 +65,7 @@ AI SEO Keeper is a hybrid AI plus deterministic SEO plugin for WordPress. It is 
 
 ```mermaid
 flowchart TD
-    WP[WordPress boot] --> Bootstrap[ai-seo-keeper.php]
+    WP[WordPress boot] --> Bootstrap[ai-seo-captain.php]
     Bootstrap --> Autoload[autoload.php PSR-4]
     Bootstrap --> Activator[class-activator.php]
     Bootstrap --> Plugin[class-plugin.php]
@@ -93,11 +93,11 @@ flowchart TD
     Plugin --> WooCommerce[class-woocommerce-integration.php]
 
     Settings --> Options[(wp_options)]
-    Indexer --> ContentIndex[(ai_seo_keeper_content_index)]
-    History --> Conversations[(ai_seo_keeper_conversations)]
-    History --> Messages[(ai_seo_keeper_messages)]
-    RunManager --> Runs[(ai_seo_keeper_runs)]
-    Redirects --> RedirectsTable[(ai_seo_keeper_redirects)]
+    Indexer --> ContentIndex[(ai_seo_captain_content_index)]
+    History --> Conversations[(ai_seo_captain_conversations)]
+    History --> Messages[(ai_seo_captain_messages)]
+    RunManager --> Runs[(ai_seo_captain_runs)]
+    Redirects --> RedirectsTable[(ai_seo_captain_redirects)]
     Admin --> PostMeta[(wp_postmeta)]
     Frontend --> PostMeta
 
@@ -111,7 +111,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     Request[Frontend request] --> Singular{Singular and viewable post type?}
-    Singular -- No --> Stop[No page-level AI SEO Keeper context]
+    Singular -- No --> Stop[No page-level SEO Captain context]
     Singular -- Yes --> Global{frontend_output_enabled?}
     Global -- No --> Stop
     Global -- Yes --> Conflict{Conflicting SEO plugin active and override disabled?}
@@ -128,8 +128,8 @@ flowchart TD
 
 | File | Responsibility |
 | --- | --- |
-| `ai-seo-keeper.php` | Bootstrap, constants, autoloader trigger, activation hook, DB auto-upgrade, boot entrypoint |
-| `includes/autoload.php` | PSR-4 autoloader for `AI_SEO_Keeper` namespace |
+| `ai-seo-captain.php` | Bootstrap, constants, autoloader trigger, activation hook, DB auto-upgrade, boot entrypoint |
+| `includes/autoload.php` | PSR-4 autoloader for `AI_SEO_Captain` namespace |
 | `includes/class-plugin.php` | Runtime composition and admin/frontend boot split |
 | `includes/class-activator.php` | SQL table creation (5 tables), default option initialization, `completed_steps` column |
 | `includes/class-settings.php` | Settings defaults, registration, sanitization, title branding helpers |
@@ -160,56 +160,56 @@ flowchart TD
 
 ### Options
 
-- Option name: `ai_seo_keeper_options`
-- IndexNow log option: `ai_seo_keeper_indexnow_log`
-- DB version option: `ai_seo_keeper_db_version`
+- Option name: `ai_seo_captain_options`
+- IndexNow log option: `ai_seo_captain_indexnow_log`
+- DB version option: `ai_seo_captain_db_version`
 
 ### SQL tables
 
-- `wp_ai_seo_keeper_content_index`
+- `wp_ai_seo_captain_content_index`
   - Site inventory used for audits and AI context.
-- `wp_ai_seo_keeper_conversations`
+- `wp_ai_seo_captain_conversations`
   - Conversation containers for per-post chat, site-chat, and site-audit sessions.
-- `wp_ai_seo_keeper_messages`
+- `wp_ai_seo_captain_messages`
   - Stored user and assistant messages, including AI suggestion payloads.
-- `wp_ai_seo_keeper_redirects`
+- `wp_ai_seo_captain_redirects`
   - Redirect rules (source, target, type, hits, created_at).
-- `wp_ai_seo_keeper_runs`
+- `wp_ai_seo_captain_runs`
   - Saved page lists for batch processing (name, page_ids, page_count, model_used, status, completed_steps).
 
 ### Important post meta keys
 
-- `_ai_seo_keeper_meta_title`
-- `_ai_seo_keeper_meta_description`
-- `_ai_seo_keeper_focus_keyphrase`
-- `_ai_seo_keeper_social_title`
-- `_ai_seo_keeper_social_description`
-- `_ai_seo_keeper_social_image`
-- `_ai_seo_keeper_canonical_url`
-- `_ai_seo_keeper_robots_directives`
-- `_ai_seo_keeper_schema_type`
-- `_ai_seo_keeper_approved_message_id`
-- `_ai_seo_keeper_frontend_enabled`
-- `_ai_seo_keeper_page_audit`
-- `_ai_seo_keeper_audit_skip`
-- `_ai_seo_keeper_pending_content_changes`
-- `_ai_seo_keeper_content_backup`
-- `_ai_seo_keeper_cornerstone`
-- `_ai_seo_keeper_title_branding_off`
-- `_ai_seo_keeper_hreflang`
+- `_ai_seo_captain_meta_title`
+- `_ai_seo_captain_meta_description`
+- `_ai_seo_captain_focus_keyphrase`
+- `_ai_seo_captain_social_title`
+- `_ai_seo_captain_social_description`
+- `_ai_seo_captain_social_image`
+- `_ai_seo_captain_canonical_url`
+- `_ai_seo_captain_robots_directives`
+- `_ai_seo_captain_schema_type`
+- `_ai_seo_captain_approved_message_id`
+- `_ai_seo_captain_frontend_enabled`
+- `_ai_seo_captain_page_audit`
+- `_ai_seo_captain_audit_skip`
+- `_ai_seo_captain_pending_content_changes`
+- `_ai_seo_captain_content_backup`
+- `_ai_seo_captain_cornerstone`
+- `_ai_seo_captain_title_branding_off`
+- `_ai_seo_captain_hreflang`
 
 ### Term meta keys
 
-- `_ai_seo_keeper_term_title`
-- `_ai_seo_keeper_term_description`
-- `_ai_seo_keeper_term_canonical`
-- `_ai_seo_keeper_term_noindex`
+- `_ai_seo_captain_term_title`
+- `_ai_seo_captain_term_description`
+- `_ai_seo_captain_term_canonical`
+- `_ai_seo_captain_term_noindex`
 
 ## Runtime flow
 
 ### 1. Boot flow
 
-1. WordPress loads `ai-seo-keeper.php`.
+1. WordPress loads `ai-seo-captain.php`.
 2. Activation creates the content index, conversations, and messages tables.
 3. `Plugin::boot()` instantiates shared services.
 4. In admin, the plugin boots the content indexer, AI generator, and admin UI.
@@ -260,11 +260,11 @@ flowchart TD
 ## Operator and environment notes
 
 - Workspace root: `c:/xampp/htdocs/greencoders`
-- Plugin root: `c:/xampp/htdocs/greencoders/wp-content/plugins/ai-seo-keeper`
+- Plugin root: `c:/xampp/htdocs/greencoders/wp-content/plugins/ai-seo-captain`
 - Environment: local WordPress under XAMPP on Windows
 - PHP executable: `c:/xampp/php/php.exe`
 - Git repository: `https://github.com/VladStef-GC/AISEO.git` (branch `main`)
-- PSR-4 autoloader: `includes/autoload.php` (`AI_SEO_Keeper\ClassName` → `includes/class-classname.php`)
+- PSR-4 autoloader: `includes/autoload.php` (`AI_SEO_Captain\ClassName` → `includes/class-classname.php`)
 - Admin JS/CSS auto-loading: create `assets/js/page-{slug}.js` or `assets/css/page-{slug}.css` — no code changes needed.
 - Uninstall performs hard cleanup: all 5 plugin tables, all options, all post/term meta keys, user meta.
 
@@ -289,9 +289,9 @@ flowchart TD
 Use this as the starting brief for a new chat:
 
 ```text
-Read wp-content/plugins/ai-seo-keeper/PLAN.md and wp-content/plugins/ai-seo-keeper/PROJECT-HANDOFF.md first.
+Read wp-content/plugins/ai-seo-captain/PLAN.md and wp-content/plugins/ai-seo-captain/PROJECT-HANDOFF.md first.
 
-We are building AI SEO Keeper (v1.3.1) as a standalone WordPress SEO plugin that replaces the need for another free SEO plugin.
+We are building SEO Captain (v1.3.1) as a standalone WordPress SEO plugin that replaces the need for another free SEO plugin.
 
 Current state:
 - Full standalone SEO layer for both singular and non-singular content

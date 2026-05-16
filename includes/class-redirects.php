@@ -1,6 +1,6 @@
 <?php
 
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
 /**
  * Redirect Manager + 404 Monitor.
@@ -23,15 +23,15 @@ class Redirects
         $this->settings = $settings;
 
         global $wpdb;
-        $this->table = $wpdb->prefix . 'ai_seo_keeper_redirects';
+        $this->table = $wpdb->prefix . 'ai_seo_captain_redirects';
 
         // Front-end: execute redirects and log 404s.
         add_action('template_redirect', array($this, 'handle_request'), 1);
 
         // Admin AJAX handlers.
-        add_action('wp_ajax_ai_seo_keeper_add_redirect', array($this, 'ajax_add_redirect'));
-        add_action('wp_ajax_ai_seo_keeper_delete_redirect', array($this, 'ajax_delete_redirect'));
-        add_action('wp_ajax_ai_seo_keeper_clear_404s', array($this, 'ajax_clear_404s'));
+        add_action('wp_ajax_ai_seo_captain_add_redirect', array($this, 'ajax_add_redirect'));
+        add_action('wp_ajax_ai_seo_captain_delete_redirect', array($this, 'ajax_delete_redirect'));
+        add_action('wp_ajax_ai_seo_captain_clear_404s', array($this, 'ajax_clear_404s'));
     }
 
     /**
@@ -281,7 +281,7 @@ class Redirects
 
     public function ajax_add_redirect(): void
     {
-        check_ajax_referer('ai_seo_keeper_nonce', '_nonce');
+        check_ajax_referer('ai_seo_captain_nonce', '_nonce');
 
         if (! current_user_can('manage_options')) {
             wp_send_json_error('Unauthorized');
@@ -306,7 +306,7 @@ class Redirects
 
     public function ajax_delete_redirect(): void
     {
-        check_ajax_referer('ai_seo_keeper_nonce', '_nonce');
+        check_ajax_referer('ai_seo_captain_nonce', '_nonce');
 
         if (! current_user_can('manage_options')) {
             wp_send_json_error('Unauthorized');
@@ -323,7 +323,7 @@ class Redirects
 
     public function ajax_clear_404s(): void
     {
-        check_ajax_referer('ai_seo_keeper_nonce', '_nonce');
+        check_ajax_referer('ai_seo_captain_nonce', '_nonce');
 
         if (! current_user_can('manage_options')) {
             wp_send_json_error('Unauthorized');
@@ -338,8 +338,8 @@ class Redirects
      */
     public function render_admin_page(): void
     {
-        wp_localize_script('ai-seo-page-redirects', 'aiskRedirects', array(
-            'nonce' => wp_create_nonce('ai_seo_keeper_nonce'),
+        wp_localize_script('ai-seo-page-redirects', 'aiscRedirects', array(
+            'nonce' => wp_create_nonce('ai_seo_captain_nonce'),
         ));
 
         $redirects = $this->get_redirects();
@@ -347,7 +347,7 @@ class Redirects
         $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'redirects';
 ?>
         <div class="wrap">
-            <h1>AI SEO Keeper — Redirects &amp; 404 Monitor</h1>
+            <h1>SEO Captain — Redirects &amp; 404 Monitor</h1>
 
             <nav class="nav-tab-wrapper" style="margin-bottom:16px;">
                 <a href="<?php echo esc_url(add_query_arg('tab', 'redirects')); ?>" class="nav-tab <?php echo 'redirects' === $active_tab ? 'nav-tab-active' : ''; ?>">Redirects (<?php echo count($redirects); ?>)</a>

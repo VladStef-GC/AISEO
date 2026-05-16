@@ -1,28 +1,28 @@
 <?php
 
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
 class Frontend
 {
-    public const FRONTEND_ENABLE_META_KEY = '_ai_seo_keeper_frontend_enabled';
+    public const FRONTEND_ENABLE_META_KEY = '_ai_seo_captain_frontend_enabled';
 
-    private const META_TITLE_KEY = '_ai_seo_keeper_meta_title';
+    private const META_TITLE_KEY = '_ai_seo_captain_meta_title';
 
-    private const META_DESCRIPTION_KEY = '_ai_seo_keeper_meta_description';
+    private const META_DESCRIPTION_KEY = '_ai_seo_captain_meta_description';
 
-    private const SOCIAL_TITLE_META_KEY = '_ai_seo_keeper_social_title';
+    private const SOCIAL_TITLE_META_KEY = '_ai_seo_captain_social_title';
 
-    private const SOCIAL_DESCRIPTION_META_KEY = '_ai_seo_keeper_social_description';
+    private const SOCIAL_DESCRIPTION_META_KEY = '_ai_seo_captain_social_description';
 
-    private const SOCIAL_IMAGE_META_KEY = '_ai_seo_keeper_social_image';
+    private const SOCIAL_IMAGE_META_KEY = '_ai_seo_captain_social_image';
 
-    private const CANONICAL_URL_META_KEY = '_ai_seo_keeper_canonical_url';
+    private const CANONICAL_URL_META_KEY = '_ai_seo_captain_canonical_url';
 
-    private const ROBOTS_DIRECTIVES_META_KEY = '_ai_seo_keeper_robots_directives';
+    private const ROBOTS_DIRECTIVES_META_KEY = '_ai_seo_captain_robots_directives';
 
-    private const SCHEMA_TYPE_META_KEY = '_ai_seo_keeper_schema_type';
+    private const SCHEMA_TYPE_META_KEY = '_ai_seo_captain_schema_type';
 
-    private const TITLE_BRANDING_OFF_META_KEY = '_ai_seo_keeper_title_branding_off';
+    private const TITLE_BRANDING_OFF_META_KEY = '_ai_seo_captain_title_branding_off';
 
     private const TITLE_MAX_LENGTH = 60;
 
@@ -39,7 +39,7 @@ class Frontend
         $this->settings = $settings;
         $this->history_store = $history_store;
 
-        add_shortcode('ai_seo_keeper_breadcrumbs', array($this, 'render_breadcrumbs_shortcode'));
+        add_shortcode('ai_seo_captain_breadcrumbs', array($this, 'render_breadcrumbs_shortcode'));
         add_shortcode('ai_seo_map', array($this, 'render_map_shortcode'));
         add_action('wp_head', array($this, 'output_webmaster_verification_tags'), 0);
         add_filter('pre_get_document_title', array($this, 'filter_document_title'), 50);
@@ -128,7 +128,7 @@ class Frontend
                 'home_label' => wp_specialchars_decode((string) get_bloginfo('name'), ENT_QUOTES),
             ),
             $atts,
-            'ai_seo_keeper_breadcrumbs'
+            'ai_seo_captain_breadcrumbs'
         );
         $items = $this->build_breadcrumb_items($post, (string) $atts['home_label']);
 
@@ -138,17 +138,17 @@ class Frontend
 
         ob_start();
 ?>
-        <nav class="ai-seo-keeper-breadcrumbs" aria-label="Breadcrumbs">
-            <ol class="ai-seo-keeper-breadcrumbs-list">
+        <nav class="ai-seo-captain-breadcrumbs" aria-label="Breadcrumbs">
+            <ol class="ai-seo-captain-breadcrumbs-list">
                 <?php foreach ($items as $index => $item) : ?>
-                    <li class="ai-seo-keeper-breadcrumbs-item">
+                    <li class="ai-seo-captain-breadcrumbs-item">
                         <?php if (! empty($item['is_current'])) : ?>
                             <span aria-current="page"><?php echo esc_html($item['name']); ?></span>
                         <?php else : ?>
                             <a href="<?php echo esc_url($item['url']); ?>"><?php echo esc_html($item['name']); ?></a>
                         <?php endif; ?>
                         <?php if ($index < count($items) - 1) : ?>
-                            <span class="ai-seo-keeper-breadcrumbs-separator" aria-hidden="true"><?php echo esc_html((string) $atts['separator']); ?></span>
+                            <span class="ai-seo-captain-breadcrumbs-separator" aria-hidden="true"><?php echo esc_html((string) $atts['separator']); ?></span>
                         <?php endif; ?>
                     </li>
                 <?php endforeach; ?>
@@ -189,7 +189,7 @@ class Frontend
             return;
         }
 
-        echo "\n" . '<link rel="canonical" href="' . esc_url($context['canonical_url']) . '" data-ai-seo-keeper="approved" data-ai-seo-feature="canonical" />' . "\n";
+        echo "\n" . '<link rel="canonical" href="' . esc_url($context['canonical_url']) . '" data-ai-seo-captain="approved" data-ai-seo-feature="canonical" />' . "\n";
     }
 
     public function output_open_graph_tags(): void
@@ -211,7 +211,7 @@ class Frontend
         }
 
         // Extra OG tags (e.g. WooCommerce og:price, og:availability).
-        $extra_tags = apply_filters('ai_seo_keeper_extra_og_tags', array(), $context);
+        $extra_tags = apply_filters('ai_seo_captain_extra_og_tags', array(), $context);
         foreach ($extra_tags as $tag) {
             if (! empty($tag['name']) && ! empty($tag['content'])) {
                 $this->print_meta_tag('property', esc_attr($tag['name']), esc_attr($tag['content']), 'open_graph');
@@ -249,7 +249,7 @@ class Frontend
             '@graph' => $this->build_schema_graph($context),
         );
 
-        echo "\n" . '<script type="application/ld+json" data-ai-seo-keeper="approved" data-ai-seo-feature="schema">' . wp_json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
+        echo "\n" . '<script type="application/ld+json" data-ai-seo-captain="approved" data-ai-seo-feature="schema">' . wp_json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
     }
 
     public function output_robots_directives(): void
@@ -280,7 +280,7 @@ class Frontend
         $alternates = array();
 
         // 1) Manual hreflang entries from post meta.
-        $manual = trim((string) get_post_meta($post_id, '_ai_seo_keeper_hreflang', true));
+        $manual = trim((string) get_post_meta($post_id, '_ai_seo_captain_hreflang', true));
         if ('' !== $manual) {
             $lines = preg_split('/[\r\n]+/', $manual);
             foreach ($lines as $line) {
@@ -328,7 +328,7 @@ class Frontend
             return;
         }
 
-        echo "\n<!-- AI SEO Keeper: hreflang -->\n";
+        echo "\n<!-- SEO Captain: hreflang -->\n";
         foreach ($alternates as $lang => $url) {
             echo '<link rel="alternate" hreflang="' . esc_attr($lang) . '" href="' . esc_url($url) . '" />' . "\n";
         }
@@ -698,7 +698,7 @@ class Frontend
         } elseif (function_exists('is_woocommerce') && (\is_shop() || \is_product_category() || \is_product_tag())) {
             // Delegate to WooCommerce integration filter.
             $wc_context = apply_filters(
-                'ai_seo_keeper_wc_archive_context',
+                'ai_seo_captain_wc_archive_context',
                 array(
                     'robots_directives' => $robots,
                     'social_image_url'  => $social_image_url,
@@ -863,25 +863,25 @@ class Frontend
      */
     private function apply_term_seo_overrides_title(int $term_id, string $default): string
     {
-        $custom = get_term_meta($term_id, '_ai_seo_keeper_seo_title', true);
+        $custom = get_term_meta($term_id, '_ai_seo_captain_seo_title', true);
         return (is_string($custom) && '' !== $custom) ? $custom : $default;
     }
 
     private function apply_term_seo_overrides_description(int $term_id, string $default): string
     {
-        $custom = get_term_meta($term_id, '_ai_seo_keeper_meta_description', true);
+        $custom = get_term_meta($term_id, '_ai_seo_captain_meta_description', true);
         return (is_string($custom) && '' !== $custom) ? $custom : $default;
     }
 
     private function apply_term_seo_overrides_canonical(int $term_id, string $default): string
     {
-        $custom = get_term_meta($term_id, '_ai_seo_keeper_canonical', true);
+        $custom = get_term_meta($term_id, '_ai_seo_captain_canonical', true);
         return (is_string($custom) && '' !== $custom) ? $custom : $default;
     }
 
     private function apply_term_seo_overrides_noindex(int $term_id, string $default): string
     {
-        $noindex = get_term_meta($term_id, '_ai_seo_keeper_noindex', true);
+        $noindex = get_term_meta($term_id, '_ai_seo_captain_noindex', true);
         return '1' === $noindex ? 'noindex,follow' : $default;
     }
 
@@ -1103,7 +1103,7 @@ class Frontend
 
         // Allow WooCommerce integration (and other extensions) to enrich the entity.
         if ('Product' === $context['schema_type']) {
-            $entity = apply_filters('ai_seo_keeper_product_schema', $entity, $context['post']);
+            $entity = apply_filters('ai_seo_captain_product_schema', $entity, $context['post']);
         }
 
         return $entity;
@@ -1632,7 +1632,7 @@ class Frontend
             return;
         }
 
-        echo "\n" . '<meta ' . esc_attr($attribute) . '="' . esc_attr($key) . '" content="' . esc_attr($content) . '" data-ai-seo-keeper="approved" data-ai-seo-feature="' . esc_attr($feature) . '" />' . "\n";
+        echo "\n" . '<meta ' . esc_attr($attribute) . '="' . esc_attr($key) . '" content="' . esc_attr($content) . '" data-ai-seo-captain="approved" data-ai-seo-feature="' . esc_attr($feature) . '" />' . "\n";
     }
 
     /**
@@ -2025,7 +2025,7 @@ class Frontend
                 $options['local_country'] ?? '',
             ));
             if (empty($parts)) {
-                return '<!-- AI SEO Keeper: No location data configured for map. -->';
+                return '<!-- SEO Captain: No location data configured for map. -->';
             }
             $query = urlencode(implode(', ', $parts));
             $src = 'https://maps.google.com/maps?q=' . $query . '&output=embed';

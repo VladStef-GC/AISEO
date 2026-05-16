@@ -117,11 +117,11 @@ Before building the content editor, inject full SEO context into the chat prompt
 ### Add to `build_chat_user_prompt()`:
 
 - [x] Page content via Content_Helper (already done)
-- [x] Current `_ai_seo_keeper_meta_title` draft (via `get_seo_context()` → `format_seo_context_lines()`)
-- [x] Current `_ai_seo_keeper_meta_description` draft (via `get_seo_context()` → `format_seo_context_lines()`)
+- [x] Current `_ai_seo_captain_meta_title` draft (via `get_seo_context()` → `format_seo_context_lines()`)
+- [x] Current `_ai_seo_captain_meta_description` draft (via `get_seo_context()` → `format_seo_context_lines()`)
 - [x] Social title/description, schema type, canonical, robots, cornerstone (via `format_seo_context_lines()`)
 - [ ] Snippet score metrics (title length, desc length, keyphrase-in-title, keyphrase-in-desc)
-- [ ] Page audit data if exists (`_ai_seo_keeper_page_audit` — score, issues, suggestions)
+- [ ] Page audit data if exists (`_ai_seo_captain_page_audit` — score, issues, suggestions)
 
 ### Add "Apply" button for chat suggestions:
 
@@ -138,7 +138,7 @@ Before building the content editor, inject full SEO context into the chat prompt
 Companion to `Content_Helper` — same builder detection logic, but for writing back.
 
 ```php
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
 class Content_Writer {
     /**
@@ -167,9 +167,9 @@ class Content_Writer {
 
 | Action | Purpose |
 |---|---|
-| `ai_seo_keeper_content_edit` | Request AI changeset for current page |
-| `ai_seo_keeper_apply_changes` | Apply accepted changes to page content |
-| `ai_seo_keeper_apply_suggestion` | Apply a single chat suggestion to a meta field |
+| `ai_seo_captain_content_edit` | Request AI changeset for current page |
+| `ai_seo_captain_apply_changes` | Apply accepted changes to page content |
+| `ai_seo_captain_apply_suggestion` | Apply a single chat suggestion to a meta field |
 
 ---
 

@@ -1,10 +1,10 @@
-/* AI SEO Keeper — Setup Wizard page styles */
+/* SEO Captain — Setup Wizard page styles */
 
-.aisk-wizard {
+.aisc-wizard {
     max-width: 960px;
 }
 
-.aisk-step {
+.aisc-step {
     background: #fff;
     border: 1px solid #dcdcde;
     padding: 24px;
@@ -13,19 +13,19 @@
     transition: opacity .3s;
 }
 
-.aisk-step.locked {
+.aisc-step.locked {
     opacity: 0.5;
     pointer-events: none;
 }
 
-.aisk-step-header {
+.aisc-step-header {
     display: flex;
     align-items: center;
     gap: 12px;
     margin-bottom: 12px;
 }
 
-.aisk-badge {
+.aisc-badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -39,24 +39,24 @@
     transition: background .3s;
 }
 
-.aisk-badge.pending {
+.aisc-badge.pending {
     background: #72aee6;
 }
 
-.aisk-badge.active {
+.aisc-badge.active {
     background: #2271b1;
 }
 
-.aisk-badge.done {
+.aisc-badge.done {
     background: #00a32a;
 }
 
-.aisk-progress-wrap {
+.aisc-progress-wrap {
     margin-top: 16px;
     display: none;
 }
 
-.aisk-progress-track {
+.aisc-progress-track {
     background: #f0f0f1;
     border-radius: 4px;
     overflow: hidden;
@@ -64,14 +64,14 @@
     max-width: 600px;
 }
 
-.aisk-progress-bar {
+.aisc-progress-bar {
     height: 100%;
     width: 0%;
     transition: width .3s;
     border-radius: 4px;
 }
 
-.aisk-progress-info {
+.aisc-progress-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -81,7 +81,7 @@
     color: #50575e;
 }
 
-.aisk-log {
+.aisc-log {
     margin-top: 12px;
     max-height: 300px;
     overflow-y: auto;
@@ -93,16 +93,16 @@
     border-radius: 4px;
 }
 
-.aisk-log-entry {
+.aisc-log-entry {
     padding: 4px 0;
     border-bottom: 1px solid #f0f0f1;
 }
 
-.aisk-log-entry:last-child {
+.aisc-log-entry:last-child {
     border-bottom: none;
 }
 
-.aisk-done-banner {
+.aisc-done-banner {
     display: none;
     margin-top: 12px;
     padding: 12px 16px;
@@ -110,17 +110,17 @@
     font-size: 13px;
 }
 
-.aisk-done-banner.success {
+.aisc-done-banner.success {
     background: #edf8f1;
     border: 1px solid #00a32a;
 }
 
-.aisk-done-banner.warning {
+.aisc-done-banner.warning {
     background: #fef8e7;
     border: 1px solid #dba617;
 }
 
-.aisk-error-banner {
+.aisc-error-banner {
     display: none;
     margin-top: 12px;
     padding: 12px 16px;
@@ -130,7 +130,7 @@
     font-size: 13px;
 }
 
-.aisk-controls {
+.aisc-controls {
     display: flex;
     gap: 8px;
     align-items: center;
@@ -138,11 +138,11 @@
     margin-top: 8px;
 }
 
-.aisk-controls .button {
+.aisc-controls .button {
     min-width: 100px;
 }
 
-.aisk-audit-card {
+.aisc-audit-card {
     border: 1px solid #dcdcde;
     padding: 16px;
     margin-bottom: 12px;
@@ -150,18 +150,18 @@
     border-radius: 4px;
 }
 
-.aisk-audit-header {
+.aisc-audit-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.aisk-audit-score {
+.aisc-audit-score {
     font-size: 20px;
     font-weight: 700;
 }
 
-.aisk-elapsed {
+.aisc-elapsed {
     font-size: 12px;
     color: #787c82;
     margin-left: 8px;
@@ -170,7 +170,7 @@
 /* ══════════════════════════════════════════════════════════════════════
    MODAL — Large-site operation dialog
    ══════════════════════════════════════════════════════════════════════ */
-.aisk-modal-overlay {
+.aisc-modal-overlay {
     position: fixed;
     inset: 0;
     z-index: 100000;
@@ -179,11 +179,11 @@
     transition: opacity 0.2s ease;
 }
 
-.aisk-modal-overlay.is-visible {
+.aisc-modal-overlay.is-visible {
     opacity: 1;
 }
 
-.aisk-modal {
+.aisc-modal {
     position: fixed;
     z-index: 100001;
     top: 50%;
@@ -201,12 +201,12 @@
     transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.aisk-modal.is-visible {
+.aisc-modal.is-visible {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
 }
 
-.aisk-modal__header {
+.aisc-modal__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -216,14 +216,14 @@
     border-radius: 8px 8px 0 0;
 }
 
-.aisk-modal__header h2 {
+.aisc-modal__header h2 {
     margin: 0;
     font-size: 18px;
     font-weight: 700;
     color: #1d2327;
 }
 
-.aisk-modal__close {
+.aisc-modal__close {
     background: none;
     border: none;
     font-size: 28px;
@@ -233,18 +233,18 @@
     line-height: 1;
 }
 
-.aisk-modal__close:hover {
+.aisc-modal__close:hover {
     color: #d63638;
 }
 
-.aisk-modal__body {
+.aisc-modal__body {
     padding: 24px;
     overflow-y: auto;
     flex: 1;
 }
 
 /* Info banner inside modal */
-.aisk-modal__info-banner {
+.aisc-modal__info-banner {
     display: flex;
     align-items: flex-start;
     gap: 12px;
@@ -258,14 +258,14 @@
     line-height: 1.5;
 }
 
-.aisk-modal__info-banner .dashicons {
+.aisc-modal__info-banner .dashicons {
     color: #2271b1;
     font-size: 22px;
     margin-top: 2px;
     flex-shrink: 0;
 }
 
-.aisk-modal__prompt {
+.aisc-modal__prompt {
     font-size: 15px;
     font-weight: 600;
     margin: 0 0 16px;
@@ -273,7 +273,7 @@
 }
 
 /* Section labels: "Redo:" / "New:" */
-.aisk-modal__section-label {
+.aisc-modal__section-label {
     font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
@@ -284,19 +284,19 @@
     border-bottom: 1px solid #f0f0f0;
 }
 
-.aisk-modal__section-label:first-of-type {
+.aisc-modal__section-label:first-of-type {
     margin-top: 0;
 }
 
 /* Redo list — clickable items */
-.aisk-modal__redo-list {
+.aisc-modal__redo-list {
     display: flex;
     flex-direction: column;
     gap: 8px;
     margin-bottom: 16px;
 }
 
-.aisk-modal__redo-item {
+.aisc-modal__redo-item {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -311,13 +311,13 @@
     font-size: 14px;
 }
 
-.aisk-modal__redo-item:hover {
+.aisc-modal__redo-item:hover {
     border-color: #2271b1;
     background: #f0f6fc;
     box-shadow: 0 1px 4px rgba(34, 113, 177, 0.1);
 }
 
-.aisk-modal__redo-item .dashicons {
+.aisc-modal__redo-item .dashicons {
     font-size: 20px;
     width: 20px;
     height: 20px;
@@ -325,24 +325,24 @@
     flex-shrink: 0;
 }
 
-.aisk-modal__redo-info {
+.aisc-modal__redo-info {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 2px;
 }
 
-.aisk-modal__redo-info strong {
+.aisc-modal__redo-info strong {
     font-size: 14px;
     color: #1d2327;
 }
 
-.aisk-modal__redo-info small {
+.aisc-modal__redo-info small {
     font-size: 12px;
     color: #787c82;
 }
 
-.aisk-modal__redo-badge {
+.aisc-modal__redo-badge {
     font-size: 11px;
     font-weight: 600;
     padding: 3px 8px;
@@ -351,32 +351,32 @@
     flex-shrink: 0;
 }
 
-.aisk-modal__redo-badge.is-complete {
+.aisc-modal__redo-badge.is-complete {
     background: #edf8f1;
     color: #00a32a;
     border: 1px solid #b8e6c8;
 }
 
-.aisk-modal__redo-badge.is-partial {
+.aisc-modal__redo-badge.is-partial {
     background: #fef8e7;
     color: #996800;
     border: 1px solid #f0c33c;
 }
 
-.aisk-modal__redo-badge.is-pending {
+.aisc-modal__redo-badge.is-pending {
     background: #f6f7f7;
     color: #787c82;
     border: 1px solid #dcdcde;
 }
 
 /* Two option buttons side-by-side */
-.aisk-modal__options {
+.aisc-modal__options {
     display: flex;
     gap: 16px;
     margin-bottom: 8px;
 }
 
-.aisk-modal__option-btn {
+.aisc-modal__option-btn {
     flex: 1;
     display: flex;
     align-items: flex-start;
@@ -392,7 +392,7 @@
     line-height: 1.4;
 }
 
-.aisk-modal__option-btn .dashicons {
+.aisc-modal__option-btn .dashicons {
     font-size: 24px;
     width: 24px;
     height: 24px;
@@ -400,31 +400,31 @@
     flex-shrink: 0;
 }
 
-.aisk-modal__option-btn.is-primary .dashicons {
+.aisc-modal__option-btn.is-primary .dashicons {
     color: #00a32a;
 }
 
-.aisk-modal__option-btn.is-secondary .dashicons {
+.aisc-modal__option-btn.is-secondary .dashicons {
     color: #2271b1;
 }
 
-.aisk-modal__option-btn:hover {
+.aisc-modal__option-btn:hover {
     border-color: #2271b1;
     box-shadow: 0 2px 8px rgba(34, 113, 177, 0.12);
     background: #f9fcff;
 }
 
-.aisk-modal__option-btn small {
+.aisc-modal__option-btn small {
     color: #50575e;
     font-weight: 400;
 }
 
 /* ── List creation panel ── */
-.aisk-modal__list-header {
+.aisc-modal__list-header {
     margin-bottom: 14px;
 }
 
-.aisk-modal__list-header label {
+.aisc-modal__list-header label {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -432,7 +432,7 @@
     font-size: 14px;
 }
 
-.aisk-modal__list-name {
+.aisc-modal__list-name {
     flex: 1;
     padding: 6px 10px;
     font-size: 14px;
@@ -440,7 +440,7 @@
     border-radius: 4px;
 }
 
-.aisk-modal__search-bar {
+.aisc-modal__search-bar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -448,7 +448,7 @@
     margin-bottom: 12px;
 }
 
-.aisk-modal__search {
+.aisc-modal__search {
     flex: 1;
     min-width: 160px;
     padding: 6px 10px;
@@ -457,35 +457,35 @@
     border-radius: 4px;
 }
 
-.aisk-modal__filters {
+.aisc-modal__filters {
     display: flex;
     gap: 4px;
 }
 
-.aisk-modal__filter {
+.aisc-modal__filter {
     font-size: 12px !important;
     padding: 2px 10px !important;
 }
 
-.aisk-modal__filter.is-active {
+.aisc-modal__filter.is-active {
     background: #2271b1 !important;
     color: #fff !important;
     border-color: #2271b1 !important;
 }
 
-.aisk-modal__bulk {
+.aisc-modal__bulk {
     font-size: 12px;
     color: #50575e;
 }
 
-.aisk-modal__count {
+.aisc-modal__count {
     font-weight: 600;
     color: #1d2327;
     margin-left: 6px;
 }
 
 /* Page list */
-.aisk-modal__page-list {
+.aisc-modal__page-list {
     max-height: 320px;
     overflow-y: auto;
     border: 1px solid #dcdcde;
@@ -493,14 +493,14 @@
     background: #f6f7f7;
 }
 
-.aisk-modal__loading {
+.aisc-modal__loading {
     padding: 20px;
     text-align: center;
     color: #787c82;
     font-size: 13px;
 }
 
-.aisk-modal__page-row {
+.aisc-modal__page-row {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -511,20 +511,20 @@
     transition: background 0.1s;
 }
 
-.aisk-modal__page-row:last-child {
+.aisc-modal__page-row:last-child {
     border-bottom: none;
 }
 
-.aisk-modal__page-row:hover {
+.aisc-modal__page-row:hover {
     background: #e9f0f7;
 }
 
-.aisk-modal__page-row input[type="checkbox"] {
+.aisc-modal__page-row input[type="checkbox"] {
     flex-shrink: 0;
     margin: 0;
 }
 
-.aisk-modal__page-title {
+.aisc-modal__page-title {
     flex: 1;
     font-weight: 500;
     min-width: 0;
@@ -533,13 +533,13 @@
     white-space: nowrap;
 }
 
-.aisk-modal__page-meta {
+.aisc-modal__page-meta {
     color: #787c82;
     font-size: 11px;
     white-space: nowrap;
 }
 
-.aisk-modal__badge {
+.aisc-modal__badge {
     font-size: 10px;
     font-weight: 600;
     padding: 1px 6px;
@@ -547,18 +547,18 @@
     white-space: nowrap;
 }
 
-.aisk-modal__badge.is-good {
+.aisc-modal__badge.is-good {
     background: #d4edda;
     color: #155724;
 }
 
-.aisk-modal__badge.is-pending {
+.aisc-modal__badge.is-pending {
     background: #fff3cd;
     color: #856404;
 }
 
 /* Footer */
-.aisk-modal__list-footer {
+.aisc-modal__list-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -570,13 +570,13 @@
 /* ══════════════════════════════════════════════════════════════════════
    RUNS (LISTS) — Badges shown under Steps 2 & 3
    ══════════════════════════════════════════════════════════════════════ */
-.aisk-runs-summary {
+.aisc-runs-summary {
     margin-top: 16px;
     padding-top: 14px;
     border-top: 1px dashed #dcdcde;
 }
 
-.aisk-runs-title {
+.aisc-runs-title {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -586,14 +586,14 @@
     color: #1d2327;
 }
 
-.aisk-runs-title .dashicons {
+.aisc-runs-title .dashicons {
     color: #2271b1;
     font-size: 18px;
     width: 18px;
     height: 18px;
 }
 
-.aisk-run-badge {
+.aisc-run-badge {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -605,43 +605,43 @@
     background: #f6f7f7;
 }
 
-.aisk-run-badge strong {
+.aisc-run-badge strong {
     font-weight: 600;
 }
 
-.aisk-run-badge span {
+.aisc-run-badge span {
     color: #50575e;
 }
 
-.aisk-run-badge .dashicons {
+.aisc-run-badge .dashicons {
     font-size: 16px;
     width: 16px;
     height: 16px;
 }
 
-.aisk-run-badge.is-complete {
+.aisc-run-badge.is-complete {
     background: #d4edda;
     border-color: #28a745;
     color: #155724;
 }
 
-.aisk-run-badge.is-complete .dashicons {
+.aisc-run-badge.is-complete .dashicons {
     color: #28a745;
 }
 
-.aisk-run-badge.is-partial {
+.aisc-run-badge.is-partial {
     background: #fff3cd;
     border-color: #f0c36d;
     color: #856404;
 }
 
-.aisk-run-badge.is-pending {
+.aisc-run-badge.is-pending {
     background: #f0f0f1;
     border-color: #c3c4c7;
     color: #787c82;
 }
 
-.aisk-run-delete {
+.aisc-run-delete {
     background: none;
     border: none;
     font-size: 16px;
@@ -653,6 +653,6 @@
     transition: color 0.15s;
 }
 
-.aisk-run-delete:hover {
+.aisc-run-delete:hover {
     color: #d63638;
 }

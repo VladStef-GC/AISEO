@@ -1,6 +1,6 @@
 <?php
 
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
 class AI_Generator
 {
@@ -25,7 +25,7 @@ class AI_Generator
         $options = $this->settings->get();
 
         if (empty($options['api_key'])) {
-            throw new \RuntimeException('Add an API key in AI SEO Keeper Settings before generating suggestions.');
+            throw new \RuntimeException('Add an API key in SEO Captain Settings before generating suggestions.');
         }
 
         $provider = (string) $options['provider'];
@@ -74,7 +74,7 @@ class AI_Generator
         $options = $this->settings->get();
 
         if (empty($options['api_key'])) {
-            throw new \RuntimeException('Add an API key in AI SEO Keeper Settings before generating AI site audits.');
+            throw new \RuntimeException('Add an API key in SEO Captain Settings before generating AI site audits.');
         }
 
         $provider = (string) $options['provider'];
@@ -92,7 +92,7 @@ class AI_Generator
         }
 
         $payload = $this->decode_json_payload($raw_response);
-        $audit_title = isset($payload['audit_title']) ? sanitize_text_field((string) $payload['audit_title']) : 'AI SEO Keeper Site Audit';
+        $audit_title = isset($payload['audit_title']) ? sanitize_text_field((string) $payload['audit_title']) : 'SEO Captain Site Audit';
         $executive_summary = isset($payload['executive_summary']) ? sanitize_textarea_field((string) $payload['executive_summary']) : '';
         $notes = isset($payload['notes']) ? sanitize_textarea_field((string) $payload['notes']) : '';
         $priority_actions = $this->sanitize_string_list($payload['priority_actions'] ?? array(), 5);
@@ -133,7 +133,7 @@ class AI_Generator
         $options = $this->settings->get();
 
         if (empty($options['api_key'])) {
-            throw new \RuntimeException('Add an API key in AI SEO Keeper Settings before using the AI assistant.');
+            throw new \RuntimeException('Add an API key in SEO Captain Settings before using the AI assistant.');
         }
 
         $provider = (string) $options['provider'];
@@ -190,7 +190,7 @@ class AI_Generator
 
         return trim(
             $base_prompt . "\n\n" .
-                'IDENTITY: You are the AI inside the "AI SEO Keeper" WordPress plugin. This plugin handles ALL SEO. The user does NOT use Yoast, RankMath, or any other SEO plugin — never mention them.' . "\n" .
+                'IDENTITY: You are the AI inside the "SEO Captain" WordPress plugin. This plugin handles ALL SEO. The user does NOT use Yoast, RankMath, or any other SEO plugin — never mention them.' . "\n" .
                 'Return only valid JSON with exactly these keys: seo_title, meta_description, focus_keyphrase, social_title, social_description, notes. ' .
                 'Do not use markdown fences. Keep the title at or under 60 characters (total including branding). ' .
                 'Keep the meta description at or under 155 characters, ideally around 140-155. ' .
@@ -231,10 +231,10 @@ class AI_Generator
 
         return trim(
             $base_prompt . "\n\n" .
-                'IDENTITY: You are the AI inside the "AI SEO Keeper" WordPress plugin. ' .
+                'IDENTITY: You are the AI inside the "SEO Captain" WordPress plugin. ' .
                 'This plugin handles ALL on-page SEO: meta titles, descriptions, schema markup, Open Graph, sitemaps, and audits. ' .
                 'The user does NOT use Yoast, RankMath, or any other SEO plugin — never mention them. ' .
-                'Always refer to "AI SEO Keeper" when discussing the SEO plugin or its features.' . "\n\n" .
+                'Always refer to "SEO Captain" when discussing the SEO plugin or its features.' . "\n\n" .
                 'Return only valid JSON with exactly these keys: reply, suggested_title, suggested_description, wants_edits, notes. ' .
                 'reply should answer the user directly with a clear, actionable plan. ' .
                 'wants_edits must be true when the user asks you to improve, fix, or change page CONTENT (headings, paragraphs, links, images, structure). Set it false for questions or metadata-only requests.' . "\n\n" .
@@ -242,7 +242,7 @@ class AI_Generator
                 'the page hierarchy (parent page, sibling pages, child pages — all with their SEO titles, keyphrases, and meta descriptions), ' .
                 'keyphrase conflict warnings (other pages targeting the same keyphrase), and the site structure tree. Use ALL of it.' . "\n\n" .
                 'TWO SEO CATEGORIES — always distinguish clearly:' . "\n" .
-                '  A) SEO METADATA = title, meta description, focus keyphrase, canonical URL, robots directives, schema type, OG tags. These are managed by AI SEO Keeper fields.' . "\n" .
+                '  A) SEO METADATA = title, meta description, focus keyphrase, canonical URL, robots directives, schema type, OG tags. These are managed by SEO Captain fields.' . "\n" .
                 '  B) SEO CONTENT/STRUCTURE = H1-H6 headings, body text, word count, images with alt tags, internal/external links, CTAs, page hierarchy. These require page content edits.' . "\n\n" .
                 'HIERARCHY & CANNIBALIZATION RULES:' . "\n" .
                 '8. Use the Page Hierarchy data to understand WHERE this page sits in the site. A child page must have different SEO focus than its parent and siblings.' . "\n" .
@@ -268,15 +268,15 @@ class AI_Generator
         // Use browser values if provided, otherwise fall back to saved meta.
         $focus_keyphrase = isset($overrides['focus_keyphrase']) && '' !== $overrides['focus_keyphrase']
             ? trim(wp_strip_all_tags($overrides['focus_keyphrase']))
-            : trim(wp_strip_all_tags((string) get_post_meta($post->ID, '_ai_seo_keeper_focus_keyphrase', true)));
+            : trim(wp_strip_all_tags((string) get_post_meta($post->ID, '_ai_seo_captain_focus_keyphrase', true)));
 
         $seo_title_draft = isset($overrides['seo_title']) && null !== $overrides['seo_title']
             ? trim($overrides['seo_title'])
-            : trim((string) get_post_meta($post->ID, '_ai_seo_keeper_meta_title', true));
+            : trim((string) get_post_meta($post->ID, '_ai_seo_captain_meta_title', true));
 
         $meta_desc_draft = isset($overrides['meta_description']) && null !== $overrides['meta_description']
             ? trim($overrides['meta_description'])
-            : trim((string) get_post_meta($post->ID, '_ai_seo_keeper_meta_description', true));
+            : trim((string) get_post_meta($post->ID, '_ai_seo_captain_meta_description', true));
 
         // Snippet score metrics.
         $title_len = mb_strlen($seo_title_draft);
@@ -285,36 +285,36 @@ class AI_Generator
         $kw_in_desc = '' !== $focus_keyphrase && '' !== $meta_desc_draft && false !== mb_stripos($meta_desc_draft, $focus_keyphrase);
 
         // Page audit data (if previously audited).
-        $audit_raw = get_post_meta($post->ID, '_ai_seo_keeper_page_audit', true);
+        $audit_raw = get_post_meta($post->ID, '_ai_seo_captain_page_audit', true);
         $audit_data = is_array($audit_raw) ? $audit_raw : array();
 
         // Additional tab data for full context.
         $social_title = isset($overrides['social_title']) && null !== $overrides['social_title']
             ? trim($overrides['social_title'])
-            : trim((string) get_post_meta($post->ID, '_ai_seo_keeper_social_title', true));
+            : trim((string) get_post_meta($post->ID, '_ai_seo_captain_social_title', true));
 
         $social_description = isset($overrides['social_description']) && null !== $overrides['social_description']
             ? trim($overrides['social_description'])
-            : trim((string) get_post_meta($post->ID, '_ai_seo_keeper_social_description', true));
+            : trim((string) get_post_meta($post->ID, '_ai_seo_captain_social_description', true));
 
         $schema_type = isset($overrides['schema_type']) && null !== $overrides['schema_type']
             ? trim($overrides['schema_type'])
-            : trim((string) get_post_meta($post->ID, '_ai_seo_keeper_schema_type', true));
+            : trim((string) get_post_meta($post->ID, '_ai_seo_captain_schema_type', true));
 
         $canonical_url = isset($overrides['canonical_url']) && null !== $overrides['canonical_url']
             ? trim($overrides['canonical_url'])
-            : trim((string) get_post_meta($post->ID, '_ai_seo_keeper_canonical_url', true));
+            : trim((string) get_post_meta($post->ID, '_ai_seo_captain_canonical_url', true));
 
         $robots_directives = isset($overrides['robots_directives']) && null !== $overrides['robots_directives']
             ? trim($overrides['robots_directives'])
-            : trim((string) get_post_meta($post->ID, '_ai_seo_keeper_robots_directives', true));
+            : trim((string) get_post_meta($post->ID, '_ai_seo_captain_robots_directives', true));
 
         $is_cornerstone = isset($overrides['cornerstone']) && null !== $overrides['cornerstone']
             ? ('1' === $overrides['cornerstone'])
-            : (! empty(get_post_meta($post->ID, '_ai_seo_keeper_cornerstone', true)));
+            : (! empty(get_post_meta($post->ID, '_ai_seo_captain_cornerstone', true)));
 
         // WooCommerce product data (supplied by WooCommerce_Integration filter when active).
-        $wc_data = apply_filters('ai_seo_keeper_product_context', array(), $post);
+        $wc_data = apply_filters('ai_seo_captain_product_context', array(), $post);
 
         // Hierarchy context for AI Chat (parent, siblings, children with SEO meta).
         $hierarchy = $this->content_indexer->get_hierarchy_context((int) $post->ID);
@@ -983,7 +983,7 @@ class AI_Generator
         $options = $this->settings->get();
 
         if (empty($options['api_key'])) {
-            throw new \RuntimeException('Add an API key in AI SEO Keeper Settings before generating page audits.');
+            throw new \RuntimeException('Add an API key in SEO Captain Settings before generating page audits.');
         }
 
         $provider = (string) $options['provider'];
@@ -1026,7 +1026,7 @@ class AI_Generator
         $options = $this->settings->get();
 
         if (empty($options['api_key'])) {
-            throw new \RuntimeException('Add an API key in AI SEO Keeper Settings before requesting content changes.');
+            throw new \RuntimeException('Add an API key in SEO Captain Settings before requesting content changes.');
         }
 
         $provider = (string) $options['provider'];
@@ -1147,7 +1147,7 @@ class AI_Generator
 
         return trim(
             $base_prompt . "\n\n" .
-                'IDENTITY: You are the AI inside the "AI SEO Keeper" WordPress plugin. This plugin handles ALL SEO. The user does NOT use Yoast, RankMath, or any other SEO plugin — never mention them.' . "\n" .
+                'IDENTITY: You are the AI inside the "SEO Captain" WordPress plugin. This plugin handles ALL SEO. The user does NOT use Yoast, RankMath, or any other SEO plugin — never mention them.' . "\n" .
                 'Return only valid JSON with exactly these keys: score, issues, suggestions, missing_alt_tags, word_count, heading_structure, summary. ' .
                 'score is 0-100 representing overall SEO health. ' .
                 'issues is an array of short strings describing problems found. ' .

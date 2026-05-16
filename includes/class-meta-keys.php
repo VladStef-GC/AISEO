@@ -1,42 +1,42 @@
 <?php
 
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
 /**
  * Centralized post/term meta key constants.
  *
  * Use these instead of duplicating key strings across classes.
- * Example: Meta_Keys::TITLE instead of '_ai_seo_keeper_meta_title'.
+ * Example: Meta_Keys::TITLE instead of '_ai_seo_captain_meta_title'.
  */
 final class Meta_Keys
 {
     // --- Post meta keys ---------------------------------------------------
 
-    public const TITLE              = '_ai_seo_keeper_meta_title';
-    public const DESCRIPTION        = '_ai_seo_keeper_meta_description';
-    public const FOCUS_KEYPHRASE    = '_ai_seo_keeper_focus_keyphrase';
-    public const SOCIAL_TITLE       = '_ai_seo_keeper_social_title';
-    public const SOCIAL_DESCRIPTION = '_ai_seo_keeper_social_description';
-    public const SOCIAL_IMAGE       = '_ai_seo_keeper_social_image';
-    public const CANONICAL          = '_ai_seo_keeper_canonical_url';
-    public const ROBOTS             = '_ai_seo_keeper_robots_directives';
-    public const SCHEMA_TYPE        = '_ai_seo_keeper_schema_type';
-    public const FRONTEND_ON        = '_ai_seo_keeper_frontend_enabled';
-    public const APPROVED_MSG       = '_ai_seo_keeper_approved_message_id';
-    public const BRANDING_OFF       = '_ai_seo_keeper_title_branding_off';
-    public const CORNERSTONE        = '_ai_seo_keeper_cornerstone';
-    public const HREFLANG           = '_ai_seo_keeper_hreflang';
-    public const PAGE_AUDIT         = '_ai_seo_keeper_page_audit';
-    public const PENDING_CHANGES    = '_ai_seo_keeper_pending_content_changes';
-    public const CONTENT_BACKUP     = '_ai_seo_keeper_content_backup';
-    public const AUDIT_SKIP         = '_ai_seo_keeper_audit_skip';
+    public const TITLE              = '_ai_seo_captain_meta_title';
+    public const DESCRIPTION        = '_ai_seo_captain_meta_description';
+    public const FOCUS_KEYPHRASE    = '_ai_seo_captain_focus_keyphrase';
+    public const SOCIAL_TITLE       = '_ai_seo_captain_social_title';
+    public const SOCIAL_DESCRIPTION = '_ai_seo_captain_social_description';
+    public const SOCIAL_IMAGE       = '_ai_seo_captain_social_image';
+    public const CANONICAL          = '_ai_seo_captain_canonical_url';
+    public const ROBOTS             = '_ai_seo_captain_robots_directives';
+    public const SCHEMA_TYPE        = '_ai_seo_captain_schema_type';
+    public const FRONTEND_ON        = '_ai_seo_captain_frontend_enabled';
+    public const APPROVED_MSG       = '_ai_seo_captain_approved_message_id';
+    public const BRANDING_OFF       = '_ai_seo_captain_title_branding_off';
+    public const CORNERSTONE        = '_ai_seo_captain_cornerstone';
+    public const HREFLANG           = '_ai_seo_captain_hreflang';
+    public const PAGE_AUDIT         = '_ai_seo_captain_page_audit';
+    public const PENDING_CHANGES    = '_ai_seo_captain_pending_content_changes';
+    public const CONTENT_BACKUP     = '_ai_seo_captain_content_backup';
+    public const AUDIT_SKIP         = '_ai_seo_captain_audit_skip';
 
     // --- Term meta keys ---------------------------------------------------
 
-    public const TERM_SEO_TITLE       = '_ai_seo_keeper_seo_title';
-    public const TERM_META_DESCRIPTION = '_ai_seo_keeper_meta_description';
-    public const TERM_CANONICAL       = '_ai_seo_keeper_canonical';
-    public const TERM_NOINDEX         = '_ai_seo_keeper_noindex';
+    public const TERM_SEO_TITLE       = '_ai_seo_captain_seo_title';
+    public const TERM_META_DESCRIPTION = '_ai_seo_captain_meta_description';
+    public const TERM_CANONICAL       = '_ai_seo_captain_canonical';
+    public const TERM_NOINDEX         = '_ai_seo_captain_noindex';
 
     /**
      * All post meta keys managed by the plugin.

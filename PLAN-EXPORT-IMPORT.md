@@ -1,4 +1,4 @@
-# AI SEO Keeper — Export/Import Overhaul Plan
+# SEO Captain — Export/Import Overhaul Plan
 
 **Version:** 1.0  
 **Date:** 2026-05-16  
@@ -29,7 +29,7 @@ This applies to ALL import modes — including Force Import.
 ### 2.1 Exported (partial)
 | Data | Status |
 |------|--------|
-| Plugin settings (`ai_seo_keeper_options`) | ✅ Exported (minus API keys) |
+| Plugin settings (`ai_seo_captain_options`) | ✅ Exported (minus API keys) |
 | 12 of 18 post meta keys | ✅ Partial |
 | Redirects (type=redirect only, no stats) | ✅ Partial |
 
@@ -37,15 +37,15 @@ This applies to ALL import modes — including Force Import.
 | Data | Type |
 |------|------|
 | 6 post meta keys | `title_branding_off`, `page_audit`, `audit_skip`, `approved_message_id`, `pending_content_changes`, `content_backup` |
-| ALL 4 term meta keys | `_ai_seo_keeper_seo_title`, `_ai_seo_keeper_meta_description`, `_ai_seo_keeper_canonical`, `_ai_seo_keeper_noindex` |
-| Content index table | `{prefix}ai_seo_keeper_content_index` |
-| Conversations table | `{prefix}ai_seo_keeper_conversations` |
-| Messages table | `{prefix}ai_seo_keeper_messages` |
-| Runs table | `{prefix}ai_seo_keeper_runs` |
+| ALL 4 term meta keys | `_ai_seo_captain_seo_title`, `_ai_seo_captain_meta_description`, `_ai_seo_captain_canonical`, `_ai_seo_captain_noindex` |
+| Content index table | `{prefix}ai_seo_captain_content_index` |
+| Conversations table | `{prefix}ai_seo_captain_conversations` |
+| Messages table | `{prefix}ai_seo_captain_messages` |
+| Runs table | `{prefix}ai_seo_captain_runs` |
 | 404 entries | Redirects table where type=404 |
 | Redirect stats | `hit_count`, `last_hit`, `created_at` columns |
-| IndexNow log | `ai_seo_keeper_indexnow_log` option |
-| Wizard flags | `ai_seo_keeper_step2_all_done`, `ai_seo_keeper_step3_all_done` |
+| IndexNow log | `ai_seo_captain_indexnow_log` option |
+| Wizard flags | `ai_seo_captain_step2_all_done`, `ai_seo_captain_step3_all_done` |
 
 ### 2.3 Import Limitations
 - Single JSON upload, no mode selection
@@ -62,7 +62,7 @@ This applies to ALL import modes — including Force Import.
 
 | # | Checkbox Label | Data Included | Default |
 |---|---------------|---------------|---------|
-| 1 | **Plugin Settings** | `ai_seo_keeper_options` (minus API keys), wizard completion flags | ✅ On |
+| 1 | **Plugin Settings** | `ai_seo_captain_options` (minus API keys), wizard completion flags | ✅ On |
 | 2 | **SEO Metadata (Posts & Pages)** | All 18 post meta keys for all post types | ✅ On |
 | 3 | **SEO Metadata (Terms)** | All 4 term meta keys for all taxonomies | ✅ On |
 | 4 | **Page Audits & Content Index** | `page_audit` meta + content index table | ✅ On |
@@ -79,17 +79,17 @@ This applies to ALL import modes — including Force Import.
 | `pending_content_changes` | Transient/in-progress data |
 | `content_backup` | Transient — content before AI edit |
 | `approved_message_id` | References chat IDs that won't exist on target |
-| User meta (`_ai_seo_keeper_active_runs`) | Per-user state, not site data |
-| `ai_seo_keeper_db_version` | Target site manages its own DB version |
+| User meta (`_ai_seo_captain_active_runs`) | Per-user state, not site data |
+| `ai_seo_captain_db_version` | Target site manages its own DB version |
 | Page content / media | Out of scope — WordPress handles this natively |
 
 ### 3.3 Export File Format
 
-**Filename:** `ai-seo-keeper-export-{domain}-{YYYY-MM-DD}.json`
+**Filename:** `ai-seo-captain-export-{domain}-{YYYY-MM-DD}.json`
 
 ```json
 {
-  "plugin": "ai-seo-keeper",
+  "plugin": "ai-seo-captain",
   "format_version": "2.0",
   "plugin_version": "1.0.0-beta",
   "exported_at": "2026-05-16T10:30:00Z",
@@ -118,21 +118,21 @@ This applies to ALL import modes — including Force Import.
           "original_id": 42
         },
         "meta": {
-          "_ai_seo_keeper_meta_title": "About Us | Company Name",
-          "_ai_seo_keeper_meta_description": "Learn about...",
-          "_ai_seo_keeper_focus_keyphrase": "about company",
-          "_ai_seo_keeper_social_title": "...",
-          "_ai_seo_keeper_social_description": "...",
-          "_ai_seo_keeper_social_image": "https://site-a.com/wp-content/uploads/...",
-          "_ai_seo_keeper_schema_type": "WebPage",
-          "_ai_seo_keeper_canonical_url": "https://site-a.com/about-us/",
-          "_ai_seo_keeper_robots_directives": "",
-          "_ai_seo_keeper_frontend_enabled": "1",
-          "_ai_seo_keeper_cornerstone": "1",
-          "_ai_seo_keeper_hreflang": "",
-          "_ai_seo_keeper_title_branding_off": "0",
-          "_ai_seo_keeper_page_audit": "{...audit JSON...}",
-          "_ai_seo_keeper_audit_skip": "0"
+          "_ai_seo_captain_meta_title": "About Us | Company Name",
+          "_ai_seo_captain_meta_description": "Learn about...",
+          "_ai_seo_captain_focus_keyphrase": "about company",
+          "_ai_seo_captain_social_title": "...",
+          "_ai_seo_captain_social_description": "...",
+          "_ai_seo_captain_social_image": "https://site-a.com/wp-content/uploads/...",
+          "_ai_seo_captain_schema_type": "WebPage",
+          "_ai_seo_captain_canonical_url": "https://site-a.com/about-us/",
+          "_ai_seo_captain_robots_directives": "",
+          "_ai_seo_captain_frontend_enabled": "1",
+          "_ai_seo_captain_cornerstone": "1",
+          "_ai_seo_captain_hreflang": "",
+          "_ai_seo_captain_title_branding_off": "0",
+          "_ai_seo_captain_page_audit": "{...audit JSON...}",
+          "_ai_seo_captain_audit_skip": "0"
         }
       }
     ],
@@ -145,10 +145,10 @@ This applies to ALL import modes — including Force Import.
           "original_term_id": 5
         },
         "meta": {
-          "_ai_seo_keeper_seo_title": "News Articles",
-          "_ai_seo_keeper_meta_description": "Latest news...",
-          "_ai_seo_keeper_canonical": "",
-          "_ai_seo_keeper_noindex": "0"
+          "_ai_seo_captain_seo_title": "News Articles",
+          "_ai_seo_captain_meta_description": "Latest news...",
+          "_ai_seo_captain_canonical": "",
+          "_ai_seo_captain_noindex": "0"
         }
       }
     ],
@@ -190,7 +190,7 @@ This applies to ALL import modes — including Force Import.
 ### 4.1 Force Import
 
 **What it does:**
-- For every **matched** page/term: DELETES all existing AI SEO Keeper meta and REPLACES with export data
+- For every **matched** page/term: DELETES all existing SEO Captain meta and REPLACES with export data
 - Unmatched pages on target: **LEFT COMPLETELY ALONE** (no deletion, no modification)
 - Unmatched pages in export: reported as "skipped — not found on target"
 - Settings: completely overwritten with export values
@@ -284,8 +284,8 @@ If `source_domain` in the export ≠ current site domain, prompt user:
 
 | Field | Rewrite? |
 |-------|----------|
-| `_ai_seo_keeper_canonical_url` | ✅ Yes — replace domain |
-| `_ai_seo_keeper_social_image` | ✅ Yes — replace domain (media must exist on target) |
+| `_ai_seo_captain_canonical_url` | ✅ Yes — replace domain |
+| `_ai_seo_captain_social_image` | ✅ Yes — replace domain (media must exist on target) |
 | Redirect `source_url` | ⚠️ Only if absolute URLs (relative paths stay as-is) |
 | Redirect `target_url` | ✅ Yes — replace domain |
 | Content index URLs | ✅ Yes — replace domain |
@@ -309,7 +309,7 @@ If `source_domain` in the export ≠ current site domain, prompt user:
 **Screen shows:**
 - File upload dropzone
 - After upload, display:
-  - ✅ Valid AI SEO Keeper export file
+  - ✅ Valid SEO Captain export file
   - Source: `site-a.com`
   - Exported: May 16, 2026
   - Plugin version: 1.0.0-beta
@@ -483,7 +483,7 @@ Only for Force Import mode:
 ### 8.3 File Structure
 
 ```
-ai-seo-keeper/
+ai-seo-captain/
 ├── includes/
 │   ├── admin/
 │   │   ├── class-admin-import-export.php    ← EXISTING (will be refactored)
@@ -531,11 +531,11 @@ ai-seo-keeper/
 
 | Action | Purpose |
 |--------|---------|
-| `aisk_export_generate` | Generate and download export file |
-| `aisk_import_validate` | Validate uploaded JSON, return summary |
-| `aisk_import_match` | Run matching algorithm, return results |
-| `aisk_import_process` | Process next chunk of items |
-| `aisk_import_report` | Generate final import report |
+| `aisc_export_generate` | Generate and download export file |
+| `aisc_import_validate` | Validate uploaded JSON, return summary |
+| `aisc_import_match` | Run matching algorithm, return results |
+| `aisc_import_process` | Process next chunk of items |
+| `aisc_import_report` | Generate final import report |
 
 ---
 

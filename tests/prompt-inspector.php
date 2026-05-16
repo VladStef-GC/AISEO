@@ -23,7 +23,7 @@
  * │  It is NOT loaded by the plugin — 100% standalone.          │
  * └─────────────────────────────────────────────────────────────┘
  *
- * @package AI_SEO_Keeper
+ * @package AI_SEO_Captain
  */
 
 // ──────────────────────────────────────────────────────────────────────
@@ -46,12 +46,12 @@ $_SERVER['SCRIPT_NAME']  = '/wp-admin/admin.php';
 require_once $wp_load;
 wp_set_current_user(1);
 
-use AI_SEO_Keeper\Settings;
-use AI_SEO_Keeper\Content_Indexer;
-use AI_SEO_Keeper\Audit_Engine;
-use AI_SEO_Keeper\AI_Generator;
-use AI_SEO_Keeper\History_Store;
-use AI_SEO_Keeper\Site_Chat;
+use AI_SEO_Captain\Settings;
+use AI_SEO_Captain\Content_Indexer;
+use AI_SEO_Captain\Audit_Engine;
+use AI_SEO_Captain\AI_Generator;
+use AI_SEO_Captain\History_Store;
+use AI_SEO_Captain\Site_Chat;
 
 // ──────────────────────────────────────────────────────────────────────
 //  2. Parse CLI arguments
@@ -193,7 +193,7 @@ if ($output_json) {
 // ─── Human-readable output ───────────────────────────────────────────
 
 echo "╔══════════════════════════════════════════════════════════════╗\n";
-echo "║          AI SEO Keeper — Prompt Inspector                    ║\n";
+echo "║          SEO Captain — Prompt Inspector                    ║\n";
 echo "║          " . $output['generated_at'] . "                      ║\n";
 echo "╚══════════════════════════════════════════════════════════════╝\n\n";
 

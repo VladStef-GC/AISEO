@@ -1,5 +1,5 @@
 /**
- * AI SEO Keeper — Bulk Editor page scripts
+ * SEO Captain — Bulk Editor page scripts
  */
 (function ($) {
     'use strict';
@@ -22,7 +22,7 @@
         btn.prop('disabled', true).text('Saving…');
 
         $.post(ajaxurl, {
-            action: 'ai_seo_keeper_bulk_save_seo',
+            action: 'ai_seo_captain_bulk_save_seo',
             _nonce: nonce,
             post_id: postId,
             seo_title: row.find('.ai-seo-bulk-title').val(),
@@ -42,7 +42,7 @@
 
     // ── Site structure tree ──────────────────────────────────────
     (function () {
-        var treeContainer = document.getElementById('aisk-site-tree');
+        var treeContainer = document.getElementById('aisc-site-tree');
         if (!treeContainer || typeof aiSeoBulkEditor === 'undefined' || !aiSeoBulkEditor.treeData) return;
 
         var treeData = aiSeoBulkEditor.treeData;
@@ -76,7 +76,7 @@
                 var slug = '/' + n.slug;
                 html += '<li style="margin:2px 0;">';
                 if (hasKids) {
-                    html += '<span class="aisk-tree-toggle" style="cursor:pointer;display:inline-block;width:18px;text-align:center;font-weight:700;color:#2271b1;user-select:none;" data-expanded="1">\u2212</span>';
+                    html += '<span class="aisc-tree-toggle" style="cursor:pointer;display:inline-block;width:18px;text-align:center;font-weight:700;color:#2271b1;user-select:none;" data-expanded="1">\u2212</span>';
                 } else {
                     html += '<span style="display:inline-block;width:18px;text-align:center;color:#c3c4c7;">\u00B7</span>';
                 }
@@ -85,7 +85,7 @@
                 html += ' <span style="color:#787c82;font-size:12px;">' + esc(slug) + '</span>';
                 html += statusBadge;
                 if (hasKids) {
-                    html += '<div class="aisk-tree-children">' + buildTree(n.id, depth + 1) + '</div>';
+                    html += '<div class="aisc-tree-children">' + buildTree(n.id, depth + 1) + '</div>';
                 }
                 html += '</li>';
             }
@@ -109,9 +109,9 @@
             var icon = typeIcons[pt] || '\uD83D\uDCCE';
             var label = pt.charAt(0).toUpperCase() + pt.slice(1) + 's';
             flatHtml += '<div style="margin-top:12px;">';
-            flatHtml += '<span class="aisk-tree-toggle" style="cursor:pointer;display:inline-block;width:18px;text-align:center;font-weight:700;color:#2271b1;user-select:none;" data-expanded="1">\u2212</span>';
+            flatHtml += '<span class="aisc-tree-toggle" style="cursor:pointer;display:inline-block;width:18px;text-align:center;font-weight:700;color:#2271b1;user-select:none;" data-expanded="1">\u2212</span>';
             flatHtml += '<strong>' + icon + ' ' + esc(label) + ' (' + flatTypes[pt].length + ')</strong>';
-            flatHtml += '<div class="aisk-tree-children"><ul style="list-style:none;margin:0;padding-left:20px;">';
+            flatHtml += '<div class="aisc-tree-children"><ul style="list-style:none;margin:0;padding-left:20px;">';
             for (var k = 0; k < flatTypes[pt].length; k++) {
                 var fn = flatTypes[pt][k];
                 var statusB = fn.status !== 'publish' ? ' <span style="font-size:11px;color:#dba617;font-weight:600;">(' + esc(fn.status) + ')</span>' : '';
@@ -123,9 +123,9 @@
         treeContainer.innerHTML = pageTree + flatHtml;
 
         treeContainer.addEventListener('click', function (e) {
-            var toggle = e.target.closest('.aisk-tree-toggle');
+            var toggle = e.target.closest('.aisc-tree-toggle');
             if (!toggle) return;
-            var children = toggle.parentElement.querySelector('.aisk-tree-children');
+            var children = toggle.parentElement.querySelector('.aisc-tree-children');
             if (!children) return;
             var expanded = toggle.getAttribute('data-expanded') === '1';
             if (expanded) {
@@ -139,26 +139,26 @@
             }
         });
 
-        var expandAll = document.getElementById('aisk-tree-expand-all');
-        var collapseAll = document.getElementById('aisk-tree-collapse-all');
+        var expandAll = document.getElementById('aisc-tree-expand-all');
+        var collapseAll = document.getElementById('aisc-tree-collapse-all');
         if (expandAll) {
             expandAll.addEventListener('click', function () {
-                var toggles = document.querySelectorAll('#aisk-site-tree .aisk-tree-toggle');
+                var toggles = document.querySelectorAll('#aisc-site-tree .aisc-tree-toggle');
                 for (var t = 0; t < toggles.length; t++) {
                     toggles[t].textContent = '\u2212';
                     toggles[t].setAttribute('data-expanded', '1');
-                    var ch = toggles[t].parentElement.querySelector('.aisk-tree-children');
+                    var ch = toggles[t].parentElement.querySelector('.aisc-tree-children');
                     if (ch) ch.style.display = '';
                 }
             });
         }
         if (collapseAll) {
             collapseAll.addEventListener('click', function () {
-                var toggles = document.querySelectorAll('#aisk-site-tree .aisk-tree-toggle');
+                var toggles = document.querySelectorAll('#aisc-site-tree .aisc-tree-toggle');
                 for (var t = 0; t < toggles.length; t++) {
                     toggles[t].textContent = '+';
                     toggles[t].setAttribute('data-expanded', '0');
-                    var ch = toggles[t].parentElement.querySelector('.aisk-tree-children');
+                    var ch = toggles[t].parentElement.querySelector('.aisc-tree-children');
                     if (ch) ch.style.display = 'none';
                 }
             });
@@ -167,7 +167,7 @@
 
     // ── Search filter ──────────────────────────────────────────────
     (function () {
-        var searchInput = document.getElementById('aisk-bulk-search');
+        var searchInput = document.getElementById('aisc-bulk-search');
         if (!searchInput) return;
         var table = document.getElementById('ai-seo-bulk-table');
         if (!table) return;
@@ -182,7 +182,7 @@
                 if (term === '' || title.indexOf(term) !== -1) {
                     rows[i].style.display = '';
                     visibleCount++;
-                    rows[i].querySelector('.aisk-row-num').textContent = visibleCount;
+                    rows[i].querySelector('.aisc-row-num').textContent = visibleCount;
                 } else {
                     rows[i].style.display = 'none';
                 }
@@ -195,7 +195,7 @@
         var table = document.getElementById('ai-seo-bulk-table');
         if (!table) return;
 
-        var storageKey = 'aisk_bulk_columns';
+        var storageKey = 'aisc_bulk_columns';
         var widthPresets = {
             '00': ['30%', '33%', '30%', '', ''],
             '10': ['22%', '26%', '26%', '20%', ''],
@@ -206,9 +206,9 @@
         function applyWidths(showKeyphrase, showKeywords) {
             var key = (showKeyphrase ? '1' : '0') + (showKeywords ? '1' : '0');
             var w = widthPresets[key];
-            var titleTh = table.querySelector('.aisk-col-title');
-            var seoTh = table.querySelector('.aisk-col-seotitle');
-            var descTh = table.querySelector('.aisk-col-desc');
+            var titleTh = table.querySelector('.aisc-col-title');
+            var seoTh = table.querySelector('.aisc-col-seotitle');
+            var descTh = table.querySelector('.aisc-col-desc');
             if (titleTh) titleTh.style.width = w[0];
             if (seoTh) seoTh.style.width = w[1];
             if (descTh) descTh.style.width = w[2];
@@ -239,14 +239,14 @@
         function refresh() {
             var kp = keyphraseToggle ? keyphraseToggle.checked : false;
             var kw = keywordsToggle ? keywordsToggle.checked : false;
-            toggleColumn('aisk-col-keyphrase', kp);
-            toggleColumn('aisk-col-keywords', kw);
+            toggleColumn('aisc-col-keyphrase', kp);
+            toggleColumn('aisc-col-keywords', kw);
             applyWidths(kp, kw);
             saveState(kp, kw);
         }
 
-        var keyphraseToggle = document.getElementById('aisk-bulk-col-keyphrase');
-        var keywordsToggle = document.getElementById('aisk-bulk-col-keywords');
+        var keyphraseToggle = document.getElementById('aisc-bulk-col-keyphrase');
+        var keywordsToggle = document.getElementById('aisc-bulk-col-keywords');
         var saved = loadState();
 
         if (keyphraseToggle && saved.keyphrase) keyphraseToggle.checked = true;

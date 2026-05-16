@@ -1,5 +1,5 @@
 /**
- * AI SEO Keeper — Shared admin scripts
+ * SEO Captain — Shared admin scripts
  *
  * Accordion toggle and sortable table helpers.
  */

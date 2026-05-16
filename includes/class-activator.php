@@ -1,6 +1,6 @@
 <?php
 
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
 class Activator
 {
@@ -11,9 +11,9 @@ class Activator
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
 		$charset_collate = $wpdb->get_charset_collate();
-		$content_table   = $wpdb->prefix . 'ai_seo_keeper_content_index';
-		$chat_table      = $wpdb->prefix . 'ai_seo_keeper_conversations';
-		$message_table   = $wpdb->prefix . 'ai_seo_keeper_messages';
+		$content_table   = $wpdb->prefix . 'ai_seo_captain_content_index';
+		$chat_table      = $wpdb->prefix . 'ai_seo_captain_conversations';
+		$message_table   = $wpdb->prefix . 'ai_seo_captain_messages';
 
 		$sql = "CREATE TABLE {$content_table} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -57,7 +57,7 @@ class Activator
 			KEY conversation_id (conversation_id)
 		) {$charset_collate};";
 
-		$redirects_table = $wpdb->prefix . 'ai_seo_keeper_redirects';
+		$redirects_table = $wpdb->prefix . 'ai_seo_captain_redirects';
 		$sql .= "\n\n		CREATE TABLE {$redirects_table} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			source_url varchar(2048) NOT NULL,
@@ -72,7 +72,7 @@ class Activator
 			KEY type (type)
 		) {$charset_collate};";
 
-		$runs_table = $wpdb->prefix . 'ai_seo_keeper_runs';
+		$runs_table = $wpdb->prefix . 'ai_seo_captain_runs';
 		$sql .= "\n\n		CREATE TABLE {$runs_table} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			user_id bigint(20) unsigned NOT NULL DEFAULT 0,

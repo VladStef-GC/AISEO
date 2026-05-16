@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AI_SEO_Keeper\Tests\Unit;
+namespace AI_SEO_Captain\Tests\Unit;
 
-use AI_SEO_Keeper\Settings;
+use AI_SEO_Captain\Settings;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for Settings static utility methods.
  * Only pure static methods are tested here — no WP option DB calls.
  *
- * @covers \AI_SEO_Keeper\Settings
+ * @covers \AI_SEO_Captain\Settings
  */
 class SettingsTest extends TestCase
 {

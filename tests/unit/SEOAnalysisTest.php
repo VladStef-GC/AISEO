@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AI_SEO_Keeper\Tests\Unit;
+namespace AI_SEO_Captain\Tests\Unit;
 
-use AI_SEO_Keeper\Admin\SEO_Analysis;
+use AI_SEO_Captain\Admin\SEO_Analysis;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for SEO_Analysis — pure static methods, no WordPress required.
  *
- * @covers \AI_SEO_Keeper\Admin\SEO_Analysis
+ * @covers \AI_SEO_Captain\Admin\SEO_Analysis
  */
 class SEOAnalysisTest extends TestCase
 {

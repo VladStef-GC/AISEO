@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AI_SEO_Keeper\Tests\Unit;
+namespace AI_SEO_Captain\Tests\Unit;
 
-use AI_SEO_Keeper\Content_Indexer;
+use AI_SEO_Captain\Content_Indexer;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 
@@ -12,7 +12,7 @@ use ReflectionMethod;
  * Unit tests for Content_Indexer tree-rendering helpers.
  * Tests the pure formatting logic without database access.
  *
- * @covers \AI_SEO_Keeper\Content_Indexer
+ * @covers \AI_SEO_Captain\Content_Indexer
  */
 class ContentIndexerTreeTest extends TestCase
 {

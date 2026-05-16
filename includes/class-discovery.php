@@ -1,6 +1,6 @@
 <?php
 
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
 class Discovery
 {
@@ -67,7 +67,7 @@ class Discovery
             '# ' . $site_name,
             '> ' . $site_description,
             '',
-            'AI SEO Keeper generated discovery document for language models and AI search agents.',
+            'SEO Captain generated discovery document for language models and AI search agents.',
             'Canonical site: ' . $home_url,
             'Sitemap: ' . $sitemap_url,
             'Feed: ' . $feed_url,
@@ -274,7 +274,7 @@ class Discovery
         $latest = $site_audits[0];
 
         return array(
-            'audit_title' => isset($latest['audit_title']) ? (string) $latest['audit_title'] : 'AI SEO Keeper Site Audit',
+            'audit_title' => isset($latest['audit_title']) ? (string) $latest['audit_title'] : 'SEO Captain Site Audit',
             'executive_summary' => isset($latest['executive_summary']) ? wp_trim_words((string) $latest['executive_summary'], 40, '...') : '',
             'priority_actions' => isset($latest['priority_actions']) && is_array($latest['priority_actions']) ? array_slice(array_values($latest['priority_actions']), 0, 3) : array(),
             'quick_wins' => isset($latest['quick_wins']) && is_array($latest['quick_wins']) ? array_slice(array_values($latest['quick_wins']), 0, 3) : array(),

@@ -1,8 +1,8 @@
 <?php
 
-namespace AI_SEO_Keeper\ImportExport;
+namespace AI_SEO_Captain\ImportExport;
 
-use AI_SEO_Keeper\Settings;
+use AI_SEO_Captain\Settings;
 
 /**
  * Builds the export JSON data from all plugin sources.
@@ -11,33 +11,33 @@ class Exporter
 {
     /** Post meta keys for SEO Metadata section. */
     private const SEO_META_KEYS = array(
-        '_ai_seo_keeper_meta_title',
-        '_ai_seo_keeper_meta_description',
-        '_ai_seo_keeper_focus_keyphrase',
-        '_ai_seo_keeper_social_title',
-        '_ai_seo_keeper_social_description',
-        '_ai_seo_keeper_social_image',
-        '_ai_seo_keeper_schema_type',
-        '_ai_seo_keeper_canonical_url',
-        '_ai_seo_keeper_robots_directives',
-        '_ai_seo_keeper_frontend_enabled',
-        '_ai_seo_keeper_cornerstone',
-        '_ai_seo_keeper_hreflang',
-        '_ai_seo_keeper_title_branding_off',
+        '_ai_seo_captain_meta_title',
+        '_ai_seo_captain_meta_description',
+        '_ai_seo_captain_focus_keyphrase',
+        '_ai_seo_captain_social_title',
+        '_ai_seo_captain_social_description',
+        '_ai_seo_captain_social_image',
+        '_ai_seo_captain_schema_type',
+        '_ai_seo_captain_canonical_url',
+        '_ai_seo_captain_robots_directives',
+        '_ai_seo_captain_frontend_enabled',
+        '_ai_seo_captain_cornerstone',
+        '_ai_seo_captain_hreflang',
+        '_ai_seo_captain_title_branding_off',
     );
 
     /** Post meta keys for Audit section. */
     private const AUDIT_META_KEYS = array(
-        '_ai_seo_keeper_page_audit',
-        '_ai_seo_keeper_audit_skip',
+        '_ai_seo_captain_page_audit',
+        '_ai_seo_captain_audit_skip',
     );
 
     /** Term meta keys. */
     private const TERM_META_KEYS = array(
-        '_ai_seo_keeper_seo_title',
-        '_ai_seo_keeper_meta_description',
-        '_ai_seo_keeper_canonical',
-        '_ai_seo_keeper_noindex',
+        '_ai_seo_captain_seo_title',
+        '_ai_seo_captain_meta_description',
+        '_ai_seo_captain_canonical',
+        '_ai_seo_captain_noindex',
     );
 
     private Settings $settings;
@@ -56,7 +56,7 @@ class Exporter
     public function build(array $sections): array
     {
         $data = array(
-            'plugin'            => 'ai-seo-keeper',
+            'plugin'            => 'ai-seo-captain',
             'format_version'    => '2.0',
             'plugin_version'    => defined('AI_SEO_KEEPER_VERSION') ? AI_SEO_KEEPER_VERSION : '1.0.0',
             'exported_at'       => gmdate('c'),
@@ -132,8 +132,8 @@ class Exporter
         unset($options['api_key'], $options['google_api_key']);
 
         $wizard_flags = array(
-            'step2_all_done' => (bool) get_option('ai_seo_keeper_step2_all_done', false),
-            'step3_all_done' => (bool) get_option('ai_seo_keeper_step3_all_done', false),
+            'step2_all_done' => (bool) get_option('ai_seo_captain_step2_all_done', false),
+            'step3_all_done' => (bool) get_option('ai_seo_captain_step3_all_done', false),
         );
 
         return array(
@@ -265,7 +265,7 @@ class Exporter
         }
 
         // Content index table.
-        $table = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table = $wpdb->prefix . 'ai_seo_captain_content_index';
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
         $index_rows = $wpdb->get_results(
             "SELECT ci.*, p.post_name, p.post_type
@@ -304,7 +304,7 @@ class Exporter
     private function export_redirects(): array
     {
         global $wpdb;
-        $table = $wpdb->prefix . 'ai_seo_keeper_redirects';
+        $table = $wpdb->prefix . 'ai_seo_captain_redirects';
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
         $rows = $wpdb->get_results(
@@ -321,7 +321,7 @@ class Exporter
     private function export_404s(): array
     {
         global $wpdb;
-        $table = $wpdb->prefix . 'ai_seo_keeper_redirects';
+        $table = $wpdb->prefix . 'ai_seo_captain_redirects';
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
         $rows = $wpdb->get_results(
@@ -338,7 +338,7 @@ class Exporter
     private function export_runs(): array
     {
         global $wpdb;
-        $table = $wpdb->prefix . 'ai_seo_keeper_runs';
+        $table = $wpdb->prefix . 'ai_seo_captain_runs';
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
         $rows = $wpdb->get_results(
@@ -354,8 +354,8 @@ class Exporter
     private function export_chat_history(): array
     {
         global $wpdb;
-        $conv_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
-        $msg_table  = $wpdb->prefix . 'ai_seo_keeper_messages';
+        $conv_table = $wpdb->prefix . 'ai_seo_captain_conversations';
+        $msg_table  = $wpdb->prefix . 'ai_seo_captain_messages';
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
         $conversations = $wpdb->get_results(

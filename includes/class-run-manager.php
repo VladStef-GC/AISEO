@@ -1,6 +1,6 @@
 <?php
 
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
 class Run_Manager
 {
@@ -9,7 +9,7 @@ class Run_Manager
     public function __construct()
     {
         global $wpdb;
-        $this->table = $wpdb->prefix . 'ai_seo_keeper_runs';
+        $this->table = $wpdb->prefix . 'ai_seo_captain_runs';
     }
 
     public function create_run(string $name, array $page_ids, string $description = ''): int
@@ -101,7 +101,7 @@ class Run_Manager
 
     public function get_active_run_ids(): array
     {
-        $ids = get_user_meta(get_current_user_id(), '_ai_seo_keeper_active_runs', true);
+        $ids = get_user_meta(get_current_user_id(), '_ai_seo_captain_active_runs', true);
 
         return is_array($ids) ? array_map('intval', $ids) : array();
     }
@@ -110,7 +110,7 @@ class Run_Manager
     {
         update_user_meta(
             get_current_user_id(),
-            '_ai_seo_keeper_active_runs',
+            '_ai_seo_captain_active_runs',
             array_values(array_unique(array_map('intval', $ids)))
         );
     }
@@ -139,7 +139,7 @@ class Run_Manager
     {
         global $wpdb;
 
-        $index_table = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $index_table = $wpdb->prefix . 'ai_seo_captain_content_index';
 
         return $wpdb->get_results(
             $wpdb->prepare(
@@ -150,7 +150,7 @@ class Run_Manager
                     ON pm.post_id = idx.object_id AND pm.meta_key = %s
                  WHERE idx.status = 'publish'
                  ORDER BY idx.post_type ASC, idx.title ASC",
-                '_ai_seo_keeper_page_audit'
+                '_ai_seo_captain_page_audit'
             ),
             ARRAY_A
         );

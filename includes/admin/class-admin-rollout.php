@@ -1,14 +1,14 @@
 <?php
 
-namespace AI_SEO_Keeper\Admin;
+namespace AI_SEO_Captain\Admin;
 
-use AI_SEO_Keeper\Content_Indexer;
-use AI_SEO_Keeper\AI_Generator;
-use AI_SEO_Keeper\History_Store;
-use AI_SEO_Keeper\IndexNow;
-use AI_SEO_Keeper\Audit_Engine;
-use AI_SEO_Keeper\Settings;
-use AI_SEO_Keeper\Admin as AdminBase;
+use AI_SEO_Captain\Content_Indexer;
+use AI_SEO_Captain\AI_Generator;
+use AI_SEO_Captain\History_Store;
+use AI_SEO_Captain\IndexNow;
+use AI_SEO_Captain\Audit_Engine;
+use AI_SEO_Captain\Settings;
+use AI_SEO_Captain\Admin as AdminBase;
 
 /**
  * Bulk operations — sync index, generate site audit, IndexNow submit,
@@ -49,13 +49,13 @@ class Admin_Rollout
             wp_die('You are not allowed to do that.');
         }
 
-        check_admin_referer('ai_seo_keeper_sync_index');
+        check_admin_referer('ai_seo_captain_sync_index');
 
         $sync_count = $this->content_indexer->sync();
 
         $redirect_url = add_query_arg(
             array(
-                'page'   => 'ai-seo-keeper',
+                'page'   => 'ai-seo-captain',
                 'synced' => $sync_count,
             ),
             admin_url('admin.php')
@@ -75,7 +75,7 @@ class Admin_Rollout
             wp_die('You are not allowed to do that.');
         }
 
-        check_admin_referer('ai_seo_keeper_generate_site_audit');
+        check_admin_referer('ai_seo_captain_generate_site_audit');
 
         try {
             $options   = get_option(Settings::OPTION_NAME, array());
@@ -87,7 +87,7 @@ class Admin_Rollout
             $this->history_store->log_generation(
                 0,
                 'site_audit',
-                'AI SEO Keeper Site Audit',
+                'SEO Captain Site Audit',
                 array(
                     'provider'       => $audit['provider'],
                     'model'          => $audit['model'],
@@ -108,7 +108,7 @@ class Admin_Rollout
 
             $redirect_url = add_query_arg(
                 array(
-                    'page'          => 'ai-seo-keeper-audit',
+                    'page'          => 'ai-seo-captain-audit',
                     'audit_status'  => 'success',
                     'audit_message' => rawurlencode('AI strategic audit generated successfully.'),
                 ),
@@ -117,7 +117,7 @@ class Admin_Rollout
         } catch (\Throwable $throwable) {
             $redirect_url = add_query_arg(
                 array(
-                    'page'          => 'ai-seo-keeper-audit',
+                    'page'          => 'ai-seo-captain-audit',
                     'audit_status'  => 'error',
                     'audit_message' => rawurlencode($throwable->getMessage()),
                 ),
@@ -139,7 +139,7 @@ class Admin_Rollout
             wp_die('You are not allowed to do that.');
         }
 
-        check_admin_referer('ai_seo_keeper_submit_indexnow');
+        check_admin_referer('ai_seo_captain_submit_indexnow');
 
         $report = $this->audit_engine->get_report(10);
         $urls   = array();
@@ -156,7 +156,7 @@ class Admin_Rollout
 
         $redirect_url = add_query_arg(
             array(
-                'page'          => 'ai-seo-keeper-audit',
+                'page'          => 'ai-seo-captain-audit',
                 'audit_status'  => 'success' === ($result['status'] ?? '') ? 'success' : 'error',
                 'audit_message' => rawurlencode((string) ($result['message'] ?? 'IndexNow request finished.')),
             ),
@@ -177,7 +177,7 @@ class Admin_Rollout
             wp_die('You are not allowed to do that.');
         }
 
-        check_admin_referer('ai_seo_keeper_bulk_frontend_rollout');
+        check_admin_referer('ai_seo_captain_bulk_frontend_rollout');
 
         $post_ids = isset($_POST['post_ids']) ? array_map('intval', (array) wp_unslash($_POST['post_ids'])) : array();
         $mode     = isset($_POST['bulk_mode']) ? sanitize_key((string) wp_unslash($_POST['bulk_mode'])) : '';

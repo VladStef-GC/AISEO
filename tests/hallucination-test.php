@@ -11,7 +11,7 @@
  *
  * DELETE THIS FILE before going to production — it is NOT part of the plugin.
  *
- * @package AI_SEO_Keeper
+ * @package AI_SEO_Captain
  */
 
 // ──────────────────────────────────────────────────────────────────────
@@ -42,15 +42,15 @@ if (! function_exists('wp_set_current_user')) {
 }
 wp_set_current_user(1);
 
-use AI_SEO_Keeper\Settings;
-use AI_SEO_Keeper\Content_Indexer;
-use AI_SEO_Keeper\Audit_Engine;
-use AI_SEO_Keeper\AI_Generator;
-use AI_SEO_Keeper\History_Store;
-use AI_SEO_Keeper\Site_Chat;
+use AI_SEO_Captain\Settings;
+use AI_SEO_Captain\Content_Indexer;
+use AI_SEO_Captain\Audit_Engine;
+use AI_SEO_Captain\AI_Generator;
+use AI_SEO_Captain\History_Store;
+use AI_SEO_Captain\Site_Chat;
 
 echo "=============================================================\n";
-echo "  AI SEO Keeper — Hallucination Test Suite\n";
+echo "  SEO Captain — Hallucination Test Suite\n";
 echo "  Date: " . gmdate('Y-m-d H:i:s') . " UTC\n";
 echo "=============================================================\n\n";
 
@@ -68,7 +68,7 @@ $site_chat       = new Site_Chat($settings, $content_indexer, $audit_engine, $ai
 $options = $settings->get();
 
 if (empty($options['api_key'])) {
-    fwrite(STDERR, "ERROR: No API key configured. Set one in AI SEO Keeper Settings first.\n");
+    fwrite(STDERR, "ERROR: No API key configured. Set one in SEO Captain Settings first.\n");
     exit(1);
 }
 

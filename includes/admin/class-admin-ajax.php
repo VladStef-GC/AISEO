@@ -1,14 +1,14 @@
 <?php
 
-namespace AI_SEO_Keeper\Admin;
+namespace AI_SEO_Captain\Admin;
 
-use AI_SEO_Keeper\AI_Generator;
-use AI_SEO_Keeper\Content_Indexer;
-use AI_SEO_Keeper\Content_Writer;
-use AI_SEO_Keeper\History_Store;
-use AI_SEO_Keeper\Run_Manager;
-use AI_SEO_Keeper\Settings;
-use AI_SEO_Keeper\Admin as AdminBase;
+use AI_SEO_Captain\AI_Generator;
+use AI_SEO_Captain\Content_Indexer;
+use AI_SEO_Captain\Content_Writer;
+use AI_SEO_Captain\History_Store;
+use AI_SEO_Captain\Run_Manager;
+use AI_SEO_Captain\Settings;
+use AI_SEO_Captain\Admin as AdminBase;
 
 /**
  * All wp_ajax_* handler methods for the editor metabox, setup wizard,
@@ -48,19 +48,19 @@ class Admin_Ajax
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
 
         if (! $post_id) {
-            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-captain')), 400);
         }
 
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
+        check_ajax_referer('ai_seo_captain_save_editor_meta', 'nonce');
 
         $post_type = get_post_type($post_id);
 
         if (! $post_type || ! $this->admin->is_supported_post_type($post_type)) {
-            wp_send_json_error(array('message' => __('Unsupported content type.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Unsupported content type.', 'ai-seo-captain')), 400);
         }
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-captain')), 403);
         }
 
         $saved_meta = $this->admin->persist_editor_meta($post_id, $_POST);
@@ -82,19 +82,19 @@ class Admin_Ajax
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
 
         if (! $post_id) {
-            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-captain')), 400);
         }
 
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
+        check_ajax_referer('ai_seo_captain_save_editor_meta', 'nonce');
 
         $post_type = get_post_type($post_id);
 
         if (! $post_type || ! $this->admin->is_supported_post_type($post_type)) {
-            wp_send_json_error(array('message' => __('Unsupported content type.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Unsupported content type.', 'ai-seo-captain')), 400);
         }
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-captain')), 403);
         }
 
         $field_overrides = array(
@@ -182,19 +182,19 @@ class Admin_Ajax
         $message_id = isset($_POST['message_id']) ? (int) $_POST['message_id'] : 0;
 
         if (! $post_id || ! $message_id) {
-            wp_send_json_error(array('message' => __('Missing suggestion approval details.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Missing suggestion approval details.', 'ai-seo-captain')), 400);
         }
 
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
+        check_ajax_referer('ai_seo_captain_save_editor_meta', 'nonce');
 
         $post_type = get_post_type($post_id);
 
         if (! $post_type || ! $this->admin->is_supported_post_type($post_type)) {
-            wp_send_json_error(array('message' => __('Unsupported content type.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Unsupported content type.', 'ai-seo-captain')), 400);
         }
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-captain')), 403);
         }
 
         try {
@@ -242,29 +242,29 @@ class Admin_Ajax
         $message = isset($_POST['message']) ? sanitize_textarea_field(wp_unslash($_POST['message'])) : '';
 
         if (! $post_id) {
-            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-captain')), 400);
         }
 
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
+        check_ajax_referer('ai_seo_captain_save_editor_meta', 'nonce');
 
         $post_type = get_post_type($post_id);
 
         if (! $post_type || ! $this->admin->is_supported_post_type($post_type)) {
-            wp_send_json_error(array('message' => __('Unsupported content type.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Unsupported content type.', 'ai-seo-captain')), 400);
         }
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-captain')), 403);
         }
 
         if ('' === trim($message)) {
-            wp_send_json_error(array('message' => __('Enter a question before asking the AI assistant.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Enter a question before asking the AI assistant.', 'ai-seo-captain')), 400);
         }
 
         $options = $this->settings->get();
 
         if (empty($options['editor_chat_enabled'])) {
-            wp_send_json_error(array('message' => __('The AI assistant is disabled in settings.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('The AI assistant is disabled in settings.', 'ai-seo-captain')), 400);
         }
 
         try {
@@ -312,7 +312,7 @@ class Admin_Ajax
         $chat_messages = $this->history_store->get_recent_chat_messages($post_id, 12);
 
         $response_data = array(
-            'message' => __('AI assistant replied.', 'ai-seo-keeper'),
+            'message' => __('AI assistant replied.', 'ai-seo-captain'),
             'notes'   => $reply['notes'],
             'chatHtml' => $this->admin->render_chat_history_markup($chat_messages),
         );
@@ -332,16 +332,16 @@ class Admin_Ajax
 
     public function handle_setup_index(): void
     {
-        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+        check_ajax_referer('ai_seo_captain_setup_wizard', 'nonce');
 
         if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
         }
 
         $count = $this->content_indexer->sync();
 
         global $wpdb;
-        $table = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table = $wpdb->prefix . 'ai_seo_captain_content_index';
         $ids   = $wpdb->get_col("SELECT object_id FROM {$table} WHERE object_type = 'post' AND status = 'publish' ORDER BY object_id ASC");
 
         wp_send_json_success(array(
@@ -353,22 +353,22 @@ class Admin_Ajax
 
     public function handle_bulk_generate(): void
     {
-        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+        check_ajax_referer('ai_seo_captain_setup_wizard', 'nonce');
 
         if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
         }
 
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
 
         if ($post_id <= 0) {
-            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-captain')), 400);
         }
 
         $post = get_post($post_id);
 
         if (! $post instanceof \WP_Post) {
-            wp_send_json_error(array('message' => __('Page not found.', 'ai-seo-keeper')), 404);
+            wp_send_json_error(array('message' => __('Page not found.', 'ai-seo-captain')), 404);
         }
 
         // Respect skip rules (individual skip + path patterns).
@@ -482,30 +482,30 @@ class Admin_Ajax
     {
         // Accept both editor nonce and wizard nonce since this is called from both contexts.
         if (
-            ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? '')), 'ai_seo_keeper_save_editor_meta')
-            && ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? '')), 'ai_seo_keeper_setup_wizard')
+            ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? '')), 'ai_seo_captain_save_editor_meta')
+            && ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? '')), 'ai_seo_captain_setup_wizard')
         ) {
-            wp_send_json_error(array('message' => __('Security check failed.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('Security check failed.', 'ai-seo-captain')), 403);
         }
 
         if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
         }
 
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
 
         if ($post_id <= 0) {
-            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-captain')), 400);
         }
 
         $post = get_post($post_id);
 
         if (! $post instanceof \WP_Post) {
-            wp_send_json_error(array('message' => __('Page not found.', 'ai-seo-keeper')), 404);
+            wp_send_json_error(array('message' => __('Page not found.', 'ai-seo-captain')), 404);
         }
 
         // Return cached audit if already completed.
-        $cached = get_post_meta($post_id, '_ai_seo_keeper_page_audit', true);
+        $cached = get_post_meta($post_id, '_ai_seo_captain_page_audit', true);
 
         if (is_array($cached) && isset($cached['score'])) {
             wp_send_json_success(array(
@@ -535,7 +535,7 @@ class Admin_Ajax
             return;
         }
 
-        update_post_meta($post_id, '_ai_seo_keeper_page_audit', array(
+        update_post_meta($post_id, '_ai_seo_captain_page_audit', array(
             'score'             => $audit['score'],
             'issues'            => $audit['issues'],
             'suggestions'       => $audit['suggestions'],
@@ -563,25 +563,25 @@ class Admin_Ajax
 
     public function handle_toggle_audit_skip(): void
     {
-        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+        check_ajax_referer('ai_seo_captain_setup_wizard', 'nonce');
 
         if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
         }
 
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
 
         if ($post_id <= 0) {
-            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-captain')), 400);
         }
 
-        $current   = get_post_meta($post_id, '_ai_seo_keeper_audit_skip', true);
+        $current   = get_post_meta($post_id, '_ai_seo_captain_audit_skip', true);
         $new_value = empty($current) ? '1' : '';
 
         if ('' === $new_value) {
-            delete_post_meta($post_id, '_ai_seo_keeper_audit_skip');
+            delete_post_meta($post_id, '_ai_seo_captain_audit_skip');
         } else {
-            update_post_meta($post_id, '_ai_seo_keeper_audit_skip', '1');
+            update_post_meta($post_id, '_ai_seo_captain_audit_skip', '1');
         }
 
         wp_send_json_success(array(
@@ -592,17 +592,17 @@ class Admin_Ajax
 
     public function handle_save_skip_patterns(): void
     {
-        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+        check_ajax_referer('ai_seo_captain_setup_wizard', 'nonce');
 
         if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
         }
 
         $patterns = isset($_POST['patterns']) ? sanitize_textarea_field(wp_unslash($_POST['patterns'])) : '';
 
         $options                       = $this->settings->get();
         $options['audit_skip_patterns'] = $patterns;
-        update_option('ai_seo_keeper_options', $options);
+        update_option('ai_seo_captain_options', $options);
 
         $matched = $this->admin->count_pages_matching_skip_patterns($patterns);
 
@@ -622,17 +622,17 @@ class Admin_Ajax
         $instruction = isset($_POST['instruction']) ? sanitize_textarea_field(wp_unslash($_POST['instruction'])) : '';
 
         if (! $post_id) {
-            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-captain')), 400);
         }
 
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
+        check_ajax_referer('ai_seo_captain_save_editor_meta', 'nonce');
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-captain')), 403);
         }
 
         if ('' === trim($instruction)) {
-            wp_send_json_error(array('message' => __('Provide an instruction for the AI content editor.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Provide an instruction for the AI content editor.', 'ai-seo-captain')), 400);
         }
 
         try {
@@ -658,18 +658,18 @@ class Admin_Ajax
         $summary      = isset($_POST['summary']) ? sanitize_textarea_field(wp_unslash($_POST['summary'])) : '';
 
         if (! $post_id) {
-            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-captain')), 400);
         }
 
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
+        check_ajax_referer('ai_seo_captain_save_editor_meta', 'nonce');
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-captain')), 403);
         }
 
         $changes = json_decode($changes_json, true);
         if (! is_array($changes) || empty($changes)) {
-            wp_send_json_error(array('message' => __('No changes to apply.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('No changes to apply.', 'ai-seo-captain')), 400);
         }
 
         Content_Writer::store_pending_changes($post_id, $changes, $summary);
@@ -707,13 +707,13 @@ class Admin_Ajax
         $value   = isset($_POST['value']) ? wp_unslash($_POST['value']) : '';
 
         if (! $post_id) {
-            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-captain')), 400);
         }
 
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
+        check_ajax_referer('ai_seo_captain_save_editor_meta', 'nonce');
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-captain')), 403);
         }
 
         $allowed_fields = array(
@@ -722,7 +722,7 @@ class Admin_Ajax
         );
 
         if (! isset($allowed_fields[$field])) {
-            wp_send_json_error(array('message' => __('Invalid field: ', 'ai-seo-keeper') . $field), 400);
+            wp_send_json_error(array('message' => __('Invalid field: ', 'ai-seo-captain') . $field), 400);
         }
 
         $meta_key  = $allowed_fields[$field];
@@ -741,22 +741,22 @@ class Admin_Ajax
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
 
         if (! $post_id) {
-            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-captain')), 400);
         }
 
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
+        check_ajax_referer('ai_seo_captain_save_editor_meta', 'nonce');
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-captain')), 403);
         }
 
         $restored = Content_Writer::restore_backup($post_id);
 
         if (! $restored) {
-            wp_send_json_error(array('message' => __('No backup found for this page.', 'ai-seo-keeper')), 404);
+            wp_send_json_error(array('message' => __('No backup found for this page.', 'ai-seo-captain')), 404);
         }
 
-        wp_send_json_success(array('message' => __('Content restored to the version before AI edits.', 'ai-seo-keeper')));
+        wp_send_json_success(array('message' => __('Content restored to the version before AI edits.', 'ai-seo-captain')));
     }
 
     public function handle_clear_chat(): void
@@ -764,13 +764,13 @@ class Admin_Ajax
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
 
         if (! $post_id) {
-            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-captain')), 400);
         }
 
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
+        check_ajax_referer('ai_seo_captain_save_editor_meta', 'nonce');
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
         }
 
         $deleted = $this->history_store->clear_chat_messages($post_id);
@@ -784,10 +784,10 @@ class Admin_Ajax
 
     public function handle_test_model(): void
     {
-        check_ajax_referer('ai_seo_keeper_settings_test_model', 'nonce');
+        check_ajax_referer('ai_seo_captain_settings_test_model', 'nonce');
 
         if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => __('You are not allowed to test AI model access.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('You are not allowed to test AI model access.', 'ai-seo-captain')), 403);
         }
 
         $options            = $this->settings->get();
@@ -795,7 +795,7 @@ class Admin_Ajax
         $supported_providers = Settings::get_supported_providers();
 
         if (! in_array($provider, $supported_providers, true)) {
-            wp_send_json_error(array('message' => __('Unsupported AI provider selected.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Unsupported AI provider selected.', 'ai-seo-captain')), 400);
         }
 
         $requested_model = isset($_POST['model']) ? sanitize_text_field((string) wp_unslash($_POST['model'])) : '';
@@ -817,7 +817,7 @@ class Admin_Ajax
         $api_key        = '' !== trim($posted_api_key) ? $posted_api_key : (string) ($options['api_key'] ?? '');
 
         if ('' === trim($api_key)) {
-            wp_send_json_error(array('message' => __('Enter an API key before testing model availability.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Enter an API key before testing model availability.', 'ai-seo-captain')), 400);
         }
 
         try {
@@ -854,18 +854,18 @@ class Admin_Ajax
         $edit_id = isset($_POST['edit_id']) ? (int) $_POST['edit_id'] : 0;
 
         if (! $post_id || ! $edit_id) {
-            wp_send_json_error(array('message' => __('Missing parameters.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Missing parameters.', 'ai-seo-captain')), 400);
         }
 
-        check_ajax_referer('ai_seo_keeper_save_editor_meta', 'nonce');
+        check_ajax_referer('ai_seo_captain_save_editor_meta', 'nonce');
 
         if (! current_user_can('edit_post', $post_id)) {
-            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
         }
 
         $this->history_store->delete_content_edit_plan($edit_id);
 
-        wp_send_json_success(array('message' => __('Plan removed from history.', 'ai-seo-keeper')));
+        wp_send_json_success(array('message' => __('Plan removed from history.', 'ai-seo-captain')));
     }
 
     // ------------------------------------------------------------------
@@ -874,7 +874,7 @@ class Admin_Ajax
 
     public function handle_bulk_save_seo(): void
     {
-        check_ajax_referer('ai_seo_keeper_nonce', '_nonce');
+        check_ajax_referer('ai_seo_captain_nonce', '_nonce');
 
         if (! current_user_can('manage_options')) {
             wp_send_json_error('Unauthorized');
@@ -892,12 +892,12 @@ class Admin_Ajax
         update_post_meta($post_id, AdminBase::META_TITLE_KEY, $seo_title);
         update_post_meta($post_id, AdminBase::META_DESCRIPTION_KEY, $seo_description);
 
-        wp_send_json_success(array('message' => __('Saved.', 'ai-seo-keeper')));
+        wp_send_json_success(array('message' => __('Saved.', 'ai-seo-captain')));
     }
 
     public function handle_save_image_alt(): void
     {
-        check_ajax_referer('ai_seo_keeper_nonce', '_nonce');
+        check_ajax_referer('ai_seo_captain_nonce', '_nonce');
 
         if (! current_user_can('manage_options')) {
             wp_send_json_error('Unauthorized');
@@ -912,7 +912,7 @@ class Admin_Ajax
         $alt_text = isset($_POST['alt_text']) ? sanitize_text_field(wp_unslash($_POST['alt_text'])) : '';
         update_post_meta($attachment_id, '_wp_attachment_image_alt', $alt_text);
 
-        wp_send_json_success(array('message' => __('Alt text saved.', 'ai-seo-keeper')));
+        wp_send_json_success(array('message' => __('Alt text saved.', 'ai-seo-captain')));
     }
 
     /**
@@ -922,7 +922,7 @@ class Admin_Ajax
      */
     public function handle_save_video_seo(): void
     {
-        check_ajax_referer('ai_seo_keeper_nonce', '_nonce');
+        check_ajax_referer('ai_seo_captain_nonce', '_nonce');
 
         if (! current_user_can('manage_options')) {
             wp_send_json_error('Unauthorized');
@@ -954,11 +954,11 @@ class Admin_Ajax
                 wp_send_json_error('Missing post ID.');
             }
             $hash = md5($video_key);
-            update_post_meta($post_id, '_ai_seo_keeper_video_title_' . $hash, $seo_title);
-            update_post_meta($post_id, '_ai_seo_keeper_video_desc_' . $hash, $seo_desc);
+            update_post_meta($post_id, '_ai_seo_captain_video_title_' . $hash, $seo_title);
+            update_post_meta($post_id, '_ai_seo_captain_video_desc_' . $hash, $seo_desc);
         }
 
-        wp_send_json_success(array('message' => __('Video SEO data saved.', 'ai-seo-keeper')));
+        wp_send_json_success(array('message' => __('Video SEO data saved.', 'ai-seo-captain')));
     }
 
     /**
@@ -966,7 +966,7 @@ class Admin_Ajax
      */
     public function handle_save_doc_seo(): void
     {
-        check_ajax_referer('ai_seo_keeper_nonce', '_nonce');
+        check_ajax_referer('ai_seo_captain_nonce', '_nonce');
 
         if (! current_user_can('manage_options')) {
             wp_send_json_error('Unauthorized');
@@ -987,7 +987,7 @@ class Admin_Ajax
             'post_excerpt' => $seo_desc,
         ));
 
-        wp_send_json_success(array('message' => __('Document SEO data saved.', 'ai-seo-keeper')));
+        wp_send_json_success(array('message' => __('Document SEO data saved.', 'ai-seo-captain')));
     }
 
     // ------------------------------------------------------------------
@@ -996,7 +996,7 @@ class Admin_Ajax
 
     public function handle_create_run(): void
     {
-        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+        check_ajax_referer('ai_seo_captain_setup_wizard', 'nonce');
 
         if (! current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
@@ -1004,13 +1004,13 @@ class Admin_Ajax
 
         $name = isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '';
         if (empty($name)) {
-            wp_send_json_error(array('message' => __('List name is required.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('List name is required.', 'ai-seo-captain')), 400);
         }
 
         $page_ids_raw = isset($_POST['page_ids']) ? wp_unslash($_POST['page_ids']) : '[]';
         $page_ids     = json_decode($page_ids_raw, true);
         if (! is_array($page_ids) || empty($page_ids)) {
-            wp_send_json_error(array('message' => __('Select at least one page.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Select at least one page.', 'ai-seo-captain')), 400);
         }
 
         $page_ids = array_map('intval', $page_ids);
@@ -1018,7 +1018,7 @@ class Admin_Ajax
         $run_id = $this->run_manager->create_run($name, $page_ids);
 
         if (! $run_id) {
-            wp_send_json_error(array('message' => __('Failed to create list.', 'ai-seo-keeper')));
+            wp_send_json_error(array('message' => __('Failed to create list.', 'ai-seo-captain')));
         }
 
         // Auto-activate this run.
@@ -1031,7 +1031,7 @@ class Admin_Ajax
             'page_ids'   => $page_ids,
             'message'    => sprintf(
                 /* translators: 1: list name, 2: page count */
-                __('List "%1$s" created with %2$d pages.', 'ai-seo-keeper'),
+                __('List "%1$s" created with %2$d pages.', 'ai-seo-captain'),
                 $name,
                 count($page_ids)
             ),
@@ -1040,7 +1040,7 @@ class Admin_Ajax
 
     public function handle_get_runs(): void
     {
-        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+        check_ajax_referer('ai_seo_captain_setup_wizard', 'nonce');
 
         if (! current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
@@ -1057,7 +1057,7 @@ class Admin_Ajax
 
     public function handle_delete_run(): void
     {
-        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+        check_ajax_referer('ai_seo_captain_setup_wizard', 'nonce');
 
         if (! current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
@@ -1065,7 +1065,7 @@ class Admin_Ajax
 
         $run_id = isset($_POST['run_id']) ? (int) $_POST['run_id'] : 0;
         if (! $run_id) {
-            wp_send_json_error(array('message' => __('Invalid list ID.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Invalid list ID.', 'ai-seo-captain')), 400);
         }
 
         $this->run_manager->delete_run($run_id);
@@ -1075,12 +1075,12 @@ class Admin_Ajax
         $active = array_values(array_diff($active, array($run_id)));
         $this->run_manager->set_active_run_ids($active);
 
-        wp_send_json_success(array('message' => __('List deleted.', 'ai-seo-keeper')));
+        wp_send_json_success(array('message' => __('List deleted.', 'ai-seo-captain')));
     }
 
     public function handle_set_active_runs(): void
     {
-        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+        check_ajax_referer('ai_seo_captain_setup_wizard', 'nonce');
 
         if (! current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
@@ -1099,7 +1099,7 @@ class Admin_Ajax
 
     public function handle_get_pages_for_selector(): void
     {
-        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+        check_ajax_referer('ai_seo_captain_setup_wizard', 'nonce');
 
         if (! current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
@@ -1112,7 +1112,7 @@ class Admin_Ajax
 
     public function handle_mark_run_step(): void
     {
-        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+        check_ajax_referer('ai_seo_captain_setup_wizard', 'nonce');
 
         if (! current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
@@ -1122,7 +1122,7 @@ class Admin_Ajax
         $step   = isset($_POST['step']) ? sanitize_text_field(wp_unslash($_POST['step'])) : '';
 
         if (! $run_id || ! in_array($step, array('metadata', 'audit'), true)) {
-            wp_send_json_error(array('message' => __('Invalid parameters.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Invalid parameters.', 'ai-seo-captain')), 400);
         }
 
         $this->run_manager->mark_step_complete($run_id, $step);
@@ -1132,7 +1132,7 @@ class Admin_Ajax
 
     public function handle_clear_seo_data(): void
     {
-        check_ajax_referer('ai_seo_keeper_setup_wizard', 'nonce');
+        check_ajax_referer('ai_seo_captain_setup_wizard', 'nonce');
 
         if (! current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
@@ -1141,7 +1141,7 @@ class Admin_Ajax
         $scope = isset($_POST['scope']) ? sanitize_text_field(wp_unslash($_POST['scope'])) : '';
 
         if (! in_array($scope, array('metadata', 'audits', 'all'), true)) {
-            wp_send_json_error(array('message' => __('Invalid scope.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Invalid scope.', 'ai-seo-captain')), 400);
         }
 
         global $wpdb;
@@ -1150,20 +1150,20 @@ class Admin_Ajax
         if ($scope === 'metadata' || $scope === 'all') {
             $deleted += (int) $wpdb->query(
                 "DELETE FROM {$wpdb->postmeta} WHERE meta_key IN (
-                    '_ai_seo_keeper_meta_title',
-                    '_ai_seo_keeper_meta_description',
-                    '_ai_seo_keeper_focus_keyphrase',
-                    '_ai_seo_keeper_social_title',
-                    '_ai_seo_keeper_social_description',
-                    '_ai_seo_keeper_social_image',
-                    '_ai_seo_keeper_canonical_url',
-                    '_ai_seo_keeper_robots_directives',
-                    '_ai_seo_keeper_schema_type',
-                    '_ai_seo_keeper_title_branding_off',
-                    '_ai_seo_keeper_cornerstone',
-                    '_ai_seo_keeper_hreflang',
-                    '_ai_seo_keeper_pending_content_changes',
-                    '_ai_seo_keeper_content_backup'
+                    '_ai_seo_captain_meta_title',
+                    '_ai_seo_captain_meta_description',
+                    '_ai_seo_captain_focus_keyphrase',
+                    '_ai_seo_captain_social_title',
+                    '_ai_seo_captain_social_description',
+                    '_ai_seo_captain_social_image',
+                    '_ai_seo_captain_canonical_url',
+                    '_ai_seo_captain_robots_directives',
+                    '_ai_seo_captain_schema_type',
+                    '_ai_seo_captain_title_branding_off',
+                    '_ai_seo_captain_cornerstone',
+                    '_ai_seo_captain_hreflang',
+                    '_ai_seo_captain_pending_content_changes',
+                    '_ai_seo_captain_content_backup'
                 )"
             );
         }
@@ -1171,8 +1171,8 @@ class Admin_Ajax
         if ($scope === 'audits' || $scope === 'all') {
             $deleted += (int) $wpdb->query(
                 "DELETE FROM {$wpdb->postmeta} WHERE meta_key IN (
-                    '_ai_seo_keeper_page_audit',
-                    '_ai_seo_keeper_audit_skip'
+                    '_ai_seo_captain_page_audit',
+                    '_ai_seo_captain_audit_skip'
                 )"
             );
         }
@@ -1181,40 +1181,40 @@ class Admin_Ajax
             // Clear approval and frontend toggles.
             $deleted += (int) $wpdb->query(
                 "DELETE FROM {$wpdb->postmeta} WHERE meta_key IN (
-                    '_ai_seo_keeper_approved_message_id',
-                    '_ai_seo_keeper_frontend_enabled'
+                    '_ai_seo_captain_approved_message_id',
+                    '_ai_seo_captain_frontend_enabled'
                 )"
             );
 
             // Clear term meta (taxonomy SEO fields).
             $wpdb->query(
                 "DELETE FROM {$wpdb->termmeta} WHERE meta_key IN (
-                    '_ai_seo_keeper_seo_title',
-                    '_ai_seo_keeper_meta_description',
-                    '_ai_seo_keeper_canonical',
-                    '_ai_seo_keeper_noindex'
+                    '_ai_seo_captain_seo_title',
+                    '_ai_seo_captain_meta_description',
+                    '_ai_seo_captain_canonical',
+                    '_ai_seo_captain_noindex'
                 )"
             );
 
             // Delete all lists.
-            $runs_table = $wpdb->prefix . 'ai_seo_keeper_runs';
+            $runs_table = $wpdb->prefix . 'ai_seo_captain_runs';
             $wpdb->query("DELETE FROM {$runs_table}");
 
             // Clear conversations and messages.
-            $messages_table      = $wpdb->prefix . 'ai_seo_keeper_messages';
-            $conversations_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
+            $messages_table      = $wpdb->prefix . 'ai_seo_captain_messages';
+            $conversations_table = $wpdb->prefix . 'ai_seo_captain_conversations';
             $wpdb->query("DELETE FROM {$messages_table}");
             $wpdb->query("DELETE FROM {$conversations_table}");
 
             // Clear site audit log and IndexNow log.
-            delete_option('ai_seo_keeper_indexnow_log');
+            delete_option('ai_seo_captain_indexnow_log');
 
             // Clear active runs user meta for current user.
-            delete_user_meta(get_current_user_id(), '_ai_seo_keeper_active_runs');
+            delete_user_meta(get_current_user_id(), '_ai_seo_captain_active_runs');
         }
 
         wp_send_json_success(array(
-            'message' => sprintf(__('%d entries cleared.', 'ai-seo-keeper'), $deleted),
+            'message' => sprintf(__('%d entries cleared.', 'ai-seo-captain'), $deleted),
             'deleted' => $deleted,
         ));
     }

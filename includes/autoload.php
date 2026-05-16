@@ -1,13 +1,13 @@
 <?php
 
 /**
- * PSR-4 inspired autoloader for the AI_SEO_Keeper namespace.
+ * PSR-4 inspired autoloader for the AI_SEO_Captain namespace.
  *
- * Root namespace:  AI_SEO_Keeper\ClassName       → includes/class-classname.php
- * Sub-namespace:   AI_SEO_Keeper\Admin\ClassName  → includes/admin/class-classname.php
+ * Root namespace:  AI_SEO_Captain\ClassName       → includes/class-classname.php
+ * Sub-namespace:   AI_SEO_Captain\Admin\ClassName  → includes/admin/class-classname.php
  */
 spl_autoload_register(static function (string $class): void {
-    $prefix = 'AI_SEO_Keeper\\';
+    $prefix = 'AI_SEO_Captain\\';
 
     if (0 !== strncmp($class, $prefix, strlen($prefix))) {
         return;

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * PHPUnit bootstrap for AI SEO Keeper unit tests.
+ * PHPUnit bootstrap for SEO Captain unit tests.
  *
  * Loads the plugin autoloader and defines lightweight WP function stubs
  * so pure-PHP classes can be tested without a live WordPress installation.

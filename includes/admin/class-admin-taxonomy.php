@@ -1,8 +1,8 @@
 <?php
 
-namespace AI_SEO_Keeper\Admin;
+namespace AI_SEO_Captain\Admin;
 
-use AI_SEO_Keeper\Meta_Keys;
+use AI_SEO_Captain\Meta_Keys;
 
 /**
  * Taxonomy term SEO fields — register, render, save.
@@ -32,37 +32,37 @@ class Admin_Taxonomy
         $canonical        = get_term_meta($term->term_id, Meta_Keys::TERM_CANONICAL, true);
         $noindex          = get_term_meta($term->term_id, Meta_Keys::TERM_NOINDEX, true);
 
-        wp_nonce_field('ai_seo_keeper_term_seo', '_ai_seo_keeper_term_nonce');
+        wp_nonce_field('ai_seo_captain_term_seo', '_ai_seo_captain_term_nonce');
 ?>
         <tr class="form-field">
             <th scope="row" colspan="2">
-                <h2 style="margin:0;"><?php esc_html_e('AI SEO Keeper', 'ai-seo-keeper'); ?></h2>
+                <h2 style="margin:0;"><?php esc_html_e('SEO Captain', 'ai-seo-captain'); ?></h2>
             </th>
         </tr>
         <tr class="form-field">
-            <th scope="row"><label for="ai-seo-keeper-term-seo-title"><?php esc_html_e('SEO Title', 'ai-seo-keeper'); ?></label></th>
+            <th scope="row"><label for="ai-seo-captain-term-seo-title"><?php esc_html_e('SEO Title', 'ai-seo-captain'); ?></label></th>
             <td>
-                <input id="ai-seo-keeper-term-seo-title" type="text" name="ai_seo_keeper_seo_title" value="<?php echo esc_attr($seo_title); ?>" class="large-text" />
-                <p class="description"><?php esc_html_e('Override the default title tag. Leave blank to use the WordPress default.', 'ai-seo-keeper'); ?></p>
+                <input id="ai-seo-captain-term-seo-title" type="text" name="ai_seo_captain_seo_title" value="<?php echo esc_attr($seo_title); ?>" class="large-text" />
+                <p class="description"><?php esc_html_e('Override the default title tag. Leave blank to use the WordPress default.', 'ai-seo-captain'); ?></p>
             </td>
         </tr>
         <tr class="form-field">
-            <th scope="row"><label for="ai-seo-keeper-term-meta-desc"><?php esc_html_e('Meta description', 'ai-seo-keeper'); ?></label></th>
+            <th scope="row"><label for="ai-seo-captain-term-meta-desc"><?php esc_html_e('Meta description', 'ai-seo-captain'); ?></label></th>
             <td>
-                <textarea id="ai-seo-keeper-term-meta-desc" name="ai_seo_keeper_meta_description" rows="3" class="large-text"><?php echo esc_textarea($meta_description); ?></textarea>
+                <textarea id="ai-seo-captain-term-meta-desc" name="ai_seo_captain_meta_description" rows="3" class="large-text"><?php echo esc_textarea($meta_description); ?></textarea>
             </td>
         </tr>
         <tr class="form-field">
-            <th scope="row"><label for="ai-seo-keeper-term-canonical"><?php esc_html_e('Canonical URL', 'ai-seo-keeper'); ?></label></th>
+            <th scope="row"><label for="ai-seo-captain-term-canonical"><?php esc_html_e('Canonical URL', 'ai-seo-captain'); ?></label></th>
             <td>
-                <input id="ai-seo-keeper-term-canonical" type="url" name="ai_seo_keeper_canonical" value="<?php echo esc_attr($canonical); ?>" class="large-text" placeholder="https://" />
-                <p class="description"><?php esc_html_e('Leave blank for the default canonical URL.', 'ai-seo-keeper'); ?></p>
+                <input id="ai-seo-captain-term-canonical" type="url" name="ai_seo_captain_canonical" value="<?php echo esc_attr($canonical); ?>" class="large-text" placeholder="https://" />
+                <p class="description"><?php esc_html_e('Leave blank for the default canonical URL.', 'ai-seo-captain'); ?></p>
             </td>
         </tr>
         <tr class="form-field">
-            <th scope="row"><?php esc_html_e('Noindex', 'ai-seo-keeper'); ?></th>
+            <th scope="row"><?php esc_html_e('Noindex', 'ai-seo-captain'); ?></th>
             <td>
-                <label><input type="checkbox" name="ai_seo_keeper_noindex" value="1" <?php checked($noindex, '1'); ?> /> <?php esc_html_e('Prevent search engines from indexing this taxonomy archive', 'ai-seo-keeper'); ?></label>
+                <label><input type="checkbox" name="ai_seo_captain_noindex" value="1" <?php checked($noindex, '1'); ?> /> <?php esc_html_e('Prevent search engines from indexing this taxonomy archive', 'ai-seo-captain'); ?></label>
             </td>
         </tr>
 <?php
@@ -74,8 +74,8 @@ class Admin_Taxonomy
     public function save_fields(int $term_id, int $tt_id): void
     {
         if (
-            ! isset($_POST['_ai_seo_keeper_term_nonce'])
-            || ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_ai_seo_keeper_term_nonce'])), 'ai_seo_keeper_term_seo')
+            ! isset($_POST['_ai_seo_captain_term_nonce'])
+            || ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_ai_seo_captain_term_nonce'])), 'ai_seo_captain_term_seo')
         ) {
             return;
         }
@@ -85,9 +85,9 @@ class Admin_Taxonomy
         }
 
         $fields = array(
-            'ai_seo_keeper_seo_title'       => Meta_Keys::TERM_SEO_TITLE,
-            'ai_seo_keeper_meta_description' => Meta_Keys::TERM_META_DESCRIPTION,
-            'ai_seo_keeper_canonical'       => Meta_Keys::TERM_CANONICAL,
+            'ai_seo_captain_seo_title'       => Meta_Keys::TERM_SEO_TITLE,
+            'ai_seo_captain_meta_description' => Meta_Keys::TERM_META_DESCRIPTION,
+            'ai_seo_captain_canonical'       => Meta_Keys::TERM_CANONICAL,
         );
 
         foreach ($fields as $input_key => $meta_key) {
@@ -104,7 +104,7 @@ class Admin_Taxonomy
             }
         }
 
-        $noindex = isset($_POST['ai_seo_keeper_noindex']) ? '1' : '';
+        $noindex = isset($_POST['ai_seo_captain_noindex']) ? '1' : '';
 
         if ('' !== $noindex) {
             update_term_meta($term_id, Meta_Keys::TERM_NOINDEX, '1');

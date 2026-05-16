@@ -27,7 +27,7 @@ jQuery(function ($) {
     // --- Render Lists panel (always, even when chat is disabled) ---
     (function renderListsGrid() {
         var runs = conf.runs || [];
-        var $grid = $('#aisk-lists-grid');
+        var $grid = $('#aisc-lists-grid');
         if (!$grid.length) return;
         if (runs.length === 0) return;
 
@@ -55,20 +55,20 @@ jQuery(function ($) {
                 statusText = 'Incomplete — Missing: ' + missing.join(', ');
             }
 
-            html += '<div class="aisk-list-card ' + statusClass + '" data-run-id="' + parseInt(r.id, 10) + '">' +
-                '<div class="aisk-list-card__header">' +
-                '<span class="aisk-list-card__status">' + statusIcon + '</span>' +
-                '<strong class="aisk-list-card__name">' + $('<span>').text(r.name).html() + '</strong>' +
+            html += '<div class="aisc-list-card ' + statusClass + '" data-run-id="' + parseInt(r.id, 10) + '">' +
+                '<div class="aisc-list-card__header">' +
+                '<span class="aisc-list-card__status">' + statusIcon + '</span>' +
+                '<strong class="aisc-list-card__name">' + $('<span>').text(r.name).html() + '</strong>' +
                 '</div>' +
-                '<div class="aisk-list-card__stats">' +
+                '<div class="aisc-list-card__stats">' +
                 '<span>' + pc + ' pages</span>' +
-                '<span class="aisk-list-card__sep">&middot;</span>' +
-                '<span class="' + (metaDone ? 'aisk-stat-done' : 'aisk-stat-missing') + '">Metadata: ' + (metaDone ? 'Done ✓' : 'Pending') + '</span>' +
-                '<span class="aisk-list-card__sep">&middot;</span>' +
-                '<span class="' + (auditDone ? 'aisk-stat-done' : 'aisk-stat-missing') + '">Audit: ' + (auditDone ? 'Done ✓' : 'Pending') + '</span>' +
+                '<span class="aisc-list-card__sep">&middot;</span>' +
+                '<span class="' + (metaDone ? 'aisc-stat-done' : 'aisc-stat-missing') + '">Metadata: ' + (metaDone ? 'Done ✓' : 'Pending') + '</span>' +
+                '<span class="aisc-list-card__sep">&middot;</span>' +
+                '<span class="' + (auditDone ? 'aisc-stat-done' : 'aisc-stat-missing') + '">Audit: ' + (auditDone ? 'Done ✓' : 'Pending') + '</span>' +
                 '</div>' +
-                '<div class="aisk-list-card__status-text">' + statusText + '</div>' +
-                '<div class="aisk-list-card__date">Created: ' + (r.created_at || '').substring(0, 10) + '</div>' +
+                '<div class="aisc-list-card__status-text">' + statusText + '</div>' +
+                '<div class="aisc-list-card__date">Created: ' + (r.created_at || '').substring(0, 10) + '</div>' +
                 '</div>';
         }
         $grid.html(html);
@@ -121,17 +121,17 @@ jQuery(function ($) {
     (function renderFocusPicker() {
         var $list = $('#ai-seo-focus-list');
         if (!$list.length || auditedPages.length === 0) {
-            $list.html('<div class="aisk-focus-selector__empty">No audited pages yet. Run a Full SEO Audit from the Setup Wizard first.</div>');
+            $list.html('<div class="aisc-focus-selector__empty">No audited pages yet. Run a Full SEO Audit from the Setup Wizard first.</div>');
             return;
         }
         var html = '';
         for (var i = 0; i < auditedPages.length; i++) {
             var p = auditedPages[i];
             var listLabels = (p.lists && p.lists.length > 0) ? p.lists.join(', ') : 'Full Site';
-            html += '<label class="aisk-focus-selector__row">' +
+            html += '<label class="aisc-focus-selector__row">' +
                 '<input type="checkbox" value="' + parseInt(p.id, 10) + '" />' +
-                '<span class="aisk-focus-selector__title">' + $('<span>').text(p.title).html() + '</span>' +
-                '<span class="aisk-focus-selector__list-label">' + $('<span>').text(listLabels).html() + '</span>' +
+                '<span class="aisc-focus-selector__title">' + $('<span>').text(p.title).html() + '</span>' +
+                '<span class="aisc-focus-selector__list-label">' + $('<span>').text(listLabels).html() + '</span>' +
                 '</label>';
         }
         $list.html(html);
@@ -140,7 +140,7 @@ jQuery(function ($) {
     // Search filter for focus pages
     $('#ai-seo-focus-search').on('input', function () {
         var term = $(this).val().toLowerCase();
-        $('#ai-seo-focus-list .aisk-focus-selector__row').each(function () {
+        $('#ai-seo-focus-list .aisc-focus-selector__row').each(function () {
             $(this).toggle($(this).text().toLowerCase().indexOf(term) !== -1);
         });
     });

@@ -1,5 +1,5 @@
 /**
- * AI SEO Keeper — Video SEO page scripts
+ * SEO Captain — Video SEO page scripts
  */
 (function ($) {
     'use strict';
@@ -21,7 +21,7 @@
         btn.prop('disabled', true).text('Saving…');
 
         $.post(ajaxurl, {
-            action: 'ai_seo_keeper_save_video_seo',
+            action: 'ai_seo_captain_save_video_seo',
             _nonce: nonce,
             video_key: row.data('video-key'),
             post_id: row.data('post-id'),
@@ -40,7 +40,7 @@
     });
 
     // Search filter.
-    var searchInput = document.getElementById('aisk-video-search');
+    var searchInput = document.getElementById('aisc-video-search');
     var table = document.getElementById('ai-seo-video-table');
     if (searchInput && table) {
         searchInput.addEventListener('input', function () {

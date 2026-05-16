@@ -1,4 +1,4 @@
-# AI SEO Keeper — Plugin Capabilities & Feature Summary
+# SEO Captain — Plugin Capabilities & Feature Summary
 
 **Version:** 1.3.1  
 **Date:** 2026-05-14
@@ -84,7 +84,7 @@ Plus site-wide: **orphaned content**, **duplicate titles**, **keyword cannibaliz
 | Twitter Card tags | Social fields or post data |
 | Schema JSON-LD | Auto-typed (Article, Product, LocalBusiness, FAQPage, etc.) |
 | Hreflang `<link>` tags | Per-page alternates + WPML/Polylang auto-detect |
-| Breadcrumb schema + shortcode | `[ai_seo_keeper_breadcrumbs]` |
+| Breadcrumb schema + shortcode | `[ai_seo_captain_breadcrumbs]` |
 | Google/Bing verification meta | Settings codes |
 | Title templates | 9 templates (post, page, category, tag, author, date, search, archive, 404) |
 | Separator & brand suffix | Configurable `|` + site brand |
@@ -183,15 +183,15 @@ Plus site-wide: **orphaned content**, **duplicate titles**, **keyword cannibaliz
 
 | Table | Purpose |
 |-------|---------|
-| `wp_ai_seo_keeper_content_index` | Site content index for AI context |
-| `wp_ai_seo_keeper_conversations` | Chat conversation containers |
-| `wp_ai_seo_keeper_messages` | Individual chat messages (AI + user) |
-| `wp_ai_seo_keeper_redirects` | Redirects + 404 log entries |
-| `wp_ai_seo_keeper_runs` | Named batch operation tracking |
+| `wp_ai_seo_captain_content_index` | Site content index for AI context |
+| `wp_ai_seo_captain_conversations` | Chat conversation containers |
+| `wp_ai_seo_captain_messages` | Individual chat messages (AI + user) |
+| `wp_ai_seo_captain_redirects` | Redirects + 404 log entries |
+| `wp_ai_seo_captain_runs` | Named batch operation tracking |
 
-**Post Meta Keys:** 17 (`_ai_seo_keeper_*`)  
-**Term Meta Keys:** 4 (`_ai_seo_keeper_*`)  
-**Settings:** 70+ options in single `ai_seo_keeper_settings` row
+**Post Meta Keys:** 17 (`_ai_seo_captain_*`)  
+**Term Meta Keys:** 4 (`_ai_seo_captain_*`)  
+**Settings:** 70+ options in single `ai_seo_captain_settings` row
 
 ---
 

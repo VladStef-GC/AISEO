@@ -1,6 +1,6 @@
 <?php
 
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
 /**
  * Universal content extractor for WordPress posts.
@@ -65,7 +65,7 @@ class Content_Helper
     private static function resolve_content(\WP_Post $post): string
     {
         // 0. Allow any theme, builder, or ACF integration to supply content.
-        $custom = apply_filters('ai_seo_keeper_post_content', '', $post);
+        $custom = apply_filters('ai_seo_captain_post_content', '', $post);
 
         if (is_string($custom) && self::is_meaningful($custom)) {
             return $custom;

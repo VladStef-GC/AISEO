@@ -1,6 +1,6 @@
 <?php
 
-namespace AI_SEO_Keeper\ImportExport;
+namespace AI_SEO_Captain\ImportExport;
 
 /**
  * Replaces source domain with target domain in URLs.
@@ -70,8 +70,8 @@ class Url_Rewriter
         }
 
         $url_keys = array(
-            '_ai_seo_keeper_canonical_url',
-            '_ai_seo_keeper_social_image',
+            '_ai_seo_captain_canonical_url',
+            '_ai_seo_captain_social_image',
         );
 
         foreach ($url_keys as $key) {

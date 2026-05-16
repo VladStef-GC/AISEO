@@ -1,6 +1,6 @@
 <?php
 
-namespace AI_SEO_Keeper\ImportExport;
+namespace AI_SEO_Captain\ImportExport;
 
 /**
  * Matches exported posts/terms to local posts/terms using slug+type priority.

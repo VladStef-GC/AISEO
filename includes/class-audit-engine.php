@@ -1,16 +1,16 @@
 <?php
 
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
 class Audit_Engine
 {
-    private const META_TITLE_KEY = '_ai_seo_keeper_meta_title';
+    private const META_TITLE_KEY = '_ai_seo_captain_meta_title';
 
-    private const META_DESCRIPTION_KEY = '_ai_seo_keeper_meta_description';
+    private const META_DESCRIPTION_KEY = '_ai_seo_captain_meta_description';
 
-    private const FRONTEND_ENABLE_META_KEY = '_ai_seo_keeper_frontend_enabled';
+    private const FRONTEND_ENABLE_META_KEY = '_ai_seo_captain_frontend_enabled';
 
-    private const APPROVED_MESSAGE_META_KEY = '_ai_seo_keeper_approved_message_id';
+    private const APPROVED_MESSAGE_META_KEY = '_ai_seo_captain_approved_message_id';
 
     private Content_Indexer $content_indexer;
 
@@ -81,7 +81,7 @@ class Audit_Engine
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
         $limit = max(1, $limit);
 
         $sql = $wpdb->prepare(
@@ -106,7 +106,7 @@ class Audit_Engine
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
         $postmeta_table = $wpdb->postmeta;
         $limit = max(1, $limit);
 
@@ -134,7 +134,7 @@ class Audit_Engine
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
         $postmeta_table = $wpdb->postmeta;
         $limit = max(1, $limit);
 
@@ -191,7 +191,7 @@ class Audit_Engine
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
         $postmeta_table = $wpdb->postmeta;
         $limit = max(1, $limit);
 
@@ -243,7 +243,7 @@ class Audit_Engine
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
         $limit = max(1, $limit);
         $rows = $wpdb->get_results(
             $wpdb->prepare(
@@ -332,7 +332,7 @@ class Audit_Engine
         $orphans = array();
 
         global $wpdb;
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
 
         // Get all published posts from the index.
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -394,7 +394,7 @@ class Audit_Engine
     public function build_internal_link_graph(): array
     {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
         $posts = $wpdb->get_col(

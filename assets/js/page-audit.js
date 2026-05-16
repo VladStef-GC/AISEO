@@ -1,5 +1,5 @@
 /**
- * AI SEO Keeper — Audit page scripts
+ * SEO Captain — Audit page scripts
  */
 (function () {
     'use strict';
@@ -28,8 +28,8 @@
         });
     }
 
-    initLoadMore('aisk-indexnow-loadmore', '.aisk-indexnow-entry');
-    initLoadMore('aisk-siteaudits-loadmore', '.aisk-siteaudit-entry');
+    initLoadMore('aisc-indexnow-loadmore', '.aisc-indexnow-entry');
+    initLoadMore('aisc-siteaudits-loadmore', '.aisc-siteaudit-entry');
 
     /* ---------- Export to .txt helper ---------- */
     function initExport(btnId, entrySelector, filename) {
@@ -56,6 +56,6 @@
         });
     }
 
-    initExport('aisk-indexnow-export', '.aisk-indexnow-entry', 'indexnow-activity.txt');
-    initExport('aisk-siteaudits-export', '.aisk-siteaudit-entry', 'ai-site-audits.txt');
+    initExport('aisc-indexnow-export', '.aisc-indexnow-entry', 'indexnow-activity.txt');
+    initExport('aisc-siteaudits-export', '.aisc-siteaudit-entry', 'ai-site-audits.txt');
 })();

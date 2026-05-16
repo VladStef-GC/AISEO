@@ -1,16 +1,16 @@
 /**
- * AI SEO Keeper — Redirects page scripts
+ * SEO Captain — Redirects page scripts
  */
 (function ($) {
     'use strict';
 
-    var nonce = aiskRedirects.nonce;
+    var nonce = aiscRedirects.nonce;
 
     $('#ai-seo-redir-add-btn').on('click', function () {
         var btn = $(this);
         btn.prop('disabled', true);
         $.post(ajaxurl, {
-            action: 'ai_seo_keeper_add_redirect',
+            action: 'ai_seo_captain_add_redirect',
             _nonce: nonce,
             source_url: $('#ai-seo-redir-source').val(),
             target_url: $('#ai-seo-redir-target').val(),
@@ -28,7 +28,7 @@
     $(document).on('click', '.ai-seo-redir-delete', function () {
         var row = $(this).closest('tr');
         $.post(ajaxurl, {
-            action: 'ai_seo_keeper_delete_redirect',
+            action: 'ai_seo_captain_delete_redirect',
             _nonce: nonce,
             id: $(this).data('id')
         }, function (resp) {
@@ -41,7 +41,7 @@
     $('#ai-seo-clear-404s').on('click', function () {
         if (!confirm('Clear all 404 entries?')) return;
         $.post(ajaxurl, {
-            action: 'ai_seo_keeper_clear_404s',
+            action: 'ai_seo_captain_clear_404s',
             _nonce: nonce
         }, function (resp) {
             if (resp.success) location.reload();

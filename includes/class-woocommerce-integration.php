@@ -1,9 +1,9 @@
 <?php
 
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
 /**
- * WooCommerce Integration for AI SEO Keeper.
+ * WooCommerce Integration for SEO Captain.
  *
  * Boots only when WooCommerce is active. Enriches:
  *  - Product schema with real WC data (price, SKU, availability, ratings)
@@ -12,7 +12,7 @@ namespace AI_SEO_Keeper;
  *  - Sitemaps with product / product_cat / product_tag entries
  *  - AI generation context with product-specific data
  *
- * @package AI_SEO_Keeper
+ * @package AI_SEO_Captain
  */
 class WooCommerce_Integration
 {
@@ -54,23 +54,23 @@ class WooCommerce_Integration
     private function init(): void
     {
         // Schema enrichment — hooked from class-frontend.php filter.
-        add_filter('ai_seo_keeper_product_schema', array($this, 'enrich_product_schema'), 10, 2);
+        add_filter('ai_seo_captain_product_schema', array($this, 'enrich_product_schema'), 10, 2);
 
         // Extra Open Graph tags for product pages.
-        add_filter('ai_seo_keeper_extra_og_tags', array($this, 'add_product_og_tags'), 10, 2);
+        add_filter('ai_seo_captain_extra_og_tags', array($this, 'add_product_og_tags'), 10, 2);
 
         // Non-singular context for WC archives.
-        add_filter('ai_seo_keeper_wc_archive_context', array($this, 'build_wc_archive_context'), 10, 3);
+        add_filter('ai_seo_captain_wc_archive_context', array($this, 'build_wc_archive_context'), 10, 3);
 
         // Sitemap entries — only when sitemap is enabled.
         if (! empty($this->options['sitemap_enabled'])) {
-            add_filter('ai_seo_keeper_sitemap_index_entries', array($this, 'add_sitemap_entries'), 10, 2);
-            add_filter('ai_seo_keeper_sitemap_urls', array($this, 'get_sitemap_urls'), 10, 2);
+            add_filter('ai_seo_captain_sitemap_index_entries', array($this, 'add_sitemap_entries'), 10, 2);
+            add_filter('ai_seo_captain_sitemap_urls', array($this, 'get_sitemap_urls'), 10, 2);
         }
 
         // AI generator context — only when AI context enrichment is enabled.
         if (! empty($this->options['wc_ai_context_enabled'])) {
-            add_filter('ai_seo_keeper_product_context', array($this, 'get_ai_product_context'), 10, 2);
+            add_filter('ai_seo_captain_product_context', array($this, 'get_ai_product_context'), 10, 2);
         }
     }
 
@@ -211,7 +211,7 @@ class WooCommerce_Integration
             $shop_page_id  = (int) \wc_get_page_id('shop');
             $archive_title = $shop_page_id > 0
                 ? wp_strip_all_tags((string) get_the_title($shop_page_id))
-                : __('Shop', 'ai-seo-keeper');
+                : __('Shop', 'ai-seo-captain');
 
             $context['context_type']       = 'wc_shop';
             $context['title']              = $archive_title . ' ' . $separator . ' ' . $site_name;
@@ -242,7 +242,7 @@ class WooCommerce_Integration
             }
 
             // Respect term-level noindex.
-            $noindex = get_term_meta($term->term_id, '_ai_seo_keeper_noindex', true);
+            $noindex = get_term_meta($term->term_id, '_ai_seo_captain_noindex', true);
             if ('1' === $noindex) {
                 $context['robots_directives'] = 'noindex,follow';
             }
@@ -439,7 +439,7 @@ class WooCommerce_Integration
 
     private function get_product_post_urls(): array
     {
-        $noindex_key = '_ai_seo_keeper_robots_directives';
+        $noindex_key = '_ai_seo_captain_robots_directives';
         $urls        = array();
 
         $posts = get_posts(array(
@@ -487,7 +487,7 @@ class WooCommerce_Integration
             if (! $term instanceof \WP_Term) {
                 continue;
             }
-            $noindex = get_term_meta($term->term_id, '_ai_seo_keeper_noindex', true);
+            $noindex = get_term_meta($term->term_id, '_ai_seo_captain_noindex', true);
             if ('1' === $noindex) {
                 continue;
             }

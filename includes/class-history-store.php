@@ -1,10 +1,10 @@
 <?php
 
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
 class History_Store
 {
-    private const APPROVED_MESSAGE_META_KEY = '_ai_seo_keeper_approved_message_id';
+    private const APPROVED_MESSAGE_META_KEY = '_ai_seo_captain_approved_message_id';
 
     private const SITE_AUDIT_OBJECT_TYPE = 'site_audit';
 
@@ -15,7 +15,7 @@ class History_Store
         global $wpdb;
 
         $conversation_id = $this->get_or_create_conversation($object_id, $object_type, $conversation_title);
-        $messages_table = $wpdb->prefix . 'ai_seo_keeper_messages';
+        $messages_table = $wpdb->prefix . 'ai_seo_captain_messages';
         $created_at = current_time('mysql', true);
 
         $user_inserted = $wpdb->insert(
@@ -60,8 +60,8 @@ class History_Store
     {
         global $wpdb;
 
-        $conversations_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
-        $messages_table = $wpdb->prefix . 'ai_seo_keeper_messages';
+        $conversations_table = $wpdb->prefix . 'ai_seo_captain_conversations';
+        $messages_table = $wpdb->prefix . 'ai_seo_captain_messages';
         $limit = max(1, min(10, $limit));
         $approved_message_id = $this->get_approved_suggestion_id($object_id, $object_type);
 
@@ -153,8 +153,8 @@ class History_Store
     {
         global $wpdb;
 
-        $conversations_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
-        $messages_table = $wpdb->prefix . 'ai_seo_keeper_messages';
+        $conversations_table = $wpdb->prefix . 'ai_seo_captain_conversations';
+        $messages_table = $wpdb->prefix . 'ai_seo_captain_messages';
         $limit = max(1, min(10, $limit));
 
         $sql = $wpdb->prepare(
@@ -190,7 +190,7 @@ class History_Store
             $history[] = array(
                 'id' => (int) $row['id'],
                 'created_at' => (string) $row['created_at'],
-                'audit_title' => isset($payload['audit_title']) ? (string) $payload['audit_title'] : 'AI SEO Keeper Site Audit',
+                'audit_title' => isset($payload['audit_title']) ? (string) $payload['audit_title'] : 'SEO Captain Site Audit',
                 'executive_summary' => isset($payload['executive_summary']) ? (string) $payload['executive_summary'] : '',
                 'priority_actions' => isset($payload['priority_actions']) && is_array($payload['priority_actions']) ? array_values($payload['priority_actions']) : array(),
                 'quick_wins' => isset($payload['quick_wins']) && is_array($payload['quick_wins']) ? array_values($payload['quick_wins']) : array(),
@@ -207,8 +207,8 @@ class History_Store
     {
         global $wpdb;
 
-        $conversations_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
-        $messages_table = $wpdb->prefix . 'ai_seo_keeper_messages';
+        $conversations_table = $wpdb->prefix . 'ai_seo_captain_conversations';
+        $messages_table = $wpdb->prefix . 'ai_seo_captain_messages';
         $limit = max(1, min(20, $limit));
 
         $sql = $wpdb->prepare(
@@ -261,8 +261,8 @@ class History_Store
     {
         global $wpdb;
 
-        $conversations_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
-        $messages_table = $wpdb->prefix . 'ai_seo_keeper_messages';
+        $conversations_table = $wpdb->prefix . 'ai_seo_captain_conversations';
+        $messages_table = $wpdb->prefix . 'ai_seo_captain_messages';
 
         $sql = $wpdb->prepare(
             "SELECT m.id, m.content, m.created_at
@@ -307,7 +307,7 @@ class History_Store
     {
         global $wpdb;
 
-        $conversations_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
+        $conversations_table = $wpdb->prefix . 'ai_seo_captain_conversations';
 
         $conversation_id = (int) $wpdb->get_var(
             $wpdb->prepare(
@@ -346,7 +346,7 @@ class History_Store
     {
         global $wpdb;
 
-        $conversations_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
+        $conversations_table = $wpdb->prefix . 'ai_seo_captain_conversations';
 
         $wpdb->update(
             $conversations_table,
@@ -361,8 +361,8 @@ class History_Store
     {
         global $wpdb;
 
-        $conversations_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
-        $messages_table = $wpdb->prefix . 'ai_seo_keeper_messages';
+        $conversations_table = $wpdb->prefix . 'ai_seo_captain_conversations';
+        $messages_table = $wpdb->prefix . 'ai_seo_captain_messages';
 
         $conversation_ids = $wpdb->get_col(
             $wpdb->prepare(
@@ -393,8 +393,8 @@ class History_Store
     {
         global $wpdb;
 
-        $conversations_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
-        $messages_table = $wpdb->prefix . 'ai_seo_keeper_messages';
+        $conversations_table = $wpdb->prefix . 'ai_seo_captain_conversations';
+        $messages_table = $wpdb->prefix . 'ai_seo_captain_messages';
 
         // Find the most recent content_edit conversation for this post.
         $conversation_id = $wpdb->get_var(
@@ -458,8 +458,8 @@ class History_Store
     {
         global $wpdb;
 
-        $conversations_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
-        $messages_table = $wpdb->prefix . 'ai_seo_keeper_messages';
+        $conversations_table = $wpdb->prefix . 'ai_seo_captain_conversations';
+        $messages_table = $wpdb->prefix . 'ai_seo_captain_messages';
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
@@ -511,7 +511,7 @@ class History_Store
     {
         global $wpdb;
 
-        $messages_table = $wpdb->prefix . 'ai_seo_keeper_messages';
+        $messages_table = $wpdb->prefix . 'ai_seo_captain_messages';
 
         // Delete the assistant message and its paired user message (previous row).
         $conversation_id = $wpdb->get_var(
@@ -546,7 +546,7 @@ class History_Store
         );
 
         if (0 === (int) $remaining) {
-            $conversations_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
+            $conversations_table = $wpdb->prefix . 'ai_seo_captain_conversations';
             $wpdb->delete($conversations_table, array('id' => (int) $conversation_id), array('%d'));
         }
     }

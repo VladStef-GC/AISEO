@@ -1,8 +1,8 @@
 <?php
 
-namespace AI_SEO_Keeper\ImportExport;
+namespace AI_SEO_Captain\ImportExport;
 
-use AI_SEO_Keeper\Settings;
+use AI_SEO_Captain\Settings;
 
 /**
  * Processes import in chunks via AJAX.
@@ -22,29 +22,29 @@ class Importer
 
     /** Post meta keys managed by the plugin (for force-mode cleanup). */
     private const ALL_POST_META_KEYS = array(
-        '_ai_seo_keeper_meta_title',
-        '_ai_seo_keeper_meta_description',
-        '_ai_seo_keeper_focus_keyphrase',
-        '_ai_seo_keeper_social_title',
-        '_ai_seo_keeper_social_description',
-        '_ai_seo_keeper_social_image',
-        '_ai_seo_keeper_schema_type',
-        '_ai_seo_keeper_canonical_url',
-        '_ai_seo_keeper_robots_directives',
-        '_ai_seo_keeper_frontend_enabled',
-        '_ai_seo_keeper_cornerstone',
-        '_ai_seo_keeper_hreflang',
-        '_ai_seo_keeper_title_branding_off',
-        '_ai_seo_keeper_page_audit',
-        '_ai_seo_keeper_audit_skip',
+        '_ai_seo_captain_meta_title',
+        '_ai_seo_captain_meta_description',
+        '_ai_seo_captain_focus_keyphrase',
+        '_ai_seo_captain_social_title',
+        '_ai_seo_captain_social_description',
+        '_ai_seo_captain_social_image',
+        '_ai_seo_captain_schema_type',
+        '_ai_seo_captain_canonical_url',
+        '_ai_seo_captain_robots_directives',
+        '_ai_seo_captain_frontend_enabled',
+        '_ai_seo_captain_cornerstone',
+        '_ai_seo_captain_hreflang',
+        '_ai_seo_captain_title_branding_off',
+        '_ai_seo_captain_page_audit',
+        '_ai_seo_captain_audit_skip',
     );
 
     /** Term meta keys managed by the plugin. */
     private const ALL_TERM_META_KEYS = array(
-        '_ai_seo_keeper_seo_title',
-        '_ai_seo_keeper_meta_description',
-        '_ai_seo_keeper_canonical',
-        '_ai_seo_keeper_noindex',
+        '_ai_seo_captain_seo_title',
+        '_ai_seo_captain_meta_description',
+        '_ai_seo_captain_canonical',
+        '_ai_seo_captain_noindex',
     );
 
     private Settings $settings;
@@ -109,7 +109,7 @@ class Importer
         // Wizard flags.
         if (! empty($wizard_flags) && is_array($wizard_flags)) {
             foreach ($wizard_flags as $flag_key => $flag_value) {
-                $option_name = 'ai_seo_keeper_' . sanitize_key($flag_key);
+                $option_name = 'ai_seo_captain_' . sanitize_key($flag_key);
                 if (self::MODE_UPDATE === $this->mode) {
                     if (! get_option($option_name)) {
                         update_option($option_name, $flag_value);
@@ -190,7 +190,7 @@ class Importer
 
         foreach ($meta as $key => $value) {
             // Only allow known plugin keys.
-            if (0 !== strpos($key, '_ai_seo_keeper_')) {
+            if (0 !== strpos($key, '_ai_seo_captain_')) {
                 continue;
             }
 
@@ -266,7 +266,7 @@ class Importer
         }
 
         foreach ($meta as $key => $value) {
-            if (0 !== strpos($key, '_ai_seo_keeper_')) {
+            if (0 !== strpos($key, '_ai_seo_captain_')) {
                 continue;
             }
 
@@ -338,7 +338,7 @@ class Importer
     private function import_content_index(array $entries, array $slug_map): int
     {
         global $wpdb;
-        $table   = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table   = $wpdb->prefix . 'ai_seo_captain_content_index';
         $written = 0;
 
         foreach ($entries as $entry) {
@@ -412,7 +412,7 @@ class Importer
     public function import_redirects(array $redirects): array
     {
         global $wpdb;
-        $table    = $wpdb->prefix . 'ai_seo_keeper_redirects';
+        $table    = $wpdb->prefix . 'ai_seo_captain_redirects';
         $imported = 0;
         $skipped  = 0;
 
@@ -488,7 +488,7 @@ class Importer
     public function import_404s(array $entries): array
     {
         global $wpdb;
-        $table    = $wpdb->prefix . 'ai_seo_keeper_redirects';
+        $table    = $wpdb->prefix . 'ai_seo_captain_redirects';
         $imported = 0;
         $skipped  = 0;
 
@@ -550,7 +550,7 @@ class Importer
     public function import_runs(array $runs): array
     {
         global $wpdb;
-        $table    = $wpdb->prefix . 'ai_seo_keeper_runs';
+        $table    = $wpdb->prefix . 'ai_seo_captain_runs';
         $imported = 0;
 
         if (self::MODE_FORCE === $this->mode) {
@@ -591,8 +591,8 @@ class Importer
     public function import_chat_history(array $chat_data, array $post_matches): array
     {
         global $wpdb;
-        $conv_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
-        $msg_table  = $wpdb->prefix . 'ai_seo_keeper_messages';
+        $conv_table = $wpdb->prefix . 'ai_seo_captain_conversations';
+        $msg_table  = $wpdb->prefix . 'ai_seo_captain_messages';
 
         $conversations = $chat_data['conversations'] ?? array();
         $messages      = $chat_data['messages'] ?? array();

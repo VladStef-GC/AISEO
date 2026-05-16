@@ -1,5 +1,5 @@
 /**
- * AI SEO Keeper — Image SEO page scripts
+ * SEO Captain — Image SEO page scripts
  */
 (function ($) {
     'use strict';
@@ -25,7 +25,7 @@
         btn.prop('disabled', true).text('Saving…');
 
         $.post(ajaxurl, {
-            action: 'ai_seo_keeper_save_image_alt',
+            action: 'ai_seo_captain_save_image_alt',
             _nonce: nonce,
             attachment_id: row.data('att-id'),
             alt_text: row.find('.ai-seo-img-alt').val()
@@ -41,7 +41,7 @@
     });
 
     // Search filter.
-    var searchInput = document.getElementById('aisk-image-search');
+    var searchInput = document.getElementById('aisc-image-search');
     var table = document.getElementById('ai-seo-image-table');
     if (searchInput && table) {
         searchInput.addEventListener('input', function () {

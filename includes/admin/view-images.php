@@ -8,7 +8,7 @@
  *   $total_images, $total_with_alt, $total_missing_alt,
  *   $used_on_map, $nonce
  *
- * @package AI_SEO_Keeper
+ * @package AI_SEO_Captain
  */
 
 defined('ABSPATH') || exit;
@@ -26,8 +26,8 @@ defined('ABSPATH') || exit;
 /** @var string     $readiness_banner */
 ?>
 <div class="wrap">
-    <h1><?php esc_html_e('Image SEO', 'ai-seo-keeper'); ?></h1>
-    <p class="description"><?php esc_html_e('Manage alt text across your published images. Only images attached to or used as featured image on published content are shown.', 'ai-seo-keeper'); ?></p>
+    <h1><?php esc_html_e('Image SEO', 'ai-seo-captain'); ?></h1>
+    <p class="description"><?php esc_html_e('Manage alt text across your published images. Only images attached to or used as featured image on published content are shown.', 'ai-seo-captain'); ?></p>
 
     <?php echo $readiness_banner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped 
     ?>
@@ -35,26 +35,26 @@ defined('ABSPATH') || exit;
     <div style="display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:16px;max-width:700px;margin:20px 0;">
         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
             <p style="font-size:28px;margin:0;font-weight:600;"><?php echo $total_images; ?></p>
-            <p style="margin:4px 0 0;color:#50575e;"><?php esc_html_e('Total images', 'ai-seo-keeper'); ?></p>
+            <p style="margin:4px 0 0;color:#50575e;"><?php esc_html_e('Total images', 'ai-seo-captain'); ?></p>
         </div>
         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
             <p style="font-size:28px;margin:0;font-weight:600;color:#00a32a;"><?php echo $total_with_alt; ?></p>
-            <p style="margin:4px 0 0;color:#50575e;"><?php esc_html_e('With alt text', 'ai-seo-keeper'); ?></p>
+            <p style="margin:4px 0 0;color:#50575e;"><?php esc_html_e('With alt text', 'ai-seo-captain'); ?></p>
         </div>
         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
             <p style="font-size:28px;margin:0;font-weight:600;color:<?php echo $total_missing_alt > 0 ? '#d63638' : '#00a32a'; ?>;"><?php echo $total_missing_alt; ?></p>
-            <p style="margin:4px 0 0;color:#50575e;"><?php esc_html_e('Missing alt text', 'ai-seo-keeper'); ?></p>
+            <p style="margin:4px 0 0;color:#50575e;"><?php esc_html_e('Missing alt text', 'ai-seo-captain'); ?></p>
         </div>
     </div>
 
     <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:16px 0;">
         <div style="display:flex;gap:6px;">
-            <a href="<?php echo esc_url(add_query_arg('filter', 'all', remove_query_arg('paged'))); ?>" class="button <?php echo 'all' === $filter ? 'button-primary' : ''; ?>"><?php echo esc_html(sprintf(__('All images (%d)', 'ai-seo-keeper'), $total_images)); ?></a>
-            <a href="<?php echo esc_url(add_query_arg('filter', 'missing_alt', remove_query_arg('paged'))); ?>" class="button <?php echo 'missing_alt' === $filter ? 'button-primary' : ''; ?>"><?php echo esc_html(sprintf(__('Missing alt (%d)', 'ai-seo-keeper'), $total_missing_alt)); ?></a>
-            <a href="<?php echo esc_url(add_query_arg('filter', 'with_alt', remove_query_arg('paged'))); ?>" class="button <?php echo 'with_alt' === $filter ? 'button-primary' : ''; ?>"><?php echo esc_html(sprintf(__('With alt (%d)', 'ai-seo-keeper'), $total_with_alt)); ?></a>
+            <a href="<?php echo esc_url(add_query_arg('filter', 'all', remove_query_arg('paged'))); ?>" class="button <?php echo 'all' === $filter ? 'button-primary' : ''; ?>"><?php echo esc_html(sprintf(__('All images (%d)', 'ai-seo-captain'), $total_images)); ?></a>
+            <a href="<?php echo esc_url(add_query_arg('filter', 'missing_alt', remove_query_arg('paged'))); ?>" class="button <?php echo 'missing_alt' === $filter ? 'button-primary' : ''; ?>"><?php echo esc_html(sprintf(__('Missing alt (%d)', 'ai-seo-captain'), $total_missing_alt)); ?></a>
+            <a href="<?php echo esc_url(add_query_arg('filter', 'with_alt', remove_query_arg('paged'))); ?>" class="button <?php echo 'with_alt' === $filter ? 'button-primary' : ''; ?>"><?php echo esc_html(sprintf(__('With alt (%d)', 'ai-seo-captain'), $total_with_alt)); ?></a>
         </div>
         <div style="flex:1;min-width:200px;max-width:400px;">
-            <input type="text" id="aisk-image-search" placeholder="<?php esc_attr_e('Search images by filename…', 'ai-seo-keeper'); ?>" style="width:100%;padding:6px 10px;font-size:13px;border:1px solid #8c8f94;border-radius:4px;" />
+            <input type="text" id="aisc-image-search" placeholder="<?php esc_attr_e('Search images by filename…', 'ai-seo-captain'); ?>" style="width:100%;padding:6px 10px;font-size:13px;border:1px solid #8c8f94;border-radius:4px;" />
         </div>
     </div>
 
@@ -62,10 +62,10 @@ defined('ABSPATH') || exit;
         <table class="widefat striped ai-seo-sortable" id="ai-seo-image-table">
             <thead>
                 <tr>
-                    <th style="width:80px;"><?php esc_html_e('Image', 'ai-seo-keeper'); ?></th>
-                    <th style="width:25%;" class="ai-seo-sort" data-col="1"><?php esc_html_e('File', 'ai-seo-keeper'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                    <th style="width:40%;" class="ai-seo-sort" data-col="2"><?php esc_html_e('Alt text', 'ai-seo-keeper'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                    <th style="width:20%;" class="ai-seo-sort" data-col="3"><?php esc_html_e('Used on', 'ai-seo-keeper'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th style="width:80px;"><?php esc_html_e('Image', 'ai-seo-captain'); ?></th>
+                    <th style="width:25%;" class="ai-seo-sort" data-col="1"><?php esc_html_e('File', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th style="width:40%;" class="ai-seo-sort" data-col="2"><?php esc_html_e('Alt text', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th style="width:20%;" class="ai-seo-sort" data-col="3"><?php esc_html_e('Used on', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
                     <th style="width:5%;"></th>
                 </tr>
             </thead>
@@ -96,17 +96,17 @@ defined('ABSPATH') || exit;
                         </td>
                         <td data-sort-value="<?php echo esc_attr(strtolower($filename)); ?>">
                             <strong><?php echo esc_html($filename); ?></strong>
-                            <div style="margin-top:2px;"><a href="<?php echo esc_url(admin_url('upload.php?item=' . $att_id)); ?>" style="font-size:12px;color:#50575e;"><?php esc_html_e('Edit in Media', 'ai-seo-keeper'); ?></a></div>
+                            <div style="margin-top:2px;"><a href="<?php echo esc_url(admin_url('upload.php?item=' . $att_id)); ?>" style="font-size:12px;color:#50575e;"><?php esc_html_e('Edit in Media', 'ai-seo-captain'); ?></a></div>
                         </td>
                         <td data-sort-value="<?php echo esc_attr(strtolower($alt)); ?>">
-                            <input type="text" class="large-text ai-seo-img-alt" value="<?php echo esc_attr($alt); ?>" data-original="<?php echo esc_attr($alt); ?>" placeholder="<?php esc_attr_e('Enter alt text\u2026', 'ai-seo-keeper'); ?>" />
+                            <input type="text" class="large-text ai-seo-img-alt" value="<?php echo esc_attr($alt); ?>" data-original="<?php echo esc_attr($alt); ?>" placeholder="<?php esc_attr_e('Enter alt text\u2026', 'ai-seo-captain'); ?>" />
                         </td>
                         <td data-sort-value="<?php echo esc_attr(strtolower($used_on_first_title)); ?>">
                             <?php if ($used_on_count > 0) : ?>
                                 <?php $first_pid = array_key_first($used_on_pages); ?>
                                 <a href="<?php echo esc_url(admin_url('post.php?post=' . $first_pid . '&action=edit')); ?>" style="font-size:12px;"><?php echo esc_html($used_on_pages[$first_pid]); ?></a>
                                 <?php if ($used_on_count > 1) : ?>
-                                    <span class="ai-seo-used-toggle" style="display:inline-block;margin-left:4px;background:#2271b1;color:#fff;border-radius:10px;padding:0 7px;font-size:11px;cursor:pointer;vertical-align:middle;" title="<?php echo esc_attr(sprintf(__('Used on %d pages', 'ai-seo-keeper'), $used_on_count)); ?>">+<?php echo $used_on_count - 1; ?></span>
+                                    <span class="ai-seo-used-toggle" style="display:inline-block;margin-left:4px;background:#2271b1;color:#fff;border-radius:10px;padding:0 7px;font-size:11px;cursor:pointer;vertical-align:middle;" title="<?php echo esc_attr(sprintf(__('Used on %d pages', 'ai-seo-captain'), $used_on_count)); ?>">+<?php echo $used_on_count - 1; ?></span>
                                     <div class="ai-seo-used-list" style="display:none;margin-top:6px;">
                                         <?php $i = 0;
                                         foreach ($used_on_pages as $pid => $ptitle) : $i++;
@@ -116,11 +116,11 @@ defined('ABSPATH') || exit;
                                     </div>
                                 <?php endif; ?>
                             <?php else : ?>
-                                <span style="color:#50575e;font-size:12px;"><?php esc_html_e('Unattached', 'ai-seo-keeper'); ?></span>
+                                <span style="color:#50575e;font-size:12px;"><?php esc_html_e('Unattached', 'ai-seo-captain'); ?></span>
                             <?php endif; ?>
                         </td>
                         <td>
-                            <button type="button" class="button button-small ai-seo-img-save" disabled><?php esc_html_e('Save', 'ai-seo-keeper'); ?></button>
+                            <button type="button" class="button button-small ai-seo-img-save" disabled><?php esc_html_e('Save', 'ai-seo-captain'); ?></button>
                         </td>
                     </tr>
                 <?php endwhile;
@@ -144,7 +144,7 @@ defined('ABSPATH') || exit;
             </div>
         <?php endif; ?>
     <?php else : ?>
-        <p><?php echo 'missing_alt' === $filter ? esc_html__('All images have alt text — great!', 'ai-seo-keeper') : ('with_alt' === $filter ? esc_html__('No images have alt text yet.', 'ai-seo-keeper') : esc_html__('No published images found.', 'ai-seo-keeper')); ?></p>
+        <p><?php echo 'missing_alt' === $filter ? esc_html__('All images have alt text — great!', 'ai-seo-captain') : ('with_alt' === $filter ? esc_html__('No images have alt text yet.', 'ai-seo-captain') : esc_html__('No published images found.', 'ai-seo-captain')); ?></p>
     <?php endif; ?>
 
 </div>

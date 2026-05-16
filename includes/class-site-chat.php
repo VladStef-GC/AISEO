@@ -1,6 +1,6 @@
 <?php
 
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
 /**
  * Site-wide AI Chat — allows users to discuss overall SEO performance,
@@ -43,26 +43,26 @@ class Site_Chat
 
     public function handle_chat(): void
     {
-        check_ajax_referer('ai_seo_keeper_site_chat', 'nonce');
+        check_ajax_referer('ai_seo_captain_site_chat', 'nonce');
 
         if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
         }
 
         $message = isset($_POST['message']) ? sanitize_textarea_field(wp_unslash($_POST['message'])) : '';
 
         if ('' === trim($message)) {
-            wp_send_json_error(array('message' => __('Enter a question before asking the AI assistant.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Enter a question before asking the AI assistant.', 'ai-seo-captain')), 400);
         }
 
         $options = $this->settings->get();
 
         if (empty($options['api_key'])) {
-            wp_send_json_error(array('message' => __('Add an API key in AI SEO Keeper Settings before using the AI assistant.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('Add an API key in SEO Captain Settings before using the AI assistant.', 'ai-seo-captain')), 400);
         }
 
         if (empty($options['editor_chat_enabled'])) {
-            wp_send_json_error(array('message' => __('The AI assistant is disabled in settings.', 'ai-seo-keeper')), 400);
+            wp_send_json_error(array('message' => __('The AI assistant is disabled in settings.', 'ai-seo-captain')), 400);
         }
 
         try {
@@ -122,23 +122,23 @@ class Site_Chat
         $chat_messages = $this->get_recent_messages(20);
 
         wp_send_json_success(array(
-            'message'  => __('AI assistant replied.', 'ai-seo-keeper'),
+            'message'  => __('AI assistant replied.', 'ai-seo-captain'),
             'chatHtml' => $this->render_chat_html($chat_messages),
         ));
     }
 
     public function handle_clear_chat(): void
     {
-        check_ajax_referer('ai_seo_keeper_site_chat', 'nonce');
+        check_ajax_referer('ai_seo_captain_site_chat', 'nonce');
 
         if (! current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-keeper')), 403);
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
         }
 
         $this->clear_messages();
 
         wp_send_json_success(array(
-            'message'  => __('Chat history cleared.', 'ai-seo-keeper'),
+            'message'  => __('Chat history cleared.', 'ai-seo-captain'),
             'chatHtml' => $this->render_chat_html(array()),
         ));
     }
@@ -214,7 +214,7 @@ class Site_Chat
     private function build_system_prompt(): string
     {
         return trim(
-            'IDENTITY: You are the AI inside the "AI SEO Keeper" WordPress plugin. ' .
+            'IDENTITY: You are the AI inside the "SEO Captain" WordPress plugin. ' .
                 'You are in SITE-WIDE CHAT mode — the user is asking about overall site SEO, not a specific page. ' .
                 'Never mention Yoast, RankMath, or any other SEO plugin.' . "\n\n" .
                 'Return only valid JSON with exactly these keys: reply, notes.' . "\n" .
@@ -463,7 +463,7 @@ class Site_Chat
     {
         global $wpdb;
 
-        $table    = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table    = $wpdb->prefix . 'ai_seo_captain_content_index';
         $postmeta = $wpdb->postmeta;
 
         $rows = $wpdb->get_results(
@@ -473,7 +473,7 @@ class Site_Chat
                  FROM {$table} idx
                  INNER JOIN {$postmeta} pm_audit
                     ON pm_audit.post_id = idx.object_id
-                   AND pm_audit.meta_key = '_ai_seo_keeper_page_audit'
+                   AND pm_audit.meta_key = '_ai_seo_captain_page_audit'
                  WHERE idx.object_type = %s AND idx.status = %s
                  ORDER BY idx.title ASC",
                 'post',
@@ -516,7 +516,7 @@ class Site_Chat
     {
         global $wpdb;
 
-        $table    = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table    = $wpdb->prefix . 'ai_seo_captain_content_index';
         $postmeta = $wpdb->postmeta;
 
         $rows = $wpdb->get_results(
@@ -526,7 +526,7 @@ class Site_Chat
                  FROM {$table} idx
                  INNER JOIN {$postmeta} pm_kp
                     ON pm_kp.post_id = idx.object_id
-                   AND pm_kp.meta_key = '_ai_seo_keeper_focus_keyphrase'
+                   AND pm_kp.meta_key = '_ai_seo_captain_focus_keyphrase'
                  WHERE idx.object_type = %s
                    AND idx.status = %s
                    AND TRIM(COALESCE(pm_kp.meta_value, '')) != ''
@@ -654,7 +654,7 @@ class Site_Chat
     {
         global $wpdb;
 
-        $table = $wpdb->prefix . 'ai_seo_keeper_redirects';
+        $table = $wpdb->prefix . 'ai_seo_captain_redirects';
 
         // Check if table exists.
         $table_exists = $wpdb->get_var(
@@ -695,8 +695,8 @@ class Site_Chat
     {
         global $wpdb;
 
-        $conversations_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
-        $messages_table      = $wpdb->prefix . 'ai_seo_keeper_messages';
+        $conversations_table = $wpdb->prefix . 'ai_seo_captain_conversations';
+        $messages_table      = $wpdb->prefix . 'ai_seo_captain_messages';
         $limit               = max(1, min(50, $limit));
 
         $rows = $wpdb->get_results(
@@ -745,8 +745,8 @@ class Site_Chat
     {
         global $wpdb;
 
-        $conversations_table = $wpdb->prefix . 'ai_seo_keeper_conversations';
-        $messages_table      = $wpdb->prefix . 'ai_seo_keeper_messages';
+        $conversations_table = $wpdb->prefix . 'ai_seo_captain_conversations';
+        $messages_table      = $wpdb->prefix . 'ai_seo_captain_messages';
 
         $conversation_ids = $wpdb->get_col(
             $wpdb->prepare(
@@ -774,21 +774,21 @@ class Site_Chat
         ob_start();
         if (empty($chat_messages)) :
 ?>
-            <p class="ai-seo-keeper-empty-state">No site-wide AI chat messages yet. Ask about your overall SEO performance, site structure, or keyphrase strategy.</p>
+            <p class="ai-seo-captain-empty-state">No site-wide AI chat messages yet. Ask about your overall SEO performance, site structure, or keyphrase strategy.</p>
         <?php else : ?>
-            <div class="ai-seo-keeper-stack">
+            <div class="ai-seo-captain-stack">
                 <?php foreach ($chat_messages as $entry) : ?>
-                    <div class="ai-seo-keeper-chat-item <?php echo 'assistant' === $entry['role'] ? 'is-assistant' : ''; ?>">
+                    <div class="ai-seo-captain-chat-item <?php echo 'assistant' === $entry['role'] ? 'is-assistant' : ''; ?>">
                         <p style="margin:0 0 8px;"><strong><?php echo 'assistant' === $entry['role'] ? 'AI SEO Strategist' : 'You'; ?></strong></p>
                         <?php if ('assistant' === $entry['role']) : ?>
-                            <div class="ai-seo-keeper-site-chat-reply"><?php echo wp_kses_post($this->render_markdown($entry['reply'])); ?></div>
+                            <div class="ai-seo-captain-site-chat-reply"><?php echo wp_kses_post($this->render_markdown($entry['reply'])); ?></div>
                             <?php if ('' !== $entry['notes']) : ?>
-                                <p style="margin:8px 0 0;"><em class="ai-seo-keeper-chat-meta"><?php echo esc_html($entry['notes']); ?></em></p>
+                                <p style="margin:8px 0 0;"><em class="ai-seo-captain-chat-meta"><?php echo esc_html($entry['notes']); ?></em></p>
                             <?php endif; ?>
                         <?php else : ?>
                             <p style="margin:0;"><?php echo esc_html($entry['message']); ?></p>
                         <?php endif; ?>
-                        <p class="ai-seo-keeper-chat-meta" style="margin:4px 0 0;">
+                        <p class="ai-seo-captain-chat-meta" style="margin:4px 0 0;">
                             <?php if ('assistant' === $entry['role']) : ?>
                                 <?php echo esc_html(strtoupper($entry['provider'])); ?>
                                 <?php if ('' !== $entry['model']) : ?>

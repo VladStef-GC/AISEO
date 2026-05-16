@@ -1,14 +1,14 @@
 <?php
 
-namespace AI_SEO_Keeper\Admin;
+namespace AI_SEO_Captain\Admin;
 
-use AI_SEO_Keeper\Plugin;
-use AI_SEO_Keeper\Settings;
-use AI_SEO_Keeper\Admin as AdminBase;
-use AI_SEO_Keeper\ImportExport\Exporter;
-use AI_SEO_Keeper\ImportExport\Matcher;
-use AI_SEO_Keeper\ImportExport\Importer;
-use AI_SEO_Keeper\ImportExport\Url_Rewriter;
+use AI_SEO_Captain\Plugin;
+use AI_SEO_Captain\Settings;
+use AI_SEO_Captain\Admin as AdminBase;
+use AI_SEO_Captain\ImportExport\Exporter;
+use AI_SEO_Captain\ImportExport\Matcher;
+use AI_SEO_Captain\ImportExport\Importer;
+use AI_SEO_Captain\ImportExport\Url_Rewriter;
 
 /**
  * Export, Import, and Yoast migration handlers.
@@ -49,7 +49,7 @@ class Admin_Import_Export
         if (! current_user_can('manage_options')) {
             wp_die('Unauthorized');
         }
-        check_admin_referer('ai_seo_keeper_export');
+        check_admin_referer('ai_seo_captain_export');
 
         $sections = array();
         if (! empty($_POST['export_settings'])) {
@@ -87,7 +87,7 @@ class Admin_Import_Export
         $json     = wp_json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         header('Content-Type: application/json; charset=utf-8');
-        header('Content-Disposition: attachment; filename="ai-seo-keeper-export-' . sanitize_file_name($domain) . '-' . gmdate('Y-m-d') . '.json"');
+        header('Content-Disposition: attachment; filename="ai-seo-captain-export-' . sanitize_file_name($domain) . '-' . gmdate('Y-m-d') . '.json"');
         header('Content-Length: ' . strlen($json));
         echo $json;
         exit;
@@ -102,7 +102,7 @@ class Admin_Import_Export
      */
     public function ajax_import_validate(): void
     {
-        check_ajax_referer('ai_seo_keeper_import_v2', '_nonce');
+        check_ajax_referer('ai_seo_captain_import_v2', '_nonce');
         if (! current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
         }
@@ -126,12 +126,12 @@ class Admin_Import_Export
         $json = file_get_contents($_FILES['import_file']['tmp_name']); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
         $data = json_decode($json, true);
 
-        if (! is_array($data) || 'ai-seo-keeper' !== ($data['plugin'] ?? '')) {
-            wp_send_json_error(array('message' => 'Invalid file. Must be an AI SEO Keeper export.'));
+        if (! is_array($data) || 'ai-seo-captain' !== ($data['plugin'] ?? '')) {
+            wp_send_json_error(array('message' => 'Invalid file. Must be an SEO Captain export.'));
         }
 
         // Store in transient (1 hour TTL).
-        $transient_key = 'aisk_import_' . get_current_user_id();
+        $transient_key = 'aisc_import_' . get_current_user_id();
         set_transient($transient_key, $data, HOUR_IN_SECONDS);
 
         wp_send_json_success(array(
@@ -150,12 +150,12 @@ class Admin_Import_Export
      */
     public function ajax_import_match(): void
     {
-        check_ajax_referer('ai_seo_keeper_import_v2', '_nonce');
+        check_ajax_referer('ai_seo_captain_import_v2', '_nonce');
         if (! current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
         }
 
-        $data = get_transient('aisk_import_' . get_current_user_id());
+        $data = get_transient('aisc_import_' . get_current_user_id());
         if (! is_array($data)) {
             wp_send_json_error(array('message' => 'Import session expired. Please upload the file again.'));
         }
@@ -182,7 +182,7 @@ class Admin_Import_Export
             'term_matches'  => $term_matches,
             'audit_matches' => $audit_posts,
         );
-        set_transient('aisk_import_matches_' . get_current_user_id(), $match_data, HOUR_IN_SECONDS);
+        set_transient('aisc_import_matches_' . get_current_user_id(), $match_data, HOUR_IN_SECONDS);
 
         wp_send_json_success(array(
             'posts' => array(
@@ -205,18 +205,18 @@ class Admin_Import_Export
      */
     public function ajax_import_process(): void
     {
-        check_ajax_referer('ai_seo_keeper_import_v2', '_nonce');
+        check_ajax_referer('ai_seo_captain_import_v2', '_nonce');
         if (! current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
         }
 
         $uid  = get_current_user_id();
-        $data = get_transient('aisk_import_' . $uid);
+        $data = get_transient('aisc_import_' . $uid);
         if (! is_array($data)) {
             wp_send_json_error(array('message' => 'Import session expired.'));
         }
 
-        $match_data = get_transient('aisk_import_matches_' . $uid);
+        $match_data = get_transient('aisc_import_matches_' . $uid);
         if (! is_array($match_data)) {
             wp_send_json_error(array('message' => 'Match data expired. Please re-run matching.'));
         }
@@ -334,8 +334,8 @@ class Admin_Import_Export
                 }
                 $result['done'] = true;
                 // Clean up transients.
-                delete_transient('aisk_import_' . $uid);
-                delete_transient('aisk_import_matches_' . $uid);
+                delete_transient('aisc_import_' . $uid);
+                delete_transient('aisc_import_matches_' . $uid);
                 break;
 
             default:
@@ -356,7 +356,7 @@ class Admin_Import_Export
             wp_die('You are not allowed to do that.');
         }
 
-        check_admin_referer('ai_seo_keeper_import_yoast_metadata');
+        check_admin_referer('ai_seo_captain_import_yoast_metadata');
 
         $result = array();
 
@@ -377,7 +377,7 @@ class Admin_Import_Export
         }
 
         if ($result['skipped_existing'] > 0) {
-            $message .= ' ' . sprintf('%d existing AI SEO Keeper field(s) were left unchanged.', $result['skipped_existing']);
+            $message .= ' ' . sprintf('%d existing SEO Captain field(s) were left unchanged.', $result['skipped_existing']);
         }
 
         if ($result['unsupported_advanced_robots'] > 0) {

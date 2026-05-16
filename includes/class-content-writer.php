@@ -1,6 +1,6 @@
 <?php
 
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
 /**
  * Content_Writer — applies text changes to post content across page builders.
@@ -24,7 +24,7 @@ class Content_Writer
         'tatsu' => 'tatsu_sections',
     );
 
-    private const PENDING_META_KEY = '_ai_seo_keeper_pending_content_changes';
+    private const PENDING_META_KEY = '_ai_seo_captain_pending_content_changes';
 
     /**
      * Store approved changes as pending — they will be applied on the next
@@ -457,7 +457,7 @@ class Content_Writer
             }
         }
 
-        update_post_meta($post_id, '_ai_seo_keeper_content_backup', $backup);
+        update_post_meta($post_id, '_ai_seo_captain_content_backup', $backup);
 
         // Also trigger a WordPress revision if revisions are enabled.
         if (wp_revisions_enabled($post)) {
@@ -496,7 +496,7 @@ class Content_Writer
      */
     public static function restore_backup(int $post_id): bool
     {
-        $backup = get_post_meta($post_id, '_ai_seo_keeper_content_backup', true);
+        $backup = get_post_meta($post_id, '_ai_seo_captain_content_backup', true);
 
         if (! is_array($backup) || empty($backup['post_content'])) {
             return false;
@@ -514,7 +514,7 @@ class Content_Writer
             }
         }
 
-        delete_post_meta($post_id, '_ai_seo_keeper_content_backup');
+        delete_post_meta($post_id, '_ai_seo_captain_content_backup');
         clean_post_cache($post_id);
 
         return true;

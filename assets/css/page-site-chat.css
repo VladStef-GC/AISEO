@@ -1,11 +1,11 @@
 /* Site-wide AI Chat page styles */
 
-.ai-seo-keeper-site-chat-wrap {
+.ai-seo-captain-site-chat-wrap {
     max-width: 960px;
 }
 
 /* --- Summary cards --- */
-.ai-seo-keeper-site-chat-cards {
+.ai-seo-captain-site-chat-cards {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
@@ -56,21 +56,21 @@
 }
 
 /* --- Chat panel --- */
-.ai-seo-keeper-site-chat-panel {
+.ai-seo-captain-site-chat-panel {
     background: #fff;
     border: 1px solid #ddd;
     border-radius: 6px;
     padding: 20px;
 }
 
-.ai-seo-keeper-site-chat-intro {
+.ai-seo-captain-site-chat-intro {
     font-size: 13px;
     color: #646970;
     margin-bottom: 12px;
     line-height: 1.5;
 }
 
-.ai-seo-keeper-site-chat-panel .ai-seo-keeper-chat-input {
+.ai-seo-captain-site-chat-panel .ai-seo-captain-chat-input {
     font-size: 14px;
     padding: 10px 12px;
     border-radius: 4px;
@@ -79,20 +79,20 @@
     min-height: 60px;
 }
 
-.ai-seo-keeper-site-chat-panel .ai-seo-keeper-chat-input:focus {
+.ai-seo-captain-site-chat-panel .ai-seo-captain-chat-input:focus {
     border-color: #2271b1;
     box-shadow: 0 0 0 1px #2271b1;
     outline: none;
 }
 
 /* --- Chat messages --- */
-.ai-seo-keeper-site-chat-panel .ai-seo-keeper-chat-shell {
+.ai-seo-captain-site-chat-panel .ai-seo-captain-chat-shell {
     margin-top: 16px;
     max-height: 600px;
     overflow-y: auto;
 }
 
-.ai-seo-keeper-site-chat-panel .ai-seo-keeper-chat-item {
+.ai-seo-captain-site-chat-panel .ai-seo-captain-chat-item {
     padding: 12px 14px;
     margin-bottom: 8px;
     border-radius: 6px;
@@ -100,32 +100,32 @@
     border-left: 3px solid #ddd;
 }
 
-.ai-seo-keeper-site-chat-panel .ai-seo-keeper-chat-item.is-assistant {
+.ai-seo-captain-site-chat-panel .ai-seo-captain-chat-item.is-assistant {
     background: #f0f6fc;
     border-left-color: #2271b1;
 }
 
-.ai-seo-keeper-site-chat-reply {
+.ai-seo-captain-site-chat-reply {
     font-size: 13px;
     line-height: 1.6;
 }
 
-.ai-seo-keeper-site-chat-reply strong {
+.ai-seo-captain-site-chat-reply strong {
     font-weight: 600;
 }
 
-.ai-seo-keeper-chat-status {
+.ai-seo-captain-chat-status {
     font-size: 13px;
     color: #646970;
 }
 
-.ai-seo-keeper-chat-meta {
+.ai-seo-captain-chat-meta {
     font-size: 11px;
     color: #8c8f94;
 }
 
 /* --- Focus Pages section --- */
-.ai-seo-keeper-focus-pages {
+.ai-seo-captain-focus-pages {
     margin: 10px 0 4px;
     border: 1px solid #dcdcde;
     border-radius: 4px;
@@ -133,25 +133,25 @@
     background: #fafafa;
 }
 
-.ai-seo-keeper-focus-pages[open] {
+.ai-seo-captain-focus-pages[open] {
     padding-bottom: 12px;
 }
 
-.ai-seo-keeper-focus-pages summary {
+.ai-seo-captain-focus-pages summary {
     padding: 8px 0;
     list-style: none;
 }
 
-.ai-seo-keeper-focus-pages summary::-webkit-details-marker {
+.ai-seo-captain-focus-pages summary::-webkit-details-marker {
     display: none;
 }
 
-.ai-seo-keeper-focus-pages summary::before {
+.ai-seo-captain-focus-pages summary::before {
     content: '▸ ';
     font-size: 12px;
 }
 
-.ai-seo-keeper-focus-pages[open] summary::before {
+.ai-seo-captain-focus-pages[open] summary::before {
     content: '▾ ';
 }
 
@@ -174,7 +174,7 @@
 /* ══════════════════════════════════════════════════════════════════════
    LISTS PANEL — Strategist page
    ══════════════════════════════════════════════════════════════════════ */
-.aisk-strategist-lists {
+.aisc-strategist-lists {
     background: #fff;
     border: 1px solid #dcdcde;
     border-radius: 6px;
@@ -182,7 +182,7 @@
     margin-bottom: 20px;
 }
 
-.aisk-strategist-lists__header h3 {
+.aisc-strategist-lists__header h3 {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -191,15 +191,15 @@
     color: #1d2327;
 }
 
-.aisk-strategist-lists__header h3 .dashicons {
+.aisc-strategist-lists__header h3 .dashicons {
     color: #2271b1;
 }
 
-.aisk-strategist-lists__header .description {
+.aisc-strategist-lists__header .description {
     margin: 0 0 14px;
 }
 
-.aisk-strategist-lists__empty {
+.aisc-strategist-lists__empty {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -208,7 +208,7 @@
     font-style: italic;
 }
 
-.aisk-strategist-lists__empty .dashicons {
+.aisc-strategist-lists__empty .dashicons {
     font-size: 16px;
     width: 16px;
     height: 16px;
@@ -216,13 +216,13 @@
 }
 
 /* List cards grid */
-.aisk-strategist-lists__grid {
+.aisc-strategist-lists__grid {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
 }
 
-.aisk-list-card {
+.aisc-list-card {
     flex: 0 0 calc(50% - 6px);
     min-width: 260px;
     padding: 14px 16px;
@@ -232,57 +232,57 @@
     transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.aisk-list-card:hover {
+.aisc-list-card:hover {
     border-color: #a7aaad;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
-.aisk-list-card.is-complete {
+.aisc-list-card.is-complete {
     border-color: #28a745;
     background: #f0faf3;
 }
 
-.aisk-list-card.is-partial {
+.aisc-list-card.is-partial {
     border-color: #f0c36d;
     background: #fffbf0;
 }
 
-.aisk-list-card.is-pending {
+.aisc-list-card.is-pending {
     border-color: #c3c4c7;
     background: #f6f7f7;
 }
 
-.aisk-list-card__header {
+.aisc-list-card__header {
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 6px;
 }
 
-.aisk-list-card__status {
+.aisc-list-card__status {
     font-size: 16px;
     flex-shrink: 0;
 }
 
-.aisk-list-card.is-complete .aisk-list-card__status {
+.aisc-list-card.is-complete .aisc-list-card__status {
     color: #28a745;
 }
 
-.aisk-list-card.is-partial .aisk-list-card__status {
+.aisc-list-card.is-partial .aisc-list-card__status {
     color: #d68308;
 }
 
-.aisk-list-card.is-pending .aisk-list-card__status {
+.aisc-list-card.is-pending .aisc-list-card__status {
     color: #a7aaad;
 }
 
-.aisk-list-card__name {
+.aisc-list-card__name {
     flex: 1;
     font-size: 14px;
     font-weight: 600;
 }
 
-.aisk-list-card__delete {
+.aisc-list-card__delete {
     background: none;
     border: none;
     font-size: 20px;
@@ -292,79 +292,79 @@
     line-height: 1;
 }
 
-.aisk-list-card__delete:hover {
+.aisc-list-card__delete:hover {
     color: #d63638;
 }
 
-.aisk-list-card__stats {
+.aisc-list-card__stats {
     font-size: 12px;
     color: #50575e;
     margin-bottom: 4px;
 }
 
-.aisk-list-card__sep {
+.aisc-list-card__sep {
     margin: 0 4px;
     color: #c3c4c7;
 }
 
-.aisk-stat-done {
+.aisc-stat-done {
     color: #00a32a;
     font-weight: 600;
 }
 
-.aisk-stat-missing {
+.aisc-stat-missing {
     color: #b32d2e;
     font-weight: 600;
 }
 
-.aisk-list-card__status-text {
+.aisc-list-card__status-text {
     font-size: 12px;
     font-weight: 600;
 }
 
-.aisk-list-card.is-complete .aisk-list-card__status-text {
+.aisc-list-card.is-complete .aisc-list-card__status-text {
     color: #28a745;
 }
 
-.aisk-list-card.is-partial .aisk-list-card__status-text {
+.aisc-list-card.is-partial .aisc-list-card__status-text {
     color: #d68308;
 }
 
-.aisk-list-card.is-pending .aisk-list-card__status-text {
+.aisc-list-card.is-pending .aisc-list-card__status-text {
     color: #787c82;
 }
 
-.aisk-list-card__date {
+.aisc-list-card__date {
     font-size: 11px;
     color: #a7aaad;
     margin-top: 2px;
 }
 
 /* --- Focus Pages picker --- */
-.aisk-focus-selector {
+.aisc-focus-selector {
     border: 1px solid #dcdcde;
     border-radius: 4px;
     background: #fff;
 }
 
-.aisk-focus-selector__search {
+.aisc-focus-selector__search {
     padding: 8px;
     border-bottom: 1px solid #f0f0f0;
 }
 
-.aisk-focus-selector__search input {
+.aisc-focus-selector__search input {
     width: 100%;
     padding: 6px 10px;
     font-size: 13px;
 }
 
-.aisk-focus-selector__list {
+.aisc-focus-selector__list {
     max-height: 240px;
     overflow-y: auto;
     padding: 4px 0;
 }
 
-.aisk-focus-selector__row {
+.aisc-focus-selector__row {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -374,16 +374,16 @@
     transition: background 0.1s;
 }
 
-.aisk-focus-selector__row:hover {
+.aisc-focus-selector__row:hover {
     background: #f0f6fc;
 }
 
-.aisk-focus-selector__row input[type="checkbox"] {
+.aisc-focus-selector__row input[type="checkbox"] {
     flex-shrink: 0;
     margin: 0;
 }
 
-.aisk-focus-selector__title {
+.aisc-focus-selector__title {
     flex: 1;
     color: #1d2327;
     font-weight: 500;
@@ -392,7 +392,7 @@
     white-space: nowrap;
 }
 
-.aisk-focus-selector__list-label {
+.aisc-focus-selector__list-label {
     font-size: 11px;
     color: #787c82;
     white-space: nowrap;
@@ -402,7 +402,7 @@
     border-radius: 3px;
 }
 
-.aisk-focus-selector__empty {
+.aisc-focus-selector__empty {
     padding: 16px;
     text-align: center;
     color: #787c82;

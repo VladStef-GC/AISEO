@@ -1,5 +1,5 @@
 /**
- * AI SEO Keeper — Export/Import page controller (v2).
+ * SEO Captain — Export/Import page controller (v2).
  *
  * Multi-step AJAX import flow:
  *  1. Upload & validate
@@ -11,11 +11,11 @@
 (function ($) {
     'use strict';
 
-    if (typeof aiskImportExport === 'undefined') {
+    if (typeof aiscImportExport === 'undefined') {
         return;
     }
 
-    var cfg = aiskImportExport;
+    var cfg = aiscImportExport;
     var selectedFile = null;
     var validationData = null;
     var isImporting = false;
@@ -42,13 +42,13 @@
     // ----------------------------------------------------------------
 
     function showStep(stepId) {
-        $('[id^="aisk-import-step-"]').hide();
+        $('[id^="aisc-import-step-"]').hide();
         $('#' + stepId).show();
 
         // Update step indicator.
-        var stepName = stepId.replace('aisk-import-step-', '');
+        var stepName = stepId.replace('aisc-import-step-', '');
         var activeIdx = stepNames.indexOf(stepName);
-        $('#aisk-step-indicator .aisk-step').each(function (i) {
+        $('#aisc-step-indicator .aisc-step').each(function (i) {
             var $s = $(this);
             $s.removeClass('active done');
             if (i < activeIdx) {
@@ -57,7 +57,7 @@
                 $s.addClass('active');
             }
         });
-        $('#aisk-step-indicator .aisk-step-line').each(function (i) {
+        $('#aisc-step-indicator .aisc-step-line').each(function (i) {
             $(this).toggleClass('done', i < activeIdx);
         });
     }
@@ -74,9 +74,9 @@
      * Show an inline notice instead of alert().
      */
     function showNotice(msg, type) {
-        var $el = $('#aisk-import-notice');
-        $el.removeClass('aisk-notice-error aisk-notice-success')
-            .addClass(type === 'success' ? 'aisk-notice-success' : 'aisk-notice-error')
+        var $el = $('#aisc-import-notice');
+        $el.removeClass('aisc-notice-error aisc-notice-success')
+            .addClass(type === 'success' ? 'aisc-notice-success' : 'aisc-notice-error')
             .text(msg)
             .slideDown(200);
 
@@ -86,7 +86,7 @@
     }
 
     function hideNotice() {
-        $('#aisk-import-notice').slideUp(150);
+        $('#aisc-import-notice').slideUp(150);
     }
 
     /**
@@ -105,14 +105,14 @@
     // ----------------------------------------------------------------
 
     // Dropzone click.
-    $('#aisk-import-dropzone').on('click', function (e) {
-        if (e.target.id !== 'aisk-import-file') {
-            $('#aisk-import-file')[0].click();
+    $('#aisc-import-dropzone').on('click', function (e) {
+        if (e.target.id !== 'aisc-import-file') {
+            $('#aisc-import-file')[0].click();
         }
     });
 
     // Drag & drop.
-    $('#aisk-import-dropzone').on('dragover', function (e) {
+    $('#aisc-import-dropzone').on('dragover', function (e) {
         e.preventDefault();
         $(this).addClass('drag-over');
     }).on('dragleave drop', function () {
@@ -132,7 +132,7 @@
     });
 
     // File input change.
-    $('#aisk-import-file').on('change', function () {
+    $('#aisc-import-file').on('change', function () {
         if (!this.files.length) return;
         var err = validateFile(this.files[0]);
         if (err) {
@@ -145,24 +145,24 @@
     });
 
     function showFileInfo(file) {
-        $('#aisk-import-filename').text(file.name);
-        $('#aisk-import-filesize').text(formatBytes(file.size));
-        $('#aisk-import-file-info').show();
-        $('#aisk-import-upload-btn').prop('disabled', false);
+        $('#aisc-import-filename').text(file.name);
+        $('#aisc-import-filesize').text(formatBytes(file.size));
+        $('#aisc-import-file-info').show();
+        $('#aisc-import-upload-btn').prop('disabled', false);
     }
 
     // Upload button.
-    $('#aisk-import-upload-btn').on('click', function () {
+    $('#aisc-import-upload-btn').on('click', function () {
         if (!selectedFile) return;
 
         var $btn = $(this);
-        var $spinner = $('#aisk-import-upload-spinner');
+        var $spinner = $('#aisc-import-upload-spinner');
         $btn.prop('disabled', true);
         $spinner.addClass('is-active');
         hideNotice();
 
         var formData = new FormData();
-        formData.append('action', 'ai_seo_keeper_import_validate');
+        formData.append('action', 'ai_seo_captain_import_validate');
         formData.append('_nonce', cfg.nonce);
         formData.append('import_file', selectedFile);
 
@@ -177,7 +177,7 @@
                 if (res.success) {
                     validationData = res.data;
                     buildConfigStep(res.data);
-                    showStep('aisk-import-step-config');
+                    showStep('aisc-import-step-config');
                 } else {
                     showNotice(res.data && res.data.message ? res.data.message : 'Validation failed.');
                     $btn.prop('disabled', false);
@@ -209,10 +209,10 @@
             if (parts.length) html += '<br>' + parts.join(', ');
         }
         html += '</div>';
-        $('#aisk-import-summary').html(html);
+        $('#aisc-import-summary').html(html);
 
         // Section checkboxes.
-        var $grid = $('#aisk-import-sections-grid').empty();
+        var $grid = $('#aisc-import-sections-grid').empty();
         var included = data.sections_included || [];
         var allSections = Object.keys(sectionLabels);
         for (var i = 0; i < allSections.length; i++) {
@@ -222,58 +222,58 @@
             if (data.counts && data.counts[key]) {
                 label += ' (' + data.counts[key] + ')';
             }
-            var cls = inFile ? '' : ' class="aisk-disabled"';
+            var cls = inFile ? '' : ' class="aisc-disabled"';
             var chk = '<label' + cls + '>' +
-                '<input type="checkbox" name="aisk_import_section" value="' + key + '"' +
+                '<input type="checkbox" name="aisc_import_section" value="' + key + '"' +
                 (inFile ? ' checked' : ' disabled') +
                 ' /> ' + escHtml(label) +
-                (!inFile ? ' <span style="color:var(--aisk-text-muted);">(not in export)</span>' : '') +
+                (!inFile ? ' <span style="color:var(--aisc-text-muted);">(not in export)</span>' : '') +
                 '</label>';
             $grid.append(chk);
         }
 
         // Domain mismatch.
         if (data.source_domain && data.current_domain && data.source_domain !== data.current_domain) {
-            $('#aisk-domain-info').html(
+            $('#aisc-domain-info').html(
                 'Export source: <strong>' + escHtml(data.source_domain) + '</strong><br>' +
                 'Your site: <strong>' + escHtml(data.current_domain) + '</strong>'
             );
-            $('#aisk-import-domain-rewrite').show();
+            $('#aisc-import-domain-rewrite').show();
         } else {
-            $('#aisk-import-domain-rewrite').hide();
+            $('#aisc-import-domain-rewrite').hide();
         }
     }
 
     // Mode card active state toggle.
-    $(document).on('change', 'input[name="aisk_import_mode"]', function () {
-        $('.aisk-mode-card').removeClass('active');
-        $(this).closest('.aisk-mode-card').addClass('active');
+    $(document).on('change', 'input[name="aisc_import_mode"]', function () {
+        $('.aisc-mode-card').removeClass('active');
+        $(this).closest('.aisc-mode-card').addClass('active');
     });
 
-    $('#aisk-import-back-upload').on('click', function () {
-        showStep('aisk-import-step-upload');
+    $('#aisc-import-back-upload').on('click', function () {
+        showStep('aisc-import-step-upload');
     });
 
     // ----------------------------------------------------------------
     //  Step 3: Match
     // ----------------------------------------------------------------
 
-    $('#aisk-import-match-btn').on('click', function () {
+    $('#aisc-import-match-btn').on('click', function () {
         var $btn = $(this);
-        var $spinner = $('#aisk-import-match-spinner');
+        var $spinner = $('#aisc-import-match-spinner');
         $btn.prop('disabled', true);
         $spinner.addClass('is-active');
         hideNotice();
 
         $.post(cfg.ajax_url, {
-            action: 'ai_seo_keeper_import_match',
+            action: 'ai_seo_captain_import_match',
             _nonce: cfg.nonce
         }, function (res) {
             $spinner.removeClass('is-active');
             $btn.prop('disabled', false);
             if (res.success) {
                 buildMatchStep(res.data);
-                showStep('aisk-import-step-match');
+                showStep('aisc-import-step-match');
             } else {
                 showNotice(res.data && res.data.message ? res.data.message : 'Matching failed.');
             }
@@ -290,42 +290,42 @@
 
         // Summary with badges.
         var summaryParts = [];
-        if (posts.strong && posts.strong.length) summaryParts.push('<span class="aisk-match-badge aisk-badge-strong">' + posts.strong.length + ' strong</span>');
-        if (posts.fuzzy && posts.fuzzy.length) summaryParts.push('<span class="aisk-match-badge aisk-badge-fuzzy">' + posts.fuzzy.length + ' fuzzy</span>');
-        if (posts.orphaned && posts.orphaned.length) summaryParts.push('<span class="aisk-match-badge aisk-badge-missing">' + posts.orphaned.length + ' not found</span>');
-        $('#aisk-match-summary').html(summaryParts.join(' '));
+        if (posts.strong && posts.strong.length) summaryParts.push('<span class="aisc-match-badge aisc-badge-strong">' + posts.strong.length + ' strong</span>');
+        if (posts.fuzzy && posts.fuzzy.length) summaryParts.push('<span class="aisc-match-badge aisc-badge-fuzzy">' + posts.fuzzy.length + ' fuzzy</span>');
+        if (posts.orphaned && posts.orphaned.length) summaryParts.push('<span class="aisc-match-badge aisc-badge-missing">' + posts.orphaned.length + ' not found</span>');
+        $('#aisc-match-summary').html(summaryParts.join(' '));
 
         // Posts table.
-        var $tbody = $('#aisk-match-table-body').empty();
+        var $tbody = $('#aisc-match-table-body').empty();
 
         (posts.strong || []).forEach(function (m) {
             $tbody.append(
                 '<tr>' +
-                '<td><input type="checkbox" class="aisk-match-post" data-index="' + m.export_index + '" data-confidence="strong" checked /></td>' +
-                '<td>/' + escHtml(m.export_slug) + ' <span style="color:var(--aisk-text-muted);">(' + escHtml(m.export_type) + ')</span></td>' +
-                '<td><span class="aisk-match-badge aisk-badge-strong">Match</span></td>' +
-                '<td>/' + escHtml(m.local_slug) + ' <span style="color:var(--aisk-text-muted);">(ID ' + m.local_id + ')</span></td>' +
+                '<td><input type="checkbox" class="aisc-match-post" data-index="' + m.export_index + '" data-confidence="strong" checked /></td>' +
+                '<td>/' + escHtml(m.export_slug) + ' <span style="color:var(--aisc-text-muted);">(' + escHtml(m.export_type) + ')</span></td>' +
+                '<td><span class="aisc-match-badge aisc-badge-strong">Match</span></td>' +
+                '<td>/' + escHtml(m.local_slug) + ' <span style="color:var(--aisc-text-muted);">(ID ' + m.local_id + ')</span></td>' +
                 '</tr>'
             );
         });
 
         (posts.fuzzy || []).forEach(function (m) {
             $tbody.append(
-                '<tr class="aisk-row-fuzzy">' +
-                '<td><input type="checkbox" class="aisk-match-post aisk-fuzzy-post" data-index="' + m.export_index + '" data-confidence="fuzzy" /></td>' +
-                '<td>/' + escHtml(m.export_slug) + ' <span style="color:var(--aisk-text-muted);">(' + escHtml(m.export_type) + ')</span></td>' +
-                '<td><span class="aisk-match-badge aisk-badge-fuzzy">Fuzzy</span></td>' +
-                '<td>/' + escHtml(m.local_slug) + ' — "' + escHtml(m.local_title) + '" <span style="color:var(--aisk-text-muted);">(ID ' + m.local_id + ')</span></td>' +
+                '<tr class="aisc-row-fuzzy">' +
+                '<td><input type="checkbox" class="aisc-match-post aisc-fuzzy-post" data-index="' + m.export_index + '" data-confidence="fuzzy" /></td>' +
+                '<td>/' + escHtml(m.export_slug) + ' <span style="color:var(--aisc-text-muted);">(' + escHtml(m.export_type) + ')</span></td>' +
+                '<td><span class="aisc-match-badge aisc-badge-fuzzy">Fuzzy</span></td>' +
+                '<td>/' + escHtml(m.local_slug) + ' — "' + escHtml(m.local_title) + '" <span style="color:var(--aisc-text-muted);">(ID ' + m.local_id + ')</span></td>' +
                 '</tr>'
             );
         });
 
         (posts.orphaned || []).forEach(function (m) {
             $tbody.append(
-                '<tr class="aisk-row-orphaned">' +
+                '<tr class="aisc-row-orphaned">' +
                 '<td></td>' +
                 '<td>/' + escHtml(m.export_slug) + ' (' + escHtml(m.export_type) + ')</td>' +
-                '<td><span class="aisk-match-badge aisk-badge-missing">Missing</span></td>' +
+                '<td><span class="aisc-match-badge aisc-badge-missing">Missing</span></td>' +
                 '<td>—</td>' +
                 '</tr>'
             );
@@ -333,78 +333,78 @@
 
         // Terms table.
         if (terms.total && terms.total > 0) {
-            $('#aisk-match-terms-wrap').show();
+            $('#aisc-match-terms-wrap').show();
             var termParts = [];
-            if (terms.strong && terms.strong.length) termParts.push('<span class="aisk-match-badge aisk-badge-strong">' + terms.strong.length + ' strong</span>');
-            if (terms.fuzzy && terms.fuzzy.length) termParts.push('<span class="aisk-match-badge aisk-badge-fuzzy">' + terms.fuzzy.length + ' fuzzy</span>');
-            if (terms.orphaned && terms.orphaned.length) termParts.push('<span class="aisk-match-badge aisk-badge-missing">' + terms.orphaned.length + ' not found</span>');
-            $('#aisk-term-match-summary').html(termParts.join(' '));
+            if (terms.strong && terms.strong.length) termParts.push('<span class="aisc-match-badge aisc-badge-strong">' + terms.strong.length + ' strong</span>');
+            if (terms.fuzzy && terms.fuzzy.length) termParts.push('<span class="aisc-match-badge aisc-badge-fuzzy">' + terms.fuzzy.length + ' fuzzy</span>');
+            if (terms.orphaned && terms.orphaned.length) termParts.push('<span class="aisc-match-badge aisc-badge-missing">' + terms.orphaned.length + ' not found</span>');
+            $('#aisc-term-match-summary').html(termParts.join(' '));
 
-            var $termBody = $('#aisk-term-match-table-body').empty();
+            var $termBody = $('#aisc-term-match-table-body').empty();
             (terms.strong || []).forEach(function (m) {
                 $termBody.append(
                     '<tr>' +
-                    '<td><input type="checkbox" class="aisk-match-term" data-index="' + m.export_index + '" data-confidence="strong" checked /></td>' +
-                    '<td>' + escHtml(m.export_name) + ' <span style="color:var(--aisk-text-muted);">(' + escHtml(m.export_taxonomy) + ')</span></td>' +
-                    '<td><span class="aisk-match-badge aisk-badge-strong">Match</span></td>' +
-                    '<td>' + escHtml(m.local_name) + ' <span style="color:var(--aisk-text-muted);">(ID ' + m.local_term_id + ')</span></td>' +
+                    '<td><input type="checkbox" class="aisc-match-term" data-index="' + m.export_index + '" data-confidence="strong" checked /></td>' +
+                    '<td>' + escHtml(m.export_name) + ' <span style="color:var(--aisc-text-muted);">(' + escHtml(m.export_taxonomy) + ')</span></td>' +
+                    '<td><span class="aisc-match-badge aisc-badge-strong">Match</span></td>' +
+                    '<td>' + escHtml(m.local_name) + ' <span style="color:var(--aisc-text-muted);">(ID ' + m.local_term_id + ')</span></td>' +
                     '</tr>'
                 );
             });
             (terms.fuzzy || []).forEach(function (m) {
                 $termBody.append(
-                    '<tr class="aisk-row-fuzzy">' +
-                    '<td><input type="checkbox" class="aisk-match-term aisk-fuzzy-term" data-index="' + m.export_index + '" data-confidence="fuzzy" /></td>' +
-                    '<td>' + escHtml(m.export_name) + ' <span style="color:var(--aisk-text-muted);">(' + escHtml(m.export_taxonomy) + ')</span></td>' +
-                    '<td><span class="aisk-match-badge aisk-badge-fuzzy">Fuzzy</span></td>' +
-                    '<td>' + escHtml(m.local_name) + ' <span style="color:var(--aisk-text-muted);">(ID ' + m.local_term_id + ')</span></td>' +
+                    '<tr class="aisc-row-fuzzy">' +
+                    '<td><input type="checkbox" class="aisc-match-term aisc-fuzzy-term" data-index="' + m.export_index + '" data-confidence="fuzzy" /></td>' +
+                    '<td>' + escHtml(m.export_name) + ' <span style="color:var(--aisc-text-muted);">(' + escHtml(m.export_taxonomy) + ')</span></td>' +
+                    '<td><span class="aisc-match-badge aisc-badge-fuzzy">Fuzzy</span></td>' +
+                    '<td>' + escHtml(m.local_name) + ' <span style="color:var(--aisc-text-muted);">(ID ' + m.local_term_id + ')</span></td>' +
                     '</tr>'
                 );
             });
             (terms.orphaned || []).forEach(function (m) {
                 $termBody.append(
-                    '<tr class="aisk-row-orphaned">' +
+                    '<tr class="aisc-row-orphaned">' +
                     '<td></td>' +
                     '<td>' + escHtml(m.export_name) + ' (' + escHtml(m.export_taxonomy) + ')</td>' +
-                    '<td><span class="aisk-match-badge aisk-badge-missing">Missing</span></td>' +
+                    '<td><span class="aisc-match-badge aisc-badge-missing">Missing</span></td>' +
                     '<td>—</td>' +
                     '</tr>'
                 );
             });
         } else {
-            $('#aisk-match-terms-wrap').hide();
+            $('#aisc-match-terms-wrap').hide();
         }
 
         // Force confirm visibility.
-        var mode = $('input[name="aisk_import_mode"]:checked').val();
+        var mode = $('input[name="aisc_import_mode"]:checked').val();
         if (mode === 'force') {
             var matchCount = (posts.strong ? posts.strong.length : 0);
-            $('#aisk-force-msg').text(
+            $('#aisc-force-msg').text(
                 'This will REPLACE all existing SEO data for the ' + matchCount +
                 ' matched pages. Existing values will be lost. Your other pages will NOT be affected.'
             );
-            $('#aisk-force-confirm').show();
+            $('#aisc-force-confirm').show();
         } else {
-            $('#aisk-force-confirm').hide();
+            $('#aisc-force-confirm').hide();
         }
     }
 
-    $('#aisk-import-back-config').on('click', function () {
-        showStep('aisk-import-step-config');
+    $('#aisc-import-back-config').on('click', function () {
+        showStep('aisc-import-step-config');
     });
 
     // ----------------------------------------------------------------
     //  Step 4: Start Import
     // ----------------------------------------------------------------
 
-    $('#aisk-import-start-btn').on('click', function () {
+    $('#aisc-import-start-btn').on('click', function () {
         if (isImporting) return;
 
-        var mode = $('input[name="aisk_import_mode"]:checked').val();
+        var mode = $('input[name="aisc_import_mode"]:checked').val();
 
         // Force confirmation.
         if (mode === 'force') {
-            if ($('#aisk-force-input').val().trim().toUpperCase() !== 'FORCE') {
+            if ($('#aisc-force-input').val().trim().toUpperCase() !== 'FORCE') {
                 showNotice('Please type FORCE to confirm.');
                 return;
             }
@@ -412,7 +412,7 @@
 
         // Collect selected sections.
         var sections = [];
-        $('input[name="aisk_import_section"]:checked').each(function () {
+        $('input[name="aisc_import_section"]:checked').each(function () {
             sections.push($(this).val());
         });
 
@@ -423,15 +423,15 @@
 
         // Collect approved fuzzy matches.
         var approvedFuzzy = [];
-        $('.aisk-fuzzy-post:checked').each(function () {
+        $('.aisc-fuzzy-post:checked').each(function () {
             approvedFuzzy.push(parseInt($(this).data('index'), 10));
         });
         var approvedFuzzyTerms = [];
-        $('.aisk-fuzzy-term:checked').each(function () {
+        $('.aisc-fuzzy-term:checked').each(function () {
             approvedFuzzyTerms.push(parseInt($(this).data('index'), 10));
         });
 
-        var rewriteUrls = $('#aisk-rewrite-urls').is(':checked') ? 1 : 0;
+        var rewriteUrls = $('#aisc-rewrite-urls').is(':checked') ? 1 : 0;
 
         // Lock UI.
         isImporting = true;
@@ -439,11 +439,11 @@
         hideNotice();
 
         // Warn on page leave.
-        $(window).on('beforeunload.aiskImport', function () {
+        $(window).on('beforeunload.aiscImport', function () {
             return 'Import in progress. Are you sure you want to leave?';
         });
 
-        showStep('aisk-import-step-progress');
+        showStep('aisc-import-step-progress');
 
         // Begin chunked processing.
         var totalSteps = sections.length;
@@ -452,7 +452,7 @@
 
         function processStep(step, offset) {
             var postData = {
-                action: 'ai_seo_keeper_import_process',
+                action: 'ai_seo_captain_import_process',
                 _nonce: cfg.nonce,
                 mode: mode,
                 sections: sections,
@@ -516,20 +516,20 @@
     });
 
     function updateProgress(pct, label) {
-        $('#aisk-progress-bar').css('width', pct + '%');
-        $('#aisk-progress-pct').text(pct + '%');
-        $('#aisk-progress-label').text(label);
+        $('#aisc-progress-bar').css('width', pct + '%');
+        $('#aisc-progress-pct').text(pct + '%');
+        $('#aisc-progress-label').text(label);
     }
 
     function appendLog(text) {
-        var $log = $('#aisk-progress-log');
+        var $log = $('#aisc-progress-log');
         $log.append(escHtml(text) + '\n');
         $log.scrollTop($log[0].scrollHeight);
     }
 
     function finishImport(logs) {
         isImporting = false;
-        $(window).off('beforeunload.aiskImport');
+        $(window).off('beforeunload.aiscImport');
         updateProgress(100, 'Complete!');
 
         // Count stats.
@@ -543,10 +543,10 @@
         });
 
         // Build report with stat cards.
-        var reportHtml = '<div class="aisk-report-stats">' +
-            '<div class="aisk-report-stat"><div class="aisk-report-stat-value">' + imported + '</div><div class="aisk-report-stat-label">Imported</div></div>' +
-            '<div class="aisk-report-stat"><div class="aisk-report-stat-value">' + skipped + '</div><div class="aisk-report-stat-label">Skipped</div></div>' +
-            '<div class="aisk-report-stat"><div class="aisk-report-stat-value">' + errors + '</div><div class="aisk-report-stat-label">Errors</div></div>' +
+        var reportHtml = '<div class="aisc-report-stats">' +
+            '<div class="aisc-report-stat"><div class="aisc-report-stat-value">' + imported + '</div><div class="aisc-report-stat-label">Imported</div></div>' +
+            '<div class="aisc-report-stat"><div class="aisc-report-stat-value">' + skipped + '</div><div class="aisc-report-stat-label">Skipped</div></div>' +
+            '<div class="aisc-report-stat"><div class="aisc-report-stat-value">' + errors + '</div><div class="aisc-report-stat-label">Errors</div></div>' +
             '</div>';
 
         var stringEntries = logs.filter(function (e) { return typeof e === 'string'; });
@@ -558,15 +558,15 @@
             reportHtml += '</ul>';
         }
 
-        $('#aisk-import-report').html(reportHtml);
+        $('#aisc-import-report').html(reportHtml);
 
         setTimeout(function () {
-            showStep('aisk-import-step-report');
+            showStep('aisc-import-step-report');
         }, 500);
     }
 
     // Done button — reload page.
-    $('#aisk-import-done-btn').on('click', function () {
+    $('#aisc-import-done-btn').on('click', function () {
         window.location.reload();
     });
 

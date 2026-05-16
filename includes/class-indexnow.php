@@ -1,10 +1,10 @@
 <?php
 
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
 class IndexNow
 {
-    private const LOG_OPTION_NAME = 'ai_seo_keeper_indexnow_log';
+    private const LOG_OPTION_NAME = 'ai_seo_captain_indexnow_log';
 
     private Settings $settings;
 

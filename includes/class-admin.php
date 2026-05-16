@@ -1,79 +1,79 @@
 <?php
 
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
-use AI_SEO_Keeper\Admin\SEO_Analysis;
-use AI_SEO_Keeper\Admin\Admin_Taxonomy;
-use AI_SEO_Keeper\Admin\Admin_Import_Export;
-use AI_SEO_Keeper\Admin\Admin_Rollout;
-use AI_SEO_Keeper\Admin\Admin_Ajax;
+use AI_SEO_Captain\Admin\SEO_Analysis;
+use AI_SEO_Captain\Admin\Admin_Taxonomy;
+use AI_SEO_Captain\Admin\Admin_Import_Export;
+use AI_SEO_Captain\Admin\Admin_Rollout;
+use AI_SEO_Captain\Admin\Admin_Ajax;
 
 class Admin
 {
-    private const META_BOX_ID = 'ai_seo_keeper_meta_box';
+    private const META_BOX_ID = 'ai_seo_captain_meta_box';
 
-    public const FRONTEND_ENABLE_META_KEY = '_ai_seo_keeper_frontend_enabled';
+    public const FRONTEND_ENABLE_META_KEY = '_ai_seo_captain_frontend_enabled';
 
-    private const AJAX_SAVE_ACTION = 'ai_seo_keeper_save_meta';
+    private const AJAX_SAVE_ACTION = 'ai_seo_captain_save_meta';
 
-    private const AJAX_GENERATE_ACTION = 'ai_seo_keeper_generate_meta';
+    private const AJAX_GENERATE_ACTION = 'ai_seo_captain_generate_meta';
 
-    private const AJAX_APPROVE_ACTION = 'ai_seo_keeper_approve_suggestion';
+    private const AJAX_APPROVE_ACTION = 'ai_seo_captain_approve_suggestion';
 
-    private const AJAX_CHAT_ACTION = 'ai_seo_keeper_chat';
+    private const AJAX_CHAT_ACTION = 'ai_seo_captain_chat';
 
-    private const AJAX_BULK_GENERATE_ACTION = 'ai_seo_keeper_bulk_generate';
+    private const AJAX_BULK_GENERATE_ACTION = 'ai_seo_captain_bulk_generate';
 
-    private const AJAX_PAGE_AUDIT_ACTION = 'ai_seo_keeper_page_audit';
+    private const AJAX_PAGE_AUDIT_ACTION = 'ai_seo_captain_page_audit';
 
-    private const AJAX_SETUP_INDEX_ACTION = 'ai_seo_keeper_setup_index';
+    private const AJAX_SETUP_INDEX_ACTION = 'ai_seo_captain_setup_index';
 
-    private const GENERATE_SITE_AUDIT_ACTION = 'ai_seo_keeper_generate_site_audit';
+    private const GENERATE_SITE_AUDIT_ACTION = 'ai_seo_captain_generate_site_audit';
 
-    private const SUBMIT_INDEXNOW_ACTION = 'ai_seo_keeper_submit_indexnow';
+    private const SUBMIT_INDEXNOW_ACTION = 'ai_seo_captain_submit_indexnow';
 
-    private const YOAST_IMPORT_ACTION = 'ai_seo_keeper_import_yoast_metadata';
+    private const YOAST_IMPORT_ACTION = 'ai_seo_captain_import_yoast_metadata';
 
-    private const BULK_FRONTEND_ACTION = 'ai_seo_keeper_bulk_frontend_rollout';
+    private const BULK_FRONTEND_ACTION = 'ai_seo_captain_bulk_frontend_rollout';
 
-    private const AJAX_TOGGLE_AUDIT_SKIP_ACTION = 'ai_seo_keeper_toggle_audit_skip';
+    private const AJAX_TOGGLE_AUDIT_SKIP_ACTION = 'ai_seo_captain_toggle_audit_skip';
 
-    private const AJAX_SAVE_SKIP_PATTERNS_ACTION = 'ai_seo_keeper_save_skip_patterns';
+    private const AJAX_SAVE_SKIP_PATTERNS_ACTION = 'ai_seo_captain_save_skip_patterns';
 
-    private const AJAX_CONTENT_EDIT_ACTION = 'ai_seo_keeper_content_edit';
+    private const AJAX_CONTENT_EDIT_ACTION = 'ai_seo_captain_content_edit';
 
-    private const AJAX_APPLY_CHANGES_ACTION = 'ai_seo_keeper_apply_changes';
+    private const AJAX_APPLY_CHANGES_ACTION = 'ai_seo_captain_apply_changes';
 
-    private const AJAX_APPLY_SUGGESTION_ACTION = 'ai_seo_keeper_apply_suggestion';
+    private const AJAX_APPLY_SUGGESTION_ACTION = 'ai_seo_captain_apply_suggestion';
 
-    private const AJAX_RESTORE_BACKUP_ACTION = 'ai_seo_keeper_restore_backup';
-    private const AJAX_CLEAR_CHAT_ACTION = 'ai_seo_keeper_clear_chat';
-    private const AJAX_TEST_MODEL_ACTION = 'ai_seo_keeper_test_model';
+    private const AJAX_RESTORE_BACKUP_ACTION = 'ai_seo_captain_restore_backup';
+    private const AJAX_CLEAR_CHAT_ACTION = 'ai_seo_captain_clear_chat';
+    private const AJAX_TEST_MODEL_ACTION = 'ai_seo_captain_test_model';
 
-    private const AJAX_SITE_CHAT_ACTION = 'ai_seo_keeper_site_chat';
-    private const AJAX_SITE_CHAT_CLEAR_ACTION = 'ai_seo_keeper_site_chat_clear';
+    private const AJAX_SITE_CHAT_ACTION = 'ai_seo_captain_site_chat';
+    private const AJAX_SITE_CHAT_CLEAR_ACTION = 'ai_seo_captain_site_chat_clear';
 
     public const CHAT_OBJECT_TYPE = 'post_chat';
 
-    public const META_TITLE_KEY = '_ai_seo_keeper_meta_title';
+    public const META_TITLE_KEY = '_ai_seo_captain_meta_title';
 
-    public const META_DESCRIPTION_KEY = '_ai_seo_keeper_meta_description';
+    public const META_DESCRIPTION_KEY = '_ai_seo_captain_meta_description';
 
-    public const TITLE_BRANDING_OFF_META_KEY = '_ai_seo_keeper_title_branding_off';
+    public const TITLE_BRANDING_OFF_META_KEY = '_ai_seo_captain_title_branding_off';
 
-    public const FOCUS_KEYPHRASE_META_KEY = '_ai_seo_keeper_focus_keyphrase';
+    public const FOCUS_KEYPHRASE_META_KEY = '_ai_seo_captain_focus_keyphrase';
 
-    public const SOCIAL_TITLE_META_KEY = '_ai_seo_keeper_social_title';
+    public const SOCIAL_TITLE_META_KEY = '_ai_seo_captain_social_title';
 
-    public const SOCIAL_DESCRIPTION_META_KEY = '_ai_seo_keeper_social_description';
+    public const SOCIAL_DESCRIPTION_META_KEY = '_ai_seo_captain_social_description';
 
-    public const SOCIAL_IMAGE_META_KEY = '_ai_seo_keeper_social_image';
+    public const SOCIAL_IMAGE_META_KEY = '_ai_seo_captain_social_image';
 
-    public const CANONICAL_URL_META_KEY = '_ai_seo_keeper_canonical_url';
+    public const CANONICAL_URL_META_KEY = '_ai_seo_captain_canonical_url';
 
-    public const ROBOTS_DIRECTIVES_META_KEY = '_ai_seo_keeper_robots_directives';
+    public const ROBOTS_DIRECTIVES_META_KEY = '_ai_seo_captain_robots_directives';
 
-    public const SCHEMA_TYPE_META_KEY = '_ai_seo_keeper_schema_type';
+    public const SCHEMA_TYPE_META_KEY = '_ai_seo_captain_schema_type';
 
     private const TITLE_MIN_LENGTH = 30;
 
@@ -175,17 +175,17 @@ class Admin
         add_action('save_post', array($this, 'save_editor_meta'));
 
         // --- Admin-post handlers → delegates ---
-        add_action('admin_post_ai_seo_keeper_sync_index', array($this->rollout, 'handle_sync_index'));
+        add_action('admin_post_ai_seo_captain_sync_index', array($this->rollout, 'handle_sync_index'));
         add_action('admin_post_' . self::GENERATE_SITE_AUDIT_ACTION, array($this->rollout, 'handle_generate_site_audit'));
         add_action('admin_post_' . self::SUBMIT_INDEXNOW_ACTION, array($this->rollout, 'handle_submit_indexnow'));
         add_action('admin_post_' . self::BULK_FRONTEND_ACTION, array($this->rollout, 'handle_bulk_frontend_rollout'));
         add_action('admin_post_' . self::YOAST_IMPORT_ACTION, array($this->import_export, 'handle_import_yoast'));
-        add_action('admin_post_ai_seo_keeper_export', array($this->import_export, 'handle_export'));
+        add_action('admin_post_ai_seo_captain_export', array($this->import_export, 'handle_export'));
 
         // --- Import v2 AJAX handlers ---
-        add_action('wp_ajax_ai_seo_keeper_import_validate', array($this->import_export, 'ajax_import_validate'));
-        add_action('wp_ajax_ai_seo_keeper_import_match', array($this->import_export, 'ajax_import_match'));
-        add_action('wp_ajax_ai_seo_keeper_import_process', array($this->import_export, 'ajax_import_process'));
+        add_action('wp_ajax_ai_seo_captain_import_validate', array($this->import_export, 'ajax_import_validate'));
+        add_action('wp_ajax_ai_seo_captain_import_match', array($this->import_export, 'ajax_import_match'));
+        add_action('wp_ajax_ai_seo_captain_import_process', array($this->import_export, 'ajax_import_process'));
 
         // --- AJAX handlers → delegates ---
         add_action('wp_ajax_' . self::AJAX_SAVE_ACTION, array($this->ajax, 'handle_save_editor_meta'));
@@ -203,24 +203,24 @@ class Admin
         add_action('wp_ajax_' . self::AJAX_RESTORE_BACKUP_ACTION, array($this->ajax, 'handle_restore_backup'));
         add_action('wp_ajax_' . self::AJAX_CLEAR_CHAT_ACTION, array($this->ajax, 'handle_clear_chat'));
         add_action('wp_ajax_' . self::AJAX_TEST_MODEL_ACTION, array($this->ajax, 'handle_test_model'));
-        add_action('wp_ajax_ai_seo_keeper_delete_edit_plan', array($this->ajax, 'handle_delete_edit_plan'));
-        add_action('wp_ajax_ai_seo_keeper_bulk_save_seo', array($this->ajax, 'handle_bulk_save_seo'));
-        add_action('wp_ajax_ai_seo_keeper_save_image_alt', array($this->ajax, 'handle_save_image_alt'));
-        add_action('wp_ajax_ai_seo_keeper_save_video_seo', array($this->ajax, 'handle_save_video_seo'));
-        add_action('wp_ajax_ai_seo_keeper_save_doc_seo', array($this->ajax, 'handle_save_doc_seo'));
+        add_action('wp_ajax_ai_seo_captain_delete_edit_plan', array($this->ajax, 'handle_delete_edit_plan'));
+        add_action('wp_ajax_ai_seo_captain_bulk_save_seo', array($this->ajax, 'handle_bulk_save_seo'));
+        add_action('wp_ajax_ai_seo_captain_save_image_alt', array($this->ajax, 'handle_save_image_alt'));
+        add_action('wp_ajax_ai_seo_captain_save_video_seo', array($this->ajax, 'handle_save_video_seo'));
+        add_action('wp_ajax_ai_seo_captain_save_doc_seo', array($this->ajax, 'handle_save_doc_seo'));
 
         // --- Site Chat AJAX handlers ---
         add_action('wp_ajax_' . self::AJAX_SITE_CHAT_ACTION, array($this->site_chat, 'handle_chat'));
         add_action('wp_ajax_' . self::AJAX_SITE_CHAT_CLEAR_ACTION, array($this->site_chat, 'handle_clear_chat'));
 
         // --- Runs (Lists) AJAX handlers ---
-        add_action('wp_ajax_ai_seo_keeper_create_run', array($this->ajax, 'handle_create_run'));
-        add_action('wp_ajax_ai_seo_keeper_get_runs', array($this->ajax, 'handle_get_runs'));
-        add_action('wp_ajax_ai_seo_keeper_delete_run', array($this->ajax, 'handle_delete_run'));
-        add_action('wp_ajax_ai_seo_keeper_set_active_runs', array($this->ajax, 'handle_set_active_runs'));
-        add_action('wp_ajax_ai_seo_keeper_get_pages_for_selector', array($this->ajax, 'handle_get_pages_for_selector'));
-        add_action('wp_ajax_ai_seo_keeper_mark_run_step', array($this->ajax, 'handle_mark_run_step'));
-        add_action('wp_ajax_ai_seo_keeper_clear_seo_data', array($this->ajax, 'handle_clear_seo_data'));
+        add_action('wp_ajax_ai_seo_captain_create_run', array($this->ajax, 'handle_create_run'));
+        add_action('wp_ajax_ai_seo_captain_get_runs', array($this->ajax, 'handle_get_runs'));
+        add_action('wp_ajax_ai_seo_captain_delete_run', array($this->ajax, 'handle_delete_run'));
+        add_action('wp_ajax_ai_seo_captain_set_active_runs', array($this->ajax, 'handle_set_active_runs'));
+        add_action('wp_ajax_ai_seo_captain_get_pages_for_selector', array($this->ajax, 'handle_get_pages_for_selector'));
+        add_action('wp_ajax_ai_seo_captain_mark_run_step', array($this->ajax, 'handle_mark_run_step'));
+        add_action('wp_ajax_ai_seo_captain_clear_seo_data', array($this->ajax, 'handle_clear_seo_data'));
 
         // --- Taxonomy SEO fields → delegate ---
         add_action('admin_init', array($this->taxonomy, 'register'));
@@ -245,25 +245,25 @@ class Admin
         $meta_keys = array(
             self::META_TITLE_KEY => array(
                 'type'         => 'string',
-                'description'  => 'AI SEO Keeper SEO title',
+                'description'  => 'SEO Captain SEO title',
                 'single'       => true,
                 'default'      => '',
             ),
             self::META_DESCRIPTION_KEY => array(
                 'type'         => 'string',
-                'description'  => 'AI SEO Keeper meta description',
+                'description'  => 'SEO Captain meta description',
                 'single'       => true,
                 'default'      => '',
             ),
             self::FOCUS_KEYPHRASE_META_KEY => array(
                 'type'         => 'string',
-                'description'  => 'AI SEO Keeper focus keyphrase',
+                'description'  => 'SEO Captain focus keyphrase',
                 'single'       => true,
                 'default'      => '',
             ),
             self::ROBOTS_DIRECTIVES_META_KEY => array(
                 'type'         => 'string',
-                'description'  => 'AI SEO Keeper robots directives',
+                'description'  => 'SEO Captain robots directives',
                 'single'       => true,
                 'default'      => '',
             ),
@@ -337,7 +337,7 @@ class Admin
         global $wpdb;
 
         $count = $wpdb->get_var(
-            "SELECT 1 FROM {$wpdb->postmeta} WHERE meta_key = '_ai_seo_keeper_page_audit' LIMIT 1"
+            "SELECT 1 FROM {$wpdb->postmeta} WHERE meta_key = '_ai_seo_captain_page_audit' LIMIT 1"
         );
 
         return null !== $count;
@@ -357,148 +357,148 @@ class Admin
             return '';
         }
 
-        $setup_url = esc_url(admin_url('admin.php?page=ai-seo-keeper-setup'));
+        $setup_url = esc_url(admin_url('admin.php?page=ai-seo-captain-setup'));
 
         if (! $readiness['has_index']) {
             $severity = 'is-error';
             $icon     = 'dashicons-warning';
-            $title    = esc_html__('Site Not Indexed', 'ai-seo-keeper');
+            $title    = esc_html__('Site Not Indexed', 'ai-seo-captain');
             $text     = sprintf(
                 /* translators: %s: link to Setup Wizard */
-                esc_html__('Your site content has not been indexed yet. Please %s to enable all plugin features.', 'ai-seo-keeper'),
-                '<a href="' . $setup_url . '">' . esc_html__('run the Setup Wizard', 'ai-seo-keeper') . '</a>'
+                esc_html__('Your site content has not been indexed yet. Please %s to enable all plugin features.', 'ai-seo-captain'),
+                '<a href="' . $setup_url . '">' . esc_html__('run the Setup Wizard', 'ai-seo-captain') . '</a>'
             );
         } else {
             $severity = 'is-warning';
             $icon     = 'dashicons-info-outline';
             $title    = sprintf(
                 /* translators: %d: page count */
-                esc_html__('Site Indexed — %d Pages', 'ai-seo-keeper'),
+                esc_html__('Site Indexed — %d Pages', 'ai-seo-captain'),
                 $readiness['page_count']
             );
             $text = sprintf(
                 /* translators: %s: link to Setup Wizard */
-                esc_html__('No audit data found. Please %s to unlock AI-powered features like the AI Strategist.', 'ai-seo-keeper'),
-                '<a href="' . $setup_url . '">' . esc_html__('run a full audit or audit specific pages', 'ai-seo-keeper') . '</a>'
+                esc_html__('No audit data found. Please %s to unlock AI-powered features like the AI Strategist.', 'ai-seo-captain'),
+                '<a href="' . $setup_url . '">' . esc_html__('run a full audit or audit specific pages', 'ai-seo-captain') . '</a>'
             );
         }
 
-        return '<div class="ai-seo-keeper-notice ' . $severity . '">'
-            . '<span class="dashicons ' . $icon . ' ai-seo-keeper-notice__icon"></span>'
-            . '<div class="ai-seo-keeper-notice__body">'
-            . '<strong class="ai-seo-keeper-notice__title">' . $title . '</strong>'
-            . '<span class="ai-seo-keeper-notice__text">' . $text . '</span>'
+        return '<div class="ai-seo-captain-notice ' . $severity . '">'
+            . '<span class="dashicons ' . $icon . ' ai-seo-captain-notice__icon"></span>'
+            . '<div class="ai-seo-captain-notice__body">'
+            . '<strong class="ai-seo-captain-notice__title">' . $title . '</strong>'
+            . '<span class="ai-seo-captain-notice__text">' . $text . '</span>'
             . '</div></div>';
     }
 
     public function register_menu(): void
     {
         add_menu_page(
-            'AI SEO Keeper',
-            'AI SEO Keeper',
+            'SEO Captain',
+            'SEO Captain',
             'manage_options',
-            'ai-seo-keeper',
+            'ai-seo-captain',
             array($this, 'render_dashboard'),
             'dashicons-chart-area',
             58
         );
 
         add_submenu_page(
-            'ai-seo-keeper',
-            'AI SEO Keeper Audit',
+            'ai-seo-captain',
+            'SEO Captain Audit',
             'Audit',
             'manage_options',
-            'ai-seo-keeper-audit',
+            'ai-seo-captain-audit',
             array($this, 'render_audit_page')
         );
 
         add_submenu_page(
-            'ai-seo-keeper',
-            'AI SEO Keeper Setup Wizard',
+            'ai-seo-captain',
+            'SEO Captain Setup Wizard',
             'Setup Wizard',
             'manage_options',
-            'ai-seo-keeper-setup',
+            'ai-seo-captain-setup',
             array($this, 'render_setup_wizard_page')
         );
 
         add_submenu_page(
-            'ai-seo-keeper',
-            'AI SEO Keeper Settings',
+            'ai-seo-captain',
+            'SEO Captain Settings',
             'Settings',
             'manage_options',
-            'ai-seo-keeper-settings',
+            'ai-seo-captain-settings',
             array($this, 'render_settings_page')
         );
 
         add_submenu_page(
-            'ai-seo-keeper',
+            'ai-seo-captain',
             'Redirects &amp; 404 Monitor',
             'Redirects',
             'manage_options',
-            'ai-seo-keeper-redirects',
+            'ai-seo-captain-redirects',
             array($this, 'render_redirects_page')
         );
 
         add_submenu_page(
-            'ai-seo-keeper',
+            'ai-seo-captain',
             'Bulk SEO Editor',
             'Bulk Editor',
             'manage_options',
-            'ai-seo-keeper-bulk-editor',
+            'ai-seo-captain-bulk-editor',
             array($this, 'render_bulk_editor_page')
         );
 
         add_submenu_page(
-            'ai-seo-keeper',
+            'ai-seo-captain',
             'Image SEO',
             'Image SEO',
             'manage_options',
-            'ai-seo-keeper-images',
+            'ai-seo-captain-images',
             array($this, 'render_image_seo_page')
         );
 
         add_submenu_page(
-            'ai-seo-keeper',
+            'ai-seo-captain',
             'Video SEO',
             'Video SEO',
             'manage_options',
-            'ai-seo-keeper-videos',
+            'ai-seo-captain-videos',
             array($this, 'render_video_seo_page')
         );
 
         add_submenu_page(
-            'ai-seo-keeper',
+            'ai-seo-captain',
             'Document SEO',
             'Document SEO',
             'manage_options',
-            'ai-seo-keeper-documents',
+            'ai-seo-captain-documents',
             array($this, 'render_document_seo_page')
         );
 
         add_submenu_page(
-            'ai-seo-keeper',
+            'ai-seo-captain',
             'Keyword Tracking',
             'Keywords',
             'manage_options',
-            'ai-seo-keeper-keywords',
+            'ai-seo-captain-keywords',
             array($this, 'render_keyword_tracking_page')
         );
 
         add_submenu_page(
-            'ai-seo-keeper',
+            'ai-seo-captain',
             'Export / Import',
             'Export / Import',
             'manage_options',
-            'ai-seo-keeper-export-import',
+            'ai-seo-captain-export-import',
             array($this, 'render_export_import_page')
         );
 
         add_submenu_page(
-            'ai-seo-keeper',
+            'ai-seo-captain',
             'AI SEO Strategist',
             'AI Strategist',
             'manage_options',
-            'ai-seo-keeper-site-chat',
+            'ai-seo-captain-site-chat',
             array($this, 'render_site_chat_page')
         );
     }
@@ -574,14 +574,14 @@ class Admin
         $ver = AI_SEO_KEEPER_VERSION;
 
         wp_enqueue_style(
-            'ai-seo-keeper-gutenberg-sidebar',
+            'ai-seo-captain-gutenberg-sidebar',
             $url . 'css/gutenberg-sidebar.css',
             array(),
             $ver
         );
 
         wp_enqueue_script(
-            'ai-seo-keeper-gutenberg-sidebar',
+            'ai-seo-captain-gutenberg-sidebar',
             $url . 'js/gutenberg-sidebar.js',
             array(
                 'wp-plugins',
@@ -599,11 +599,11 @@ class Admin
         $suffix_len = function_exists('mb_strlen') ? mb_strlen($suffix) : strlen($suffix);
 
         wp_localize_script(
-            'ai-seo-keeper-gutenberg-sidebar',
+            'ai-seo-captain-gutenberg-sidebar',
             'aiSeoKeeperGutenberg',
             array(
                 'ajaxUrl' => admin_url('admin-ajax.php'),
-                'nonce'   => wp_create_nonce('ai_seo_keeper_nonce'),
+                'nonce'   => wp_create_nonce('ai_seo_captain_nonce'),
                 'actions' => array(
                     'save'     => self::AJAX_SAVE_ACTION,
                     'generate' => self::AJAX_GENERATE_ACTION,
@@ -624,37 +624,37 @@ class Admin
                 'brandingSuffix'       => $suffix,
                 'brandingSuffixLength' => $suffix_len,
                 'i18n' => array(
-                    'sidebarTitle'   => __('AI SEO Keeper', 'ai-seo-keeper'),
-                    'seoScore'       => __('SEO Score', 'ai-seo-keeper'),
-                    'snippetPreview' => __('Snippet Preview', 'ai-seo-keeper'),
-                    'seoFields'      => __('SEO Fields', 'ai-seo-keeper'),
-                    'seoChecks'      => __('SEO Checks', 'ai-seo-keeper'),
-                    'aiAssistant'    => __('AI Assistant', 'ai-seo-keeper'),
-                    'seoTitle'       => __('SEO Title', 'ai-seo-keeper'),
-                    'metaDescription' => __('Meta Description', 'ai-seo-keeper'),
-                    'focusKeyphrase' => __('Focus Keyphrase', 'ai-seo-keeper'),
-                    'noindex'        => __('Set to noindex', 'ai-seo-keeper'),
-                    'saveDraft'      => __('Save Draft', 'ai-seo-keeper'),
-                    'generateAi'     => __('Generate with AI', 'ai-seo-keeper'),
-                    'askAi'          => __('Ask AI', 'ai-seo-keeper'),
-                    'askQuestion'    => __('Ask the AI assistant', 'ai-seo-keeper'),
-                    'chatPlaceholder' => __('e.g. How can I improve the title for this page?', 'ai-seo-keeper'),
-                    'saved'          => __('SEO draft saved.', 'ai-seo-keeper'),
-                    'saveError'      => __('Could not save the SEO draft.', 'ai-seo-keeper'),
-                    'generated'      => __('AI suggestion loaded. Review and save to keep it.', 'ai-seo-keeper'),
-                    'generateError'  => __('Could not generate SEO suggestions.', 'ai-seo-keeper'),
-                    'chatError'      => __('Could not get an AI assistant reply.', 'ai-seo-keeper'),
-                    'noTitle'        => __('No SEO title set', 'ai-seo-keeper'),
-                    'noDescription'  => __('No meta description set', 'ai-seo-keeper'),
-                    'saveToContinue' => __('Save the post once to see SEO checks.', 'ai-seo-keeper'),
-                    'brandingNote'   => __('Branding suffix will be appended:', 'ai-seo-keeper'),
+                    'sidebarTitle'   => __('SEO Captain', 'ai-seo-captain'),
+                    'seoScore'       => __('SEO Score', 'ai-seo-captain'),
+                    'snippetPreview' => __('Snippet Preview', 'ai-seo-captain'),
+                    'seoFields'      => __('SEO Fields', 'ai-seo-captain'),
+                    'seoChecks'      => __('SEO Checks', 'ai-seo-captain'),
+                    'aiAssistant'    => __('AI Assistant', 'ai-seo-captain'),
+                    'seoTitle'       => __('SEO Title', 'ai-seo-captain'),
+                    'metaDescription' => __('Meta Description', 'ai-seo-captain'),
+                    'focusKeyphrase' => __('Focus Keyphrase', 'ai-seo-captain'),
+                    'noindex'        => __('Set to noindex', 'ai-seo-captain'),
+                    'saveDraft'      => __('Save Draft', 'ai-seo-captain'),
+                    'generateAi'     => __('Generate with AI', 'ai-seo-captain'),
+                    'askAi'          => __('Ask AI', 'ai-seo-captain'),
+                    'askQuestion'    => __('Ask the AI assistant', 'ai-seo-captain'),
+                    'chatPlaceholder' => __('e.g. How can I improve the title for this page?', 'ai-seo-captain'),
+                    'saved'          => __('SEO draft saved.', 'ai-seo-captain'),
+                    'saveError'      => __('Could not save the SEO draft.', 'ai-seo-captain'),
+                    'generated'      => __('AI suggestion loaded. Review and save to keep it.', 'ai-seo-captain'),
+                    'generateError'  => __('Could not generate SEO suggestions.', 'ai-seo-captain'),
+                    'chatError'      => __('Could not get an AI assistant reply.', 'ai-seo-captain'),
+                    'noTitle'        => __('No SEO title set', 'ai-seo-captain'),
+                    'noDescription'  => __('No meta description set', 'ai-seo-captain'),
+                    'saveToContinue' => __('Save the post once to see SEO checks.', 'ai-seo-captain'),
+                    'brandingNote'   => __('Branding suffix will be appended:', 'ai-seo-captain'),
                     'checks' => array(
-                        'titleLength' => __('SEO title is between 30–60 characters', 'ai-seo-keeper'),
-                        'descLength'  => __('Meta description is between 70–155 characters', 'ai-seo-keeper'),
-                        'titleFilled' => __('SEO title is set', 'ai-seo-keeper'),
-                        'descFilled'  => __('Meta description is set', 'ai-seo-keeper'),
-                        'kpInTitle'   => __('Focus keyphrase appears in the SEO title', 'ai-seo-keeper'),
-                        'kpInDesc'    => __('Focus keyphrase appears in the meta description', 'ai-seo-keeper'),
+                        'titleLength' => __('SEO title is between 30–60 characters', 'ai-seo-captain'),
+                        'descLength'  => __('Meta description is between 70–155 characters', 'ai-seo-captain'),
+                        'titleFilled' => __('SEO title is set', 'ai-seo-captain'),
+                        'descFilled'  => __('Meta description is set', 'ai-seo-captain'),
+                        'kpInTitle'   => __('Focus keyphrase appears in the SEO title', 'ai-seo-captain'),
+                        'kpInDesc'    => __('Focus keyphrase appears in the meta description', 'ai-seo-captain'),
                     ),
                 ),
             )
@@ -662,12 +662,12 @@ class Admin
     }
 
     /**
-     * Enqueue shared CSS/JS on any AI SEO Keeper admin page, plus page-specific assets.
+     * Enqueue shared CSS/JS on any SEO Captain admin page, plus page-specific assets.
      */
     public function enqueue_page_assets(string $hook_suffix): void
     {
         // Only load on our own admin pages.
-        if (false === strpos($hook_suffix, 'ai-seo-keeper')) {
+        if (false === strpos($hook_suffix, 'ai-seo-captain')) {
             return;
         }
 
@@ -680,18 +680,18 @@ class Admin
 
         // Map hook suffixes to page-specific asset slugs.
         $page_map = array(
-            'ai-seo-keeper-settings'      => 'settings',
-            'ai-seo-keeper-audit'         => 'audit',
-            'toplevel_page_ai-seo-keeper' => 'dashboard',
-            'ai-seo-keeper-bulk-editor'   => 'bulk-editor',
-            'ai-seo-keeper-images'        => 'images',
-            'ai-seo-keeper-videos'        => 'videos',
-            'ai-seo-keeper-documents'     => 'documents',
-            'ai-seo-keeper-keywords'      => 'keywords',
-            'ai-seo-keeper-redirects'     => 'redirects',
-            'ai-seo-keeper-export-import' => 'export-import',
-            'ai-seo-keeper-setup'         => 'setup-wizard',
-            'ai-seo-keeper-site-chat'     => 'site-chat',
+            'ai-seo-captain-settings'      => 'settings',
+            'ai-seo-captain-audit'         => 'audit',
+            'toplevel_page_ai-seo-captain' => 'dashboard',
+            'ai-seo-captain-bulk-editor'   => 'bulk-editor',
+            'ai-seo-captain-images'        => 'images',
+            'ai-seo-captain-videos'        => 'videos',
+            'ai-seo-captain-documents'     => 'documents',
+            'ai-seo-captain-keywords'      => 'keywords',
+            'ai-seo-captain-redirects'     => 'redirects',
+            'ai-seo-captain-export-import' => 'export-import',
+            'ai-seo-captain-setup'         => 'setup-wizard',
+            'ai-seo-captain-site-chat'     => 'site-chat',
         );
 
         // Determine the page slug from the hook suffix.
@@ -727,7 +727,7 @@ jQuery(function ($) {
         var $panel = $('#' + targetId);
 
         $toggle.attr('aria-expanded', shouldOpen ? 'true' : 'false');
-        $toggle.find('.ai-seo-keeper-accordion-symbol').text(shouldOpen ? '-' : '+');
+        $toggle.find('.ai-seo-captain-accordion-symbol').text(shouldOpen ? '-' : '+');
         $panel.prop('hidden', ! shouldOpen);
     }
 
@@ -736,7 +736,7 @@ jQuery(function ($) {
             return;
         }
 
-        $panel.find('.ai-seo-keeper-tab-button').each(function () {
+        $panel.find('.ai-seo-captain-tab-button').each(function () {
             var $button = $(this);
             var isActive = $button.data('tabTarget') === targetId;
 
@@ -744,14 +744,14 @@ jQuery(function ($) {
             $button.toggleClass('is-active', isActive);
         });
 
-        $panel.find('.ai-seo-keeper-tab-panel').each(function () {
+        $panel.find('.ai-seo-captain-tab-panel').each(function () {
             var $tabPanel = $(this);
             $tabPanel.prop('hidden', $tabPanel.attr('id') !== targetId);
         });
     }
 
     function updateSearchPreview($panel) {
-        var $preview = $panel.find('.ai-seo-keeper-search-preview');
+        var $preview = $panel.find('.ai-seo-captain-search-preview');
 
         if (! $preview.length) {
             return;
@@ -761,18 +761,18 @@ jQuery(function ($) {
         var fallbackDescription = $preview.data('fallbackDescription') || '';
         var previewUrl = $preview.data('previewUrl') || '';
         var fallbackImage = $preview.data('fallbackImage') || '';
-        var title = $.trim($panel.find('#ai-seo-keeper-meta-title').val()) || fallbackTitle;
-        var description = $.trim($panel.find('#ai-seo-keeper-meta-description').val()) || fallbackDescription;
+        var title = $.trim($panel.find('#ai-seo-captain-meta-title').val()) || fallbackTitle;
+        var description = $.trim($panel.find('#ai-seo-captain-meta-description').val()) || fallbackDescription;
         var brandingSuffix = $preview.data('brandingSuffix') || '';
-        var brandingOff = $panel.find('#ai-seo-keeper-title-branding-off').is(':checked');
+        var brandingOff = $panel.find('#ai-seo-captain-title-branding-off').is(':checked');
         var displayTitle = (brandingOff || !brandingSuffix) ? title : title + brandingSuffix;
-        var previewImage = $.trim($panel.find('#ai-seo-keeper-social-image').val()) || fallbackImage;
-        var $image = $preview.find('.ai-seo-keeper-preview-image');
-        var $placeholder = $preview.find('.ai-seo-keeper-preview-image-placeholder');
+        var previewImage = $.trim($panel.find('#ai-seo-captain-social-image').val()) || fallbackImage;
+        var $image = $preview.find('.ai-seo-captain-preview-image');
+        var $placeholder = $preview.find('.ai-seo-captain-preview-image-placeholder');
 
-        $preview.find('.ai-seo-keeper-preview-title').text(displayTitle);
-        $preview.find('.ai-seo-keeper-preview-description').text(description);
-        $preview.find('.ai-seo-keeper-preview-url').text(previewUrl);
+        $preview.find('.ai-seo-captain-preview-title').text(displayTitle);
+        $preview.find('.ai-seo-captain-preview-description').text(description);
+        $preview.find('.ai-seo-captain-preview-url').text(previewUrl);
 
         if (previewImage) {
             $image.attr('src', previewImage).prop('hidden', false);
@@ -785,20 +785,20 @@ jQuery(function ($) {
     }
 
     function updateSocialImageCard($panel) {
-        var $input = $panel.find('#ai-seo-keeper-social-image');
-        var $frame = $panel.find('.ai-seo-keeper-preview-image-card-frame');
+        var $input = $panel.find('#ai-seo-captain-social-image');
+        var $frame = $panel.find('.ai-seo-captain-preview-image-card-frame');
 
         if (! $input.length || ! $frame.length) {
             return;
         }
 
         var overrideImage = $.trim($input.val());
-        var fallbackImage = $panel.find('.ai-seo-keeper-search-preview').data('fallbackImage') || '';
+        var fallbackImage = $panel.find('.ai-seo-captain-search-preview').data('fallbackImage') || '';
         var effectiveImage = overrideImage || fallbackImage;
-        var $image = $frame.find('.ai-seo-keeper-preview-image-card-image');
-        var $placeholder = $frame.find('.ai-seo-keeper-preview-image-card-empty');
+        var $image = $frame.find('.ai-seo-captain-preview-image-card-image');
+        var $placeholder = $frame.find('.ai-seo-captain-preview-image-card-empty');
 
-        $panel.find('.ai-seo-keeper-remove-social-image').prop('disabled', ! overrideImage);
+        $panel.find('.ai-seo-captain-remove-social-image').prop('disabled', ! overrideImage);
 
         if (effectiveImage) {
             $image.attr('src', effectiveImage).prop('hidden', false);
@@ -811,31 +811,31 @@ jQuery(function ($) {
     }
 
     function updateSocialPreviewCards($panel) {
-        var $cards = $panel.find('.ai-seo-keeper-social-preview-card');
+        var $cards = $panel.find('.ai-seo-captain-social-preview-card');
 
         if (! $cards.length) {
             return;
         }
 
-        var $searchPreview = $panel.find('.ai-seo-keeper-search-preview');
+        var $searchPreview = $panel.find('.ai-seo-captain-search-preview');
         var fallbackTitle = $searchPreview.data('fallbackTitle') || '';
         var fallbackDescription = $searchPreview.data('fallbackDescription') || '';
         var previewUrl = $searchPreview.data('previewUrl') || '';
         var fallbackImage = $searchPreview.data('fallbackImage') || '';
-        var seoTitle = normalizeSeoDraftText($panel.find('#ai-seo-keeper-meta-title').val()) || fallbackTitle;
-        var seoDescription = normalizeSeoDraftText($panel.find('#ai-seo-keeper-meta-description').val()) || fallbackDescription;
-        var socialTitle = normalizeSeoDraftText($panel.find('#ai-seo-keeper-social-title').val()) || seoTitle;
-        var socialDescription = normalizeSeoDraftText($panel.find('#ai-seo-keeper-social-description').val()) || seoDescription;
-        var socialImage = $.trim($panel.find('#ai-seo-keeper-social-image').val()) || fallbackImage;
+        var seoTitle = normalizeSeoDraftText($panel.find('#ai-seo-captain-meta-title').val()) || fallbackTitle;
+        var seoDescription = normalizeSeoDraftText($panel.find('#ai-seo-captain-meta-description').val()) || fallbackDescription;
+        var socialTitle = normalizeSeoDraftText($panel.find('#ai-seo-captain-social-title').val()) || seoTitle;
+        var socialDescription = normalizeSeoDraftText($panel.find('#ai-seo-captain-social-description').val()) || seoDescription;
+        var socialImage = $.trim($panel.find('#ai-seo-captain-social-image').val()) || fallbackImage;
 
         $cards.each(function () {
             var $card = $(this);
-            var $image = $card.find('.ai-seo-keeper-social-preview-image');
-            var $placeholder = $card.find('.ai-seo-keeper-social-preview-placeholder');
+            var $image = $card.find('.ai-seo-captain-social-preview-image');
+            var $placeholder = $card.find('.ai-seo-captain-social-preview-placeholder');
 
-            $card.find('.ai-seo-keeper-social-preview-title').text(socialTitle);
-            $card.find('.ai-seo-keeper-social-preview-description').text(socialDescription);
-            $card.find('.ai-seo-keeper-social-preview-url').text(previewUrl);
+            $card.find('.ai-seo-captain-social-preview-title').text(socialTitle);
+            $card.find('.ai-seo-captain-social-preview-description').text(socialDescription);
+            $card.find('.ai-seo-captain-social-preview-url').text(previewUrl);
 
             if (socialImage) {
                 $image.attr('src', socialImage).prop('hidden', false);
@@ -852,9 +852,9 @@ jQuery(function ($) {
     }
 
     function updateFieldCharacterCounters($panel) {
-        var brandingOff = $panel.find('#ai-seo-keeper-title-branding-off').is(':checked');
+        var brandingOff = $panel.find('#ai-seo-captain-title-branding-off').is(':checked');
 
-        $panel.find('.ai-seo-keeper-field-counter').each(function () {
+        $panel.find('.ai-seo-captain-field-counter').each(function () {
             var $counter = $(this);
             var fieldId = $counter.data('fieldId');
             var $field = $panel.find('#' + fieldId);
@@ -867,7 +867,7 @@ jQuery(function ($) {
             }
 
             // Only apply branding suffix to the title field and when branding is on
-            var isTitleField = (fieldId === 'ai-seo-keeper-meta-title');
+            var isTitleField = (fieldId === 'ai-seo-captain-meta-title');
             var effectiveSuffix = (isTitleField && !brandingOff) ? suffixLength : 0;
             var totalLength = currentLength + effectiveSuffix;
 
@@ -891,12 +891,12 @@ jQuery(function ($) {
 
     function setSnippetMetricState($metric, stateClass, valueText, helperText) {
         $metric.removeClass('is-good is-warning is-neutral').addClass(stateClass);
-        $metric.find('.ai-seo-keeper-snippet-metric-value').text(valueText);
-        $metric.find('.ai-seo-keeper-snippet-metric-helper').text(helperText);
+        $metric.find('.ai-seo-captain-snippet-metric-value').text(valueText);
+        $metric.find('.ai-seo-captain-snippet-metric-helper').text(helperText);
     }
 
     function updateSnippetAnalyzer($panel) {
-        var $analyzer = $panel.find('.ai-seo-keeper-snippet-analyzer');
+        var $analyzer = $panel.find('.ai-seo-captain-snippet-analyzer');
         var limits = aiSeoKeeperEditor.limits || {};
         var titleMin = parseInt(limits.titleMin, 10) || 30;
         var titleMax = parseInt(limits.titleMax, 10) || 60;
@@ -907,13 +907,13 @@ jQuery(function ($) {
             return;
         }
 
-        var brandingOff = $panel.find('#ai-seo-keeper-title-branding-off').is(':checked');
+        var brandingOff = $panel.find('#ai-seo-captain-title-branding-off').is(':checked');
         var brandingSuffixLen = parseInt(aiSeoKeeperEditor.brandingSuffixLength || 0, 10);
         var effectiveSuffix = brandingOff ? 0 : brandingSuffixLen;
 
-        var title = normalizeSeoDraftText($panel.find('#ai-seo-keeper-meta-title').val());
-        var description = normalizeSeoDraftText($panel.find('#ai-seo-keeper-meta-description').val());
-        var keyphrase = normalizeSeoDraftText($panel.find('#ai-seo-keeper-focus-keyphrase').val()).toLowerCase();
+        var title = normalizeSeoDraftText($panel.find('#ai-seo-captain-meta-title').val());
+        var description = normalizeSeoDraftText($panel.find('#ai-seo-captain-meta-description').val());
+        var keyphrase = normalizeSeoDraftText($panel.find('#ai-seo-captain-focus-keyphrase').val()).toLowerCase();
         var titleLength = title.length + effectiveSuffix;
         var descriptionLength = description.length;
         var titleLower = title.toLowerCase();
@@ -924,7 +924,7 @@ jQuery(function ($) {
         var scoreState = 'is-warning';
         var scoreLabel = 'Needs work';
         var scoreSummary = 'Tune the draft length and keyphrase placement to get closer to a search-friendly snippet.';
-        var $score = $analyzer.find('.ai-seo-keeper-snippet-score');
+        var $score = $analyzer.find('.ai-seo-captain-snippet-score');
 
         if (! title.length) {
             setSnippetMetricState(
@@ -1059,10 +1059,10 @@ jQuery(function ($) {
 
         $analyzer.removeClass('is-good is-warning is-neutral').addClass(scoreState);
         $score.removeClass('is-good is-warning is-neutral').addClass(scoreState);
-        $score.find('.ai-seo-keeper-snippet-score-number').text(score);
-        $score.find('.ai-seo-keeper-snippet-score-label').text(scoreLabel);
-        $analyzer.find('.ai-seo-keeper-snippet-summary-text').text(scoreSummary);
-        $analyzer.find('.ai-seo-keeper-snippet-score-fill').css('width', score + '%');
+        $score.find('.ai-seo-captain-snippet-score-number').text(score);
+        $score.find('.ai-seo-captain-snippet-score-label').text(scoreLabel);
+        $analyzer.find('.ai-seo-captain-snippet-summary-text').text(scoreSummary);
+        $analyzer.find('.ai-seo-captain-snippet-score-fill').css('width', score + '%');
     }
 
     function refreshSeoDraftFeedback($panel) {
@@ -1073,12 +1073,12 @@ jQuery(function ($) {
         updateSocialPreviewCards($panel);
     }
 
-    $(document).on('click', '.ai-seo-keeper-tab-button', function (event) {
+    $(document).on('click', '.ai-seo-captain-tab-button', function (event) {
         event.preventDefault();
-        activateTab($(this).closest('.ai-seo-keeper-editor-panel'), $(this).data('tabTarget'));
+        activateTab($(this).closest('.ai-seo-captain-editor-panel'), $(this).data('tabTarget'));
     });
 
-    $(document).on('click', '.ai-seo-keeper-accordion-toggle', function (event) {
+    $(document).on('click', '.ai-seo-captain-accordion-toggle', function (event) {
         event.preventDefault();
 
         var $toggle = $(this);
@@ -1086,7 +1086,7 @@ jQuery(function ($) {
         setAccordionState($toggle, ! isOpen);
     });
 
-    $(document).on('click', '.ai-seo-keeper-open-media', function (event) {
+    $(document).on('click', '.ai-seo-captain-open-media', function (event) {
         event.preventDefault();
 
         if (typeof wp === 'undefined' || ! wp.media) {
@@ -1094,7 +1094,7 @@ jQuery(function ($) {
         }
 
         var $button = $(this);
-        var $panel = $button.closest('.ai-seo-keeper-editor-panel');
+        var $panel = $button.closest('.ai-seo-captain-editor-panel');
         var frame = $panel.data('aiSeoKeeperMediaFrame');
 
         if (! frame) {
@@ -1117,7 +1117,7 @@ jQuery(function ($) {
                 }
 
                 var attachment = selection.toJSON();
-                $panel.find('#ai-seo-keeper-social-image').val(attachment.url || '').trigger('input');
+                $panel.find('#ai-seo-captain-social-image').val(attachment.url || '').trigger('input');
             });
 
             $panel.data('aiSeoKeeperMediaFrame', frame);
@@ -1126,20 +1126,20 @@ jQuery(function ($) {
         frame.open();
     });
 
-    $(document).on('click', '.ai-seo-keeper-remove-social-image', function (event) {
+    $(document).on('click', '.ai-seo-captain-remove-social-image', function (event) {
         event.preventDefault();
 
-        var $panel = $(this).closest('.ai-seo-keeper-editor-panel');
-        $panel.find('#ai-seo-keeper-social-image').val('').trigger('input').trigger('focus');
+        var $panel = $(this).closest('.ai-seo-captain-editor-panel');
+        $panel.find('#ai-seo-captain-social-image').val('').trigger('input').trigger('focus');
     });
 
-    $(document).on('click', '.ai-seo-keeper-approve-suggestion', function (event) {
+    $(document).on('click', '.ai-seo-captain-approve-suggestion', function (event) {
         event.preventDefault();
 
         var $button = $(this);
-        var $panel = $button.closest('.ai-seo-keeper-editor-panel');
-        var $status = $panel.find('.ai-seo-keeper-save-status');
-        var $notes = $panel.find('.ai-seo-keeper-ai-notes');
+        var $panel = $button.closest('.ai-seo-captain-editor-panel');
+        var $status = $panel.find('.ai-seo-captain-save-status');
+        var $notes = $panel.find('.ai-seo-captain-ai-notes');
         var postId = $('#post_ID').val();
         var messageId = $button.data('messageId');
 
@@ -1153,25 +1153,25 @@ jQuery(function ($) {
 
         $.post(aiSeoKeeperEditor.ajaxUrl, {
             action: aiSeoKeeperEditor.approveAction,
-            nonce: $('#ai_seo_keeper_editor_nonce').val(),
+            nonce: $('#ai_seo_captain_editor_nonce').val(),
             post_id: postId,
             message_id: messageId
         })
             .done(function (response) {
                 if (response && response.success && response.data) {
-                    $('#ai-seo-keeper-meta-title').val(response.data.seoTitle || '');
-                    $('#ai-seo-keeper-meta-description').val(response.data.metaDescription || '');
+                    $('#ai-seo-captain-meta-title').val(response.data.seoTitle || '');
+                    $('#ai-seo-captain-meta-description').val(response.data.metaDescription || '');
 
                     if (response.data.notes) {
                         $notes.text(response.data.notes);
                     }
 
                     if (response.data.historyHtml) {
-                        $panel.find('.ai-seo-keeper-history-shell').html(response.data.historyHtml);
+                        $panel.find('.ai-seo-captain-history-shell').html(response.data.historyHtml);
                     }
 
                     if (response.data.analysisHtml) {
-                        $panel.find('.ai-seo-keeper-analysis-shell').html(response.data.analysisHtml);
+                        $panel.find('.ai-seo-captain-analysis-shell').html(response.data.analysisHtml);
                     }
 
                     refreshSeoDraftFeedback($panel);
@@ -1196,13 +1196,13 @@ jQuery(function ($) {
             });
     });
 
-    $(document).on('click', '.ai-seo-keeper-generate-draft', function (event) {
+    $(document).on('click', '.ai-seo-captain-generate-draft', function (event) {
         event.preventDefault();
 
         var $button = $(this);
-        var $panel = $button.closest('.ai-seo-keeper-editor-panel');
-        var $status = $panel.find('.ai-seo-keeper-save-status');
-        var $notes = $panel.find('.ai-seo-keeper-ai-notes');
+        var $panel = $button.closest('.ai-seo-captain-editor-panel');
+        var $status = $panel.find('.ai-seo-captain-save-status');
+        var $notes = $panel.find('.ai-seo-captain-ai-notes');
         var postId = $('#post_ID').val();
 
         if (! postId) {
@@ -1215,33 +1215,33 @@ jQuery(function ($) {
 
         $.post(aiSeoKeeperEditor.ajaxUrl, {
             action: aiSeoKeeperEditor.generateAction,
-            nonce: $('#ai_seo_keeper_editor_nonce').val(),
+            nonce: $('#ai_seo_captain_editor_nonce').val(),
             post_id: postId,
-            current_focus_keyphrase: $('#ai-seo-keeper-focus-keyphrase').val(),
-            current_seo_title: $('#ai-seo-keeper-meta-title').val(),
-            current_meta_description: $('#ai-seo-keeper-meta-description').val(),
-            current_social_title: $('#ai-seo-keeper-social-title').val(),
-            current_social_description: $('#ai-seo-keeper-social-description').val(),
-            current_schema_type: $('#ai-seo-keeper-schema-type').val(),
-            current_canonical_url: $('#ai-seo-keeper-canonical-url').val(),
-            current_robots_directives: $('#ai-seo-keeper-robots-directives').val(),
-            current_cornerstone: $('#ai-seo-keeper-cornerstone').is(':checked') ? '1' : '0',
-            deep_analysis: $('#ai-seo-keeper-deep-analysis').is(':checked') ? '1' : '0'
+            current_focus_keyphrase: $('#ai-seo-captain-focus-keyphrase').val(),
+            current_seo_title: $('#ai-seo-captain-meta-title').val(),
+            current_meta_description: $('#ai-seo-captain-meta-description').val(),
+            current_social_title: $('#ai-seo-captain-social-title').val(),
+            current_social_description: $('#ai-seo-captain-social-description').val(),
+            current_schema_type: $('#ai-seo-captain-schema-type').val(),
+            current_canonical_url: $('#ai-seo-captain-canonical-url').val(),
+            current_robots_directives: $('#ai-seo-captain-robots-directives').val(),
+            current_cornerstone: $('#ai-seo-captain-cornerstone').is(':checked') ? '1' : '0',
+            deep_analysis: $('#ai-seo-captain-deep-analysis').is(':checked') ? '1' : '0'
         })
             .done(function (response) {
                 if (response && response.success && response.data) {
-                    $('#ai-seo-keeper-meta-title').val(response.data.seoTitle || '');
-                    $('#ai-seo-keeper-meta-description').val(response.data.metaDescription || '');
+                    $('#ai-seo-captain-meta-title').val(response.data.seoTitle || '');
+                    $('#ai-seo-captain-meta-description').val(response.data.metaDescription || '');
 
                     if (response.data.socialTitle) {
-                        $('#ai-seo-keeper-social-title').val(response.data.socialTitle).trigger('input');
+                        $('#ai-seo-captain-social-title').val(response.data.socialTitle).trigger('input');
                     }
                     if (response.data.socialDescription) {
-                        $('#ai-seo-keeper-social-description').val(response.data.socialDescription).trigger('input');
+                        $('#ai-seo-captain-social-description').val(response.data.socialDescription).trigger('input');
                     }
 
                     if (response.data.focusKeyphrase) {
-                        var $kw = $('#ai-seo-keeper-focus-keyphrase');
+                        var $kw = $('#ai-seo-captain-focus-keyphrase');
                         if ('' === $.trim($kw.val())) {
                             $kw.val(response.data.focusKeyphrase);
                         }
@@ -1252,11 +1252,11 @@ jQuery(function ($) {
                     }
 
                     if (response.data.historyHtml) {
-                        $panel.find('.ai-seo-keeper-history-shell').html(response.data.historyHtml);
+                        $panel.find('.ai-seo-captain-history-shell').html(response.data.historyHtml);
                     }
 
                     if (response.data.analysisHtml) {
-                        $panel.find('.ai-seo-keeper-analysis-shell').html(response.data.analysisHtml);
+                        $panel.find('.ai-seo-captain-analysis-shell').html(response.data.analysisHtml);
                     }
 
                     refreshSeoDraftFeedback($panel);
@@ -1281,12 +1281,12 @@ jQuery(function ($) {
             });
     });
 
-    $(document).on('click', '.ai-seo-keeper-save-draft', function (event) {
+    $(document).on('click', '.ai-seo-captain-save-draft', function (event) {
         event.preventDefault();
 
         var $button = $(this);
-        var $panel = $button.closest('.ai-seo-keeper-editor-panel');
-        var $status = $panel.find('.ai-seo-keeper-save-status');
+        var $panel = $button.closest('.ai-seo-captain-editor-panel');
+        var $status = $panel.find('.ai-seo-captain-save-status');
         var postId = $('#post_ID').val();
 
         if (! postId) {
@@ -1299,25 +1299,25 @@ jQuery(function ($) {
 
         $.post(aiSeoKeeperEditor.ajaxUrl, {
             action: aiSeoKeeperEditor.saveAction,
-            nonce: $('#ai_seo_keeper_editor_nonce').val(),
+            nonce: $('#ai_seo_captain_editor_nonce').val(),
             post_id: postId,
-            ai_seo_keeper_focus_keyphrase: $('#ai-seo-keeper-focus-keyphrase').val(),
-            ai_seo_keeper_meta_title: $('#ai-seo-keeper-meta-title').val(),
-            ai_seo_keeper_meta_description: $('#ai-seo-keeper-meta-description').val(),
-            ai_seo_keeper_social_title: $('#ai-seo-keeper-social-title').val(),
-            ai_seo_keeper_social_description: $('#ai-seo-keeper-social-description').val(),
-            ai_seo_keeper_social_image: $('#ai-seo-keeper-social-image').val(),
-            ai_seo_keeper_schema_type: $('#ai-seo-keeper-schema-type').val(),
-            ai_seo_keeper_canonical_url: $('#ai-seo-keeper-canonical-url').val(),
-            ai_seo_keeper_robots_directives: $('#ai-seo-keeper-robots-directives').val(),
-            ai_seo_keeper_frontend_enabled: $('#ai-seo-keeper-frontend-enabled').is(':checked') ? 1 : 0,
-            ai_seo_keeper_cornerstone: $('#ai-seo-keeper-cornerstone').is(':checked') ? 1 : 0,
-            ai_seo_keeper_hreflang: $('#ai-seo-keeper-hreflang').val()
+            ai_seo_captain_focus_keyphrase: $('#ai-seo-captain-focus-keyphrase').val(),
+            ai_seo_captain_meta_title: $('#ai-seo-captain-meta-title').val(),
+            ai_seo_captain_meta_description: $('#ai-seo-captain-meta-description').val(),
+            ai_seo_captain_social_title: $('#ai-seo-captain-social-title').val(),
+            ai_seo_captain_social_description: $('#ai-seo-captain-social-description').val(),
+            ai_seo_captain_social_image: $('#ai-seo-captain-social-image').val(),
+            ai_seo_captain_schema_type: $('#ai-seo-captain-schema-type').val(),
+            ai_seo_captain_canonical_url: $('#ai-seo-captain-canonical-url').val(),
+            ai_seo_captain_robots_directives: $('#ai-seo-captain-robots-directives').val(),
+            ai_seo_captain_frontend_enabled: $('#ai-seo-captain-frontend-enabled').is(':checked') ? 1 : 0,
+            ai_seo_captain_cornerstone: $('#ai-seo-captain-cornerstone').is(':checked') ? 1 : 0,
+            ai_seo_captain_hreflang: $('#ai-seo-captain-hreflang').val()
         })
             .done(function (response) {
                 if (response && response.success) {
                     if (response.data.analysisHtml) {
-                        $panel.find('.ai-seo-keeper-analysis-shell').html(response.data.analysisHtml);
+                        $panel.find('.ai-seo-captain-analysis-shell').html(response.data.analysisHtml);
                     }
 
                     $status.text(aiSeoKeeperEditor.savedText + ' ' + response.data.savedAt).css('color', '#135e16');
@@ -1340,14 +1340,14 @@ jQuery(function ($) {
             });
     });
 
-    $(document).on('click', '.ai-seo-keeper-send-chat', function (event) {
+    $(document).on('click', '.ai-seo-captain-send-chat', function (event) {
         event.preventDefault();
 
         var $button = $(this);
-        var $panel = $button.closest('.ai-seo-keeper-editor-panel');
-        var $chatStatus = $button.closest('.ai-seo-keeper-assistant-panel').find('.ai-seo-keeper-chat-status');
-        var $status = $chatStatus.length ? $chatStatus : $panel.find('.ai-seo-keeper-save-status');
-        var $input = $panel.find('.ai-seo-keeper-chat-input');
+        var $panel = $button.closest('.ai-seo-captain-editor-panel');
+        var $chatStatus = $button.closest('.ai-seo-captain-assistant-panel').find('.ai-seo-captain-chat-status');
+        var $status = $chatStatus.length ? $chatStatus : $panel.find('.ai-seo-captain-save-status');
+        var $input = $panel.find('.ai-seo-captain-chat-input');
         var postId = $('#post_ID').val();
         var message = $.trim($input.val());
 
@@ -1366,34 +1366,34 @@ jQuery(function ($) {
 
         $.post(aiSeoKeeperEditor.ajaxUrl, {
             action: aiSeoKeeperEditor.chatAction,
-            nonce: $('#ai_seo_keeper_editor_nonce').val(),
+            nonce: $('#ai_seo_captain_editor_nonce').val(),
             post_id: postId,
             message: message,
-            deep_analysis: $('#ai-seo-keeper-deep-analysis').is(':checked') ? '1' : '0'
+            deep_analysis: $('#ai-seo-captain-deep-analysis').is(':checked') ? '1' : '0'
         })
             .done(function (response) {
                 if (response && response.success && response.data) {
                     if (response.data.chatHtml) {
-                        $panel.find('.ai-seo-keeper-chat-shell').html(response.data.chatHtml);
+                        $panel.find('.ai-seo-captain-chat-shell').html(response.data.chatHtml);
                     }
 
                     if (response.data.notes) {
-                        $panel.find('.ai-seo-keeper-ai-notes').text(response.data.notes);
+                        $panel.find('.ai-seo-captain-ai-notes').text(response.data.notes);
                     }
 
                     $input.val('');
 
                     // If AI triggered content edit proposals, render diff cards.
-                    var $review = $panel.find('.ai-seo-keeper-content-review');
+                    var $review = $panel.find('.ai-seo-captain-content-review');
                     if (response.data.changes && response.data.changes.length) {
                         var changes = response.data.changes;
-                        var html = '<div class="ai-seo-keeper-diff-review">';
+                        var html = '<div class="ai-seo-captain-diff-review">';
                         html += '<p style="margin:0 0 12px;font-size:13px;color:#50575e;">' + escHtml(response.data.summary || '') + '</p>';
                         html += '<p style="margin:0 0 8px;font-size:13px;font-weight:600;">' + changes.length + ' proposed change(s) — review and accept individually:</p>';
 
                         for (var i = 0; i < changes.length; i++) {
                             var ch = changes[i];
-                            html += '<div class="ai-seo-keeper-diff-card" data-idx="' + i + '" style="border:1px solid #dcdcde;border-radius:4px;padding:12px;margin-bottom:10px;background:#fff;">';
+                            html += '<div class="ai-seo-captain-diff-card" data-idx="' + i + '" style="border:1px solid #dcdcde;border-radius:4px;padding:12px;margin-bottom:10px;background:#fff;">';
                             html += '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">';
                             html += '<strong style="font-size:13px;">' + escHtml(ch.section) + '</strong>';
                             if (ch.tag_change) html += ' <span style="font-size:11px;background:#e5f5fa;color:#0a4b78;padding:1px 6px;border-radius:3px;">' + escHtml(ch.tag_change) + '</span>';
@@ -1403,15 +1403,15 @@ jQuery(function ($) {
                             html += '<div style="flex:1;"><span style="font-size:11px;color:#135e16;font-weight:600;">AFTER</span><div style="font-size:13px;background:#eef8ee;padding:6px 8px;border-radius:3px;word-break:break-word;">' + escHtml(ch.new) + '</div></div>';
                             html += '</div>';
                             if (ch.reason) html += '<p style="font-size:12px;color:#787c82;margin:0 0 8px;font-style:italic;">' + escHtml(ch.reason) + '</p>';
-                            html += '<label style="font-size:13px;cursor:pointer;"><input type="checkbox" class="ai-seo-keeper-diff-accept" data-idx="' + i + '" checked /> Accept this change</label>';
+                            html += '<label style="font-size:13px;cursor:pointer;"><input type="checkbox" class="ai-seo-captain-diff-accept" data-idx="' + i + '" checked /> Accept this change</label>';
                             html += '</div>';
                         }
 
                         html += '<div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">';
-                        html += '<button type="button" class="button ai-seo-keeper-toggle-all-changes" style="font-size:12px;">Deselect All</button>';
-                        html += '<button type="button" class="button button-primary ai-seo-keeper-apply-content-changes">Approve Selected</button>';
-                        html += '<button type="button" class="button ai-seo-keeper-discard-changes">Disregard</button>';
-                        html += '<span class="ai-seo-keeper-apply-status" style="font-size:13px;"></span>';
+                        html += '<button type="button" class="button ai-seo-captain-toggle-all-changes" style="font-size:12px;">Deselect All</button>';
+                        html += '<button type="button" class="button button-primary ai-seo-captain-apply-content-changes">Approve Selected</button>';
+                        html += '<button type="button" class="button ai-seo-captain-discard-changes">Disregard</button>';
+                        html += '<span class="ai-seo-captain-apply-status" style="font-size:13px;"></span>';
                         html += '</div>';
                         html += '</div>';
 
@@ -1443,19 +1443,19 @@ jQuery(function ($) {
     });
 
     // ── Apply suggestion button (title / description from chat) ──────
-    $(document).on('click', '.ai-seo-keeper-apply-suggestion', function (event) {
+    $(document).on('click', '.ai-seo-captain-apply-suggestion', function (event) {
         event.preventDefault();
         var $btn = $(this);
         var field = $btn.data('field');
         var value = $btn.data('value');
         var postId = $('#post_ID').val();
-        var $panel = $btn.closest('.ai-seo-keeper-editor-panel');
+        var $panel = $btn.closest('.ai-seo-captain-editor-panel');
 
         $btn.prop('disabled', true).text('Applying…');
 
         $.post(aiSeoKeeperEditor.ajaxUrl, {
-            action: 'ai_seo_keeper_apply_suggestion',
-            nonce: $('#ai_seo_keeper_editor_nonce').val(),
+            action: 'ai_seo_captain_apply_suggestion',
+            nonce: $('#ai_seo_captain_editor_nonce').val(),
             post_id: postId,
             field: field,
             value: value
@@ -1463,9 +1463,9 @@ jQuery(function ($) {
         .done(function (response) {
             if (response && response.success) {
                 if (field === 'meta_title') {
-                    $('#ai-seo-keeper-meta-title').val(value).trigger('input');
+                    $('#ai-seo-captain-meta-title').val(value).trigger('input');
                 } else if (field === 'meta_description') {
-                    $('#ai-seo-keeper-meta-description').val(value).trigger('input');
+                    $('#ai-seo-captain-meta-description').val(value).trigger('input');
                 }
                 $btn.text('✓ Applied').css('color', '#135e16');
                 if ($panel.length) {
@@ -1481,17 +1481,17 @@ jQuery(function ($) {
     });
 
     // Approve selected content changes (stored as pending — applied on Update/Publish).
-    $(document).on('click', '.ai-seo-keeper-apply-content-changes', function () {
+    $(document).on('click', '.ai-seo-captain-apply-content-changes', function () {
         var $btn = $(this);
-        var $contentReview = $btn.closest('.ai-seo-keeper-content-review');
-        var $review = $btn.closest('.ai-seo-keeper-diff-review');
-        var $statusEl = $review.find('.ai-seo-keeper-apply-status');
+        var $contentReview = $btn.closest('.ai-seo-captain-content-review');
+        var $review = $btn.closest('.ai-seo-captain-diff-review');
+        var $statusEl = $review.find('.ai-seo-captain-apply-status');
         var allChanges = $contentReview.data('proposedChanges');
         var summary = $contentReview.data('changeSummary') || '';
         var postId = $('#post_ID').val();
 
         var accepted = [];
-        $review.find('.ai-seo-keeper-diff-accept:checked').each(function () {
+        $review.find('.ai-seo-captain-diff-accept:checked').each(function () {
             var idx = parseInt($(this).data('idx'), 10);
             if (allChanges[idx]) {
                 accepted.push({ old: allChanges[idx].old, 'new': allChanges[idx]['new'], section: allChanges[idx].section || '' });
@@ -1506,8 +1506,8 @@ jQuery(function ($) {
         $btn.prop('disabled', true).text('Approving…');
 
         $.post(aiSeoKeeperEditor.ajaxUrl, {
-            action: 'ai_seo_keeper_apply_changes',
-            nonce: $('#ai_seo_keeper_editor_nonce').val(),
+            action: 'ai_seo_captain_apply_changes',
+            nonce: $('#ai_seo_captain_editor_nonce').val(),
             post_id: postId,
             changes: JSON.stringify(accepted),
             summary: summary
@@ -1517,13 +1517,13 @@ jQuery(function ($) {
                 var d = response.data;
                 $statusEl.text('✓ ' + d.applied + ' change(s) approved — click Update/Publish to make them live.').css('color', '#135e16');
                 $btn.text('✓ Approved').prop('disabled', true);
-                $review.find('.ai-seo-keeper-discard-changes, .ai-seo-keeper-toggle-all-changes').hide();
-                $review.find('.ai-seo-keeper-diff-accept').prop('disabled', true);
+                $review.find('.ai-seo-captain-discard-changes, .ai-seo-captain-toggle-all-changes').hide();
+                $review.find('.ai-seo-captain-diff-accept').prop('disabled', true);
                 // Show pending notice at the top of the panel.
-                var $panel = $btn.closest('.ai-seo-keeper-editor-panel');
-                if (! $panel.find('.ai-seo-keeper-pending-notice').length) {
-                    $panel.find('.ai-seo-keeper-toolbar').after(
-                        '<div class="ai-seo-keeper-pending-notice" style="background:#fff8e1;border-left:4px solid #ffb300;padding:8px 12px;margin:8px 0;font-size:13px;">' +
+                var $panel = $btn.closest('.ai-seo-captain-editor-panel');
+                if (! $panel.find('.ai-seo-captain-pending-notice').length) {
+                    $panel.find('.ai-seo-captain-toolbar').after(
+                        '<div class="ai-seo-captain-pending-notice" style="background:#fff8e1;border-left:4px solid #ffb300;padding:8px 12px;margin:8px 0;font-size:13px;">' +
                         '⏳ <strong>' + d.applied + ' AI content change(s) pending</strong> — Preview the page, then click <strong>Update</strong> to publish them.' +
                         '</div>'
                     );
@@ -1541,29 +1541,29 @@ jQuery(function ($) {
     });
 
     // Toggle select/deselect all checkboxes.
-    $(document).on('click', '.ai-seo-keeper-toggle-all-changes', function () {
+    $(document).on('click', '.ai-seo-captain-toggle-all-changes', function () {
         var $btn = $(this);
-        var $review = $btn.closest('.ai-seo-keeper-diff-review');
-        var $boxes = $review.find('.ai-seo-keeper-diff-accept');
+        var $review = $btn.closest('.ai-seo-captain-diff-review');
+        var $boxes = $review.find('.ai-seo-captain-diff-accept');
         var allChecked = $boxes.length === $boxes.filter(':checked').length;
         $boxes.prop('checked', ! allChecked);
         $btn.text(allChecked ? 'Select All' : 'Deselect All');
     });
 
     // Disregard — collapse the diff review but keep it recoverable via chat context.
-    $(document).on('click', '.ai-seo-keeper-discard-changes', function () {
-        var $review = $(this).closest('.ai-seo-keeper-content-review');
-        $review.find('.ai-seo-keeper-diff-review').slideUp(200);
-        var $chatStatus = $review.closest('.ai-seo-keeper-assistant-panel').find('.ai-seo-keeper-chat-status');
+    $(document).on('click', '.ai-seo-captain-discard-changes', function () {
+        var $review = $(this).closest('.ai-seo-captain-content-review');
+        $review.find('.ai-seo-captain-diff-review').slideUp(200);
+        var $chatStatus = $review.closest('.ai-seo-captain-assistant-panel').find('.ai-seo-captain-chat-status');
         if ($chatStatus.length) {
             $chatStatus.text('Changes disregarded. You can ask AI for a different plan.').css('color', '#787c82');
         }
     });
 
     // ── Clear chat conversation ───────────────────────────────────────
-    $(document).on('click', '.ai-seo-keeper-clear-chat', function () {
+    $(document).on('click', '.ai-seo-captain-clear-chat', function () {
         var $btn = $(this);
-        var $panel = $btn.closest('.ai-seo-keeper-editor-panel');
+        var $panel = $btn.closest('.ai-seo-captain-editor-panel');
         var postId = $('#post_ID').val();
 
         if (! confirm('Clear all chat messages for this page? This cannot be undone.')) return;
@@ -1571,14 +1571,14 @@ jQuery(function ($) {
         $btn.prop('disabled', true);
 
         $.post(aiSeoKeeperEditor.ajaxUrl, {
-            action: 'ai_seo_keeper_clear_chat',
-            nonce: $('#ai_seo_keeper_editor_nonce').val(),
+            action: 'ai_seo_captain_clear_chat',
+            nonce: $('#ai_seo_captain_editor_nonce').val(),
             post_id: postId
         })
         .done(function (response) {
             if (response && response.success) {
-                $panel.find('.ai-seo-keeper-chat-shell').empty();
-                $panel.find('.ai-seo-keeper-content-review').empty();
+                $panel.find('.ai-seo-captain-chat-shell').empty();
+                $panel.find('.ai-seo-captain-content-review').empty();
             }
         })
         .always(function () {
@@ -1586,14 +1586,14 @@ jQuery(function ($) {
         });
     });
 
-    $(document).on('click', '.ai-seo-keeper-restore-backup', function () {
+    $(document).on('click', '.ai-seo-captain-restore-backup', function () {
         var $btn = $(this);
         var postId = $('#post_ID').val();
         $btn.prop('disabled', true).text('Restoring…');
 
         $.post(aiSeoKeeperEditor.ajaxUrl, {
-            action: 'ai_seo_keeper_restore_backup',
-            nonce: $('#ai_seo_keeper_editor_nonce').val(),
+            action: 'ai_seo_captain_restore_backup',
+            nonce: $('#ai_seo_captain_editor_nonce').val(),
             post_id: postId
         })
         .done(function (response) {
@@ -1609,8 +1609,8 @@ jQuery(function ($) {
     });
 
     // ── Toggle content edit plan details in History ───────────────────
-    $(document).on('click', '.ai-seo-keeper-toggle-edit-details', function () {
-        var $details = $(this).closest('.ai-seo-keeper-history-item').find('.ai-seo-keeper-edit-details');
+    $(document).on('click', '.ai-seo-captain-toggle-edit-details', function () {
+        var $details = $(this).closest('.ai-seo-captain-history-item').find('.ai-seo-captain-edit-details');
         if ($details.is(':visible')) {
             $details.slideUp(200);
             $(this).html($(this).html().replace('▾', '▸'));
@@ -1621,7 +1621,7 @@ jQuery(function ($) {
     });
 
     // ── Delete content edit plan from History ─────────────────────────
-    $(document).on('click', '.ai-seo-keeper-delete-edit-plan', function () {
+    $(document).on('click', '.ai-seo-captain-delete-edit-plan', function () {
         var $btn = $(this);
         var editId = $btn.data('editId');
         var postId = $('#post_ID').val();
@@ -1631,14 +1631,14 @@ jQuery(function ($) {
         $btn.prop('disabled', true);
 
         $.post(aiSeoKeeperEditor.ajaxUrl, {
-            action: 'ai_seo_keeper_delete_edit_plan',
-            nonce: $('#ai_seo_keeper_editor_nonce').val(),
+            action: 'ai_seo_captain_delete_edit_plan',
+            nonce: $('#ai_seo_captain_editor_nonce').val(),
             post_id: postId,
             edit_id: editId
         })
         .done(function (response) {
             if (response && response.success) {
-                $btn.closest('.ai-seo-keeper-history-item').slideUp(200, function () {
+                $btn.closest('.ai-seo-captain-history-item').slideUp(200, function () {
                     $(this).remove();
                 });
             }
@@ -1656,7 +1656,7 @@ jQuery(function ($) {
     }
 
     // ── Help-tip tooltip positioning ──────────────────────────────────
-    $(document).on('mouseenter', '.ai-seo-keeper-help-tip', function () {
+    $(document).on('mouseenter', '.ai-seo-captain-help-tip', function () {
         var rect = this.getBoundingClientRect();
         var style = document.documentElement.style;
         style.setProperty('--tip-top', Math.max(0, rect.top - 4) + 'px');
@@ -1664,30 +1664,30 @@ jQuery(function ($) {
     });
 
     // ── AI Assistant sub-tab switching ────────────────────────────────
-    $(document).on('click', '.ai-seo-keeper-assistant-tab', function () {
+    $(document).on('click', '.ai-seo-captain-assistant-tab', function () {
         var $tab = $(this);
         var target = $tab.data('target');
-        var $group = $tab.closest('.ai-seo-keeper-accordion-panel');
+        var $group = $tab.closest('.ai-seo-captain-accordion-panel');
 
-        $group.find('.ai-seo-keeper-assistant-tab').removeClass('is-active').css({'border-bottom-color': 'transparent', 'color': '#787c82'});
+        $group.find('.ai-seo-captain-assistant-tab').removeClass('is-active').css({'border-bottom-color': 'transparent', 'color': '#787c82'});
         $tab.addClass('is-active').css({'border-bottom-color': '#643d87', 'color': '#1d2327'});
 
-        $group.find('.ai-seo-keeper-assistant-panel').hide();
-        $group.find('.ai-seo-keeper-assistant-panel[data-panel="' + target + '"]').show();
+        $group.find('.ai-seo-captain-assistant-panel').hide();
+        $group.find('.ai-seo-captain-assistant-panel[data-panel="' + target + '"]').show();
     });
 
     // ── Run AI Page Audit from editor ─────────────────────────────────
-    $(document).on('click', '.ai-seo-keeper-run-page-audit', function () {
+    $(document).on('click', '.ai-seo-captain-run-page-audit', function () {
         var $btn = $(this);
-        var $status = $btn.closest('div').find('.ai-seo-keeper-audit-status');
+        var $status = $btn.closest('div').find('.ai-seo-captain-audit-status');
         var postId = $('#post_ID').val();
 
         $btn.prop('disabled', true);
         $status.text('Running AI audit…').css('color', 'inherit');
 
         $.post(aiSeoKeeperEditor.ajaxUrl, {
-            action: 'ai_seo_keeper_page_audit',
-            nonce: $('#ai_seo_keeper_editor_nonce').val(),
+            action: 'ai_seo_captain_page_audit',
+            nonce: $('#ai_seo_captain_editor_nonce').val(),
             post_id: postId
         })
         .done(function (response) {
@@ -1718,7 +1718,7 @@ jQuery(function ($) {
                 $status.html(html).css('color', '#1d2327');
 
                 // Update the score badge inline.
-                var $scoreEl = $btn.closest('.ai-seo-keeper-snippet-analyzer').find('.ai-seo-keeper-snippet-score-number');
+                var $scoreEl = $btn.closest('.ai-seo-captain-snippet-analyzer').find('.ai-seo-captain-snippet-score-number');
                 // No — that's the metadata fit score, don't overwrite it.
             } else {
                 $status.text('Audit failed.').css('color', '#8a2424');
@@ -1736,26 +1736,26 @@ jQuery(function ($) {
         });
     });
 
-    $(document).on('input', '#ai-seo-keeper-focus-keyphrase, #ai-seo-keeper-meta-title, #ai-seo-keeper-meta-description, #ai-seo-keeper-social-title, #ai-seo-keeper-social-description', function () {
-        refreshSeoDraftFeedback($(this).closest('.ai-seo-keeper-editor-panel'));
+    $(document).on('input', '#ai-seo-captain-focus-keyphrase, #ai-seo-captain-meta-title, #ai-seo-captain-meta-description, #ai-seo-captain-social-title, #ai-seo-captain-social-description', function () {
+        refreshSeoDraftFeedback($(this).closest('.ai-seo-captain-editor-panel'));
     });
 
-    $(document).on('change', '#ai-seo-keeper-title-branding-off', function () {
-        var $panel = $(this).closest('.ai-seo-keeper-editor-panel');
+    $(document).on('change', '#ai-seo-captain-title-branding-off', function () {
+        var $panel = $(this).closest('.ai-seo-captain-editor-panel');
         var isOff = $(this).is(':checked');
-        $panel.find('.ai-seo-keeper-branding-suffix').toggle(!isOff);
+        $panel.find('.ai-seo-captain-branding-suffix').toggle(!isOff);
         refreshSeoDraftFeedback($panel);
     });
 
-    $('.ai-seo-keeper-editor-panel').each(function () {
+    $('.ai-seo-captain-editor-panel').each(function () {
         var $panel = $(this);
-        var firstTab = $panel.find('.ai-seo-keeper-tab-button').first().data('tabTarget');
+        var firstTab = $panel.find('.ai-seo-captain-tab-button').first().data('tabTarget');
 
         if (firstTab) {
             activateTab($panel, firstTab);
         }
 
-        $panel.find('.ai-seo-keeper-accordion-toggle').each(function () {
+        $panel.find('.ai-seo-captain-accordion-toggle').each(function () {
             var $toggle = $(this);
             setAccordionState($toggle, String($toggle.data('defaultOpen')) === '1');
         });
@@ -1763,8 +1763,8 @@ jQuery(function ($) {
         refreshSeoDraftFeedback($panel);
     });
 
-    $(document).on('input', '#ai-seo-keeper-social-image', function () {
-        refreshSeoDraftFeedback($(this).closest('.ai-seo-keeper-editor-panel'));
+    $(document).on('input', '#ai-seo-captain-social-image', function () {
+        refreshSeoDraftFeedback($(this).closest('.ai-seo-captain-editor-panel'));
     });
 });
 JS;
@@ -1843,7 +1843,7 @@ JS;
         ));
 
         $total_pages    = $query->max_num_pages;
-        $nonce          = wp_create_nonce('ai_seo_keeper_nonce');
+        $nonce          = wp_create_nonce('ai_seo_captain_nonce');
         $meta_title_key = self::META_TITLE_KEY;
         $meta_desc_key  = self::META_DESCRIPTION_KEY;
         $has_woo        = class_exists('WooCommerce') && (int) wp_count_posts('product')->publish > 0;
@@ -1966,7 +1966,7 @@ JS;
         );
         $total_missing_alt = $total_images - $total_with_alt;
 
-        $nonce = wp_create_nonce('ai_seo_keeper_nonce');
+        $nonce = wp_create_nonce('ai_seo_captain_nonce');
 
         wp_localize_script('ai-seo-page-images', 'aiSeoImages', array(
             'nonce' => $nonce,
@@ -2070,8 +2070,8 @@ JS;
                 }
                 $seen_embedded[$unique] = true;
 
-                $meta_key_title = '_ai_seo_keeper_video_title_' . md5($unique);
-                $meta_key_desc  = '_ai_seo_keeper_video_desc_' . md5($unique);
+                $meta_key_title = '_ai_seo_captain_video_title_' . md5($unique);
+                $meta_key_desc  = '_ai_seo_captain_video_desc_' . md5($unique);
                 $seo_title      = (string) get_post_meta((int) $er['ID'], $meta_key_title, true);
                 $seo_desc       = (string) get_post_meta((int) $er['ID'], $meta_key_desc, true);
 
@@ -2132,7 +2132,7 @@ JS;
         $offset      = ($paged - 1) * $per_page;
         $videos      = array_slice($all_videos, $offset, $per_page);
 
-        $nonce = wp_create_nonce('ai_seo_keeper_nonce');
+        $nonce = wp_create_nonce('ai_seo_captain_nonce');
 
         wp_localize_script('ai-seo-page-videos', 'aiSeoVideos', array(
             'nonce' => $nonce,
@@ -2307,7 +2307,7 @@ JS;
         );
         $total_missing_title = $total_docs - $total_with_title;
 
-        $nonce = wp_create_nonce('ai_seo_keeper_nonce');
+        $nonce = wp_create_nonce('ai_seo_captain_nonce');
 
         wp_localize_script('ai-seo-page-documents', 'aiSeoDocs', array(
             'nonce' => $nonce,
@@ -2339,7 +2339,7 @@ JS;
                     AND pm.meta_value != ''
                     AND p.post_status = 'publish'
                 ORDER BY LOWER(pm.meta_value) ASC, p.post_title ASC",
-                '_ai_seo_keeper_focus_keyphrase'
+                '_ai_seo_captain_focus_keyphrase'
             ),
             ARRAY_A
         );
@@ -2387,9 +2387,9 @@ JS;
         $import_status = isset($_GET['import_status']) ? sanitize_key($_GET['import_status']) : '';
         $import_msg    = isset($_GET['import_msg']) ? sanitize_text_field(wp_unslash($_GET['import_msg'])) : '';
 
-        wp_localize_script('ai-seo-page-export-import', 'aiskImportExport', array(
+        wp_localize_script('ai-seo-page-export-import', 'aiscImportExport', array(
             'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce'    => wp_create_nonce('ai_seo_keeper_import_v2'),
+            'nonce'    => wp_create_nonce('ai_seo_captain_import_v2'),
         ));
 
         require __DIR__ . '/admin/view-export-import.php';
@@ -2435,8 +2435,8 @@ JS;
             }
 
             // Also include "Full Site" pages (not in any list) that have both postmeta keys.
-            $step2_all_done = (bool) get_option('ai_seo_keeper_step2_all_done', false);
-            $step3_all_done = (bool) get_option('ai_seo_keeper_step3_all_done', false);
+            $step2_all_done = (bool) get_option('ai_seo_captain_step2_all_done', false);
+            $step3_all_done = (bool) get_option('ai_seo_captain_step3_all_done', false);
 
             if ($step2_all_done && $step3_all_done) {
                 // Full site processing completed both steps — include all pages with both postmeta.
@@ -2445,9 +2445,9 @@ JS;
                      FROM {$wpdb->postmeta} audit
                      INNER JOIN {$wpdb->posts} p ON p.ID = audit.post_id
                      INNER JOIN {$wpdb->postmeta} meta ON meta.post_id = audit.post_id
-                        AND meta.meta_key = '_ai_seo_keeper_meta_title'
+                        AND meta.meta_key = '_ai_seo_captain_meta_title'
                         AND meta.meta_value != ''
-                     WHERE audit.meta_key = '_ai_seo_keeper_page_audit'
+                     WHERE audit.meta_key = '_ai_seo_captain_page_audit'
                      ORDER BY p.post_title ASC",
                     ARRAY_A
                 );
@@ -2516,7 +2516,7 @@ JS;
         // Localize the JS with AJAX data.
         wp_localize_script('ai-seo-page-site-chat', 'aiSeoSiteChat', array(
             'ajaxUrl'       => admin_url('admin-ajax.php'),
-            'nonce'         => wp_create_nonce('ai_seo_keeper_site_chat'),
+            'nonce'         => wp_create_nonce('ai_seo_captain_site_chat'),
             'chatAction'    => self::AJAX_SITE_CHAT_ACTION,
             'clearAction'   => self::AJAX_SITE_CHAT_CLEAR_ACTION,
             'activeModel'   => $active_model,
@@ -2595,7 +2595,7 @@ JS;
 
         add_meta_box(
             self::META_BOX_ID,
-            'AI SEO Keeper',
+            'SEO Captain',
             array($this, 'render_editor_metabox'),
             $post_type,
             'normal',
@@ -2630,7 +2630,7 @@ JS;
         $chat_is_enabled  = ! empty($options['editor_chat_enabled']);
         // Determine chat readiness: 0 = no metadata, 1 = has metadata but no audit, 2 = full insights.
         $has_seo_metadata = '' !== trim($seo_title) || '' !== trim($seo_description) || '' !== trim($focus_keyphrase);
-        $has_page_audit   = is_array(get_post_meta($post->ID, '_ai_seo_keeper_page_audit', true));
+        $has_page_audit   = is_array(get_post_meta($post->ID, '_ai_seo_captain_page_audit', true));
         $chat_readiness   = $has_page_audit ? 2 : ($has_seo_metadata ? 1 : 0);
         $chat_messages = ($chat_is_enabled && $chat_readiness > 0) ? $this->history_store->get_recent_chat_messages((int) $post->ID, 8) : array();
         $frontend_enabled = ! empty($options['frontend_output_enabled']);
@@ -2638,7 +2638,7 @@ JS;
         $search_appearance_auto_enabled = ! empty($options['search_appearance_auto_enabled']);
         $frontend_conflict = $this->has_conflicting_seo_plugin();
         $analysis_markup = $this->render_focus_keyphrase_checks_markup($post, $focus_keyphrase, $seo_title, $seo_description);
-        $page_audit_data = get_post_meta($post->ID, '_ai_seo_keeper_page_audit', true);
+        $page_audit_data = get_post_meta($post->ID, '_ai_seo_captain_page_audit', true);
         $page_audit_score = is_array($page_audit_data) && isset($page_audit_data['score']) ? (int) $page_audit_data['score'] : null;
         $pending_changes = Content_Writer::get_pending_changes((int) $post->ID);
         $preview_title = '' !== $seo_title ? $seo_title : (string) get_the_title($post->ID);
@@ -2662,7 +2662,7 @@ JS;
                 'schema_type' => $schema_type,
             )
         );
-        $panel_id_prefix = 'ai-seo-keeper-' . (int) $post->ID;
+        $panel_id_prefix = 'ai-seo-captain-' . (int) $post->ID;
         $seo_tab_id = $panel_id_prefix . '-tab-seo';
         $social_tab_id = $panel_id_prefix . '-tab-social';
         $schema_tab_id = $panel_id_prefix . '-tab-schema';
@@ -2686,32 +2686,32 @@ JS;
             $chat_is_enabled
         );
 
-        wp_nonce_field('ai_seo_keeper_save_editor_meta', 'ai_seo_keeper_editor_nonce');
+        wp_nonce_field('ai_seo_captain_save_editor_meta', 'ai_seo_captain_editor_nonce');
 ?>
-        <div class="ai-seo-keeper-editor-panel">
+        <div class="ai-seo-captain-editor-panel">
             <?php echo $this->render_editor_panel_styles(); ?>
 
-            <p class="ai-seo-keeper-panel-intro">This is the page-level workspace for AI SEO Keeper. Generate metadata drafts, define SEO and social overrides, choose schema and advanced directives, and control whether approved output is allowed on the frontend.</p>
+            <p class="ai-seo-captain-panel-intro">This is the page-level workspace for SEO Captain. Generate metadata drafts, define SEO and social overrides, choose schema and advanced directives, and control whether approved output is allowed on the frontend.</p>
 
-            <div class="ai-seo-keeper-toolbar">
-                <div class="ai-seo-keeper-toolbar-actions">
-                    <button type="button" class="button button-primary ai-seo-keeper-generate-draft" <?php disabled(! $has_api_key); ?>>Generate with AI</button>
-                    <button type="button" class="button button-secondary ai-seo-keeper-save-draft">Save SEO draft</button>
+            <div class="ai-seo-captain-toolbar">
+                <div class="ai-seo-captain-toolbar-actions">
+                    <button type="button" class="button button-primary ai-seo-captain-generate-draft" <?php disabled(! $has_api_key); ?>>Generate with AI</button>
+                    <button type="button" class="button button-secondary ai-seo-captain-save-draft">Save SEO draft</button>
                 </div>
-                <span class="ai-seo-keeper-save-status" aria-live="polite"></span>
+                <span class="ai-seo-captain-save-status" aria-live="polite"></span>
             </div>
-            <p class="ai-seo-keeper-toolbar-note">Generate fills the draft fields only. Save SEO draft persists them without publishing or updating the main page content.</p>
+            <p class="ai-seo-captain-toolbar-note">Generate fills the draft fields only. Save SEO draft persists them without publishing or updating the main page content.</p>
 
             <div style="margin:6px 0 10px;padding:6px 10px;background:#f6f7f7;border:1px solid #dcdcde;border-radius:4px;">
                 <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;">
-                    <input type="checkbox" id="ai-seo-keeper-deep-analysis" value="1" />
-                    <strong><?php esc_html_e('Deep analysis', 'ai-seo-keeper'); ?></strong>
-                    <span style="color:#50575e;">&mdash; <?php esc_html_e('AI will read body content from topically related pages across the site (uses more tokens).', 'ai-seo-keeper'); ?></span>
+                    <input type="checkbox" id="ai-seo-captain-deep-analysis" value="1" />
+                    <strong><?php esc_html_e('Deep analysis', 'ai-seo-captain'); ?></strong>
+                    <span style="color:#50575e;">&mdash; <?php esc_html_e('AI will read body content from topically related pages across the site (uses more tokens).', 'ai-seo-captain'); ?></span>
                 </label>
             </div>
 
             <?php if (! empty($pending_changes['changes'])) : ?>
-                <div class="ai-seo-keeper-pending-notice" style="background:#fff8e1;border-left:4px solid #ffb300;padding:8px 12px;margin:8px 0;font-size:13px;">
+                <div class="ai-seo-captain-pending-notice" style="background:#fff8e1;border-left:4px solid #ffb300;padding:8px 12px;margin:8px 0;font-size:13px;">
                     ⏳ <strong><?php echo esc_html(count($pending_changes['changes'])); ?> AI content change(s) pending</strong> — Preview the page, then click <strong>Update</strong> to publish them.
                     <?php if ('' !== ($pending_changes['summary'] ?? '')) : ?>
                         <br><em style="color:#50575e;"><?php echo esc_html($pending_changes['summary']); ?></em>
@@ -2719,131 +2719,131 @@ JS;
                 </div>
             <?php endif; ?>
 
-            <div class="ai-seo-keeper-ai-notes-shell ai-seo-keeper-surface ai-seo-keeper-notes-surface">
+            <div class="ai-seo-captain-ai-notes-shell ai-seo-captain-surface ai-seo-captain-notes-surface">
                 <strong>AI notes</strong>
-                <p class="ai-seo-keeper-ai-notes">Use Generate with AI to draft a differentiated title and description for this page.</p>
+                <p class="ai-seo-captain-ai-notes">Use Generate with AI to draft a differentiated title and description for this page.</p>
             </div>
 
-            <div class="ai-seo-keeper-tab-list" role="tablist" aria-label="AI SEO Keeper panels">
-                <button type="button" class="ai-seo-keeper-tab-button" role="tab" aria-selected="false" data-tab-target="<?php echo esc_attr($seo_tab_id); ?>">SEO</button>
-                <button type="button" class="ai-seo-keeper-tab-button" role="tab" aria-selected="false" data-tab-target="<?php echo esc_attr($social_tab_id); ?>">Social</button>
-                <button type="button" class="ai-seo-keeper-tab-button" role="tab" aria-selected="false" data-tab-target="<?php echo esc_attr($schema_tab_id); ?>">Schema</button>
-                <button type="button" class="ai-seo-keeper-tab-button" role="tab" aria-selected="false" data-tab-target="<?php echo esc_attr($advanced_tab_id); ?>">Advanced</button>
-                <button type="button" class="ai-seo-keeper-tab-button" role="tab" aria-selected="false" data-tab-target="<?php echo esc_attr($checks_tab_id); ?>">Basic SEO checks</button>
-                <button type="button" class="ai-seo-keeper-tab-button" role="tab" aria-selected="false" data-tab-target="<?php echo esc_attr($links_tab_id); ?>">Links</button>
+            <div class="ai-seo-captain-tab-list" role="tablist" aria-label="SEO Captain panels">
+                <button type="button" class="ai-seo-captain-tab-button" role="tab" aria-selected="false" data-tab-target="<?php echo esc_attr($seo_tab_id); ?>">SEO</button>
+                <button type="button" class="ai-seo-captain-tab-button" role="tab" aria-selected="false" data-tab-target="<?php echo esc_attr($social_tab_id); ?>">Social</button>
+                <button type="button" class="ai-seo-captain-tab-button" role="tab" aria-selected="false" data-tab-target="<?php echo esc_attr($schema_tab_id); ?>">Schema</button>
+                <button type="button" class="ai-seo-captain-tab-button" role="tab" aria-selected="false" data-tab-target="<?php echo esc_attr($advanced_tab_id); ?>">Advanced</button>
+                <button type="button" class="ai-seo-captain-tab-button" role="tab" aria-selected="false" data-tab-target="<?php echo esc_attr($checks_tab_id); ?>">Basic SEO checks</button>
+                <button type="button" class="ai-seo-captain-tab-button" role="tab" aria-selected="false" data-tab-target="<?php echo esc_attr($links_tab_id); ?>">Links</button>
             </div>
 
-            <div class="ai-seo-keeper-tab-panels">
-                <section id="<?php echo esc_attr($seo_tab_id); ?>" class="ai-seo-keeper-tab-panel ai-seo-keeper-surface" role="tabpanel" hidden>
-                    <div class="ai-seo-keeper-search-preview" data-fallback-title="<?php echo esc_attr($preview_title); ?>" data-fallback-description="<?php echo esc_attr($preview_description); ?>" data-preview-url="<?php echo esc_attr($preview_url); ?>" data-fallback-image="<?php echo esc_attr($default_preview_image_url); ?>" data-branding-suffix="<?php echo esc_attr($branding_suffix); ?>">
+            <div class="ai-seo-captain-tab-panels">
+                <section id="<?php echo esc_attr($seo_tab_id); ?>" class="ai-seo-captain-tab-panel ai-seo-captain-surface" role="tabpanel" hidden>
+                    <div class="ai-seo-captain-search-preview" data-fallback-title="<?php echo esc_attr($preview_title); ?>" data-fallback-description="<?php echo esc_attr($preview_description); ?>" data-preview-url="<?php echo esc_attr($preview_url); ?>" data-fallback-image="<?php echo esc_attr($default_preview_image_url); ?>" data-branding-suffix="<?php echo esc_attr($branding_suffix); ?>">
                         <strong>Search preview</strong>
-                        <p class="ai-seo-keeper-panel-note">A quick preview of how the current title and description draft can look in search results, including the current preview image used by SEO Keeper.</p>
-                        <div class="ai-seo-keeper-preview-card">
-                            <div class="ai-seo-keeper-preview-copy">
-                                <div class="ai-seo-keeper-preview-brand">GreenCoders</div>
-                                <div class="ai-seo-keeper-preview-url"><?php echo esc_html($preview_url); ?></div>
-                                <div class="ai-seo-keeper-preview-title"><?php echo esc_html($preview_title_full); ?></div>
-                                <div class="ai-seo-keeper-preview-description"><?php echo esc_html($preview_description); ?></div>
+                        <p class="ai-seo-captain-panel-note">A quick preview of how the current title and description draft can look in search results, including the current preview image used by SEO Keeper.</p>
+                        <div class="ai-seo-captain-preview-card">
+                            <div class="ai-seo-captain-preview-copy">
+                                <div class="ai-seo-captain-preview-brand">GreenCoders</div>
+                                <div class="ai-seo-captain-preview-url"><?php echo esc_html($preview_url); ?></div>
+                                <div class="ai-seo-captain-preview-title"><?php echo esc_html($preview_title_full); ?></div>
+                                <div class="ai-seo-captain-preview-description"><?php echo esc_html($preview_description); ?></div>
                             </div>
-                            <div class="ai-seo-keeper-preview-media">
-                                <img class="ai-seo-keeper-preview-image" src="<?php echo esc_url($preview_image_url); ?>" alt="" <?php echo '' === $preview_image_url ? 'hidden' : ''; ?> />
-                                <div class="ai-seo-keeper-preview-image-placeholder" <?php echo '' !== $preview_image_url ? 'hidden' : ''; ?>>No preview image</div>
+                            <div class="ai-seo-captain-preview-media">
+                                <img class="ai-seo-captain-preview-image" src="<?php echo esc_url($preview_image_url); ?>" alt="" <?php echo '' === $preview_image_url ? 'hidden' : ''; ?> />
+                                <div class="ai-seo-captain-preview-image-placeholder" <?php echo '' !== $preview_image_url ? 'hidden' : ''; ?>>No preview image</div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="ai-seo-keeper-snippet-analyzer is-neutral">
-                        <div class="ai-seo-keeper-snippet-header">
+                    <div class="ai-seo-captain-snippet-analyzer is-neutral">
+                        <div class="ai-seo-captain-snippet-header">
                             <div>
-                                <strong>Live snippet health <span class="ai-seo-keeper-help-tip" data-tip="Checks ONLY whether your title and description have correct length and contain the focus keyphrase. This is NOT an overall SEO score — it tracks metadata formatting only. Use the AI audit below for a full SEO analysis."></span></strong>
-                                <p class="ai-seo-keeper-panel-note">Title length, description length, and focus-keyphrase coverage update instantly while you type.</p>
+                                <strong>Live snippet health <span class="ai-seo-captain-help-tip" data-tip="Checks ONLY whether your title and description have correct length and contain the focus keyphrase. This is NOT an overall SEO score — it tracks metadata formatting only. Use the AI audit below for a full SEO analysis."></span></strong>
+                                <p class="ai-seo-captain-panel-note">Title length, description length, and focus-keyphrase coverage update instantly while you type.</p>
                             </div>
-                            <div class="ai-seo-keeper-snippet-score is-neutral">
-                                <span class="ai-seo-keeper-snippet-score-number">0</span>
-                                <span class="ai-seo-keeper-snippet-score-caption">Metadata fit</span>
-                                <span class="ai-seo-keeper-snippet-score-label">Start writing</span>
+                            <div class="ai-seo-captain-snippet-score is-neutral">
+                                <span class="ai-seo-captain-snippet-score-number">0</span>
+                                <span class="ai-seo-captain-snippet-score-caption">Metadata fit</span>
+                                <span class="ai-seo-captain-snippet-score-label">Start writing</span>
                             </div>
                         </div>
 
-                        <div class="ai-seo-keeper-snippet-score-track" aria-hidden="true">
-                            <span class="ai-seo-keeper-snippet-score-fill" style="width:0%;"></span>
+                        <div class="ai-seo-captain-snippet-score-track" aria-hidden="true">
+                            <span class="ai-seo-captain-snippet-score-fill" style="width:0%;"></span>
                         </div>
 
                         <?php if (null !== $page_audit_score) : ?>
                             <div style="display:flex;align-items:center;gap:12px;margin:10px 0;padding:10px 14px;background:#f6f7f7;border-radius:8px;">
-                                <span style="font-size:14px;">AI SEO Score: <strong style="color:<?php echo $page_audit_score >= 70 ? '#00a32a' : ($page_audit_score >= 40 ? '#dba617' : '#d63638'); ?>; font-size:16px;"><?php echo esc_html((string) $page_audit_score); ?>/100</strong> <span class="ai-seo-keeper-help-tip" data-tip="Full AI-powered SEO audit of this page. Unlike the metadata fit score above, this analyzes content quality, heading structure, word count, image alt tags, readability, and more."></span></span>
-                                <button type="button" class="button button-primary ai-seo-keeper-run-page-audit" style="font-size:13px;min-height:34px;padding:0 18px;border-radius:12px;" <?php disabled(! $has_api_key); ?>>↻ Re-run AI Audit</button>
-                                <span class="ai-seo-keeper-audit-status" style="font-size:12px;color:#787c82;"></span>
+                                <span style="font-size:14px;">AI SEO Score: <strong style="color:<?php echo $page_audit_score >= 70 ? '#00a32a' : ($page_audit_score >= 40 ? '#dba617' : '#d63638'); ?>; font-size:16px;"><?php echo esc_html((string) $page_audit_score); ?>/100</strong> <span class="ai-seo-captain-help-tip" data-tip="Full AI-powered SEO audit of this page. Unlike the metadata fit score above, this analyzes content quality, heading structure, word count, image alt tags, readability, and more."></span></span>
+                                <button type="button" class="button button-primary ai-seo-captain-run-page-audit" style="font-size:13px;min-height:34px;padding:0 18px;border-radius:12px;" <?php disabled(! $has_api_key); ?>>↻ Re-run AI Audit</button>
+                                <span class="ai-seo-captain-audit-status" style="font-size:12px;color:#787c82;"></span>
                             </div>
                         <?php else : ?>
                             <div style="display:flex;align-items:center;gap:12px;margin:10px 0;padding:8px 12px;background:#fef8ee;border-radius:4px;border:1px solid #f0c33c;">
                                 <span style="font-size:13px;">No AI SEO audit has been run on this page yet.</span>
-                                <button type="button" class="button button-small button-primary ai-seo-keeper-run-page-audit" <?php disabled(! $has_api_key); ?>>▶ Run AI Audit</button>
-                                <span class="ai-seo-keeper-audit-status" style="font-size:12px;color:#787c82;"></span>
+                                <button type="button" class="button button-small button-primary ai-seo-captain-run-page-audit" <?php disabled(! $has_api_key); ?>>▶ Run AI Audit</button>
+                                <span class="ai-seo-captain-audit-status" style="font-size:12px;color:#787c82;"></span>
                             </div>
                         <?php endif; ?>
 
-                        <p class="ai-seo-keeper-snippet-summary-text">Length and focus-keyphrase signals update as you type.</p>
+                        <p class="ai-seo-captain-snippet-summary-text">Length and focus-keyphrase signals update as you type.</p>
 
-                        <div class="ai-seo-keeper-snippet-metrics">
-                            <div class="ai-seo-keeper-snippet-metric is-neutral" data-snippet-metric="title-length">
-                                <span class="ai-seo-keeper-snippet-metric-label">Title length</span>
-                                <strong class="ai-seo-keeper-snippet-metric-value">0 chars</strong>
-                                <span class="ai-seo-keeper-snippet-metric-helper">Add a title draft to start scoring.</span>
+                        <div class="ai-seo-captain-snippet-metrics">
+                            <div class="ai-seo-captain-snippet-metric is-neutral" data-snippet-metric="title-length">
+                                <span class="ai-seo-captain-snippet-metric-label">Title length</span>
+                                <strong class="ai-seo-captain-snippet-metric-value">0 chars</strong>
+                                <span class="ai-seo-captain-snippet-metric-helper">Add a title draft to start scoring.</span>
                             </div>
 
-                            <div class="ai-seo-keeper-snippet-metric is-neutral" data-snippet-metric="description-length">
-                                <span class="ai-seo-keeper-snippet-metric-label">Description length</span>
-                                <strong class="ai-seo-keeper-snippet-metric-value">0 chars</strong>
-                                <span class="ai-seo-keeper-snippet-metric-helper">Add a meta description to score it.</span>
+                            <div class="ai-seo-captain-snippet-metric is-neutral" data-snippet-metric="description-length">
+                                <span class="ai-seo-captain-snippet-metric-label">Description length</span>
+                                <strong class="ai-seo-captain-snippet-metric-value">0 chars</strong>
+                                <span class="ai-seo-captain-snippet-metric-helper">Add a meta description to score it.</span>
                             </div>
 
-                            <div class="ai-seo-keeper-snippet-metric is-neutral" data-snippet-metric="keyphrase-title">
-                                <span class="ai-seo-keeper-snippet-metric-label">Keyphrase in title</span>
-                                <strong class="ai-seo-keeper-snippet-metric-value">Waiting</strong>
-                                <span class="ai-seo-keeper-snippet-metric-helper">Add a focus keyphrase to evaluate title relevance.</span>
+                            <div class="ai-seo-captain-snippet-metric is-neutral" data-snippet-metric="keyphrase-title">
+                                <span class="ai-seo-captain-snippet-metric-label">Keyphrase in title</span>
+                                <strong class="ai-seo-captain-snippet-metric-value">Waiting</strong>
+                                <span class="ai-seo-captain-snippet-metric-helper">Add a focus keyphrase to evaluate title relevance.</span>
                             </div>
 
-                            <div class="ai-seo-keeper-snippet-metric is-neutral" data-snippet-metric="keyphrase-description">
-                                <span class="ai-seo-keeper-snippet-metric-label">Keyphrase in description</span>
-                                <strong class="ai-seo-keeper-snippet-metric-value">Waiting</strong>
-                                <span class="ai-seo-keeper-snippet-metric-helper">Add a focus keyphrase to evaluate description relevance.</span>
+                            <div class="ai-seo-captain-snippet-metric is-neutral" data-snippet-metric="keyphrase-description">
+                                <span class="ai-seo-captain-snippet-metric-label">Keyphrase in description</span>
+                                <strong class="ai-seo-captain-snippet-metric-value">Waiting</strong>
+                                <span class="ai-seo-captain-snippet-metric-helper">Add a focus keyphrase to evaluate description relevance.</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="ai-seo-keeper-field-grid">
-                        <label class="ai-seo-keeper-field">
-                            <span class="ai-seo-keeper-field-label">Focus keyphrase</span>
-                            <input id="ai-seo-keeper-focus-keyphrase" type="text" name="ai_seo_keeper_focus_keyphrase" value="<?php echo esc_attr($focus_keyphrase); ?>" />
-                            <span class="ai-seo-keeper-field-help">The main keyword or phrase this page should rank for. AI uses it to optimize your title, description, and content.</span>
+                    <div class="ai-seo-captain-field-grid">
+                        <label class="ai-seo-captain-field">
+                            <span class="ai-seo-captain-field-label">Focus keyphrase</span>
+                            <input id="ai-seo-captain-focus-keyphrase" type="text" name="ai_seo_captain_focus_keyphrase" value="<?php echo esc_attr($focus_keyphrase); ?>" />
+                            <span class="ai-seo-captain-field-help">The main keyword or phrase this page should rank for. AI uses it to optimize your title, description, and content.</span>
                         </label>
 
-                        <label class="ai-seo-keeper-field ai-seo-keeper-field-textarea-wide">
-                            <span class="ai-seo-keeper-field-label">SEO title <span class="ai-seo-keeper-help-tip" data-tip="This is the page-specific part of the title. The separator and site brand from Settings are appended automatically unless you check 'Use as full title' below."></span></span>
+                        <label class="ai-seo-captain-field ai-seo-captain-field-textarea-wide">
+                            <span class="ai-seo-captain-field-label">SEO title <span class="ai-seo-captain-help-tip" data-tip="This is the page-specific part of the title. The separator and site brand from Settings are appended automatically unless you check 'Use as full title' below."></span></span>
                             <div style="display:flex;align-items:center;">
-                                <input id="ai-seo-keeper-meta-title" type="text" name="ai_seo_keeper_meta_title" value="<?php echo esc_attr($seo_title); ?>" maxlength="<?php echo esc_attr((string) self::TITLE_MAX_LENGTH); ?>" style="flex:1;" />
+                                <input id="ai-seo-captain-meta-title" type="text" name="ai_seo_captain_meta_title" value="<?php echo esc_attr($seo_title); ?>" maxlength="<?php echo esc_attr((string) self::TITLE_MAX_LENGTH); ?>" style="flex:1;" />
                                 <?php if ('' !== $branding_suffix && ! $title_branding_off) : ?>
-                                    <span class="ai-seo-keeper-branding-suffix" style="white-space:nowrap;margin-left:5px;padding:0 8px;background:#643d87;border:1px solid #643d87;border-radius:4px;line-height:50px;color:#ffffff;font-size:13px;" title="Auto-appended from Settings > Search Appearance"><?php echo esc_html($branding_suffix); ?></span>
+                                    <span class="ai-seo-captain-branding-suffix" style="white-space:nowrap;margin-left:5px;padding:0 8px;background:#643d87;border:1px solid #643d87;border-radius:4px;line-height:50px;color:#ffffff;font-size:13px;" title="Auto-appended from Settings > Search Appearance"><?php echo esc_html($branding_suffix); ?></span>
                                 <?php endif; ?>
                             </div>
-                            <?php echo $this->render_field_counter('ai-seo-keeper-meta-title', $seo_title, self::TITLE_MAX_LENGTH, $title_branding_off ? '' : $branding_suffix); ?>
+                            <?php echo $this->render_field_counter('ai-seo-captain-meta-title', $seo_title, self::TITLE_MAX_LENGTH, $title_branding_off ? '' : $branding_suffix); ?>
                             <label style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:12px;color:#50575e;">
-                                <input id="ai-seo-keeper-title-branding-off" type="checkbox" name="ai_seo_keeper_title_branding_off" value="1" <?php checked($title_branding_off); ?> />
+                                <input id="ai-seo-captain-title-branding-off" type="checkbox" name="ai_seo_captain_title_branding_off" value="1" <?php checked($title_branding_off); ?> />
                                 Use as full title (skip auto separator &amp; brand)
                             </label>
-                            <span class="ai-seo-keeper-field-help">The page-specific title. Separator + brand (<strong><?php echo esc_html('' !== $branding_suffix ? $branding_suffix : 'none set'); ?></strong>) are appended automatically from <a href="<?php echo esc_url(admin_url('admin.php?page=ai-seo-keeper-settings')); ?>">Settings</a>. Check the box above to use this field as the complete title.</span>
+                            <span class="ai-seo-captain-field-help">The page-specific title. Separator + brand (<strong><?php echo esc_html('' !== $branding_suffix ? $branding_suffix : 'none set'); ?></strong>) are appended automatically from <a href="<?php echo esc_url(admin_url('admin.php?page=ai-seo-captain-settings')); ?>">Settings</a>. Check the box above to use this field as the complete title.</span>
                         </label>
 
-                        <label class="ai-seo-keeper-field ai-seo-keeper-field-textarea-wide">
-                            <span class="ai-seo-keeper-field-label">Meta description <span class="ai-seo-keeper-help-tip" data-tip="This description appears below the title in search results. Approve it via the readiness section to make it live. AI can generate or edit it for you."></span></span>
-                            <textarea id="ai-seo-keeper-meta-description" rows="5" name="ai_seo_keeper_meta_description" maxlength="<?php echo esc_attr((string) self::DESCRIPTION_MAX_LENGTH); ?>"><?php echo esc_textarea($seo_description); ?></textarea>
-                            <?php echo $this->render_field_counter('ai-seo-keeper-meta-description', $seo_description, self::DESCRIPTION_MAX_LENGTH); ?>
-                            <span class="ai-seo-keeper-field-help">Shown under the title in search results. Approve it below to go live. Max <?php echo esc_html((string) self::DESCRIPTION_MAX_LENGTH); ?> chars.</span>
+                        <label class="ai-seo-captain-field ai-seo-captain-field-textarea-wide">
+                            <span class="ai-seo-captain-field-label">Meta description <span class="ai-seo-captain-help-tip" data-tip="This description appears below the title in search results. Approve it via the readiness section to make it live. AI can generate or edit it for you."></span></span>
+                            <textarea id="ai-seo-captain-meta-description" rows="5" name="ai_seo_captain_meta_description" maxlength="<?php echo esc_attr((string) self::DESCRIPTION_MAX_LENGTH); ?>"><?php echo esc_textarea($seo_description); ?></textarea>
+                            <?php echo $this->render_field_counter('ai-seo-captain-meta-description', $seo_description, self::DESCRIPTION_MAX_LENGTH); ?>
+                            <span class="ai-seo-captain-field-help">Shown under the title in search results. Approve it below to go live. Max <?php echo esc_html((string) self::DESCRIPTION_MAX_LENGTH); ?> chars.</span>
                         </label>
                     </div>
 
-                    <div class="ai-seo-keeper-accordion-group">
+                    <div class="ai-seo-captain-accordion-group">
                         <?php if ($chat_is_enabled) : ?>
                             <?php
                             // Chat readiness banner.
@@ -2871,33 +2871,33 @@ JS;
 
                             if ($chat_readiness > 0) {
                                 $ai_assistant_content .=
-                                    '<div class="ai-seo-keeper-chat-intro">Your AI SEO copilot — ask questions, get metadata suggestions, or request page content edits. Everything happens in one conversation. <span class="ai-seo-keeper-help-tip" data-tip="AI sees your full page content, SEO title, meta description, focus keyphrase, snippet scores, audit results, related pages, and the full conversation history."></span></div>' .
+                                    '<div class="ai-seo-captain-chat-intro">Your AI SEO copilot — ask questions, get metadata suggestions, or request page content edits. Everything happens in one conversation. <span class="ai-seo-captain-help-tip" data-tip="AI sees your full page content, SEO title, meta description, focus keyphrase, snippet scores, audit results, related pages, and the full conversation history."></span></div>' .
 
-                                    '<div class="ai-seo-keeper-assistant-tabs" style="display:flex;gap:0;border-bottom:2px solid #dcdcde;margin-bottom:12px;">' .
-                                    '<button type="button" class="ai-seo-keeper-assistant-tab is-active" data-target="chat" style="padding:8px 16px;font-size:14px;font-weight:600;background:none;border:none;border-bottom:2px solid #643d87;margin-bottom:-2px;cursor:pointer;color:#1d2327;">💬 Chat</button>' .
-                                    '<button type="button" class="ai-seo-keeper-assistant-tab" data-target="history" style="padding:8px 16px;font-size:14px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:#787c82;">📋 History</button>' .
+                                    '<div class="ai-seo-captain-assistant-tabs" style="display:flex;gap:0;border-bottom:2px solid #dcdcde;margin-bottom:12px;">' .
+                                    '<button type="button" class="ai-seo-captain-assistant-tab is-active" data-target="chat" style="padding:8px 16px;font-size:14px;font-weight:600;background:none;border:none;border-bottom:2px solid #643d87;margin-bottom:-2px;cursor:pointer;color:#1d2327;">💬 Chat</button>' .
+                                    '<button type="button" class="ai-seo-captain-assistant-tab" data-target="history" style="padding:8px 16px;font-size:14px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:#787c82;">📋 History</button>' .
                                     '</div>' .
 
-                                    '<div class="ai-seo-keeper-assistant-panel" data-panel="chat">' .
-                                    '<textarea class="widefat ai-seo-keeper-chat-input" rows="3" placeholder="Ask about SEO, request content edits, or follow up on previous advice — AI handles it all in one conversation…"></textarea>' .
-                                    '<p class="ai-seo-keeper-chat-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' .
-                                    '<button type="button" class="button button-primary ai-seo-keeper-send-chat" ' . disabled(! $has_api_key, true, false) . '>Send</button>' .
-                                    '<span class="ai-seo-keeper-help-tip" data-tip="AI reads your full page content, SEO data, audit results, and conversation history. Ask questions, request metadata changes, or ask for page content edits \u2014 AI decides what to do automatically. When edits are needed, you get BEFORE/AFTER diffs to review before anything is saved."></span>' .
-                                    '<button type="button" class="button ai-seo-keeper-clear-chat" style="margin-left:auto;color:#8a2424;" ' . disabled(empty($chat_messages), true, false) . '>🗑 Clear</button>' .
+                                    '<div class="ai-seo-captain-assistant-panel" data-panel="chat">' .
+                                    '<textarea class="widefat ai-seo-captain-chat-input" rows="3" placeholder="Ask about SEO, request content edits, or follow up on previous advice — AI handles it all in one conversation…"></textarea>' .
+                                    '<p class="ai-seo-captain-chat-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' .
+                                    '<button type="button" class="button button-primary ai-seo-captain-send-chat" ' . disabled(! $has_api_key, true, false) . '>Send</button>' .
+                                    '<span class="ai-seo-captain-help-tip" data-tip="AI reads your full page content, SEO data, audit results, and conversation history. Ask questions, request metadata changes, or ask for page content edits \u2014 AI decides what to do automatically. When edits are needed, you get BEFORE/AFTER diffs to review before anything is saved."></span>' .
+                                    '<button type="button" class="button ai-seo-captain-clear-chat" style="margin-left:auto;color:#8a2424;" ' . disabled(empty($chat_messages), true, false) . '>🗑 Clear</button>' .
                                     '</p>' .
-                                    '<span class="ai-seo-keeper-chat-status" aria-live="polite" style="display:block;font-size:13px;margin:4px 0 8px;"></span>' .
-                                    '<div class="ai-seo-keeper-chat-shell">' . $this->render_chat_history_markup($chat_messages) . '</div>' .
-                                    '<div class="ai-seo-keeper-content-review"></div>' .
+                                    '<span class="ai-seo-captain-chat-status" aria-live="polite" style="display:block;font-size:13px;margin:4px 0 8px;"></span>' .
+                                    '<div class="ai-seo-captain-chat-shell">' . $this->render_chat_history_markup($chat_messages) . '</div>' .
+                                    '<div class="ai-seo-captain-content-review"></div>' .
                                     '</div>' .
 
-                                    '<div class="ai-seo-keeper-assistant-panel" data-panel="history" style="display:none;">' .
-                                    '<div class="ai-seo-keeper-history-shell">' . $this->render_history_markup($recent_suggestions, $recent_content_edits) . '</div>' .
+                                    '<div class="ai-seo-captain-assistant-panel" data-panel="history" style="display:none;">' .
+                                    '<div class="ai-seo-captain-history-shell">' . $this->render_history_markup($recent_suggestions, $recent_content_edits) . '</div>' .
                                     '</div>';
                             }
 
                             echo $this->render_accordion_section(
                                 $chat_accordion_id,
-                                'AI Assistant <span class="ai-seo-keeper-help-tip" data-tip="Unified AI workspace: chat for SEO advice, edit page content, and view suggestion history — all in one place."></span>',
+                                'AI Assistant <span class="ai-seo-captain-help-tip" data-tip="Unified AI workspace: chat for SEO advice, edit page content, and view suggestion history — all in one place."></span>',
                                 $ai_assistant_content,
                                 false,
                                 true
@@ -2908,7 +2908,7 @@ JS;
                         <?php
                         echo $this->render_accordion_section(
                             $readiness_accordion_id,
-                            'Frontend readiness <span class="ai-seo-keeper-help-tip" data-tip="Shows whether this page\'s SEO metadata is approved and ready to be served on the live site. All checks must pass for AI SEO Keeper to output your title and description."></span>',
+                            'Frontend readiness <span class="ai-seo-captain-help-tip" data-tip="Shows whether this page\'s SEO metadata is approved and ready to be served on the live site. All checks must pass for SEO Captain to output your title and description."></span>',
                             $frontend_readiness_markup,
                             true
                         );
@@ -2916,74 +2916,74 @@ JS;
                     </div>
                 </section>
 
-                <section id="<?php echo esc_attr($social_tab_id); ?>" class="ai-seo-keeper-tab-panel ai-seo-keeper-surface" role="tabpanel" hidden>
-                    <div class="ai-seo-keeper-field-grid">
-                        <label class="ai-seo-keeper-field">
-                            <span class="ai-seo-keeper-field-label">Social title override</span>
-                            <input id="ai-seo-keeper-social-title" type="text" name="ai_seo_keeper_social_title" value="<?php echo esc_attr($social_title); ?>" maxlength="<?php echo esc_attr((string) self::TITLE_MAX_LENGTH); ?>" />
-                            <?php echo $this->render_field_counter('ai-seo-keeper-social-title', $social_title, self::TITLE_MAX_LENGTH); ?>
-                            <span class="ai-seo-keeper-field-help">Optional. If empty, Open Graph and Twitter titles fall back to the approved SEO title. Maximum: <?php echo esc_html((string) self::TITLE_MAX_LENGTH); ?> characters.</span>
+                <section id="<?php echo esc_attr($social_tab_id); ?>" class="ai-seo-captain-tab-panel ai-seo-captain-surface" role="tabpanel" hidden>
+                    <div class="ai-seo-captain-field-grid">
+                        <label class="ai-seo-captain-field">
+                            <span class="ai-seo-captain-field-label">Social title override</span>
+                            <input id="ai-seo-captain-social-title" type="text" name="ai_seo_captain_social_title" value="<?php echo esc_attr($social_title); ?>" maxlength="<?php echo esc_attr((string) self::TITLE_MAX_LENGTH); ?>" />
+                            <?php echo $this->render_field_counter('ai-seo-captain-social-title', $social_title, self::TITLE_MAX_LENGTH); ?>
+                            <span class="ai-seo-captain-field-help">Optional. If empty, Open Graph and Twitter titles fall back to the approved SEO title. Maximum: <?php echo esc_html((string) self::TITLE_MAX_LENGTH); ?> characters.</span>
                         </label>
 
-                        <label class="ai-seo-keeper-field ai-seo-keeper-field-textarea-wide">
-                            <span class="ai-seo-keeper-field-label">Social description override</span>
-                            <textarea id="ai-seo-keeper-social-description" rows="5" name="ai_seo_keeper_social_description" maxlength="<?php echo esc_attr((string) self::DESCRIPTION_MAX_LENGTH); ?>"><?php echo esc_textarea($social_description); ?></textarea>
-                            <?php echo $this->render_field_counter('ai-seo-keeper-social-description', $social_description, self::DESCRIPTION_MAX_LENGTH); ?>
-                            <span class="ai-seo-keeper-field-help">Optional. If empty, social descriptions fall back to the approved meta description. Maximum: <?php echo esc_html((string) self::DESCRIPTION_MAX_LENGTH); ?> characters.</span>
+                        <label class="ai-seo-captain-field ai-seo-captain-field-textarea-wide">
+                            <span class="ai-seo-captain-field-label">Social description override</span>
+                            <textarea id="ai-seo-captain-social-description" rows="5" name="ai_seo_captain_social_description" maxlength="<?php echo esc_attr((string) self::DESCRIPTION_MAX_LENGTH); ?>"><?php echo esc_textarea($social_description); ?></textarea>
+                            <?php echo $this->render_field_counter('ai-seo-captain-social-description', $social_description, self::DESCRIPTION_MAX_LENGTH); ?>
+                            <span class="ai-seo-captain-field-help">Optional. If empty, social descriptions fall back to the approved meta description. Maximum: <?php echo esc_html((string) self::DESCRIPTION_MAX_LENGTH); ?> characters.</span>
                         </label>
 
-                        <label class="ai-seo-keeper-field">
-                            <span class="ai-seo-keeper-field-label">Social image URL</span>
-                            <input id="ai-seo-keeper-social-image" type="url" name="ai_seo_keeper_social_image" value="<?php echo esc_attr($social_image); ?>" />
-                            <span class="ai-seo-keeper-media-actions">
-                                <button type="button" class="button button-secondary ai-seo-keeper-open-media">Choose from Media Library</button>
-                                <button type="button" class="button button-link-delete ai-seo-keeper-remove-social-image" <?php disabled('' === $social_image); ?>>Remove override</button>
+                        <label class="ai-seo-captain-field">
+                            <span class="ai-seo-captain-field-label">Social image URL</span>
+                            <input id="ai-seo-captain-social-image" type="url" name="ai_seo_captain_social_image" value="<?php echo esc_attr($social_image); ?>" />
+                            <span class="ai-seo-captain-media-actions">
+                                <button type="button" class="button button-secondary ai-seo-captain-open-media">Choose from Media Library</button>
+                                <button type="button" class="button button-link-delete ai-seo-captain-remove-social-image" <?php disabled('' === $social_image); ?>>Remove override</button>
                             </span>
-                            <span class="ai-seo-keeper-field-help">Optional absolute URL. If empty, AI SEO Keeper falls back to the featured image or site logo.</span>
+                            <span class="ai-seo-captain-field-help">Optional absolute URL. If empty, SEO Captain falls back to the featured image or site logo.</span>
                         </label>
 
-                        <div class="ai-seo-keeper-field ai-seo-keeper-preview-image-card">
-                            <span class="ai-seo-keeper-field-label">Current preview image</span>
-                            <div class="ai-seo-keeper-preview-image-card-frame">
-                                <img class="ai-seo-keeper-preview-image-card-image" src="<?php echo esc_url($preview_image_url); ?>" alt="" <?php echo '' === $preview_image_url ? 'hidden' : ''; ?> />
-                                <div class="ai-seo-keeper-preview-image-card-empty" <?php echo '' !== $preview_image_url ? 'hidden' : ''; ?>>No image available yet</div>
+                        <div class="ai-seo-captain-field ai-seo-captain-preview-image-card">
+                            <span class="ai-seo-captain-field-label">Current preview image</span>
+                            <div class="ai-seo-captain-preview-image-card-frame">
+                                <img class="ai-seo-captain-preview-image-card-image" src="<?php echo esc_url($preview_image_url); ?>" alt="" <?php echo '' === $preview_image_url ? 'hidden' : ''; ?> />
+                                <div class="ai-seo-captain-preview-image-card-empty" <?php echo '' !== $preview_image_url ? 'hidden' : ''; ?>>No image available yet</div>
                             </div>
-                            <span class="ai-seo-keeper-field-help">This is the image that will be used in the search preview area unless you set a different social image.</span>
+                            <span class="ai-seo-captain-field-help">This is the image that will be used in the search preview area unless you set a different social image.</span>
                         </div>
 
-                        <div class="ai-seo-keeper-field ai-seo-keeper-field-textarea-wide ai-seo-keeper-social-preview-shell">
-                            <span class="ai-seo-keeper-field-label">Social sharing previews</span>
-                            <p class="ai-seo-keeper-field-help">These cards show how the current social title, description, and image are likely to look for Open Graph and Twitter output.</p>
-                            <div class="ai-seo-keeper-social-preview-grid">
-                                <div class="ai-seo-keeper-social-preview-card is-open-graph">
-                                    <div class="ai-seo-keeper-social-preview-header">
-                                        <span class="ai-seo-keeper-social-preview-badge">Open Graph preview</span>
-                                        <span class="ai-seo-keeper-social-preview-network">Facebook, LinkedIn, Messenger</span>
+                        <div class="ai-seo-captain-field ai-seo-captain-field-textarea-wide ai-seo-captain-social-preview-shell">
+                            <span class="ai-seo-captain-field-label">Social sharing previews</span>
+                            <p class="ai-seo-captain-field-help">These cards show how the current social title, description, and image are likely to look for Open Graph and Twitter output.</p>
+                            <div class="ai-seo-captain-social-preview-grid">
+                                <div class="ai-seo-captain-social-preview-card is-open-graph">
+                                    <div class="ai-seo-captain-social-preview-header">
+                                        <span class="ai-seo-captain-social-preview-badge">Open Graph preview</span>
+                                        <span class="ai-seo-captain-social-preview-network">Facebook, LinkedIn, Messenger</span>
                                     </div>
-                                    <div class="ai-seo-keeper-social-preview-media">
-                                        <img class="ai-seo-keeper-social-preview-image" src="<?php echo esc_url($preview_image_url); ?>" alt="" <?php echo '' === $preview_image_url ? 'hidden' : ''; ?> />
-                                        <div class="ai-seo-keeper-social-preview-placeholder" <?php echo '' !== $preview_image_url ? 'hidden' : ''; ?>>No social image selected</div>
+                                    <div class="ai-seo-captain-social-preview-media">
+                                        <img class="ai-seo-captain-social-preview-image" src="<?php echo esc_url($preview_image_url); ?>" alt="" <?php echo '' === $preview_image_url ? 'hidden' : ''; ?> />
+                                        <div class="ai-seo-captain-social-preview-placeholder" <?php echo '' !== $preview_image_url ? 'hidden' : ''; ?>>No social image selected</div>
                                     </div>
-                                    <div class="ai-seo-keeper-social-preview-copy">
-                                        <div class="ai-seo-keeper-social-preview-url"><?php echo esc_html($preview_url); ?></div>
-                                        <div class="ai-seo-keeper-social-preview-title"><?php echo esc_html($effective_social_title); ?></div>
-                                        <div class="ai-seo-keeper-social-preview-description"><?php echo esc_html($effective_social_description); ?></div>
+                                    <div class="ai-seo-captain-social-preview-copy">
+                                        <div class="ai-seo-captain-social-preview-url"><?php echo esc_html($preview_url); ?></div>
+                                        <div class="ai-seo-captain-social-preview-title"><?php echo esc_html($effective_social_title); ?></div>
+                                        <div class="ai-seo-captain-social-preview-description"><?php echo esc_html($effective_social_description); ?></div>
                                     </div>
                                 </div>
 
-                                <div class="ai-seo-keeper-social-preview-card is-twitter">
-                                    <div class="ai-seo-keeper-social-preview-header">
-                                        <span class="ai-seo-keeper-social-preview-badge">Twitter preview</span>
-                                        <span class="ai-seo-keeper-social-preview-network"><?php echo esc_html($site_name); ?> summary_large_image card</span>
+                                <div class="ai-seo-captain-social-preview-card is-twitter">
+                                    <div class="ai-seo-captain-social-preview-header">
+                                        <span class="ai-seo-captain-social-preview-badge">Twitter preview</span>
+                                        <span class="ai-seo-captain-social-preview-network"><?php echo esc_html($site_name); ?> summary_large_image card</span>
                                     </div>
-                                    <div class="ai-seo-keeper-social-preview-media is-twitter">
-                                        <img class="ai-seo-keeper-social-preview-image" src="<?php echo esc_url($preview_image_url); ?>" alt="" <?php echo '' === $preview_image_url ? 'hidden' : ''; ?> />
-                                        <div class="ai-seo-keeper-social-preview-placeholder" <?php echo '' !== $preview_image_url ? 'hidden' : ''; ?>>No social image selected</div>
+                                    <div class="ai-seo-captain-social-preview-media is-twitter">
+                                        <img class="ai-seo-captain-social-preview-image" src="<?php echo esc_url($preview_image_url); ?>" alt="" <?php echo '' === $preview_image_url ? 'hidden' : ''; ?> />
+                                        <div class="ai-seo-captain-social-preview-placeholder" <?php echo '' !== $preview_image_url ? 'hidden' : ''; ?>>No social image selected</div>
                                     </div>
-                                    <div class="ai-seo-keeper-social-preview-copy">
-                                        <div class="ai-seo-keeper-social-preview-title"><?php echo esc_html($effective_social_title); ?></div>
-                                        <div class="ai-seo-keeper-social-preview-description"><?php echo esc_html($effective_social_description); ?></div>
-                                        <div class="ai-seo-keeper-social-preview-url"><?php echo esc_html($preview_url); ?></div>
+                                    <div class="ai-seo-captain-social-preview-copy">
+                                        <div class="ai-seo-captain-social-preview-title"><?php echo esc_html($effective_social_title); ?></div>
+                                        <div class="ai-seo-captain-social-preview-description"><?php echo esc_html($effective_social_description); ?></div>
+                                        <div class="ai-seo-captain-social-preview-url"><?php echo esc_html($preview_url); ?></div>
                                     </div>
                                 </div>
                             </div>
@@ -2991,82 +2991,82 @@ JS;
                     </div>
                 </section>
 
-                <section id="<?php echo esc_attr($schema_tab_id); ?>" class="ai-seo-keeper-tab-panel ai-seo-keeper-surface" role="tabpanel" hidden>
-                    <div class="ai-seo-keeper-field-grid">
-                        <label class="ai-seo-keeper-field">
-                            <span class="ai-seo-keeper-field-label">Schema type override</span>
-                            <select id="ai-seo-keeper-schema-type" name="ai_seo_keeper_schema_type">
+                <section id="<?php echo esc_attr($schema_tab_id); ?>" class="ai-seo-captain-tab-panel ai-seo-captain-surface" role="tabpanel" hidden>
+                    <div class="ai-seo-captain-field-grid">
+                        <label class="ai-seo-captain-field">
+                            <span class="ai-seo-captain-field-label">Schema type override</span>
+                            <select id="ai-seo-captain-schema-type" name="ai_seo_captain_schema_type">
                                 <?php foreach ($this->get_schema_type_options() as $value => $label) : ?>
                                     <option value="<?php echo esc_attr($value); ?>" <?php selected($schema_type, $value); ?>><?php echo esc_html($label); ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <span class="ai-seo-keeper-field-help">Leave this on automatic detection or force a page type such as Product, Service, About, or Contact.</span>
+                            <span class="ai-seo-captain-field-help">Leave this on automatic detection or force a page type such as Product, Service, About, or Contact.</span>
                         </label>
 
-                        <div class="ai-seo-keeper-field">
-                            <span class="ai-seo-keeper-field-label">Schema note</span>
-                            <div class="ai-seo-keeper-note-box">AI SEO Keeper already outputs structured data for WebSite, Organization, BreadcrumbList, and the detected primary entity. Use overrides only when the page intentionally breaks the usual site pattern. For visible breadcrumbs in the theme content, use the <code>[ai_seo_keeper_breadcrumbs]</code> shortcode.</div>
+                        <div class="ai-seo-captain-field">
+                            <span class="ai-seo-captain-field-label">Schema note</span>
+                            <div class="ai-seo-captain-note-box">SEO Captain already outputs structured data for WebSite, Organization, BreadcrumbList, and the detected primary entity. Use overrides only when the page intentionally breaks the usual site pattern. For visible breadcrumbs in the theme content, use the <code>[ai_seo_captain_breadcrumbs]</code> shortcode.</div>
                         </div>
                     </div>
                 </section>
 
-                <section id="<?php echo esc_attr($advanced_tab_id); ?>" class="ai-seo-keeper-tab-panel ai-seo-keeper-surface" role="tabpanel" hidden>
-                    <div class="ai-seo-keeper-field-grid">
-                        <label class="ai-seo-keeper-field">
-                            <span class="ai-seo-keeper-field-label">Canonical URL override</span>
-                            <input id="ai-seo-keeper-canonical-url" type="url" name="ai_seo_keeper_canonical_url" value="<?php echo esc_attr($canonical_url); ?>" />
-                            <span class="ai-seo-keeper-field-help">Optional absolute URL. If empty, the page permalink remains canonical.</span>
+                <section id="<?php echo esc_attr($advanced_tab_id); ?>" class="ai-seo-captain-tab-panel ai-seo-captain-surface" role="tabpanel" hidden>
+                    <div class="ai-seo-captain-field-grid">
+                        <label class="ai-seo-captain-field">
+                            <span class="ai-seo-captain-field-label">Canonical URL override</span>
+                            <input id="ai-seo-captain-canonical-url" type="url" name="ai_seo_captain_canonical_url" value="<?php echo esc_attr($canonical_url); ?>" />
+                            <span class="ai-seo-captain-field-help">Optional absolute URL. If empty, the page permalink remains canonical.</span>
                         </label>
 
-                        <label class="ai-seo-keeper-field">
-                            <span class="ai-seo-keeper-field-label">Robots override</span>
-                            <select id="ai-seo-keeper-robots-directives" name="ai_seo_keeper_robots_directives">
+                        <label class="ai-seo-captain-field">
+                            <span class="ai-seo-captain-field-label">Robots override</span>
+                            <select id="ai-seo-captain-robots-directives" name="ai_seo_captain_robots_directives">
                                 <?php foreach ($this->get_robots_directive_options() as $value => $label) : ?>
                                     <option value="<?php echo esc_attr($value); ?>" <?php selected($robots_directives, $value); ?>><?php echo esc_html($label); ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <span class="ai-seo-keeper-field-help">Leave on automatic site defaults or force an index or follow combination per page.</span>
+                            <span class="ai-seo-captain-field-help">Leave on automatic site defaults or force an index or follow combination per page.</span>
                         </label>
 
-                        <div class="ai-seo-keeper-field ai-seo-keeper-toggle-field">
-                            <span class="ai-seo-keeper-field-label">Page-level frontend gate</span>
-                            <label class="ai-seo-keeper-checkbox-row">
-                                <input id="ai-seo-keeper-frontend-enabled" type="checkbox" name="ai_seo_keeper_frontend_enabled" value="1" <?php checked($frontend_post_enabled); ?> />
-                                <span>Force this page to use its approved AI suggestion and saved SEO overrides on the frontend when the global AI SEO Keeper settings also allow it.</span>
+                        <div class="ai-seo-captain-field ai-seo-captain-toggle-field">
+                            <span class="ai-seo-captain-field-label">Page-level frontend gate</span>
+                            <label class="ai-seo-captain-checkbox-row">
+                                <input id="ai-seo-captain-frontend-enabled" type="checkbox" name="ai_seo_captain_frontend_enabled" value="1" <?php checked($frontend_post_enabled); ?> />
+                                <span>Force this page to use its approved AI suggestion and saved SEO overrides on the frontend when the global SEO Captain settings also allow it.</span>
                             </label>
-                            <span class="ai-seo-keeper-field-help">This is still useful when automatic search appearance is turned off, or when you want this page explicitly managed with page-level SEO data.</span>
+                            <span class="ai-seo-captain-field-help">This is still useful when automatic search appearance is turned off, or when you want this page explicitly managed with page-level SEO data.</span>
                         </div>
 
-                        <div class="ai-seo-keeper-field ai-seo-keeper-toggle-field">
-                            <span class="ai-seo-keeper-field-label">Cornerstone content</span>
-                            <label class="ai-seo-keeper-checkbox-row">
-                                <input id="ai-seo-keeper-cornerstone" type="checkbox" name="ai_seo_keeper_cornerstone" value="1" <?php checked(! empty(get_post_meta($post->ID, '_ai_seo_keeper_cornerstone', true))); ?> />
+                        <div class="ai-seo-captain-field ai-seo-captain-toggle-field">
+                            <span class="ai-seo-captain-field-label">Cornerstone content</span>
+                            <label class="ai-seo-captain-checkbox-row">
+                                <input id="ai-seo-captain-cornerstone" type="checkbox" name="ai_seo_captain_cornerstone" value="1" <?php checked(! empty(get_post_meta($post->ID, '_ai_seo_captain_cornerstone', true))); ?> />
                                 <span>Mark this page as cornerstone content — your most important, comprehensive articles.</span>
                             </label>
-                            <span class="ai-seo-keeper-field-help">Cornerstone pages get higher priority in the sitemap, are prioritized in internal linking suggestions, and receive extra audit weight.</span>
+                            <span class="ai-seo-captain-field-help">Cornerstone pages get higher priority in the sitemap, are prioritized in internal linking suggestions, and receive extra audit weight.</span>
                         </div>
 
-                        <div class="ai-seo-keeper-field">
-                            <label class="ai-seo-keeper-field-label" for="ai-seo-keeper-hreflang">Hreflang tags (multi-language)</label>
-                            <textarea id="ai-seo-keeper-hreflang" class="ai-seo-keeper-input" rows="3" name="ai_seo_keeper_hreflang" placeholder="en|https://example.com/page&#10;fr|https://example.fr/page&#10;x-default|https://example.com/page"><?php echo esc_textarea(get_post_meta($post->ID, '_ai_seo_keeper_hreflang', true)); ?></textarea>
-                            <span class="ai-seo-keeper-field-help">One entry per line: <code>lang|URL</code>. Auto-detected from WPML/Polylang if installed. Manual entries take priority.</span>
+                        <div class="ai-seo-captain-field">
+                            <label class="ai-seo-captain-field-label" for="ai-seo-captain-hreflang">Hreflang tags (multi-language)</label>
+                            <textarea id="ai-seo-captain-hreflang" class="ai-seo-captain-input" rows="3" name="ai_seo_captain_hreflang" placeholder="en|https://example.com/page&#10;fr|https://example.fr/page&#10;x-default|https://example.com/page"><?php echo esc_textarea(get_post_meta($post->ID, '_ai_seo_captain_hreflang', true)); ?></textarea>
+                            <span class="ai-seo-captain-field-help">One entry per line: <code>lang|URL</code>. Auto-detected from WPML/Polylang if installed. Manual entries take priority.</span>
                         </div>
                     </div>
                 </section>
 
-                <section id="<?php echo esc_attr($checks_tab_id); ?>" class="ai-seo-keeper-tab-panel ai-seo-keeper-surface" role="tabpanel" hidden>
-                    <div class="ai-seo-keeper-analysis-shell">
+                <section id="<?php echo esc_attr($checks_tab_id); ?>" class="ai-seo-captain-tab-panel ai-seo-captain-surface" role="tabpanel" hidden>
+                    <div class="ai-seo-captain-analysis-shell">
                         <?php echo $analysis_markup; ?>
                     </div>
                 </section>
 
-                <section id="<?php echo esc_attr($links_tab_id); ?>" class="ai-seo-keeper-tab-panel ai-seo-keeper-surface" role="tabpanel" hidden>
+                <section id="<?php echo esc_attr($links_tab_id); ?>" class="ai-seo-captain-tab-panel ai-seo-captain-surface" role="tabpanel" hidden>
                     <?php echo $this->render_internal_links_tab($post); ?>
                 </section>
             </div>
 
             <?php if (! $has_api_key) : ?>
-                <p class="ai-seo-keeper-missing-key">Add an API key in AI SEO Keeper Settings before the generation tools can be activated.</p>
+                <p class="ai-seo-captain-missing-key">Add an API key in SEO Captain Settings before the generation tools can be activated.</p>
             <?php endif; ?>
         </div>
     <?php
@@ -3117,7 +3117,7 @@ JS;
         $this_path = trailingslashit((string) wp_parse_url($this_permalink, PHP_URL_PATH));
 
         global $wpdb;
-        $index_table = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $index_table = $wpdb->prefix . 'ai_seo_captain_content_index';
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
         $other_ids = $wpdb->get_col(
             $wpdb->prepare(
@@ -3182,10 +3182,10 @@ JS;
 
         ob_start();
     ?>
-        <div class="ai-seo-keeper-links-tab">
+        <div class="ai-seo-captain-links-tab">
             <div style="margin-bottom:16px;">
                 <strong>Outbound internal links (<?php echo count($outbound); ?>)</strong>
-                <p class="ai-seo-keeper-muted" style="margin:4px 0 8px;">Pages this post links to.</p>
+                <p class="ai-seo-captain-muted" style="margin:4px 0 8px;">Pages this post links to.</p>
                 <?php if (empty($outbound)) : ?>
                     <p style="color:#d63638;margin:0;">This page has no outbound internal links. Adding internal links helps search engines discover and understand your site structure.</p>
                 <?php else : ?>
@@ -3202,7 +3202,7 @@ JS;
 
             <div style="margin-bottom:16px;">
                 <strong>Inbound internal links (<?php echo count($inbound); ?>)</strong>
-                <p class="ai-seo-keeper-muted" style="margin:4px 0 8px;">Pages that link to this post.</p>
+                <p class="ai-seo-captain-muted" style="margin:4px 0 8px;">Pages that link to this post.</p>
                 <?php if (empty($inbound)) : ?>
                     <p style="color:#d63638;margin:0;">No other pages link to this post. It may be orphaned and harder for search engines to discover.</p>
                 <?php else : ?>
@@ -3219,12 +3219,12 @@ JS;
             <?php if (! empty($suggestions)) : ?>
                 <div>
                     <strong>Suggested pages to link to</strong>
-                    <p class="ai-seo-keeper-muted" style="margin:4px 0 8px;">Related pages you could link from this post to improve site structure.</p>
+                    <p class="ai-seo-captain-muted" style="margin:4px 0 8px;">Related pages you could link from this post to improve site structure.</p>
                     <ul style="margin:0;padding-left:20px;">
                         <?php foreach ($suggestions as $s) : ?>
                             <li style="margin-bottom:4px;">
                                 <a href="<?php echo esc_url($s['url']); ?>" target="_blank" rel="noopener"><?php echo esc_html($s['title']); ?></a>
-                                <button type="button" class="button button-small ai-seo-keeper-copy-link" data-url="<?php echo esc_attr($s['url']); ?>" data-title="<?php echo esc_attr($s['title']); ?>" style="margin-left:6px;font-size:11px;">Copy link</button>
+                                <button type="button" class="button button-small ai-seo-captain-copy-link" data-url="<?php echo esc_attr($s['url']); ?>" data-title="<?php echo esc_attr($s['title']); ?>" style="margin-left:6px;font-size:11px;">Copy link</button>
                             </li>
                         <?php endforeach; ?>
                     </ul>
@@ -3232,7 +3232,7 @@ JS;
             <?php endif; ?>
         </div>
     <?php
-        wp_add_inline_script('ai-seo-admin-common', '(function($){$(document).on("click",".ai-seo-keeper-copy-link",function(){var u=$(this).data("url"),t=$(this).data("title"),h=\'<a href="\'+u+\'">\'+t+"</a>";if(navigator.clipboard){navigator.clipboard.writeText(h)}var b=$(this);b.text("Copied!");setTimeout(function(){b.text("Copy link")},1500)})})(jQuery);');
+        wp_add_inline_script('ai-seo-admin-common', '(function($){$(document).on("click",".ai-seo-captain-copy-link",function(){var u=$(this).data("url"),t=$(this).data("title"),h=\'<a href="\'+u+\'">\'+t+"</a>";if(navigator.clipboard){navigator.clipboard.writeText(h)}var b=$(this);b.text("Copied!");setTimeout(function(){b.text("Copy link")},1500)})})(jQuery);');
 
         return ob_get_clean();
     }
@@ -3249,24 +3249,24 @@ JS;
 
         return <<<'HTML'
 <style>
-.ai-seo-keeper-editor-panel {
+.ai-seo-captain-editor-panel {
     margin-top: 4px;
 }
 
-.ai-seo-keeper-panel-intro,
-.ai-seo-keeper-panel-note,
-.ai-seo-keeper-toolbar-note,
-.ai-seo-keeper-field-help,
-.ai-seo-keeper-chat-intro,
-.ai-seo-keeper-muted,
-.ai-seo-keeper-note-box,
-.ai-seo-keeper-empty-state {
+.ai-seo-captain-panel-intro,
+.ai-seo-captain-panel-note,
+.ai-seo-captain-toolbar-note,
+.ai-seo-captain-field-help,
+.ai-seo-captain-chat-intro,
+.ai-seo-captain-muted,
+.ai-seo-captain-note-box,
+.ai-seo-captain-empty-state {
     color: #5f6b7a;
     font-size: 13px;
     line-height: 1.65;
 }
 
-.ai-seo-keeper-toolbar {
+.ai-seo-captain-toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -3275,34 +3275,34 @@ JS;
     flex-wrap: wrap;
 }
 
-.ai-seo-keeper-toolbar-actions {
+.ai-seo-captain-toolbar-actions {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
 }
 
-.ai-seo-keeper-toolbar-note {
+.ai-seo-captain-toolbar-note {
     margin: 8px 0 0;
 }
 
-.ai-seo-keeper-surface,
-.ai-seo-keeper-accordion-panel {
+.ai-seo-captain-surface,
+.ai-seo-captain-accordion-panel {
     background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
     border: 1px solid #dcdcde;
     border-radius: 18px;
     box-shadow: 0 8px 24px rgba(17, 24, 39, 0.04);
 }
 
-.ai-seo-keeper-notes-surface {
+.ai-seo-captain-notes-surface {
     margin-top: 16px;
     padding: 16px 18px;
 }
 
-.ai-seo-keeper-ai-notes {
+.ai-seo-captain-ai-notes {
     margin: 8px 0 0;
 }
 
-.ai-seo-keeper-tab-list {
+.ai-seo-captain-tab-list {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -3311,7 +3311,7 @@ JS;
     padding-bottom: 10px;
 }
 
-.ai-seo-keeper-tab-button {
+.ai-seo-captain-tab-button {
     appearance: none;
     border: 1px solid #c3c4c7;
     border-radius: 14px 14px 0 0;
@@ -3323,14 +3323,14 @@ JS;
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.ai-seo-keeper-tab-button:hover,
-.ai-seo-keeper-tab-button:focus-visible {
+.ai-seo-captain-tab-button:hover,
+.ai-seo-captain-tab-button:focus-visible {
     border-color: #c3c4c7;
     color: #1d2327;
     outline: none;
 }
 
-.ai-seo-keeper-tab-button.is-active {
+.ai-seo-captain-tab-button.is-active {
     background: #ffffff;
     border-color: #c3c4c7;
     border-bottom: 3px solid #1db954;
@@ -3338,19 +3338,19 @@ JS;
     box-shadow: none;
 }
 
-.ai-seo-keeper-tab-panels {
+.ai-seo-captain-tab-panels {
     margin-top: 16px;
 }
 
-.ai-seo-keeper-tab-panel {
+.ai-seo-captain-tab-panel {
     padding: 18px;
 }
 
-.ai-seo-keeper-search-preview {
+.ai-seo-captain-search-preview {
     margin-bottom: 18px;
 }
 
-.ai-seo-keeper-snippet-analyzer {
+.ai-seo-captain-snippet-analyzer {
     margin-bottom: 18px;
     padding: 18px;
     border-radius: 20px;
@@ -3359,14 +3359,14 @@ JS;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-.ai-seo-keeper-snippet-header {
+.ai-seo-captain-snippet-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     gap: 18px;
 }
 
-.ai-seo-keeper-snippet-score {
+.ai-seo-captain-snippet-score {
     min-width: 156px;
     display: grid;
     gap: 4px;
@@ -3377,15 +3377,15 @@ JS;
     text-align: center;
 }
 
-.ai-seo-keeper-snippet-score-number {
+.ai-seo-captain-snippet-score-number {
     font-size: 30px;
     line-height: 1;
     font-weight: 700;
     color: #111827;
 }
 
-.ai-seo-keeper-snippet-score-caption,
-.ai-seo-keeper-snippet-metric-label {
+.ai-seo-captain-snippet-score-caption,
+.ai-seo-captain-snippet-metric-label {
     font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
@@ -3393,12 +3393,12 @@ JS;
     color: #6b7280;
 }
 
-.ai-seo-keeper-snippet-score-label {
+.ai-seo-captain-snippet-score-label {
     font-size: 13px;
     font-weight: 700;
 }
 
-.ai-seo-keeper-snippet-score-track {
+.ai-seo-captain-snippet-score-track {
     margin-top: 14px;
     width: 100%;
     height: 10px;
@@ -3407,7 +3407,7 @@ JS;
     overflow: hidden;
 }
 
-.ai-seo-keeper-snippet-score-fill {
+.ai-seo-captain-snippet-score-fill {
     display: block;
     width: 0;
     height: 100%;
@@ -3415,19 +3415,19 @@ JS;
     transition: width 0.18s ease;
 }
 
-.ai-seo-keeper-snippet-summary-text {
+.ai-seo-captain-snippet-summary-text {
     margin: 12px 0 0;
     color: #5f6b7a;
 }
 
-.ai-seo-keeper-snippet-metrics {
+.ai-seo-captain-snippet-metrics {
     display: grid;
     grid-template-columns: repeat(2, minmax(220px, 1fr));
     gap: 12px;
     margin-top: 14px;
 }
 
-.ai-seo-keeper-snippet-metric {
+.ai-seo-captain-snippet-metric {
     display: grid;
     gap: 6px;
     padding: 14px 16px;
@@ -3436,63 +3436,63 @@ JS;
     background: #ffffff;
 }
 
-.ai-seo-keeper-snippet-metric-value {
+.ai-seo-captain-snippet-metric-value {
     font-size: 18px;
     color: #111827;
 }
 
-.ai-seo-keeper-snippet-metric-helper {
+.ai-seo-captain-snippet-metric-helper {
     color: #5f6b7a;
     font-size: 13px;
     line-height: 1.55;
 }
 
-.ai-seo-keeper-snippet-analyzer.is-good .ai-seo-keeper-snippet-score-fill {
+.ai-seo-captain-snippet-analyzer.is-good .ai-seo-captain-snippet-score-fill {
     background: linear-gradient(90deg, #34a853 0%, #6bd98d 100%);
 }
 
-.ai-seo-keeper-snippet-analyzer.is-neutral .ai-seo-keeper-snippet-score-fill {
+.ai-seo-captain-snippet-analyzer.is-neutral .ai-seo-captain-snippet-score-fill {
     background: linear-gradient(90deg, #643d87 0%, #a66dd4 100%);
 }
 
-.ai-seo-keeper-snippet-analyzer.is-warning .ai-seo-keeper-snippet-score-fill {
+.ai-seo-captain-snippet-analyzer.is-warning .ai-seo-captain-snippet-score-fill {
     background: linear-gradient(90deg, #d97706 0%, #fbbf24 100%);
 }
 
-.ai-seo-keeper-snippet-score.is-good,
-.ai-seo-keeper-snippet-metric.is-good {
+.ai-seo-captain-snippet-score.is-good,
+.ai-seo-captain-snippet-metric.is-good {
     border-color: #a6d8a8;
     background: linear-gradient(180deg, #f2fcf5 0%, #ffffff 100%);
 }
 
-.ai-seo-keeper-snippet-score.is-good .ai-seo-keeper-snippet-score-label,
-.ai-seo-keeper-snippet-metric.is-good .ai-seo-keeper-snippet-metric-value {
+.ai-seo-captain-snippet-score.is-good .ai-seo-captain-snippet-score-label,
+.ai-seo-captain-snippet-metric.is-good .ai-seo-captain-snippet-metric-value {
     color: #135e16;
 }
 
-.ai-seo-keeper-snippet-score.is-neutral,
-.ai-seo-keeper-snippet-metric.is-neutral {
+.ai-seo-captain-snippet-score.is-neutral,
+.ai-seo-captain-snippet-metric.is-neutral {
     border-color: #bfd7ea;
     background: linear-gradient(180deg, #f5fbff 0%, #ffffff 100%);
 }
 
-.ai-seo-keeper-snippet-score.is-neutral .ai-seo-keeper-snippet-score-label,
-.ai-seo-keeper-snippet-metric.is-neutral .ai-seo-keeper-snippet-metric-value {
+.ai-seo-captain-snippet-score.is-neutral .ai-seo-captain-snippet-score-label,
+.ai-seo-captain-snippet-metric.is-neutral .ai-seo-captain-snippet-metric-value {
     color: #0a4b78;
 }
 
-.ai-seo-keeper-snippet-score.is-warning,
-.ai-seo-keeper-snippet-metric.is-warning {
+.ai-seo-captain-snippet-score.is-warning,
+.ai-seo-captain-snippet-metric.is-warning {
     border-color: #f0c36d;
     background: linear-gradient(180deg, #fff8eb 0%, #ffffff 100%);
 }
 
-.ai-seo-keeper-snippet-score.is-warning .ai-seo-keeper-snippet-score-label,
-.ai-seo-keeper-snippet-metric.is-warning .ai-seo-keeper-snippet-metric-value {
+.ai-seo-captain-snippet-score.is-warning .ai-seo-captain-snippet-score-label,
+.ai-seo-captain-snippet-metric.is-warning .ai-seo-captain-snippet-metric-value {
     color: #8a5a00;
 }
 
-.ai-seo-keeper-preview-card {
+.ai-seo-captain-preview-card {
     display: grid;
     grid-template-columns: minmax(0, 1.6fr) minmax(150px, 0.8fr);
     gap: 18px;
@@ -3504,7 +3504,7 @@ JS;
     box-shadow: 0 14px 34px rgba(17, 24, 39, 0.08);
 }
 
-.ai-seo-keeper-preview-brand {
+.ai-seo-captain-preview-brand {
     font-size: 12px;
     font-weight: 700;
     color: #188038;
@@ -3512,28 +3512,28 @@ JS;
     letter-spacing: 0.06em;
 }
 
-.ai-seo-keeper-preview-url {
+.ai-seo-captain-preview-url {
     font-size: 13px;
     color: #188038;
     word-break: break-all;
     margin-top: 4px;
 }
 
-.ai-seo-keeper-preview-title {
+.ai-seo-captain-preview-title {
     font-size: 23px;
     line-height: 1.2;
     color: #1a0dab;
     margin-top: 8px;
 }
 
-.ai-seo-keeper-preview-description {
+.ai-seo-captain-preview-description {
     font-size: 14px;
     line-height: 1.6;
     color: #4d5156;
     margin-top: 10px;
 }
 
-.ai-seo-keeper-preview-media {
+.ai-seo-captain-preview-media {
     min-height: 168px;
     border-radius: 18px;
     overflow: hidden;
@@ -3543,29 +3543,29 @@ JS;
     justify-content: center;
 }
 
-.ai-seo-keeper-preview-image,
-.ai-seo-keeper-preview-image-card-frame img {
+.ai-seo-captain-preview-image,
+.ai-seo-captain-preview-image-card-frame img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
 }
 
-.ai-seo-keeper-preview-image-placeholder,
-.ai-seo-keeper-preview-image-card-empty {
+.ai-seo-captain-preview-image-placeholder,
+.ai-seo-captain-preview-image-card-empty {
     color: #6b7280;
     font-size: 13px;
     padding: 16px;
     text-align: center;
 }
 
-.ai-seo-keeper-field-grid {
+.ai-seo-captain-field-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(280px, 1fr));
     gap: 16px;
 }
 
-.ai-seo-keeper-field {
+.ai-seo-captain-field {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -3575,22 +3575,22 @@ JS;
     background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
 }
 
-.ai-seo-keeper-field.ai-seo-keeper-field-textarea-wide,
-.ai-seo-keeper-toggle-field {
+.ai-seo-captain-field.ai-seo-captain-field-textarea-wide,
+.ai-seo-captain-toggle-field {
     grid-column: 1 / -1;
 }
 
-.ai-seo-keeper-field-label {
+.ai-seo-captain-field-label {
     font-size: 14px;
     font-weight: 700;
     color: #1f2937;
 }
 
-.ai-seo-keeper-editor-panel .ai-seo-keeper-field input[type="text"],
-.ai-seo-keeper-editor-panel .ai-seo-keeper-field input[type="url"],
-.ai-seo-keeper-editor-panel .ai-seo-keeper-field select,
-.ai-seo-keeper-editor-panel .ai-seo-keeper-chat-input,
-.ai-seo-keeper-editor-panel .ai-seo-keeper-field textarea {
+.ai-seo-captain-editor-panel .ai-seo-captain-field input[type="text"],
+.ai-seo-captain-editor-panel .ai-seo-captain-field input[type="url"],
+.ai-seo-captain-editor-panel .ai-seo-captain-field select,
+.ai-seo-captain-editor-panel .ai-seo-captain-chat-input,
+.ai-seo-captain-editor-panel .ai-seo-captain-field textarea {
     width: 100%;
     border-radius: 14px;
     border: 1px solid #c8d0da;
@@ -3599,20 +3599,20 @@ JS;
     box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.05);
 }
 
-.ai-seo-keeper-editor-panel .ai-seo-keeper-field textarea,
-.ai-seo-keeper-editor-panel .ai-seo-keeper-chat-input {
+.ai-seo-captain-editor-panel .ai-seo-captain-field textarea,
+.ai-seo-captain-editor-panel .ai-seo-captain-chat-input {
     min-height: 140px;
     resize: vertical;
     background: linear-gradient(180deg, #fffdf8 0%, #ffffff 100%);
     border: 1px solid #d6c6a8;
 }
 
-.ai-seo-keeper-editor-panel .ai-seo-keeper-chat-input {
+.ai-seo-captain-editor-panel .ai-seo-captain-chat-input {
     min-height: 110px;
     margin-top: 12px;
 }
 
-.ai-seo-keeper-field-counter {
+.ai-seo-captain-field-counter {
     display: inline-flex;
     align-items: center;
     align-self: flex-start;
@@ -3624,32 +3624,32 @@ JS;
     font-weight: 700;
 }
 
-.ai-seo-keeper-field-counter.is-warning {
+.ai-seo-captain-field-counter.is-warning {
     background: #fff4d6;
     color: #8a5a00;
 }
 
-.ai-seo-keeper-field-counter.is-limit {
+.ai-seo-captain-field-counter.is-limit {
     background: #fde7e7;
     color: #8a2424;
 }
 
-.ai-seo-keeper-media-actions {
+.ai-seo-captain-media-actions {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
 }
 
-.ai-seo-keeper-editor-panel .ai-seo-keeper-field input:focus,
-.ai-seo-keeper-editor-panel .ai-seo-keeper-field textarea:focus,
-.ai-seo-keeper-editor-panel .ai-seo-keeper-field select:focus,
-.ai-seo-keeper-editor-panel .ai-seo-keeper-chat-input:focus {
+.ai-seo-captain-editor-panel .ai-seo-captain-field input:focus,
+.ai-seo-captain-editor-panel .ai-seo-captain-field textarea:focus,
+.ai-seo-captain-editor-panel .ai-seo-captain-field select:focus,
+.ai-seo-captain-editor-panel .ai-seo-captain-chat-input:focus {
     border-color: #643d87;
     box-shadow: 0 0 0 3px rgba(100, 61, 135, 0.12);
     outline: none;
 }
 
-.ai-seo-keeper-preview-image-card-frame {
+.ai-seo-captain-preview-image-card-frame {
     min-height: 180px;
     border-radius: 16px;
     overflow: hidden;
@@ -3657,13 +3657,13 @@ JS;
     position: relative;
 }
 
-.ai-seo-keeper-social-preview-grid {
+.ai-seo-captain-social-preview-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(260px, 1fr));
     gap: 14px;
 }
 
-.ai-seo-keeper-social-preview-card {
+.ai-seo-captain-social-preview-card {
     overflow: hidden;
     border-radius: 20px;
     border: 1px solid #d8dee6;
@@ -3671,7 +3671,7 @@ JS;
     box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
 }
 
-.ai-seo-keeper-social-preview-header {
+.ai-seo-captain-social-preview-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -3681,7 +3681,7 @@ JS;
     background: linear-gradient(135deg, #f8fbff 0%, #f4f8fc 100%);
 }
 
-.ai-seo-keeper-social-preview-badge {
+.ai-seo-captain-social-preview-badge {
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.04em;
@@ -3689,13 +3689,13 @@ JS;
     color: #0a4b78;
 }
 
-.ai-seo-keeper-social-preview-network {
+.ai-seo-captain-social-preview-network {
     font-size: 12px;
     color: #6b7280;
     text-align: right;
 }
 
-.ai-seo-keeper-social-preview-media {
+.ai-seo-captain-social-preview-media {
     min-height: 180px;
     background: linear-gradient(135deg, #eef3fb 0%, #eef6f0 100%);
     display: flex;
@@ -3704,57 +3704,57 @@ JS;
     overflow: hidden;
 }
 
-.ai-seo-keeper-social-preview-media.is-twitter {
+.ai-seo-captain-social-preview-media.is-twitter {
     min-height: 168px;
 }
 
-.ai-seo-keeper-social-preview-image {
+.ai-seo-captain-social-preview-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
 }
 
-.ai-seo-keeper-social-preview-placeholder {
+.ai-seo-captain-social-preview-placeholder {
     padding: 18px;
     color: #6b7280;
     font-size: 13px;
     text-align: center;
 }
 
-.ai-seo-keeper-social-preview-copy {
+.ai-seo-captain-social-preview-copy {
     display: grid;
     gap: 8px;
     padding: 14px 16px 16px;
 }
 
-.ai-seo-keeper-social-preview-url {
+.ai-seo-captain-social-preview-url {
     font-size: 12px;
     color: #6b7280;
     word-break: break-all;
 }
 
-.ai-seo-keeper-social-preview-title {
+.ai-seo-captain-social-preview-title {
     font-size: 17px;
     line-height: 1.35;
     font-weight: 700;
     color: #111827;
 }
 
-.ai-seo-keeper-social-preview-description {
+.ai-seo-captain-social-preview-description {
     font-size: 13px;
     line-height: 1.55;
     color: #4b5563;
 }
 
-.ai-seo-keeper-note-box {
+.ai-seo-captain-note-box {
     padding: 14px 16px;
     border-radius: 14px;
     border: 1px dashed #c7d2fe;
     background: linear-gradient(135deg, #f8faff 0%, #ffffff 100%);
 }
 
-.ai-seo-keeper-checkbox-row {
+.ai-seo-captain-checkbox-row {
     display: grid;
     grid-template-columns: 18px minmax(0, 1fr);
     gap: 4px;
@@ -3762,25 +3762,25 @@ JS;
     color: #1f2937;
 }
 
-.ai-seo-keeper-checkbox-row input[type="checkbox"] {
+.ai-seo-captain-checkbox-row input[type="checkbox"] {
     margin: 3px 0 0;
     vertical-align: top;
 }
 
-.ai-seo-keeper-accordion-group {
+.ai-seo-captain-accordion-group {
     display: grid;
     gap: 12px;
     margin-top: 18px;
 }
 
-.ai-seo-keeper-accordion-item {
+.ai-seo-captain-accordion-item {
     border: 1px solid #dcdcde;
     border-radius: 18px;
     overflow: hidden;
     background: #ffffff;
 }
 
-.ai-seo-keeper-accordion-item.is-promoted {
+.ai-seo-captain-accordion-item.is-promoted {
     border: 2px solid transparent;
     background-image: linear-gradient(#fff, #fff), linear-gradient(135deg, #643d87 0%, #1db954 100%);
     background-origin: border-box;
@@ -3788,21 +3788,21 @@ JS;
     box-shadow: 0 4px 18px rgba(100, 61, 135, 0.13);
 }
 
-.ai-seo-keeper-accordion-item.is-promoted .ai-seo-keeper-accordion-toggle {
+.ai-seo-captain-accordion-item.is-promoted .ai-seo-captain-accordion-toggle {
     background: linear-gradient(135deg, #643d87 0%, #1db954 100%);
     color: #ffffff;
 }
 
-.ai-seo-keeper-accordion-item.is-promoted .ai-seo-keeper-accordion-toggle:hover,
-.ai-seo-keeper-accordion-item.is-promoted .ai-seo-keeper-accordion-toggle:focus-visible {
+.ai-seo-captain-accordion-item.is-promoted .ai-seo-captain-accordion-toggle:hover,
+.ai-seo-captain-accordion-item.is-promoted .ai-seo-captain-accordion-toggle:focus-visible {
     background: linear-gradient(135deg, #7a4fa0 0%, #22d362 100%);
 }
 
-.ai-seo-keeper-accordion-item.is-promoted .ai-seo-keeper-accordion-symbol {
+.ai-seo-captain-accordion-item.is-promoted .ai-seo-captain-accordion-symbol {
     color: #ffffff;
 }
 
-.ai-seo-keeper-accordion-toggle {
+.ai-seo-captain-accordion-toggle {
     width: 100%;
     border: 0;
     background: linear-gradient(135deg, #ffffff 0%, #f7f9fc 100%);
@@ -3817,19 +3817,19 @@ JS;
     cursor: pointer;
 }
 
-.ai-seo-keeper-accordion-toggle:hover,
-.ai-seo-keeper-accordion-toggle:focus-visible {
+.ai-seo-captain-accordion-toggle:hover,
+.ai-seo-captain-accordion-toggle:focus-visible {
     background: linear-gradient(135deg, #f8fbff 0%, #eef4fa 100%);
     outline: none;
 }
 
-.ai-seo-keeper-accordion-symbol {
+.ai-seo-captain-accordion-symbol {
     font-size: 18px;
     font-weight: 400;
     color: #643d87;
 }
 
-.ai-seo-keeper-accordion-panel {
+.ai-seo-captain-accordion-panel {
     margin: 0;
     border-radius: 0;
     border-width: 1px 0 0;
@@ -3837,36 +3837,36 @@ JS;
     box-shadow: none;
 }
 
-.ai-seo-keeper-chat-actions {
+.ai-seo-captain-chat-actions {
     margin: 12px 0 0;
 }
 
-.ai-seo-keeper-stack {
+.ai-seo-captain-stack {
     display: grid;
     gap: 12px;
 }
 
-.ai-seo-keeper-history-item,
-.ai-seo-keeper-chat-item,
-.ai-seo-keeper-readiness-card,
-.ai-seo-keeper-status-card {
+.ai-seo-captain-history-item,
+.ai-seo-captain-chat-item,
+.ai-seo-captain-readiness-card,
+.ai-seo-captain-status-card {
     padding: 14px 16px;
     border-radius: 16px;
     border: 1px solid #dcdcde;
     background: linear-gradient(180deg, #ffffff 0%, #f6f7f7 100%);
 }
 
-.ai-seo-keeper-chat-item.is-assistant {
+.ai-seo-captain-chat-item.is-assistant {
     background: linear-gradient(180deg, #f8fbff 0%, #eef5fb 100%);
 }
 
-.ai-seo-keeper-history-meta,
-.ai-seo-keeper-chat-meta {
+.ai-seo-captain-history-meta,
+.ai-seo-captain-chat-meta {
     color: #5f6b7a;
     font-size: 12px;
 }
 
-.ai-seo-keeper-help-tip {
+.ai-seo-captain-help-tip {
     display: inline-block;
     cursor: help;
     font-weight: 400;
@@ -3875,7 +3875,7 @@ JS;
     color: #50575e;
 }
 
-.ai-seo-keeper-help-tip::before {
+.ai-seo-captain-help-tip::before {
     content: "\1D48A";
     margin-left: 5px;
     font-size: 14px;
@@ -3883,12 +3883,12 @@ JS;
     vertical-align: baseline;
 }
 
-.ai-seo-keeper-help-tip.is-light,
-.ai-seo-keeper-accordion-item.is-promoted .ai-seo-keeper-accordion-toggle .ai-seo-keeper-help-tip {
+.ai-seo-captain-help-tip.is-light,
+.ai-seo-captain-accordion-item.is-promoted .ai-seo-captain-accordion-toggle .ai-seo-captain-help-tip {
     color: #ffffff;
 }
 
-.ai-seo-keeper-help-tip:hover::after {
+.ai-seo-captain-help-tip:hover::after {
     content: attr(data-tip);
     position: fixed;
     top: var(--tip-top, 0);
@@ -3909,14 +3909,14 @@ JS;
     white-space: normal;
 }
 
-.ai-seo-keeper-readiness-grid,
-.ai-seo-keeper-status-grid {
+.ai-seo-captain-readiness-grid,
+.ai-seo-captain-status-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(180px, 1fr));
     gap: 12px;
 }
 
-.ai-seo-keeper-readiness-label {
+.ai-seo-captain-readiness-label {
     display: block;
     font-size: 12px;
     font-weight: 700;
@@ -3925,7 +3925,7 @@ JS;
     color: #6b7280;
 }
 
-.ai-seo-keeper-readiness-value {
+.ai-seo-captain-readiness-value {
     display: block;
     margin-top: 6px;
     font-size: 16px;
@@ -3933,7 +3933,7 @@ JS;
     color: #111827;
 }
 
-.ai-seo-keeper-check-list {
+.ai-seo-captain-check-list {
     margin: 0;
     padding-left: 0;
     list-style: none;
@@ -3941,29 +3941,29 @@ JS;
     gap: 12px;
 }
 
-.ai-seo-keeper-check-section + .ai-seo-keeper-check-section {
+.ai-seo-captain-check-section + .ai-seo-captain-check-section {
     margin-top: 18px;
 }
 
-.ai-seo-keeper-check-section-title {
+.ai-seo-captain-check-section-title {
     margin: 0 0 10px;
 }
 
-.ai-seo-keeper-metrics-grid {
+.ai-seo-captain-metrics-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     gap: 12px;
     margin: 12px 0 16px;
 }
 
-.ai-seo-keeper-metric-card {
+.ai-seo-captain-metric-card {
     padding: 14px 16px;
     border-radius: 16px;
     border: 1px solid #dcdcde;
     background: linear-gradient(180deg, #ffffff 0%, #f9fbfd 100%);
 }
 
-.ai-seo-keeper-metric-label {
+.ai-seo-captain-metric-label {
     display: block;
     font-size: 12px;
     font-weight: 700;
@@ -3972,7 +3972,7 @@ JS;
     color: #6b7280;
 }
 
-.ai-seo-keeper-metric-value {
+.ai-seo-captain-metric-value {
     display: block;
     margin-top: 8px;
     font-size: 22px;
@@ -3981,14 +3981,14 @@ JS;
     color: #111827;
 }
 
-.ai-seo-keeper-check-item {
+.ai-seo-captain-check-item {
     padding: 14px 16px;
     border-radius: 16px;
     border: 1px solid #dcdcde;
     background: linear-gradient(180deg, #ffffff 0%, #f9fbfd 100%);
 }
 
-.ai-seo-keeper-check-pill {
+.ai-seo-captain-check-pill {
     display: inline-block;
     padding: 3px 10px;
     border-radius: 999px;
@@ -3997,46 +3997,46 @@ JS;
     margin-right: 8px;
 }
 
-.ai-seo-keeper-check-pill.is-pass {
+.ai-seo-captain-check-pill.is-pass {
     border: 1px solid #a6d8a8;
     background: #dff3df;
     color: #135e16;
 }
 
-.ai-seo-keeper-check-pill.is-warning {
+.ai-seo-captain-check-pill.is-warning {
     border: 1px solid #e0b44c;
     background: #fff4d6;
     color: #8a5a00;
 }
 
-.ai-seo-keeper-missing-key {
+.ai-seo-captain-missing-key {
     margin-top: 14px;
     color: #8a2424;
 }
 
 @media (max-width: 960px) {
-    .ai-seo-keeper-snippet-header,
-    .ai-seo-keeper-snippet-metrics,
-    .ai-seo-keeper-metrics-grid,
-    .ai-seo-keeper-social-preview-grid,
-    .ai-seo-keeper-field-grid,
-    .ai-seo-keeper-preview-card,
-    .ai-seo-keeper-readiness-grid,
-    .ai-seo-keeper-status-grid {
+    .ai-seo-captain-snippet-header,
+    .ai-seo-captain-snippet-metrics,
+    .ai-seo-captain-metrics-grid,
+    .ai-seo-captain-social-preview-grid,
+    .ai-seo-captain-field-grid,
+    .ai-seo-captain-preview-card,
+    .ai-seo-captain-readiness-grid,
+    .ai-seo-captain-status-grid {
         grid-template-columns: 1fr;
     }
 
-    .ai-seo-keeper-snippet-header {
+    .ai-seo-captain-snippet-header {
         display: grid;
     }
 
-    .ai-seo-keeper-preview-media {
+    .ai-seo-captain-preview-media {
         min-height: 220px;
     }
 }
 
 /* GreenCoders button branding */
-.ai-seo-keeper-editor-panel .button.button-primary {
+.ai-seo-captain-editor-panel .button.button-primary {
     display: inline-block;
     text-decoration: none;
     font-size: 13px;
@@ -4058,28 +4058,28 @@ JS;
     cursor: pointer;
 }
 
-.ai-seo-keeper-editor-panel .button.button-primary:hover,
-.ai-seo-keeper-editor-panel .button.button-primary:focus {
+.ai-seo-captain-editor-panel .button.button-primary:hover,
+.ai-seo-captain-editor-panel .button.button-primary:focus {
     background: linear-gradient(135deg, #7a4fa0 0%, #22d362 100%);
     border-color: #7a4fa0;
     box-shadow: 0 4px 12px rgba(100, 61, 135, 0.35);
     color: #ffffff;
 }
 
-.ai-seo-keeper-editor-panel .button.button-primary:disabled {
+.ai-seo-captain-editor-panel .button.button-primary:disabled {
     background: linear-gradient(135deg, #9b7db5 0%, #7dd4a0 100%);
     border-color: #9b7db5;
     opacity: 0.6;
     box-shadow: none;
 }
 
-.ai-seo-keeper-editor-panel .button:not(.button-primary) {
+.ai-seo-captain-editor-panel .button:not(.button-primary) {
     border-color: #643d87;
     color: #643d87;
 }
 
-.ai-seo-keeper-editor-panel .button:not(.button-primary):hover,
-.ai-seo-keeper-editor-panel .button:not(.button-primary):focus {
+.ai-seo-captain-editor-panel .button:not(.button-primary):hover,
+.ai-seo-captain-editor-panel .button:not(.button-primary):focus {
     background: rgba(100, 61, 135, 0.06);
     border-color: #4a2d64;
     color: #4a2d64;
@@ -4090,15 +4090,15 @@ HTML;
 
     private function render_accordion_section(string $accordion_id, string $title, string $content, bool $open = false, bool $promoted = false): string
     {
-        $item_class = 'ai-seo-keeper-accordion-item' . ($promoted ? ' is-promoted' : '');
+        $item_class = 'ai-seo-captain-accordion-item' . ($promoted ? ' is-promoted' : '');
         ob_start();
     ?>
         <div class="<?php echo esc_attr($item_class); ?>">
-            <button type="button" class="ai-seo-keeper-accordion-toggle" aria-expanded="<?php echo $open ? 'true' : 'false'; ?>" aria-controls="<?php echo esc_attr($accordion_id); ?>" data-default-open="<?php echo $open ? '1' : '0'; ?>">
+            <button type="button" class="ai-seo-captain-accordion-toggle" aria-expanded="<?php echo $open ? 'true' : 'false'; ?>" aria-controls="<?php echo esc_attr($accordion_id); ?>" data-default-open="<?php echo $open ? '1' : '0'; ?>">
                 <span><?php echo wp_kses($title, array('span' => array('class' => true, 'data-tip' => true), 'img' => array('class' => true, 'src' => true, 'alt' => true, 'width' => true, 'height' => true, 'style' => true))); ?></span>
-                <span class="ai-seo-keeper-accordion-symbol"><?php echo $open ? '-' : '+'; ?></span>
+                <span class="ai-seo-captain-accordion-symbol"><?php echo $open ? '-' : '+'; ?></span>
             </button>
-            <div id="<?php echo esc_attr($accordion_id); ?>" class="ai-seo-keeper-accordion-panel" <?php echo $open ? '' : 'hidden'; ?>>
+            <div id="<?php echo esc_attr($accordion_id); ?>" class="ai-seo-captain-accordion-panel" <?php echo $open ? '' : 'hidden'; ?>>
                 <?php echo $content; ?>
             </div>
         </div>
@@ -4111,48 +4111,48 @@ HTML;
     {
         ob_start();
     ?>
-        <div class="ai-seo-keeper-stack">
-            <div class="ai-seo-keeper-readiness-grid">
-                <div class="ai-seo-keeper-readiness-card">
-                    <span class="ai-seo-keeper-readiness-label">Approved AI suggestion</span>
-                    <span class="ai-seo-keeper-readiness-value"><?php echo $has_approved_suggestion ? 'Yes' : 'No'; ?></span>
+        <div class="ai-seo-captain-stack">
+            <div class="ai-seo-captain-readiness-grid">
+                <div class="ai-seo-captain-readiness-card">
+                    <span class="ai-seo-captain-readiness-label">Approved AI suggestion</span>
+                    <span class="ai-seo-captain-readiness-value"><?php echo $has_approved_suggestion ? 'Yes' : 'No'; ?></span>
                 </div>
-                <div class="ai-seo-keeper-readiness-card">
-                    <span class="ai-seo-keeper-readiness-label">Saved SEO fields</span>
-                    <span class="ai-seo-keeper-readiness-value"><?php echo $has_saved_frontend_data ? 'Yes' : 'No'; ?></span>
+                <div class="ai-seo-captain-readiness-card">
+                    <span class="ai-seo-captain-readiness-label">Saved SEO fields</span>
+                    <span class="ai-seo-captain-readiness-value"><?php echo $has_saved_frontend_data ? 'Yes' : 'No'; ?></span>
                 </div>
-                <div class="ai-seo-keeper-readiness-card">
-                    <span class="ai-seo-keeper-readiness-label">Global frontend output</span>
-                    <span class="ai-seo-keeper-readiness-value"><?php echo $frontend_enabled ? 'Enabled' : 'Disabled'; ?></span>
+                <div class="ai-seo-captain-readiness-card">
+                    <span class="ai-seo-captain-readiness-label">Global frontend output</span>
+                    <span class="ai-seo-captain-readiness-value"><?php echo $frontend_enabled ? 'Enabled' : 'Disabled'; ?></span>
                 </div>
-                <div class="ai-seo-keeper-readiness-card">
-                    <span class="ai-seo-keeper-readiness-label">Automatic search appearance</span>
-                    <span class="ai-seo-keeper-readiness-value"><?php echo $search_appearance_auto_enabled ? 'Enabled' : 'Disabled'; ?></span>
+                <div class="ai-seo-captain-readiness-card">
+                    <span class="ai-seo-captain-readiness-label">Automatic search appearance</span>
+                    <span class="ai-seo-captain-readiness-value"><?php echo $search_appearance_auto_enabled ? 'Enabled' : 'Disabled'; ?></span>
                 </div>
-                <div class="ai-seo-keeper-readiness-card">
-                    <span class="ai-seo-keeper-readiness-label">Page gate enabled</span>
-                    <span class="ai-seo-keeper-readiness-value"><?php echo $frontend_post_enabled ? 'Yes' : 'No'; ?></span>
+                <div class="ai-seo-captain-readiness-card">
+                    <span class="ai-seo-captain-readiness-label">Page gate enabled</span>
+                    <span class="ai-seo-captain-readiness-value"><?php echo $frontend_post_enabled ? 'Yes' : 'No'; ?></span>
                 </div>
-                <div class="ai-seo-keeper-readiness-card">
-                    <span class="ai-seo-keeper-readiness-label">Conflict status</span>
-                    <span class="ai-seo-keeper-readiness-value"><?php echo $frontend_conflict ? 'Detected' : 'Clear'; ?></span>
+                <div class="ai-seo-captain-readiness-card">
+                    <span class="ai-seo-captain-readiness-label">Conflict status</span>
+                    <span class="ai-seo-captain-readiness-value"><?php echo $frontend_conflict ? 'Detected' : 'Clear'; ?></span>
                 </div>
             </div>
 
-            <p class="ai-seo-keeper-muted">Frontend output will render when the global frontend rules permit it and either automatic search appearance is enabled for singular content or this page is explicitly gated on. Approved AI suggestions and saved SEO fields still take precedence over the automatic baseline when they exist. Conflict override is currently <strong><?php echo $frontend_override_conflicts ? 'enabled' : 'off'; ?></strong>.</p>
+            <p class="ai-seo-captain-muted">Frontend output will render when the global frontend rules permit it and either automatic search appearance is enabled for singular content or this page is explicitly gated on. Approved AI suggestions and saved SEO fields still take precedence over the automatic baseline when they exist. Conflict override is currently <strong><?php echo $frontend_override_conflicts ? 'enabled' : 'off'; ?></strong>.</p>
 
-            <div class="ai-seo-keeper-status-grid">
-                <div class="ai-seo-keeper-status-card">
+            <div class="ai-seo-captain-status-grid">
+                <div class="ai-seo-captain-status-card">
                     <strong>AI status</strong>
-                    <p class="ai-seo-keeper-muted" style="margin:8px 0 0;">
+                    <p class="ai-seo-captain-muted" style="margin:8px 0 0;">
                         Provider: <?php echo esc_html(strtoupper($options['provider'])); ?><br />
                         Model: <?php echo esc_html($options['model']); ?><br />
                         API key: <?php echo $has_api_key ? 'Configured' : 'Missing'; ?>
                     </p>
                 </div>
-                <div class="ai-seo-keeper-status-card">
+                <div class="ai-seo-captain-status-card">
                     <strong>Site context</strong>
-                    <p class="ai-seo-keeper-muted" style="margin:8px 0 0;">
+                    <p class="ai-seo-captain-muted" style="margin:8px 0 0;">
                         Indexed records: <?php echo esc_html((string) $summary['total_items']); ?><br />
                         Last sync: <?php echo $summary['last_sync'] ? esc_html($summary['last_sync']) : 'Never'; ?><br />
                         Editor chat: <?php echo $chat_is_enabled ? 'Enabled in settings' : 'Disabled in settings'; ?>
@@ -4232,7 +4232,7 @@ HTML;
         }
 
         global $wpdb;
-        $table = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table = $wpdb->prefix . 'ai_seo_captain_content_index';
         $rows = $wpdb->get_col("SELECT permalink FROM {$table} WHERE object_type = 'post' AND status = 'publish'");
         $count = 0;
         $home = trailingslashit(home_url());
@@ -4266,7 +4266,7 @@ HTML;
     public function is_audit_skipped(int $post_id): bool
     {
         // Individual page skip.
-        if (! empty(get_post_meta($post_id, '_ai_seo_keeper_audit_skip', true))) {
+        if (! empty(get_post_meta($post_id, '_ai_seo_captain_audit_skip', true))) {
             return true;
         }
 
@@ -4316,13 +4316,13 @@ HTML;
         if ($has_index) {
             global $wpdb;
             $meta_count = (int) $wpdb->get_var(
-                "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = '_ai_seo_keeper_meta_title' AND meta_value != ''"
+                "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = '_ai_seo_captain_meta_title' AND meta_value != ''"
             );
             $has_metadata = $meta_count > 0;
         }
 
         global $wpdb;
-        $table = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table = $wpdb->prefix . 'ai_seo_captain_content_index';
         $published_ids = $wpdb->get_col("SELECT object_id FROM {$table} WHERE object_type = 'post' AND status = 'publish' ORDER BY object_id ASC");
         $published_ids_json = wp_json_encode(array_map('intval', $published_ids ?: array()));
         // Count pages already audited for resume detection.
@@ -4334,7 +4334,7 @@ HTML;
                 "SELECT pm.post_id, pm.meta_value, p.post_title
                 FROM {$wpdb->postmeta} pm
                 INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
-                WHERE pm.meta_key = '_ai_seo_keeper_page_audit'
+                WHERE pm.meta_key = '_ai_seo_captain_page_audit'
                 ORDER BY pm.post_id ASC",
                 ARRAY_A
             );
@@ -4342,7 +4342,7 @@ HTML;
 
             // Collect individually skipped page IDs.
             $skip_rows = $wpdb->get_col(
-                "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_ai_seo_keeper_audit_skip' AND meta_value = '1'"
+                "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_ai_seo_captain_audit_skip' AND meta_value = '1'"
             );
             $skipped_ids = array_map('intval', $skip_rows ?: array());
 
@@ -4389,8 +4389,8 @@ HTML;
         $max_pages    = Settings::get_max_pages_for_model($active_model);
 
         // Pass all data to external JS via wp_localize_script.
-        wp_localize_script('ai-seo-page-setup-wizard', 'aiskWizard', array(
-            'nonce'                    => wp_create_nonce('ai_seo_keeper_setup_wizard'),
+        wp_localize_script('ai-seo-page-setup-wizard', 'aiscWizard', array(
+            'nonce'                    => wp_create_nonce('ai_seo_captain_setup_wizard'),
             'ajaxUrl'                  => admin_url('admin-ajax.php'),
             'publishedIds'             => array_map('intval', $published_ids ?: array()),
             'skippedIds'               => $skipped_ids,
@@ -4398,7 +4398,7 @@ HTML;
             'step2AllDone'             => $step2_all_done,
             'step3AllDone'             => $step3_all_done,
             'hasWooProducts'           => class_exists('WooCommerce') && (int) wp_count_posts('product')->publish > 0,
-            'settingsUrl'              => admin_url('admin.php?page=ai-seo-keeper-settings'),
+            'settingsUrl'              => admin_url('admin.php?page=ai-seo-captain-settings'),
             'maxPages'                 => $max_pages,
             'hasIndex'                 => $has_index,
             'hasMetadata'              => $has_metadata,
@@ -4531,11 +4531,11 @@ HTML;
 
     public function save_editor_meta(int $post_id): void
     {
-        if (! isset($_POST['ai_seo_keeper_editor_nonce'])) {
+        if (! isset($_POST['ai_seo_captain_editor_nonce'])) {
             return;
         }
 
-        if (! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['ai_seo_keeper_editor_nonce'])), 'ai_seo_keeper_save_editor_meta')) {
+        if (! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['ai_seo_captain_editor_nonce'])), 'ai_seo_captain_save_editor_meta')) {
             return;
         }
 
@@ -4581,18 +4581,18 @@ HTML;
 
     public function persist_editor_meta(int $post_id, array $raw_input): array
     {
-        $focus_keyphrase = isset($raw_input['ai_seo_keeper_focus_keyphrase']) ? sanitize_text_field(wp_unslash($raw_input['ai_seo_keeper_focus_keyphrase'])) : '';
-        $seo_title = isset($raw_input['ai_seo_keeper_meta_title']) ? sanitize_text_field(wp_unslash($raw_input['ai_seo_keeper_meta_title'])) : '';
-        $seo_description = isset($raw_input['ai_seo_keeper_meta_description']) ? sanitize_textarea_field(wp_unslash($raw_input['ai_seo_keeper_meta_description'])) : '';
-        $social_title = isset($raw_input['ai_seo_keeper_social_title']) ? sanitize_text_field(wp_unslash($raw_input['ai_seo_keeper_social_title'])) : '';
-        $social_description = isset($raw_input['ai_seo_keeper_social_description']) ? sanitize_textarea_field(wp_unslash($raw_input['ai_seo_keeper_social_description'])) : '';
-        $social_image = isset($raw_input['ai_seo_keeper_social_image']) ? esc_url_raw(wp_unslash($raw_input['ai_seo_keeper_social_image'])) : '';
-        $schema_type = isset($raw_input['ai_seo_keeper_schema_type']) ? sanitize_text_field(wp_unslash($raw_input['ai_seo_keeper_schema_type'])) : '';
-        $canonical_url = isset($raw_input['ai_seo_keeper_canonical_url']) ? esc_url_raw(wp_unslash($raw_input['ai_seo_keeper_canonical_url'])) : '';
-        $robots_directives = isset($raw_input['ai_seo_keeper_robots_directives']) ? sanitize_text_field(wp_unslash($raw_input['ai_seo_keeper_robots_directives'])) : '';
-        $frontend_enabled = empty($raw_input['ai_seo_keeper_frontend_enabled']) ? '' : '1';
-        $title_branding_off = empty($raw_input['ai_seo_keeper_title_branding_off']) ? '' : '1';
-        $cornerstone = empty($raw_input['ai_seo_keeper_cornerstone']) ? '' : '1';
+        $focus_keyphrase = isset($raw_input['ai_seo_captain_focus_keyphrase']) ? sanitize_text_field(wp_unslash($raw_input['ai_seo_captain_focus_keyphrase'])) : '';
+        $seo_title = isset($raw_input['ai_seo_captain_meta_title']) ? sanitize_text_field(wp_unslash($raw_input['ai_seo_captain_meta_title'])) : '';
+        $seo_description = isset($raw_input['ai_seo_captain_meta_description']) ? sanitize_textarea_field(wp_unslash($raw_input['ai_seo_captain_meta_description'])) : '';
+        $social_title = isset($raw_input['ai_seo_captain_social_title']) ? sanitize_text_field(wp_unslash($raw_input['ai_seo_captain_social_title'])) : '';
+        $social_description = isset($raw_input['ai_seo_captain_social_description']) ? sanitize_textarea_field(wp_unslash($raw_input['ai_seo_captain_social_description'])) : '';
+        $social_image = isset($raw_input['ai_seo_captain_social_image']) ? esc_url_raw(wp_unslash($raw_input['ai_seo_captain_social_image'])) : '';
+        $schema_type = isset($raw_input['ai_seo_captain_schema_type']) ? sanitize_text_field(wp_unslash($raw_input['ai_seo_captain_schema_type'])) : '';
+        $canonical_url = isset($raw_input['ai_seo_captain_canonical_url']) ? esc_url_raw(wp_unslash($raw_input['ai_seo_captain_canonical_url'])) : '';
+        $robots_directives = isset($raw_input['ai_seo_captain_robots_directives']) ? sanitize_text_field(wp_unslash($raw_input['ai_seo_captain_robots_directives'])) : '';
+        $frontend_enabled = empty($raw_input['ai_seo_captain_frontend_enabled']) ? '' : '1';
+        $title_branding_off = empty($raw_input['ai_seo_captain_title_branding_off']) ? '' : '1';
+        $cornerstone = empty($raw_input['ai_seo_captain_cornerstone']) ? '' : '1';
 
         $limited_fields = $this->apply_editor_text_limits(
             array(
@@ -4683,17 +4683,17 @@ HTML;
         }
 
         if ('' === $cornerstone) {
-            delete_post_meta($post_id, '_ai_seo_keeper_cornerstone');
+            delete_post_meta($post_id, '_ai_seo_captain_cornerstone');
         } else {
-            update_post_meta($post_id, '_ai_seo_keeper_cornerstone', '1');
+            update_post_meta($post_id, '_ai_seo_captain_cornerstone', '1');
         }
 
         // Hreflang manual entries.
-        $hreflang = isset($raw_input['ai_seo_keeper_hreflang']) ? sanitize_textarea_field(wp_unslash($raw_input['ai_seo_keeper_hreflang'])) : '';
+        $hreflang = isset($raw_input['ai_seo_captain_hreflang']) ? sanitize_textarea_field(wp_unslash($raw_input['ai_seo_captain_hreflang'])) : '';
         if ('' === $hreflang) {
-            delete_post_meta($post_id, '_ai_seo_keeper_hreflang');
+            delete_post_meta($post_id, '_ai_seo_captain_hreflang');
         } else {
-            update_post_meta($post_id, '_ai_seo_keeper_hreflang', $hreflang);
+            update_post_meta($post_id, '_ai_seo_captain_hreflang', $hreflang);
         }
 
         return array(
@@ -4728,7 +4728,7 @@ HTML;
             : sprintf('%d / %d characters', $current_length, $max_length);
 
         return sprintf(
-            '<span class="ai-seo-keeper-field-counter %s" data-field-id="%s" data-branding-suffix-length="%d" aria-live="polite">%s</span>',
+            '<span class="ai-seo-captain-field-counter %s" data-field-id="%s" data-branding-suffix-length="%d" aria-live="polite">%s</span>',
             esc_attr($state_class),
             esc_attr($field_id),
             $suffix_length,
@@ -4812,35 +4812,35 @@ HTML;
         ob_start();
     ?>
         <?php if (empty($recent_suggestions) && empty($content_edits)) : ?>
-            <p class="ai-seo-keeper-empty-state ai-seo-keeper-history-empty">No AI suggestions have been saved for this page yet.</p>
+            <p class="ai-seo-captain-empty-state ai-seo-captain-history-empty">No AI suggestions have been saved for this page yet.</p>
         <?php else : ?>
-            <div class="ai-seo-keeper-history-list ai-seo-keeper-stack">
+            <div class="ai-seo-captain-history-list ai-seo-captain-stack">
                 <?php if (! empty($content_edits)) : ?>
                     <h4 style="margin:0 0 8px;font-size:13px;color:#50575e;border-bottom:1px solid #dcdcde;padding-bottom:6px;">Content Edit Plans</h4>
                     <?php foreach ($content_edits as $edit) : ?>
-                        <div class="ai-seo-keeper-history-item" style="border-left:3px solid <?php echo 'published' === $edit['status'] ? '#00a32a' : '#ffb300'; ?>;padding-left:10px;" data-edit-id="<?php echo esc_attr((string) $edit['id']); ?>">
+                        <div class="ai-seo-captain-history-item" style="border-left:3px solid <?php echo 'published' === $edit['status'] ? '#00a32a' : '#ffb300'; ?>;padding-left:10px;" data-edit-id="<?php echo esc_attr((string) $edit['id']); ?>">
                             <p style="margin:0 0 6px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
-                                <strong style="cursor:pointer;" class="ai-seo-keeper-toggle-edit-details"><?php echo esc_html($edit['change_count']); ?> content change(s) ▸</strong>
+                                <strong style="cursor:pointer;" class="ai-seo-captain-toggle-edit-details"><?php echo esc_html($edit['change_count']); ?> content change(s) ▸</strong>
                                 <span style="display:flex;gap:6px;align-items:center;">
                                     <?php if ('published' === $edit['status']) : ?>
-                                        <span class="ai-seo-keeper-check-pill is-pass" style="background:#00a32a;color:#fff;font-size:11px;padding:2px 8px;border-radius:3px;white-space:nowrap;">Approved | Published</span>
+                                        <span class="ai-seo-captain-check-pill is-pass" style="background:#00a32a;color:#fff;font-size:11px;padding:2px 8px;border-radius:3px;white-space:nowrap;">Approved | Published</span>
                                     <?php else : ?>
-                                        <span class="ai-seo-keeper-check-pill" style="background:#ffb300;color:#fff;font-size:11px;padding:2px 8px;border-radius:3px;white-space:nowrap;">Approved | Not Published</span>
+                                        <span class="ai-seo-captain-check-pill" style="background:#ffb300;color:#fff;font-size:11px;padding:2px 8px;border-radius:3px;white-space:nowrap;">Approved | Not Published</span>
                                     <?php endif; ?>
-                                    <button type="button" class="button button-small ai-seo-keeper-delete-edit-plan" data-edit-id="<?php echo esc_attr((string) $edit['id']); ?>" style="color:#8a2424;font-size:11px;padding:0 6px;line-height:1.8;" title="Remove this plan from history">✕</button>
+                                    <button type="button" class="button button-small ai-seo-captain-delete-edit-plan" data-edit-id="<?php echo esc_attr((string) $edit['id']); ?>" style="color:#8a2424;font-size:11px;padding:0 6px;line-height:1.8;" title="Remove this plan from history">✕</button>
                                 </span>
                             </p>
                             <?php if ('' !== ($edit['summary'] ?? '')) : ?>
                                 <p style="margin:0 0 6px;font-size:13px;"><em><?php echo esc_html($edit['summary']); ?></em></p>
                             <?php endif; ?>
-                            <p class="ai-seo-keeper-history-meta" style="margin:0 0 6px;font-size:12px;color:#787c82;">
+                            <p class="ai-seo-captain-history-meta" style="margin:0 0 6px;font-size:12px;color:#787c82;">
                                 <?php echo esc_html($edit['created_at'] ?? ''); ?>
                                 <?php if ('published' === $edit['status'] && '' !== ($edit['published_at'] ?? '')) : ?>
                                     <?php echo ' | Published: ' . esc_html($edit['published_at']); ?>
                                 <?php endif; ?>
                             </p>
                             <?php if (! empty($edit['changes'])) : ?>
-                                <div class="ai-seo-keeper-edit-details" style="display:none;margin-top:8px;">
+                                <div class="ai-seo-captain-edit-details" style="display:none;margin-top:8px;">
                                     <?php foreach ($edit['changes'] as $idx => $ch) : ?>
                                         <div style="border:1px solid #dcdcde;border-radius:4px;padding:8px;margin-bottom:6px;background:#fff;font-size:12px;">
                                             <strong><?php echo esc_html($ch['section'] ?? ('Change ' . ($idx + 1))); ?></strong>
@@ -4871,18 +4871,18 @@ HTML;
                         <h4 style="margin:12px 0 8px;font-size:13px;color:#50575e;border-bottom:1px solid #dcdcde;padding-bottom:6px;">Metadata Suggestions</h4>
                     <?php endif; ?>
                     <?php foreach ($recent_suggestions as $entry) : ?>
-                        <div class="ai-seo-keeper-history-item">
+                        <div class="ai-seo-captain-history-item">
                             <p style="margin:0 0 8px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
                                 <strong><?php echo esc_html($entry['seo_title']); ?></strong>
                                 <?php if (! empty($entry['is_approved'])) : ?>
-                                    <span class="ai-seo-keeper-check-pill is-pass">Approved</span>
+                                    <span class="ai-seo-captain-check-pill is-pass">Approved</span>
                                 <?php endif; ?>
                             </p>
                             <p style="margin:0 0 8px;"><?php echo esc_html($entry['meta_description']); ?></p>
                             <?php if ('' !== $entry['notes']) : ?>
                                 <p style="margin:0 0 8px;"><em><?php echo esc_html($entry['notes']); ?></em></p>
                             <?php endif; ?>
-                            <p class="ai-seo-keeper-history-meta" style="margin:0;">
+                            <p class="ai-seo-captain-history-meta" style="margin:0;">
                                 <?php echo esc_html(strtoupper($entry['provider'])); ?>
                                 <?php if ('' !== $entry['model']) : ?>
                                     <?php echo ' | ' . esc_html($entry['model']); ?>
@@ -4895,7 +4895,7 @@ HTML;
                                 <?php if (! empty($entry['is_approved'])) : ?>
                                     <button type="button" class="button button-small" disabled>Approved for future output</button>
                                 <?php else : ?>
-                                    <button type="button" class="button button-small ai-seo-keeper-approve-suggestion" data-message-id="<?php echo esc_attr((string) $entry['id']); ?>">Approve for future output</button>
+                                    <button type="button" class="button button-small ai-seo-captain-approve-suggestion" data-message-id="<?php echo esc_attr((string) $entry['id']); ?>">Approve for future output</button>
                                 <?php endif; ?>
                             </p>
                         </div>
@@ -4913,21 +4913,21 @@ HTML;
         ob_start();
     ?>
         <?php if (empty($chat_messages)) : ?>
-            <p class="ai-seo-keeper-empty-state">No AI assistant messages yet for this page.</p>
+            <p class="ai-seo-captain-empty-state">No AI assistant messages yet for this page.</p>
         <?php else : ?>
-            <div class="ai-seo-keeper-stack">
+            <div class="ai-seo-captain-stack">
                 <?php foreach ($chat_messages as $entry) : ?>
-                    <div class="ai-seo-keeper-chat-item <?php echo 'assistant' === $entry['role'] ? 'is-assistant' : ''; ?>">
+                    <div class="ai-seo-captain-chat-item <?php echo 'assistant' === $entry['role'] ? 'is-assistant' : ''; ?>">
                         <p style="margin:0 0 8px;"><strong><?php echo 'assistant' === $entry['role'] ? 'AI assistant' : 'You'; ?></strong></p>
                         <?php if ('assistant' === $entry['role']) : ?>
                             <p style="margin:0 0 8px;"><?php echo esc_html($entry['reply']); ?></p>
                             <?php if ('' !== $entry['suggested_title']) : ?>
                                 <p style="margin:0 0 4px;"><strong>Suggested title:</strong> <?php echo esc_html($entry['suggested_title']); ?></p>
-                                <button type="button" class="button button-small ai-seo-keeper-apply-suggestion" data-field="meta_title" data-value="<?php echo esc_attr($entry['suggested_title']); ?>" style="margin-bottom:8px;">Apply to title draft</button>
+                                <button type="button" class="button button-small ai-seo-captain-apply-suggestion" data-field="meta_title" data-value="<?php echo esc_attr($entry['suggested_title']); ?>" style="margin-bottom:8px;">Apply to title draft</button>
                             <?php endif; ?>
                             <?php if ('' !== $entry['suggested_description']) : ?>
                                 <p style="margin:0 0 4px;"><strong>Suggested description:</strong> <?php echo esc_html($entry['suggested_description']); ?></p>
-                                <button type="button" class="button button-small ai-seo-keeper-apply-suggestion" data-field="meta_description" data-value="<?php echo esc_attr($entry['suggested_description']); ?>" style="margin-bottom:8px;">Apply to description draft</button>
+                                <button type="button" class="button button-small ai-seo-captain-apply-suggestion" data-field="meta_description" data-value="<?php echo esc_attr($entry['suggested_description']); ?>" style="margin-bottom:8px;">Apply to description draft</button>
                             <?php endif; ?>
                             <?php if ('' !== $entry['notes']) : ?>
                                 <p style="margin:0 0 8px;"><em><?php echo esc_html($entry['notes']); ?></em></p>
@@ -4935,7 +4935,7 @@ HTML;
                         <?php else : ?>
                             <p style="margin:0 0 8px;"><?php echo esc_html($entry['message']); ?></p>
                         <?php endif; ?>
-                        <p class="ai-seo-keeper-chat-meta" style="margin:0;">
+                        <p class="ai-seo-captain-chat-meta" style="margin:0;">
                             <?php if ('assistant' === $entry['role']) : ?>
                                 <?php echo esc_html(strtoupper($entry['provider'])); ?>
                                 <?php if ('' !== $entry['model']) : ?>
@@ -4961,7 +4961,7 @@ HTML;
     {
         $redirect_url = add_query_arg(
             array(
-                'page' => 'ai-seo-keeper-audit',
+                'page' => 'ai-seo-captain-audit',
                 'audit_status' => $status,
                 'audit_message' => rawurlencode($message),
             ),
@@ -4976,7 +4976,7 @@ HTML;
     {
         $redirect_url = add_query_arg(
             array(
-                'page' => 'ai-seo-keeper-settings',
+                'page' => 'ai-seo-captain-settings',
                 'settings_status' => $status,
                 'settings_message' => rawurlencode($message),
             ),

@@ -1,4 +1,4 @@
-# AI SEO Keeper — v1.3 Update Plan
+# SEO Captain — v1.3 Update Plan
 
 > **Created:** May 10, 2026
 > **Status:** ✅ COMPLETED — All 7 concerns resolved in v1.3.0/v1.3.1
@@ -117,7 +117,7 @@ Split into 5 focused classes under `includes/admin/`:
    - **Target: ≤200 lines**
 
 ### Concern 2 — PSR-4 Autoloader
-- `includes/autoload.php` added with SPL autoloader mapping `AI_SEO_Keeper\` → `includes/`
+- `includes/autoload.php` added with SPL autoloader mapping `AI_SEO_Captain\` → `includes/`
 - All manual `require_once` calls removed from bootstrap
 
 ### Concern 3 — Automated Test Suite
@@ -129,7 +129,7 @@ Split into 5 focused classes under `includes/admin/`:
 - `uninstall.php` updated to delete all 5 tables, all 17 post meta keys, 4 term meta keys, options, user meta
 
 ### Concern 5 — i18n / Translation Support
-- All user-facing strings wrapped with `__()`, `_e()`, `esc_html__()`, `esc_attr__()` using text domain `ai-seo-keeper`
+- All user-facing strings wrapped with `__()`, `_e()`, `esc_html__()`, `esc_attr__()` using text domain `ai-seo-captain`
 
 ### Concern 6 — Gutenberg Sidebar Panel
 - `assets/js/gutenberg-sidebar.js` + `assets/css/gutenberg-sidebar.css` added
@@ -176,7 +176,7 @@ Phase 3 — Market Features
 - **Zero functional changes during refactoring** — same inputs, same outputs, same AJAX actions
 - **Browser-test every admin page and editor after each extraction**
 - **Keep the Classic Editor metabox working** — the Gutenberg sidebar is an addition, not a replacement
-- **All new files must use the `AI_SEO_Keeper` namespace**
+- **All new files must use the `AI_SEO_Captain` namespace**
 - **No new features until the monolith split is complete**
 
 ---

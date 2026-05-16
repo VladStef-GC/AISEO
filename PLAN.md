@@ -1,8 +1,8 @@
-# AI SEO Keeper Plan
+# SEO Captain Plan
 
 ## Mission now
 
-AI SEO Keeper is being built as a standalone WordPress SEO plugin so this site does not need another free SEO plugin for core SEO operations.
+SEO Captain is being built as a standalone WordPress SEO plugin so this site does not need another free SEO plugin for core SEO operations.
 
 The working model is hybrid by design:
 
@@ -74,7 +74,7 @@ The working model is hybrid by design:
 
 ### 1. Plugin shell and composition
 
-- `ai-seo-keeper.php` loads the runtime classes and registers activation.
+- `ai-seo-captain.php` loads the runtime classes and registers activation.
 - `includes/class-plugin.php` wires the services together.
 - `includes/class-activator.php` creates SQL tables and initializes defaults.
 - Admin-only services are booted only in wp-admin.
@@ -116,45 +116,45 @@ The working model is hybrid by design:
 
 ### SQL tables (5)
 
-- `wp_ai_seo_keeper_content_index`
-- `wp_ai_seo_keeper_conversations`
-- `wp_ai_seo_keeper_messages`
-- `wp_ai_seo_keeper_redirects`
-- `wp_ai_seo_keeper_runs`
+- `wp_ai_seo_captain_content_index`
+- `wp_ai_seo_captain_conversations`
+- `wp_ai_seo_captain_messages`
+- `wp_ai_seo_captain_redirects`
+- `wp_ai_seo_captain_runs`
 
 ### Option storage
 
-- `ai_seo_keeper_options`
-- `ai_seo_keeper_indexnow_log`
-- `ai_seo_keeper_db_version`
+- `ai_seo_captain_options`
+- `ai_seo_captain_indexnow_log`
+- `ai_seo_captain_db_version`
 
 ### Important post meta (17 keys)
 
-- `_ai_seo_keeper_meta_title`
-- `_ai_seo_keeper_meta_description`
-- `_ai_seo_keeper_focus_keyphrase`
-- `_ai_seo_keeper_social_title`
-- `_ai_seo_keeper_social_description`
-- `_ai_seo_keeper_social_image`
-- `_ai_seo_keeper_canonical_url`
-- `_ai_seo_keeper_robots_directives`
-- `_ai_seo_keeper_schema_type`
-- `_ai_seo_keeper_approved_message_id`
-- `_ai_seo_keeper_frontend_enabled`
-- `_ai_seo_keeper_page_audit`
-- `_ai_seo_keeper_audit_skip`
-- `_ai_seo_keeper_pending_content_changes`
-- `_ai_seo_keeper_content_backup`
-- `_ai_seo_keeper_cornerstone`
-- `_ai_seo_keeper_title_branding_off`
-- `_ai_seo_keeper_hreflang`
+- `_ai_seo_captain_meta_title`
+- `_ai_seo_captain_meta_description`
+- `_ai_seo_captain_focus_keyphrase`
+- `_ai_seo_captain_social_title`
+- `_ai_seo_captain_social_description`
+- `_ai_seo_captain_social_image`
+- `_ai_seo_captain_canonical_url`
+- `_ai_seo_captain_robots_directives`
+- `_ai_seo_captain_schema_type`
+- `_ai_seo_captain_approved_message_id`
+- `_ai_seo_captain_frontend_enabled`
+- `_ai_seo_captain_page_audit`
+- `_ai_seo_captain_audit_skip`
+- `_ai_seo_captain_pending_content_changes`
+- `_ai_seo_captain_content_backup`
+- `_ai_seo_captain_cornerstone`
+- `_ai_seo_captain_title_branding_off`
+- `_ai_seo_captain_hreflang`
 
 ### Term meta (4 keys)
 
-- `_ai_seo_keeper_term_title`
-- `_ai_seo_keeper_term_description`
-- `_ai_seo_keeper_term_canonical`
-- `_ai_seo_keeper_term_noindex`
+- `_ai_seo_captain_term_title`
+- `_ai_seo_captain_term_description`
+- `_ai_seo_captain_term_canonical`
+- `_ai_seo_captain_term_noindex`
 
 ## Production scope now shipped
 
@@ -169,9 +169,9 @@ The working model is hybrid by design:
 - Automatic search appearance mode for public singular content using title templates, separators, and fallback descriptions.
 - Non-singular search appearance for category, tag, author, date, search, home/posts page, post type archive, custom taxonomy, and 404 contexts.
 - XML Sitemap engine with sitemap index, per-type sitemaps (post, page, category, tag), News, Video, XSL stylesheet, robots.txt directive, WordPress core sitemap replacement, noindex-aware filtering.
-- Visible breadcrumbs through the `[ai_seo_keeper_breadcrumbs]` shortcode.
+- Visible breadcrumbs through the `[ai_seo_captain_breadcrumbs]` shortcode.
 - Yoast and competing-plugin conflict protection with explicit override controls.
-- Non-destructive Yoast metadata import that preserves existing AI SEO Keeper values.
+- Non-destructive Yoast metadata import that preserves existing SEO Captain values.
 - AI discovery documents at `llms.txt` and `llms-full.txt`.
 - Deterministic audit dashboard, duplicate detection, thin-content reporting, and rollout readiness scoring.
 - IndexNow key serving, submission logging, manual priority submission, and auto-submit support.
@@ -228,9 +228,9 @@ All critical Yoast Free parity features have been shipped:
 3. **RankMath and SEOPress import wizards** — extend migration support beyond Yoast
 4. **Broader schema enrichment** — product price/SKU, organization/contact details from trusted data sources
 
-## Feature Comparison: AI SEO Keeper vs Yoast Free
+## Feature Comparison: SEO Captain vs Yoast Free
 
-| Feature | Yoast Free | AI SEO Keeper | Status |
+| Feature | Yoast Free | SEO Captain | Status |
 |---------|-----------|---------------|--------|
 | SEO title / meta description | ✅ | ✅ | Parity |
 | Focus keyphrase analysis | ✅ Full | ✅ Full | Parity |

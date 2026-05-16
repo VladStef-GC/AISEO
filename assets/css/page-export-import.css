@@ -1,5 +1,5 @@
 /**
- * AI SEO Keeper — Export / Import page styles.
+ * SEO Captain — Export / Import page styles.
  *
  * Uses design tokens from admin-common.css.
  */
@@ -7,39 +7,39 @@
 /* ══════════════════════════════════════════════════════════════════════
    LAYOUT — stacked full-width panels
    ══════════════════════════════════════════════════════════════════════ */
-.aisk-ei-wrap {
+.aisc-ei-wrap {
     max-width: 860px;
     margin-top: 24px;
 }
 
-.aisk-ei-panel {
-    background: var(--aisk-bg);
-    border: 1px solid var(--aisk-border);
-    border-radius: var(--aisk-radius);
+.aisc-ei-panel {
+    background: var(--aisc-bg);
+    border: 1px solid var(--aisc-border);
+    border-radius: var(--aisc-radius);
     padding: 28px 32px 32px;
     margin-bottom: 24px;
 }
 
-.aisk-ei-panel h2 {
+.aisc-ei-panel h2 {
     margin: 0 0 6px;
     font-size: 20px;
     font-weight: 600;
-    color: var(--aisk-text);
+    color: var(--aisc-text);
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-.aisk-ei-panel h2 .dashicons {
+.aisc-ei-panel h2 .dashicons {
     font-size: 22px;
     width: 22px;
     height: 22px;
-    color: var(--aisk-primary);
+    color: var(--aisc-primary);
 }
 
-.aisk-ei-panel>p {
+.aisc-ei-panel>p {
     font-size: 14px;
-    color: var(--aisk-text-secondary);
+    color: var(--aisc-text-secondary);
     margin: 0 0 20px;
     line-height: 1.6;
 }
@@ -47,17 +47,17 @@
 /* ══════════════════════════════════════════════════════════════════════
    SECTION HEADERS & FIELDSETS
    ══════════════════════════════════════════════════════════════════════ */
-.aisk-ei-panel fieldset {
+.aisc-ei-panel fieldset {
     margin-bottom: 20px;
     border: none;
     padding: 0;
 }
 
-.aisk-ei-panel legend,
-.aisk-ei-section-title {
+.aisc-ei-panel legend,
+.aisc-ei-section-title {
     font-size: 14px;
     font-weight: 600;
-    color: var(--aisk-text);
+    color: var(--aisc-text);
     margin-bottom: 10px;
     display: block;
 }
@@ -65,38 +65,38 @@
 /* ══════════════════════════════════════════════════════════════════════
    CHECKBOXES — grid layout for export sections
    ══════════════════════════════════════════════════════════════════════ */
-.aisk-checkbox-grid {
+.aisc-checkbox-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 6px 24px;
 }
 
-.aisk-checkbox-grid label {
+.aisc-checkbox-grid label {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 7px 10px;
-    border-radius: var(--aisk-radius-sm);
+    border-radius: var(--aisc-radius-sm);
     font-size: 13.5px;
-    color: var(--aisk-text);
+    color: var(--aisc-text);
     cursor: pointer;
-    transition: background var(--aisk-transition);
+    transition: background var(--aisc-transition);
 }
 
-.aisk-checkbox-grid label:hover {
-    background: var(--aisk-bg-hover);
+.aisc-checkbox-grid label:hover {
+    background: var(--aisc-bg-hover);
 }
 
-.aisk-checkbox-grid label.aisk-disabled {
-    color: var(--aisk-text-muted);
+.aisc-checkbox-grid label.aisc-disabled {
+    color: var(--aisc-text-muted);
     cursor: default;
 }
 
-.aisk-checkbox-grid label.aisk-disabled:hover {
+.aisc-checkbox-grid label.aisc-disabled:hover {
     background: transparent;
 }
 
-.aisk-checkbox-grid input[type="checkbox"] {
+.aisc-checkbox-grid input[type="checkbox"] {
     width: 16px;
     height: 16px;
     flex-shrink: 0;
@@ -105,7 +105,7 @@
 /* ══════════════════════════════════════════════════════════════════════
    BUTTONS
    ══════════════════════════════════════════════════════════════════════ */
-.aisk-ei-panel .aisk-btn {
+.aisc-ei-panel .aisc-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -115,73 +115,73 @@
     line-height: 42px;
     font-size: 14px;
     font-weight: 600;
-    border-radius: var(--aisk-radius);
+    border-radius: var(--aisc-radius);
     cursor: pointer;
-    transition: background var(--aisk-transition), border-color var(--aisk-transition), box-shadow var(--aisk-transition), opacity var(--aisk-transition);
+    transition: background var(--aisc-transition), border-color var(--aisc-transition), box-shadow var(--aisc-transition), opacity var(--aisc-transition);
     border: 1px solid transparent;
     text-decoration: none;
 }
 
-.aisk-btn-primary {
-    background: var(--aisk-primary);
-    border-color: var(--aisk-primary);
-    color: var(--aisk-primary-text) !important;
+.aisc-btn-primary {
+    background: var(--aisc-primary);
+    border-color: var(--aisc-primary);
+    color: var(--aisc-primary-text) !important;
 }
 
-.aisk-btn-primary:hover {
-    background: var(--aisk-primary-hover);
-    border-color: var(--aisk-primary-hover);
+.aisc-btn-primary:hover {
+    background: var(--aisc-primary-hover);
+    border-color: var(--aisc-primary-hover);
     box-shadow: 0 2px 6px rgba(8, 149, 100, .25);
 }
 
-.aisk-btn-primary:focus {
-    box-shadow: var(--aisk-shadow-focus);
+.aisc-btn-primary:focus {
+    box-shadow: var(--aisc-shadow-focus);
     outline: none;
 }
 
-.aisk-btn-primary:disabled,
-.aisk-btn-primary.disabled {
+.aisc-btn-primary:disabled,
+.aisc-btn-primary.disabled {
     opacity: 0.5;
     cursor: not-allowed;
     box-shadow: none;
 }
 
-.aisk-btn-secondary {
-    background: var(--aisk-bg);
-    border-color: var(--aisk-border);
-    color: var(--aisk-text) !important;
+.aisc-btn-secondary {
+    background: var(--aisc-bg);
+    border-color: var(--aisc-border);
+    color: var(--aisc-text) !important;
 }
 
-.aisk-btn-secondary:hover {
-    background: var(--aisk-bg-hover);
+.aisc-btn-secondary:hover {
+    background: var(--aisc-bg-hover);
     border-color: #999;
 }
 
-.aisk-btn-danger {
-    background: var(--aisk-danger);
-    border-color: var(--aisk-danger);
+.aisc-btn-danger {
+    background: var(--aisc-danger);
+    border-color: var(--aisc-danger);
     color: #fff !important;
 }
 
-.aisk-btn-danger:hover {
+.aisc-btn-danger:hover {
     background: #b32d2e;
     border-color: #b32d2e;
     box-shadow: 0 2px 6px rgba(214, 54, 56, .25);
 }
 
-.aisk-btn-danger:disabled {
+.aisc-btn-danger:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-.aisk-btn .dashicons {
+.aisc-btn .dashicons {
     font-size: 18px;
     width: 18px;
     height: 18px;
     line-height: 18px;
 }
 
-.aisk-btn-row {
+.aisc-btn-row {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -191,213 +191,213 @@
 /* ══════════════════════════════════════════════════════════════════════
    IMPORT DROPZONE
    ══════════════════════════════════════════════════════════════════════ */
-.aisk-dropzone {
-    border: 2px dashed var(--aisk-border);
-    border-radius: var(--aisk-radius);
+.aisc-dropzone {
+    border: 2px dashed var(--aisc-border);
+    border-radius: var(--aisc-radius);
     padding: 40px 20px;
     text-align: center;
     cursor: pointer;
-    transition: border-color var(--aisk-transition), background var(--aisk-transition);
-    background: var(--aisk-bg-muted);
+    transition: border-color var(--aisc-transition), background var(--aisc-transition);
+    background: var(--aisc-bg-muted);
     margin-bottom: 16px;
 }
 
-.aisk-dropzone:hover,
-.aisk-dropzone.drag-over {
-    border-color: var(--aisk-primary);
+.aisc-dropzone:hover,
+.aisc-dropzone.drag-over {
+    border-color: var(--aisc-primary);
     background: #f0faf5;
 }
 
-.aisk-dropzone .dashicons {
+.aisc-dropzone .dashicons {
     font-size: 40px;
     width: 40px;
     height: 40px;
-    color: var(--aisk-primary);
+    color: var(--aisc-primary);
     display: block;
     margin: 0 auto 10px;
 }
 
-.aisk-dropzone p {
+.aisc-dropzone p {
     font-size: 14px;
-    color: var(--aisk-text-secondary);
+    color: var(--aisc-text-secondary);
     margin: 0;
 }
 
-.aisk-dropzone .aisk-dropzone-hint {
+.aisc-dropzone .aisc-dropzone-hint {
     font-size: 12px;
-    color: var(--aisk-text-muted);
+    color: var(--aisc-text-muted);
     margin-top: 6px;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
    INFO BARS (file info, summary, domain warning, safety notices)
    ══════════════════════════════════════════════════════════════════════ */
-.aisk-info-bar {
+.aisc-info-bar {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 12px 16px;
-    border-radius: var(--aisk-radius-sm);
+    border-radius: var(--aisc-radius-sm);
     margin-bottom: 16px;
     font-size: 13.5px;
     line-height: 1.5;
 }
 
-.aisk-info-bar .dashicons {
+.aisc-info-bar .dashicons {
     flex-shrink: 0;
     font-size: 20px;
     width: 20px;
     height: 20px;
 }
 
-.aisk-info-bar-blue {
+.aisc-info-bar-blue {
     background: #f0f6fc;
     border-left: 4px solid #2271b1;
-    color: var(--aisk-text);
+    color: var(--aisc-text);
 }
 
-.aisk-info-bar-green {
+.aisc-info-bar-green {
     background: #edfaef;
-    border-left: 4px solid var(--aisk-success);
-    color: var(--aisk-text);
+    border-left: 4px solid var(--aisc-success);
+    color: var(--aisc-text);
 }
 
-.aisk-info-bar-amber {
+.aisc-info-bar-amber {
     background: #fef8e8;
-    border-left: 4px solid var(--aisk-warning);
-    color: var(--aisk-text);
+    border-left: 4px solid var(--aisc-warning);
+    color: var(--aisc-text);
 }
 
-.aisk-info-bar-red {
+.aisc-info-bar-red {
     background: #fef0f0;
-    border-left: 4px solid var(--aisk-danger);
-    color: var(--aisk-text);
+    border-left: 4px solid var(--aisc-danger);
+    color: var(--aisc-text);
 }
 
 /* Inline notice (replaces alert()) */
-.aisk-notice {
+.aisc-notice {
     padding: 12px 16px;
-    border-radius: var(--aisk-radius-sm);
+    border-radius: var(--aisc-radius-sm);
     margin-bottom: 16px;
     font-size: 13.5px;
     display: none;
 }
 
-.aisk-notice-error {
+.aisc-notice-error {
     background: #fef0f0;
-    border-left: 4px solid var(--aisk-danger);
+    border-left: 4px solid var(--aisc-danger);
     color: #8a1c1e;
 }
 
-.aisk-notice-success {
+.aisc-notice-success {
     background: #edfaef;
-    border-left: 4px solid var(--aisk-success);
+    border-left: 4px solid var(--aisc-success);
     color: #1a5928;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
    IMPORT MODE RADIO CARDS
    ══════════════════════════════════════════════════════════════════════ */
-.aisk-mode-options {
+.aisc-mode-options {
     display: flex;
     flex-direction: column;
     gap: 8px;
     margin-bottom: 20px;
 }
 
-.aisk-mode-card {
+.aisc-mode-card {
     display: flex;
     align-items: flex-start;
     gap: 12px;
     padding: 14px 16px;
-    border: 2px solid var(--aisk-border);
-    border-radius: var(--aisk-radius);
+    border: 2px solid var(--aisc-border);
+    border-radius: var(--aisc-radius);
     cursor: pointer;
-    transition: border-color var(--aisk-transition), background var(--aisk-transition);
+    transition: border-color var(--aisc-transition), background var(--aisc-transition);
 }
 
-.aisk-mode-card:hover {
+.aisc-mode-card:hover {
     border-color: #b0b5b9;
-    background: var(--aisk-bg-hover);
+    background: var(--aisc-bg-hover);
 }
 
-.aisk-mode-card.active {
-    border-color: var(--aisk-primary);
+.aisc-mode-card.active {
+    border-color: var(--aisc-primary);
     background: #f0faf5;
 }
 
-.aisk-mode-card.aisk-mode-danger.active {
-    border-color: var(--aisk-danger);
+.aisc-mode-card.aisc-mode-danger.active {
+    border-color: var(--aisc-danger);
     background: #fef8f8;
 }
 
-.aisk-mode-card input[type="radio"] {
+.aisc-mode-card input[type="radio"] {
     margin-top: 2px;
     flex-shrink: 0;
 }
 
-.aisk-mode-card-body {
+.aisc-mode-card-body {
     flex: 1;
 }
 
-.aisk-mode-card-title {
+.aisc-mode-card-title {
     font-weight: 600;
     font-size: 14px;
-    color: var(--aisk-text);
+    color: var(--aisc-text);
     margin-bottom: 2px;
 }
 
-.aisk-mode-card-desc {
+.aisc-mode-card-desc {
     font-size: 12.5px;
-    color: var(--aisk-text-secondary);
+    color: var(--aisc-text-secondary);
     line-height: 1.5;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
    MATCHING TABLE
    ══════════════════════════════════════════════════════════════════════ */
-.aisk-match-table-wrap {
+.aisc-match-table-wrap {
     max-height: 380px;
     overflow-y: auto;
-    border: 1px solid var(--aisk-border);
-    border-radius: var(--aisk-radius-sm);
+    border: 1px solid var(--aisc-border);
+    border-radius: var(--aisc-radius-sm);
     margin-bottom: 16px;
 }
 
-.aisk-match-table-wrap table {
+.aisc-match-table-wrap table {
     margin: 0;
     border: none;
 }
 
-.aisk-match-table-wrap th {
+.aisc-match-table-wrap th {
     position: sticky;
     top: 0;
-    background: var(--aisk-bg-muted);
+    background: var(--aisc-bg-muted);
     z-index: 1;
     font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--aisk-text-secondary);
+    color: var(--aisc-text-secondary);
     padding: 10px 12px;
 }
 
-.aisk-match-table-wrap td {
+.aisc-match-table-wrap td {
     font-size: 13px;
     padding: 8px 12px;
     vertical-align: middle;
     word-break: break-all;
 }
 
-.aisk-match-table-wrap tr.aisk-row-fuzzy {
+.aisc-match-table-wrap tr.aisc-row-fuzzy {
     background: #fef9e7;
 }
 
-.aisk-match-table-wrap tr.aisk-row-orphaned {
-    color: var(--aisk-text-muted);
+.aisc-match-table-wrap tr.aisc-row-orphaned {
+    color: var(--aisc-text-muted);
 }
 
-.aisk-match-badge {
+.aisc-match-badge {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -408,17 +408,17 @@
     white-space: nowrap;
 }
 
-.aisk-badge-strong {
+.aisc-badge-strong {
     background: #e5f5ec;
     color: #1a5928;
 }
 
-.aisk-badge-fuzzy {
+.aisc-badge-fuzzy {
     background: #fef3cd;
     color: #856404;
 }
 
-.aisk-badge-missing {
+.aisc-badge-missing {
     background: #f5e6e6;
     color: #8a1c1e;
 }
@@ -426,18 +426,18 @@
 /* ══════════════════════════════════════════════════════════════════════
    PROGRESS BAR
    ══════════════════════════════════════════════════════════════════════ */
-.aisk-progress-wrap {
+.aisc-progress-wrap {
     margin-bottom: 16px;
 }
 
-.aisk-progress-label {
+.aisc-progress-label {
     font-size: 13.5px;
     font-weight: 500;
-    color: var(--aisk-text);
+    color: var(--aisc-text);
     margin-bottom: 8px;
 }
 
-.aisk-progress-track {
+.aisc-progress-track {
     background: #e8e8e8;
     border-radius: 10px;
     height: 22px;
@@ -445,8 +445,8 @@
     position: relative;
 }
 
-.aisk-progress-fill {
-    background: linear-gradient(90deg, var(--aisk-primary), var(--aisk-primary-hover));
+.aisc-progress-fill {
+    background: linear-gradient(90deg, var(--aisc-primary), var(--aisc-primary-hover));
     height: 100%;
     border-radius: 10px;
     width: 0%;
@@ -454,7 +454,7 @@
     position: relative;
 }
 
-.aisk-progress-fill::after {
+.aisc-progress-fill::after {
     content: '';
     position: absolute;
     top: 0;
@@ -462,10 +462,10 @@
     right: 0;
     bottom: 0;
     background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, .15) 50%, transparent 100%);
-    animation: aisk-shimmer 2s infinite;
+    animation: aisc-shimmer 2s infinite;
 }
 
-@keyframes aisk-shimmer {
+@keyframes aisc-shimmer {
     0% {
         transform: translateX(-100%);
     }
@@ -475,7 +475,7 @@
     }
 }
 
-.aisk-progress-pct {
+.aisc-progress-pct {
     position: absolute;
     right: 10px;
     top: 50%;
@@ -489,11 +489,11 @@
 /* ══════════════════════════════════════════════════════════════════════
    IMPORT LOG
    ══════════════════════════════════════════════════════════════════════ */
-.aisk-log {
+.aisc-log {
     max-height: 240px;
     overflow-y: auto;
-    border: 1px solid var(--aisk-border);
-    border-radius: var(--aisk-radius-sm);
+    border: 1px solid var(--aisc-border);
+    border-radius: var(--aisc-radius-sm);
     padding: 12px 14px;
     font-family: Consolas, Monaco, 'Courier New', monospace;
     font-size: 12px;
@@ -506,20 +506,20 @@
 /* ══════════════════════════════════════════════════════════════════════
    FORCE CONFIRM INPUT
    ══════════════════════════════════════════════════════════════════════ */
-.aisk-force-input {
+.aisc-force-input {
     width: 120px;
     padding: 6px 10px;
     font-size: 14px;
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
-    border: 2px solid var(--aisk-danger);
-    border-radius: var(--aisk-radius-sm);
+    border: 2px solid var(--aisc-danger);
+    border-radius: var(--aisc-radius-sm);
     text-align: center;
     margin-left: 8px;
 }
 
-.aisk-force-input:focus {
+.aisc-force-input:focus {
     outline: none;
     box-shadow: 0 0 0 2px rgba(214, 54, 56, .2);
 }
@@ -527,58 +527,58 @@
 /* ══════════════════════════════════════════════════════════════════════
    IMPORT REPORT
    ══════════════════════════════════════════════════════════════════════ */
-.aisk-report h3 {
+.aisc-report h3 {
     font-size: 18px;
     margin: 0 0 12px;
 }
 
-.aisk-report ul {
+.aisc-report ul {
     list-style: none;
     padding: 0;
     margin: 0 0 16px;
 }
 
-.aisk-report ul li {
+.aisc-report ul li {
     padding: 6px 0;
     font-size: 13.5px;
-    border-bottom: 1px solid var(--aisk-bg-muted);
+    border-bottom: 1px solid var(--aisc-bg-muted);
 }
 
-.aisk-report ul li:last-child {
+.aisc-report ul li:last-child {
     border-bottom: none;
 }
 
-.aisk-report-stats {
+.aisc-report-stats {
     display: flex;
     gap: 20px;
     margin-bottom: 16px;
 }
 
-.aisk-report-stat {
+.aisc-report-stat {
     text-align: center;
     padding: 12px 20px;
-    border-radius: var(--aisk-radius);
-    background: var(--aisk-bg-muted);
+    border-radius: var(--aisc-radius);
+    background: var(--aisc-bg-muted);
     min-width: 100px;
 }
 
-.aisk-report-stat-value {
+.aisc-report-stat-value {
     font-size: 28px;
     font-weight: 700;
-    color: var(--aisk-text);
+    color: var(--aisc-text);
     line-height: 1;
 }
 
-.aisk-report-stat-label {
+.aisc-report-stat-label {
     font-size: 12px;
-    color: var(--aisk-text-secondary);
+    color: var(--aisc-text-secondary);
     margin-top: 4px;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
    SPINNER (override WP default for inline use)
    ══════════════════════════════════════════════════════════════════════ */
-.aisk-ei-panel .spinner {
+.aisc-ei-panel .spinner {
     float: none;
     margin: 0;
     vertical-align: middle;
@@ -587,7 +587,7 @@
 /* ══════════════════════════════════════════════════════════════════════
    STEP INDICATOR
    ══════════════════════════════════════════════════════════════════════ */
-.aisk-steps {
+.aisc-steps {
     display: flex;
     align-items: center;
     gap: 0;
@@ -595,86 +595,86 @@
     padding: 0;
 }
 
-.aisk-step {
+.aisc-step {
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 12.5px;
     font-weight: 500;
-    color: var(--aisk-text-muted);
+    color: var(--aisc-text-muted);
     white-space: nowrap;
 }
 
-.aisk-step-num {
+.aisc-step-num {
     width: 26px;
     height: 26px;
     border-radius: 50%;
-    background: var(--aisk-bg-muted);
-    border: 2px solid var(--aisk-border);
+    background: var(--aisc-bg-muted);
+    border: 2px solid var(--aisc-border);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 12px;
     font-weight: 700;
     flex-shrink: 0;
-    transition: background var(--aisk-transition), border-color var(--aisk-transition), color var(--aisk-transition);
+    transition: background var(--aisc-transition), border-color var(--aisc-transition), color var(--aisc-transition);
 }
 
-.aisk-step.active .aisk-step-num {
-    background: var(--aisk-primary);
-    border-color: var(--aisk-primary);
+.aisc-step.active .aisc-step-num {
+    background: var(--aisc-primary);
+    border-color: var(--aisc-primary);
     color: #fff;
 }
 
-.aisk-step.active {
-    color: var(--aisk-text);
+.aisc-step.active {
+    color: var(--aisc-text);
     font-weight: 600;
 }
 
-.aisk-step.done .aisk-step-num {
-    background: var(--aisk-success);
-    border-color: var(--aisk-success);
+.aisc-step.done .aisc-step-num {
+    background: var(--aisc-success);
+    border-color: var(--aisc-success);
     color: #fff;
 }
 
-.aisk-step.done {
-    color: var(--aisk-success);
+.aisc-step.done {
+    color: var(--aisc-success);
 }
 
-.aisk-step-line {
+.aisc-step-line {
     flex: 1;
     height: 2px;
-    background: var(--aisk-border);
+    background: var(--aisc-border);
     min-width: 20px;
     margin: 0 6px;
 }
 
-.aisk-step-line.done {
-    background: var(--aisk-success);
+.aisc-step-line.done {
+    background: var(--aisc-success);
 }
 
 /* ══════════════════════════════════════════════════════════════════════
    RESPONSIVE
    ══════════════════════════════════════════════════════════════════════ */
 @media (max-width: 600px) {
-    .aisk-ei-panel {
+    .aisc-ei-panel {
         padding: 20px 16px 24px;
     }
 
-    .aisk-checkbox-grid {
+    .aisc-checkbox-grid {
         grid-template-columns: 1fr;
     }
 
-    .aisk-report-stats {
+    .aisc-report-stats {
         flex-wrap: wrap;
     }
 
-    .aisk-steps {
+    .aisc-steps {
         flex-wrap: wrap;
         gap: 4px;
     }
 
-    .aisk-step-line {
+    .aisc-step-line {
         display: none;
     }
 }

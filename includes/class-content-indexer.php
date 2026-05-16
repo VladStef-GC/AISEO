@@ -1,34 +1,34 @@
 <?php
 
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
 class Content_Indexer
 {
-    private const META_TITLE_KEY = '_ai_seo_keeper_meta_title';
+    private const META_TITLE_KEY = '_ai_seo_captain_meta_title';
 
-    private const META_DESCRIPTION_KEY = '_ai_seo_keeper_meta_description';
+    private const META_DESCRIPTION_KEY = '_ai_seo_captain_meta_description';
 
-    private const SOCIAL_TITLE_META_KEY = '_ai_seo_keeper_social_title';
+    private const SOCIAL_TITLE_META_KEY = '_ai_seo_captain_social_title';
 
-    private const SOCIAL_DESCRIPTION_META_KEY = '_ai_seo_keeper_social_description';
+    private const SOCIAL_DESCRIPTION_META_KEY = '_ai_seo_captain_social_description';
 
-    private const SOCIAL_IMAGE_META_KEY = '_ai_seo_keeper_social_image';
+    private const SOCIAL_IMAGE_META_KEY = '_ai_seo_captain_social_image';
 
-    private const CANONICAL_URL_META_KEY = '_ai_seo_keeper_canonical_url';
+    private const CANONICAL_URL_META_KEY = '_ai_seo_captain_canonical_url';
 
-    private const ROBOTS_DIRECTIVES_META_KEY = '_ai_seo_keeper_robots_directives';
+    private const ROBOTS_DIRECTIVES_META_KEY = '_ai_seo_captain_robots_directives';
 
-    private const SCHEMA_TYPE_META_KEY = '_ai_seo_keeper_schema_type';
+    private const SCHEMA_TYPE_META_KEY = '_ai_seo_captain_schema_type';
 
-    private const FRONTEND_ENABLE_META_KEY = '_ai_seo_keeper_frontend_enabled';
+    private const FRONTEND_ENABLE_META_KEY = '_ai_seo_captain_frontend_enabled';
 
-    private const APPROVED_MESSAGE_META_KEY = '_ai_seo_keeper_approved_message_id';
+    private const APPROVED_MESSAGE_META_KEY = '_ai_seo_captain_approved_message_id';
 
     public function get_summary(): array
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
 
         return array(
             'total_items' => (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table_name}"),
@@ -40,7 +40,7 @@ class Content_Indexer
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
 
         return (int) $wpdb->get_var(
             $wpdb->prepare(
@@ -59,7 +59,7 @@ class Content_Indexer
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
 
         $rows = $wpdb->get_results(
             "SELECT object_id, title, slug, post_type, parent_id, permalink, status
@@ -92,7 +92,7 @@ class Content_Indexer
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
         $postmeta_table = $wpdb->postmeta;
 
         $sql = $wpdb->prepare(
@@ -169,7 +169,7 @@ class Content_Indexer
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
         $postmeta_table = $wpdb->postmeta;
         $limit = max(1, $limit);
 
@@ -276,7 +276,7 @@ class Content_Indexer
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
         $limit = max(1, min(20, $limit));
 
         $groups = $wpdb->get_results(
@@ -338,7 +338,7 @@ class Content_Indexer
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
         $postmeta_table = $wpdb->postmeta;
         $limit = max(1, min(20, $limit));
 
@@ -405,7 +405,7 @@ class Content_Indexer
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
         $posts_table = $wpdb->posts;
         $limit = max(1, min(20, $limit));
         $word_threshold = max(40, $word_threshold);
@@ -500,7 +500,7 @@ class Content_Indexer
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
         $limit = max(1, min(10, $limit));
 
         $sql = $wpdb->prepare(
@@ -534,7 +534,7 @@ class Content_Indexer
     {
         global $wpdb;
 
-        $table_name  = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name  = $wpdb->prefix . 'ai_seo_captain_content_index';
         $postmeta    = $wpdb->postmeta;
 
         $current = $wpdb->get_row(
@@ -581,7 +581,7 @@ class Content_Indexer
                         COALESCE(pm_title.meta_value, '') AS seo_title,
                         COALESCE(pm_desc.meta_value, '')  AS meta_description
                  FROM {$table_name} idx
-                 LEFT JOIN {$postmeta} pm_kp    ON pm_kp.post_id    = idx.object_id AND pm_kp.meta_key    = '_ai_seo_keeper_focus_keyphrase'
+                 LEFT JOIN {$postmeta} pm_kp    ON pm_kp.post_id    = idx.object_id AND pm_kp.meta_key    = '_ai_seo_captain_focus_keyphrase'
                  LEFT JOIN {$postmeta} pm_title ON pm_title.post_id = idx.object_id AND pm_title.meta_key = %s
                  LEFT JOIN {$postmeta} pm_desc  ON pm_desc.post_id  = idx.object_id AND pm_desc.meta_key  = %s
                  WHERE idx.object_type = %s
@@ -610,7 +610,7 @@ class Content_Indexer
                         COALESCE(pm_title.meta_value, '') AS seo_title,
                         COALESCE(pm_desc.meta_value, '')  AS meta_description
                  FROM {$table_name} idx
-                 LEFT JOIN {$postmeta} pm_kp    ON pm_kp.post_id    = idx.object_id AND pm_kp.meta_key    = '_ai_seo_keeper_focus_keyphrase'
+                 LEFT JOIN {$postmeta} pm_kp    ON pm_kp.post_id    = idx.object_id AND pm_kp.meta_key    = '_ai_seo_captain_focus_keyphrase'
                  LEFT JOIN {$postmeta} pm_title ON pm_title.post_id = idx.object_id AND pm_title.meta_key = %s
                  LEFT JOIN {$postmeta} pm_desc  ON pm_desc.post_id  = idx.object_id AND pm_desc.meta_key  = %s
                  WHERE idx.object_type = %s
@@ -691,11 +691,11 @@ class Content_Indexer
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
         $postmeta   = $wpdb->postmeta;
 
         // Get the current page's focus keyphrase.
-        $focus_keyphrase = trim((string) get_post_meta($post_id, '_ai_seo_keeper_focus_keyphrase', true));
+        $focus_keyphrase = trim((string) get_post_meta($post_id, '_ai_seo_captain_focus_keyphrase', true));
 
         if ('' === $focus_keyphrase) {
             return array();
@@ -712,7 +712,7 @@ class Content_Indexer
                  INNER JOIN {$table_name} idx ON idx.object_id = pm_kp.post_id AND idx.object_type = %s
                  LEFT JOIN {$postmeta} pm_title ON pm_title.post_id = idx.object_id AND pm_title.meta_key = %s
                  LEFT JOIN {$postmeta} pm_desc  ON pm_desc.post_id  = idx.object_id AND pm_desc.meta_key  = %s
-                 WHERE pm_kp.meta_key = '_ai_seo_keeper_focus_keyphrase'
+                 WHERE pm_kp.meta_key = '_ai_seo_captain_focus_keyphrase'
                    AND LOWER(TRIM(pm_kp.meta_value)) = LOWER(%s)
                    AND idx.object_id != %d
                    AND idx.status     = %s
@@ -744,12 +744,12 @@ class Content_Indexer
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
         $postmeta   = $wpdb->postmeta;
 
         // Collect keyword sources: page title, focus keyphrase, meta description.
         $post_title       = (string) get_the_title($post_id);
-        $focus_keyphrase  = trim((string) get_post_meta($post_id, '_ai_seo_keeper_focus_keyphrase', true));
+        $focus_keyphrase  = trim((string) get_post_meta($post_id, '_ai_seo_captain_focus_keyphrase', true));
         $meta_description = trim((string) get_post_meta($post_id, self::META_DESCRIPTION_KEY, true));
 
         // Extract keywords: split all sources into words, filter short/stop words.
@@ -903,7 +903,7 @@ class Content_Indexer
                        COALESCE(pm_desc.meta_value, '')  AS meta_description,
                        {$score_expr} AS relevance_score
                 FROM {$table_name} idx
-                LEFT JOIN {$postmeta} pm_kp    ON pm_kp.post_id    = idx.object_id AND pm_kp.meta_key = '_ai_seo_keeper_focus_keyphrase'
+                LEFT JOIN {$postmeta} pm_kp    ON pm_kp.post_id    = idx.object_id AND pm_kp.meta_key = '_ai_seo_captain_focus_keyphrase'
                 LEFT JOIN {$postmeta} pm_title ON pm_title.post_id = idx.object_id AND pm_title.meta_key = %s
                 LEFT JOIN {$postmeta} pm_desc  ON pm_desc.post_id  = idx.object_id AND pm_desc.meta_key  = %s
                 WHERE idx.object_type = %s
@@ -968,7 +968,7 @@ class Content_Indexer
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
         $postmeta   = $wpdb->postmeta;
 
         // Count published pages to decide full tree vs branch-only.
@@ -992,7 +992,7 @@ class Content_Indexer
                         COALESCE(pm_title.meta_value, '') AS seo_title,
                         COALESCE(pm_desc.meta_value, '') AS seo_description
                  FROM {$table_name} idx
-                 LEFT JOIN {$postmeta} pm_kp ON pm_kp.post_id = idx.object_id AND pm_kp.meta_key = '_ai_seo_keeper_focus_keyphrase'
+                 LEFT JOIN {$postmeta} pm_kp ON pm_kp.post_id = idx.object_id AND pm_kp.meta_key = '_ai_seo_captain_focus_keyphrase'
                  LEFT JOIN {$postmeta} pm_title ON pm_title.post_id = idx.object_id AND pm_title.meta_key = %s
                  LEFT JOIN {$postmeta} pm_desc ON pm_desc.post_id = idx.object_id AND pm_desc.meta_key = %s
                  WHERE idx.object_type = %s AND idx.status = %s
@@ -1046,7 +1046,7 @@ class Content_Indexer
                         COALESCE(pm_title.meta_value, '') AS seo_title,
                         COALESCE(pm_desc.meta_value, '')  AS meta_description
                  FROM {$table_name} idx
-                 LEFT JOIN {$postmeta_table} pm_kp    ON pm_kp.post_id    = idx.object_id AND pm_kp.meta_key    = '_ai_seo_keeper_focus_keyphrase'
+                 LEFT JOIN {$postmeta_table} pm_kp    ON pm_kp.post_id    = idx.object_id AND pm_kp.meta_key    = '_ai_seo_captain_focus_keyphrase'
                  LEFT JOIN {$postmeta_table} pm_title ON pm_title.post_id = idx.object_id AND pm_title.meta_key = %s
                  LEFT JOIN {$postmeta_table} pm_desc  ON pm_desc.post_id  = idx.object_id AND pm_desc.meta_key  = %s
                  WHERE idx.object_type = %s AND idx.object_id = %d",
@@ -1158,7 +1158,7 @@ class Content_Indexer
     {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'ai_seo_keeper_content_index';
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
         $post_types = get_post_types(
             array(
                 'public' => true,

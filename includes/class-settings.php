@@ -1,10 +1,10 @@
 <?php
 
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
 class Settings
 {
-    public const OPTION_NAME = 'ai_seo_keeper_options';
+    public const OPTION_NAME = 'ai_seo_captain_options';
 
     /**
      * Curated text-only models for plugin workflows that require JSON output.
@@ -275,7 +275,7 @@ class Settings
     public function register(): void
     {
         register_setting(
-            'ai_seo_keeper_settings',
+            'ai_seo_captain_settings',
             self::OPTION_NAME,
             array($this, 'sanitize')
         );

@@ -1,5 +1,5 @@
 /**
- * AI SEO Keeper — Gutenberg Block Editor Sidebar Panel
+ * SEO Captain — Gutenberg Block Editor Sidebar Panel
  *
  * Uses global wp.* APIs (bundled with WordPress core) — no build step required.
  * Registered via PHP as a script with wp-* handle dependencies.
@@ -52,10 +52,10 @@
     }
 
     function countClass(len, min, max) {
-        if (len === 0) { return 'aisk-count aisk-count--empty'; }
-        if (len < min) { return 'aisk-count aisk-count--short'; }
-        if (len > max) { return 'aisk-count aisk-count--long'; }
-        return 'aisk-count aisk-count--ok';
+        if (len === 0) { return 'aisc-count aisc-count--empty'; }
+        if (len < min) { return 'aisc-count aisc-count--short'; }
+        if (len > max) { return 'aisc-count aisc-count--long'; }
+        return 'aisc-count aisc-count--ok';
     }
 
     function apiFetch(action, bodyData) {
@@ -76,14 +76,14 @@
         var score = props.score;
         var label = score >= 75 ? 'Good' : score >= 45 ? 'OK' : 'Needs work';
         var colour = score >= 75 ? '#00a32a' : score >= 45 ? '#dba617' : '#d63638';
-        return el('div', { className: 'aisk-score-meter' },
-            el('div', { className: 'aisk-score-bar-wrap' },
+        return el('div', { className: 'aisc-score-meter' },
+            el('div', { className: 'aisc-score-bar-wrap' },
                 el('div', {
-                    className: 'aisk-score-bar',
+                    className: 'aisc-score-bar',
                     style: { width: score + '%', background: colour }
                 })
             ),
-            el('span', { className: 'aisk-score-label', style: { color: colour } },
+            el('span', { className: 'aisc-score-label', style: { color: colour } },
                 score + '/100 — ' + label
             )
         );
@@ -105,11 +105,11 @@
                 onChange: props.onChange,
                 help: SUFFIX ? cfg.i18n.brandingNote + ' "' + SUFFIX + '"' : ''
             }),
-            el('div', { className: 'aisk-field-meta' },
+            el('div', { className: 'aisc-field-meta' },
                 el('span', { className: countClass(displayLen, TITLE_MIN, TITLE_MAX) },
                     displayLen + '/' + TITLE_MAX + ' chars'
                 ),
-                SUFFIX_LEN > 0 && el('span', { className: 'aisk-budget-note' },
+                SUFFIX_LEN > 0 && el('span', { className: 'aisc-budget-note' },
                     ' (' + budgetUsed + '/' + (TITLE_MAX - SUFFIX_LEN) + ' content budget)'
                 )
             )
@@ -123,10 +123,10 @@
         var title = props.title || '(' + cfg.i18n.noTitle + ')';
         var desc = props.description || '(' + cfg.i18n.noDescription + ')';
         var url = props.url || window.location.host;
-        return el('div', { className: 'aisk-snippet-preview' },
-            el('div', { className: 'aisk-snippet-url' }, url),
-            el('div', { className: 'aisk-snippet-title' }, title),
-            el('div', { className: 'aisk-snippet-desc' }, desc)
+        return el('div', { className: 'aisc-snippet-preview' },
+            el('div', { className: 'aisc-snippet-url' }, url),
+            el('div', { className: 'aisc-snippet-title' }, title),
+            el('div', { className: 'aisc-snippet-desc' }, desc)
         );
     }
 
@@ -138,10 +138,10 @@
         if (!checks.length) {
             return el('p', { style: { color: '#646970', fontSize: '12px' } }, cfg.i18n.saveToContinue);
         }
-        return el('ul', { className: 'aisk-checks-list' },
+        return el('ul', { className: 'aisc-checks-list' },
             checks.map(function (c, i) {
-                return el('li', { key: i, className: 'aisk-check aisk-check--' + (c.pass ? 'pass' : 'fail') },
-                    el('span', { className: 'aisk-check-icon' }, c.pass ? '✓' : '✗'),
+                return el('li', { key: i, className: 'aisc-check aisc-check--' + (c.pass ? 'pass' : 'fail') },
+                    el('span', { className: 'aisc-check-icon' }, c.pass ? '✓' : '✗'),
                     ' ',
                     c.label
                 );
@@ -332,12 +332,12 @@
 
         return el(Fragment, null,
             // "More" menu item to open the sidebar
-            el(PluginSidebarMoreMenuItem, { target: 'ai-seo-keeper-sidebar' },
+            el(PluginSidebarMoreMenuItem, { target: 'ai-seo-captain-sidebar' },
                 cfg.i18n.sidebarTitle
             ),
 
             el(PluginSidebar, {
-                name: 'ai-seo-keeper-sidebar',
+                name: 'ai-seo-captain-sidebar',
                 title: cfg.i18n.sidebarTitle,
                 icon: el('span', { style: { fontSize: '16px' } }, '🔍')
             },
@@ -372,14 +372,14 @@
                         })
                     ),
                     el(PanelRow, null,
-                        el('div', { className: 'aisk-full-width' },
+                        el('div', { className: 'aisc-full-width' },
                             el(TextareaControl, {
                                 label: cfg.i18n.metaDescription,
                                 value: fields.metaDesc,
                                 onChange: function (v) { handleFieldChange('metaDesc', v); },
                                 rows: 3
                             }),
-                            el('div', { className: 'aisk-field-meta' },
+                            el('div', { className: 'aisc-field-meta' },
                                 el('span', { className: countClass(descLen, DESC_MIN, DESC_MAX) },
                                     descLen + '/' + DESC_MAX + ' chars'
                                 )
@@ -401,7 +401,7 @@
                         })
                     ),
                     el(PanelRow, null,
-                        el('div', { className: 'aisk-actions' },
+                        el('div', { className: 'aisc-actions' },
                             el(Button, {
                                 variant: 'primary',
                                 onClick: handleSave,
@@ -443,7 +443,7 @@
                         }, chatting ? el(Spinner) : cfg.i18n.askAi)
                     ),
                     chatReply && el(PanelRow, null,
-                        el('div', { className: 'aisk-chat-reply' }, chatReply)
+                        el('div', { className: 'aisc-chat-reply' }, chatReply)
                     )
                 )
             )
@@ -453,7 +453,7 @@
     // -----------------------------------------------------------------------
     // Register the plugin
     // -----------------------------------------------------------------------
-    registerPlugin('ai-seo-keeper', {
+    registerPlugin('ai-seo-captain', {
         render: AiSeoSidebar,
         icon: 'search'
     });

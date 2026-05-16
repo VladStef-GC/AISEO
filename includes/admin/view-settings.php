@@ -8,7 +8,7 @@
  *   $indexnow_key, $indexnow_key_url, $settings_status,
  *   $settings_message, $yoast_import_action
  *
- * @package AI_SEO_Keeper
+ * @package AI_SEO_Captain
  *
  * @var array  $options              Plugin options array.
  * @var string $settings_status      'success' or 'error' flash status.
@@ -22,7 +22,7 @@
 
 defined('ABSPATH') || exit;
 
-use AI_SEO_Keeper\Settings;
+use AI_SEO_Captain\Settings;
 
 $supported_providers = Settings::get_supported_providers();
 $provider_models = array();
@@ -55,7 +55,7 @@ if ($custom_model_enabled && '' !== trim($custom_model_id)) {
 $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_temperature'] : 0.3;
 ?>
 <div class="wrap">
-    <h1><?php esc_html_e('AI SEO Keeper Settings', 'ai-seo-keeper'); ?></h1>
+    <h1><?php esc_html_e('SEO Captain Settings', 'ai-seo-captain'); ?></h1>
     <?php if ('' !== $settings_message) : ?>
         <div class="notice <?php echo 'success' === $settings_status ? 'notice-success' : 'notice-error'; ?> is-dismissible">
             <p><?php echo esc_html($settings_message); ?></p>
@@ -63,20 +63,20 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
     <?php endif; ?>
 
     <form method="post" action="options.php">
-        <?php settings_fields('ai_seo_keeper_settings'); ?>
+        <?php settings_fields('ai_seo_captain_settings'); ?>
 
         <div class="ai-seo-accordion">
 
             <!-- Section 1: AI API Settings -->
             <div class="ai-seo-accordion-section is-open">
                 <div class="ai-seo-accordion-header">
-                    <h2><?php esc_html_e('AI API Settings', 'ai-seo-keeper'); ?></h2>
+                    <h2><?php esc_html_e('AI API Settings', 'ai-seo-captain'); ?></h2>
                     <span class="dashicons dashicons-arrow-down-alt2"></span>
                 </div>
                 <div class="ai-seo-accordion-body">
                     <table class="form-table" role="presentation">
                         <tr>
-                            <th scope="row"><label for="ai-seo-provider"><?php esc_html_e('AI provider', 'ai-seo-keeper'); ?></label></th>
+                            <th scope="row"><label for="ai-seo-provider"><?php esc_html_e('AI provider', 'ai-seo-captain'); ?></label></th>
                             <td>
                                 <select id="ai-seo-provider" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[provider]">
                                     <?php foreach ($supported_providers as $provider_key) : ?>
@@ -86,7 +86,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="ai-seo-model"><?php esc_html_e('Model', 'ai-seo-keeper'); ?></label></th>
+                            <th scope="row"><label for="ai-seo-model"><?php esc_html_e('Model', 'ai-seo-captain'); ?></label></th>
                             <td>
                                 <select
                                     id="ai-seo-model"
@@ -125,11 +125,11 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="ai-seo-api-key"><?php esc_html_e('API key', 'ai-seo-keeper'); ?></label></th>
+                            <th scope="row"><label for="ai-seo-api-key"><?php esc_html_e('API key', 'ai-seo-captain'); ?></label></th>
                             <td><input id="ai-seo-api-key" class="regular-text" type="password" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[api_key]" value="<?php echo esc_attr($options['api_key']); ?>" autocomplete="off" /></td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="ai-seo-temperature"><?php esc_html_e('Temperature', 'ai-seo-keeper'); ?></label></th>
+                            <th scope="row"><label for="ai-seo-temperature"><?php esc_html_e('Temperature', 'ai-seo-captain'); ?></label></th>
                             <td>
                                 <input
                                     id="ai-seo-temperature"
@@ -149,30 +149,30 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="ai-seo-system-prompt"><?php esc_html_e('AI instructions', 'ai-seo-keeper'); ?></label></th>
+                            <th scope="row"><label for="ai-seo-system-prompt"><?php esc_html_e('AI instructions', 'ai-seo-captain'); ?></label></th>
                             <td>
                                 <textarea id="ai-seo-system-prompt" class="large-text" rows="5" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[system_prompt]"><?php echo esc_textarea($options['system_prompt']); ?></textarea>
                                 <p class="description">Global instructions applied to page generation, page chat, and site audit requests.</p>
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="ai-seo-site-chat-context"><?php esc_html_e('Site context for AI', 'ai-seo-keeper'); ?></label></th>
+                            <th scope="row"><label for="ai-seo-site-chat-context"><?php esc_html_e('Site context for AI', 'ai-seo-captain'); ?></label></th>
                             <td>
                                 <textarea id="ai-seo-site-chat-context" class="large-text" rows="6" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[site_chat_context]" placeholder="Example: We are a B2B software company selling RPA automation tools and professional services. Our main goal is lead generation through product demos and contact forms. Target audience: enterprise IT managers and CIOs."><?php echo esc_textarea($options['site_chat_context'] ?? ''); ?></textarea>
                                 <p class="description">Describe your company, what the website is for (selling products, services, blog, etc.), and any specific instructions for the AI. This context is included in every Site Chat and Page Chat conversation so the AI understands your business goals.</p>
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row"><?php esc_html_e('Model availability test', 'ai-seo-keeper'); ?></th>
+                            <th scope="row"><?php esc_html_e('Model availability test', 'ai-seo-captain'); ?></th>
                             <td>
                                 <button
                                     type="button"
                                     class="button"
                                     id="ai-seo-test-model"
                                     data-ajax-url="<?php echo esc_url(admin_url('admin-ajax.php')); ?>"
-                                    data-action="ai_seo_keeper_test_model"
-                                    data-nonce="<?php echo esc_attr(wp_create_nonce('ai_seo_keeper_settings_test_model')); ?>">
-                                    <?php esc_html_e('Test selected model', 'ai-seo-keeper'); ?>
+                                    data-action="ai_seo_captain_test_model"
+                                    data-nonce="<?php echo esc_attr(wp_create_nonce('ai_seo_captain_settings_test_model')); ?>">
+                                    <?php esc_html_e('Test selected model', 'ai-seo-captain'); ?>
                                 </button>
                                 <p class="description" style="margin-top:8px;">
                                     Checks whether the selected provider/model is accessible with the current API key and can return a response.
@@ -187,7 +187,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
             <!-- Section 2: Settings -->
             <div class="ai-seo-accordion-section">
                 <div class="ai-seo-accordion-header">
-                    <h2><?php esc_html_e('Settings', 'ai-seo-keeper'); ?></h2>
+                    <h2><?php esc_html_e('Settings', 'ai-seo-captain'); ?></h2>
                     <span class="dashicons dashicons-arrow-down-alt2"></span>
                 </div>
                 <div class="ai-seo-accordion-body">
@@ -225,7 +225,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                                     <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[frontend_override_conflicts]" value="1" <?php checked(! empty($options['frontend_override_conflicts'])); ?> />
                                     Allow output even when another SEO plugin is active.
                                 </label>
-                                <p class="description">Keep the second option off unless you explicitly want AI SEO Keeper to render alongside another SEO plugin.</p>
+                                <p class="description">Keep the second option off unless you explicitly want SEO Captain to render alongside another SEO plugin.</p>
                             </td>
                         </tr>
                         <tr>
@@ -351,39 +351,39 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                                 <?php $wc_active = class_exists('WooCommerce', false); ?>
                                 <?php if (! $wc_active) : ?>
                                     <div class="notice notice-info inline" style="margin:0 0 12px;padding:8px 12px;">
-                                        <p style="margin:0;"><?php esc_html_e('WooCommerce is not installed or active. Install WooCommerce to enable this integration.', 'ai-seo-keeper'); ?></p>
+                                        <p style="margin:0;"><?php esc_html_e('WooCommerce is not installed or active. Install WooCommerce to enable this integration.', 'ai-seo-captain'); ?></p>
                                     </div>
                                 <?php endif; ?>
                                 <label style="display:block;margin-bottom:8px;">
                                     <input type="checkbox" id="ai-seo-wc-enabled" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[wc_integration_enabled]" value="1" <?php checked(! empty($options['wc_integration_enabled'])); ?> <?php echo $wc_active ? '' : 'disabled'; ?> />
-                                    <strong><?php esc_html_e('Enable WooCommerce integration', 'ai-seo-keeper'); ?></strong>
+                                    <strong><?php esc_html_e('Enable WooCommerce integration', 'ai-seo-captain'); ?></strong>
                                 </label>
-                                <p class="description" style="margin:0 0 12px;"><?php esc_html_e('When enabled, AI SEO Keeper enriches product schema, Open Graph tags, WC archive pages, sitemaps, and AI-generated content with WooCommerce product data.', 'ai-seo-keeper'); ?></p>
+                                <p class="description" style="margin:0 0 12px;"><?php esc_html_e('When enabled, SEO Captain enriches product schema, Open Graph tags, WC archive pages, sitemaps, and AI-generated content with WooCommerce product data.', 'ai-seo-captain'); ?></p>
 
                                 <fieldset id="ai-seo-wc-options" style="margin-left:16px;<?php echo empty($options['wc_integration_enabled']) ? 'opacity:.5;pointer-events:none;' : ''; ?>">
-                                    <legend style="font-weight:600;margin-bottom:8px;"><?php esc_html_e('Schema &amp; Open Graph', 'ai-seo-keeper'); ?></legend>
+                                    <legend style="font-weight:600;margin-bottom:8px;"><?php esc_html_e('Schema &amp; Open Graph', 'ai-seo-captain'); ?></legend>
                                     <label style="display:block;margin-bottom:6px;">
                                         <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[wc_schema_enrichment_enabled]" value="1" <?php checked(! empty($options['wc_schema_enrichment_enabled'])); ?> />
-                                        <?php esc_html_e('Enrich Product schema with price, SKU, rating, brand, availability', 'ai-seo-keeper'); ?>
+                                        <?php esc_html_e('Enrich Product schema with price, SKU, rating, brand, availability', 'ai-seo-captain'); ?>
                                     </label>
                                     <label style="display:block;margin-bottom:6px;">
                                         <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[wc_ai_context_enabled]" value="1" <?php checked(! empty($options['wc_ai_context_enabled'])); ?> />
-                                        <?php esc_html_e('Include product data in AI generation context (price, SKU, brand, categories)', 'ai-seo-keeper'); ?>
+                                        <?php esc_html_e('Include product data in AI generation context (price, SKU, brand, categories)', 'ai-seo-captain'); ?>
                                     </label>
 
                                     <?php if (! empty($options['sitemap_enabled'])) : ?>
-                                        <legend style="font-weight:600;margin:12px 0 8px;"><?php esc_html_e('Sitemap', 'ai-seo-keeper'); ?></legend>
+                                        <legend style="font-weight:600;margin:12px 0 8px;"><?php esc_html_e('Sitemap', 'ai-seo-captain'); ?></legend>
                                         <label style="display:block;margin-bottom:6px;">
                                             <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_include_wc_products]" value="1" <?php checked(! empty($options['sitemap_include_wc_products'])); ?> />
-                                            <?php esc_html_e('Include products in sitemap', 'ai-seo-keeper'); ?>
+                                            <?php esc_html_e('Include products in sitemap', 'ai-seo-captain'); ?>
                                         </label>
                                         <label style="display:block;margin-bottom:6px;">
                                             <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_include_wc_product_cat]" value="1" <?php checked(! empty($options['sitemap_include_wc_product_cat'])); ?> />
-                                            <?php esc_html_e('Include product categories in sitemap', 'ai-seo-keeper'); ?>
+                                            <?php esc_html_e('Include product categories in sitemap', 'ai-seo-captain'); ?>
                                         </label>
                                         <label style="display:block;margin-bottom:6px;">
                                             <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_include_wc_product_tag]" value="1" <?php checked(! empty($options['sitemap_include_wc_product_tag'])); ?> />
-                                            <?php esc_html_e('Include product tags in sitemap', 'ai-seo-keeper'); ?>
+                                            <?php esc_html_e('Include product tags in sitemap', 'ai-seo-captain'); ?>
                                         </label>
                                     <?php endif; ?>
                                 </fieldset>
@@ -422,7 +422,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
             <!-- Section 3: Tracking and Social -->
             <div class="ai-seo-accordion-section">
                 <div class="ai-seo-accordion-header">
-                    <h2><?php esc_html_e('Tracking and Social', 'ai-seo-keeper'); ?></h2>
+                    <h2><?php esc_html_e('Tracking and Social', 'ai-seo-captain'); ?></h2>
                     <span class="dashicons dashicons-arrow-down-alt2"></span>
                 </div>
                 <div class="ai-seo-accordion-body">
@@ -449,8 +449,8 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                                     'social_pinterest' => 'Pinterest',
                                 );
                                 foreach ($social_fields as $field_key => $label) : ?>
-                                    <div class="aisk-field-row" style="margin-bottom:6px;">
-                                        <div class="aisk-field-group aisk-w-full">
+                                    <div class="aisc-field-row" style="margin-bottom:6px;">
+                                        <div class="aisc-field-group aisc-w-full">
                                             <label for="ai-seo-<?php echo esc_attr($field_key); ?>"><?php echo esc_html($label); ?></label>
                                             <input id="ai-seo-<?php echo esc_attr($field_key); ?>" class="regular-text" type="url" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[<?php echo esc_attr($field_key); ?>]" value="<?php echo esc_attr($options[$field_key] ?? ''); ?>" placeholder="https://" />
                                         </div>
@@ -465,7 +465,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
             <!-- Section 4: Local SEO / Business Schema -->
             <div class="ai-seo-accordion-section">
                 <div class="ai-seo-accordion-header">
-                    <h2><?php esc_html_e('Local SEO / Business Schema', 'ai-seo-keeper'); ?></h2>
+                    <h2><?php esc_html_e('Local SEO / Business Schema', 'ai-seo-captain'); ?></h2>
                     <span class="dashicons dashicons-arrow-down-alt2"></span>
                 </div>
                 <div class="ai-seo-accordion-body">
@@ -497,26 +497,26 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                         <tr>
                             <th scope="row">Address</th>
                             <td>
-                                <div class="aisk-field-row">
-                                    <div class="aisk-field-group aisk-w-full">
+                                <div class="aisc-field-row">
+                                    <div class="aisc-field-group aisc-w-full">
                                         <label for="ai-seo-local-street">Street</label>
                                         <input id="ai-seo-local-street" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_street]" value="<?php echo esc_attr($options['local_street'] ?? ''); ?>" />
                                     </div>
                                 </div>
-                                <div class="aisk-field-row">
-                                    <div class="aisk-field-group aisk-w-200">
+                                <div class="aisc-field-row">
+                                    <div class="aisc-field-group aisc-w-200">
                                         <label for="ai-seo-local-city">City</label>
                                         <input id="ai-seo-local-city" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_city]" value="<?php echo esc_attr($options['local_city'] ?? ''); ?>" />
                                     </div>
-                                    <div class="aisk-field-group aisk-w-140">
+                                    <div class="aisc-field-group aisc-w-140">
                                         <label for="ai-seo-local-state">State</label>
                                         <input id="ai-seo-local-state" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_state]" value="<?php echo esc_attr($options['local_state'] ?? ''); ?>" />
                                     </div>
-                                    <div class="aisk-field-group aisk-w-100">
+                                    <div class="aisc-field-group aisc-w-100">
                                         <label for="ai-seo-local-zip">Zip</label>
                                         <input id="ai-seo-local-zip" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_zip]" value="<?php echo esc_attr($options['local_zip'] ?? ''); ?>" />
                                     </div>
-                                    <div class="aisk-field-group aisk-w-140">
+                                    <div class="aisc-field-group aisc-w-140">
                                         <label for="ai-seo-local-country">Country</label>
                                         <input id="ai-seo-local-country" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_country]" value="<?php echo esc_attr($options['local_country'] ?? ''); ?>" />
                                     </div>
@@ -526,12 +526,12 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                         <tr>
                             <th scope="row">Contact</th>
                             <td>
-                                <div class="aisk-field-row">
-                                    <div class="aisk-field-group aisk-w-200">
+                                <div class="aisc-field-row">
+                                    <div class="aisc-field-group aisc-w-200">
                                         <label for="ai-seo-local-phone">Phone</label>
                                         <input id="ai-seo-local-phone" type="tel" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_phone]" value="<?php echo esc_attr($options['local_phone'] ?? ''); ?>" placeholder="+1-555-000-0000" />
                                     </div>
-                                    <div class="aisk-field-group aisk-w-200">
+                                    <div class="aisc-field-group aisc-w-200">
                                         <label for="ai-seo-local-email">Email</label>
                                         <input id="ai-seo-local-email" type="email" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_email]" value="<?php echo esc_attr($options['local_email'] ?? ''); ?>" />
                                     </div>
@@ -541,12 +541,12 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                         <tr>
                             <th scope="row">Geo coordinates</th>
                             <td>
-                                <div class="aisk-field-row">
-                                    <div class="aisk-field-group aisk-w-160">
+                                <div class="aisc-field-row">
+                                    <div class="aisc-field-group aisc-w-160">
                                         <label for="ai-seo-local-lat">Latitude</label>
                                         <input id="ai-seo-local-lat" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_lat]" value="<?php echo esc_attr($options['local_lat'] ?? ''); ?>" placeholder="44.4268" />
                                     </div>
-                                    <div class="aisk-field-group aisk-w-160">
+                                    <div class="aisc-field-group aisc-w-160">
                                         <label for="ai-seo-local-lng">Longitude</label>
                                         <input id="ai-seo-local-lng" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_lng]" value="<?php echo esc_attr($options['local_lng'] ?? ''); ?>" placeholder="26.1025" />
                                     </div>
@@ -561,7 +561,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                                 <?php
                                 $days = array('mon' => 'Monday', 'tue' => 'Tuesday', 'wed' => 'Wednesday', 'thu' => 'Thursday', 'fri' => 'Friday', 'sat' => 'Saturday', 'sun' => 'Sunday');
                                 foreach ($days as $dk => $dl) : ?>
-                                    <div class="aisk-hours-row">
+                                    <div class="aisc-hours-row">
                                         <span><?php echo esc_html($dl); ?></span>
                                         <input type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_hours_<?php echo $dk; ?>]" value="<?php echo esc_attr($options['local_hours_' . $dk] ?? ''); ?>" placeholder="09:00-17:00" />
                                     </div>
@@ -571,7 +571,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                         <tr>
                             <th scope="row"><label for="ai-seo-local-price">Price range</label></th>
                             <td>
-                                <div class="aisk-field-group aisk-w-100">
+                                <div class="aisc-field-group aisc-w-100">
                                     <input id="ai-seo-local-price" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_price_range]" value="<?php echo esc_attr($options['local_price_range'] ?? ''); ?>" placeholder="$$" />
                                 </div>
                                 <p class="description">Use $ signs (e.g. $, $$, $$$) to indicate price level.</p>
@@ -584,7 +584,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
             <!-- Section 5: RSS Feed Optimization -->
             <div class="ai-seo-accordion-section">
                 <div class="ai-seo-accordion-header">
-                    <h2><?php esc_html_e('RSS Feed Optimization', 'ai-seo-keeper'); ?></h2>
+                    <h2><?php esc_html_e('RSS Feed Optimization', 'ai-seo-captain'); ?></h2>
                     <span class="dashicons dashicons-arrow-down-alt2"></span>
                 </div>
                 <div class="ai-seo-accordion-body">
@@ -621,7 +621,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
             <!-- Section 6: Crawl Budget Optimization -->
             <div class="ai-seo-accordion-section">
                 <div class="ai-seo-accordion-header">
-                    <h2><?php esc_html_e('Crawl Budget Optimization', 'ai-seo-keeper'); ?></h2>
+                    <h2><?php esc_html_e('Crawl Budget Optimization', 'ai-seo-captain'); ?></h2>
                     <span class="dashicons dashicons-arrow-down-alt2"></span>
                 </div>
                 <div class="ai-seo-accordion-body">
@@ -657,18 +657,18 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
         </div><!-- .ai-seo-accordion -->
 
         <div style="max-width:960px;margin-top:20px;">
-            <?php submit_button(__('Save settings', 'ai-seo-keeper')); ?>
+            <?php submit_button(__('Save settings', 'ai-seo-captain')); ?>
         </div>
     </form>
 
     <div class="ai-seo-box">
-        <h2><?php esc_html_e('Yoast migration', 'ai-seo-keeper'); ?></h2>
-        <p style="margin:0 0 12px;">Copy existing Yoast per-page metadata into AI SEO Keeper without overwriting fields already filled here.</p>
+        <h2><?php esc_html_e('Yoast migration', 'ai-seo-captain'); ?></h2>
+        <p style="margin:0 0 12px;">Copy existing Yoast per-page metadata into SEO Captain without overwriting fields already filled here.</p>
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-            <?php wp_nonce_field('ai_seo_keeper_import_yoast_metadata'); ?>
+            <?php wp_nonce_field('ai_seo_captain_import_yoast_metadata'); ?>
             <input type="hidden" name="action" value="<?php echo esc_attr($yoast_import_action); ?>" />
-            <button type="submit" class="button button-secondary"><?php esc_html_e('Import Yoast metadata', 'ai-seo-keeper'); ?></button>
+            <button type="submit" class="button button-secondary"><?php esc_html_e('Import Yoast metadata', 'ai-seo-captain'); ?></button>
         </form>
-        <p class="description" style="margin:12px 0 0;">Imports focus keyphrase, SEO title, meta description, social fields, canonical URL, and noindex/nofollow. Existing AI SEO Keeper values are preserved.</p>
+        <p class="description" style="margin:12px 0 0;">Imports focus keyphrase, SEO title, meta description, social fields, canonical URL, and noindex/nofollow. Existing SEO Captain values are preserved.</p>
     </div>
 </div>

@@ -1,5 +1,5 @@
 /**
- * AI SEO Keeper — Document SEO page scripts
+ * SEO Captain — Document SEO page scripts
  */
 (function ($) {
     'use strict';
@@ -26,7 +26,7 @@
         btn.prop('disabled', true).text('Saving…');
 
         $.post(ajaxurl, {
-            action: 'ai_seo_keeper_save_doc_seo',
+            action: 'ai_seo_captain_save_doc_seo',
             _nonce: nonce,
             attachment_id: row.data('att-id'),
             seo_title: row.find('.ai-seo-doc-title').val(),
@@ -44,7 +44,7 @@
     });
 
     // Search filter.
-    var searchInput = document.getElementById('aisk-doc-search');
+    var searchInput = document.getElementById('aisc-doc-search');
     var table = document.getElementById('ai-seo-doc-table');
     if (searchInput && table) {
         searchInput.addEventListener('input', function () {

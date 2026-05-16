@@ -1,4 +1,4 @@
-# AI SEO Keeper — Copilot / AI Coding Instructions
+# SEO Captain — Copilot / AI Coding Instructions
 
 These rules apply to ALL AI agents (GitHub Copilot, Claude, GPT, etc.) working on this codebase.
 
@@ -44,13 +44,13 @@ PHP does **not** process `\u` escapes — they are emitted literally to the brow
 
 **Wrong:**
 ```php
-<h1><?php echo esc_html('\ud83d\ude80 ' . __('Title \u2014 Subtitle', 'ai-seo-keeper')); ?></h1>
+<h1><?php echo esc_html('\ud83d\ude80 ' . __('Title \u2014 Subtitle', 'ai-seo-captain')); ?></h1>
 // Outputs: \ud83d\ude80 Title \u2014 Subtitle   ← broken
 ```
 
 **Correct — use the actual UTF-8 characters in source, or keep decorative glyphs as HTML literals:**
 ```php
-<h1>🚀 <?php esc_html_e('Title — Subtitle', 'ai-seo-keeper'); ?></h1>
+<h1>🚀 <?php esc_html_e('Title — Subtitle', 'ai-seo-captain'); ?></h1>
 // Outputs: 🚀 Title — Subtitle   ← correct
 ```
 
@@ -59,21 +59,21 @@ Always paste the actual UTF-8 character directly into the source file.
 
 ---
 
-## 3. i18n — Text Domain Is `ai-seo-keeper`
+## 3. i18n — Text Domain Is `ai-seo-captain`
 
-All translatable strings must use the text domain `ai-seo-keeper`:
+All translatable strings must use the text domain `ai-seo-captain`:
 
 ```php
-__('My string', 'ai-seo-keeper')
-_e('My string', 'ai-seo-keeper')
-esc_html__('My string', 'ai-seo-keeper')
-esc_html_e('My string', 'ai-seo-keeper')
-esc_attr__('My string', 'ai-seo-keeper')
-esc_attr_e('My string', 'ai-seo-keeper')
+__('My string', 'ai-seo-captain')
+_e('My string', 'ai-seo-captain')
+esc_html__('My string', 'ai-seo-captain')
+esc_html_e('My string', 'ai-seo-captain')
+esc_attr__('My string', 'ai-seo-captain')
+esc_attr_e('My string', 'ai-seo-captain')
 ```
 
 - Decorative characters (emoji, `&rarr;`, etc.) stay **outside** translation functions.
-- Use `sprintf(__('Found %d items', 'ai-seo-keeper'), $count)` for strings with variables.
+- Use `sprintf(__('Found %d items', 'ai-seo-captain'), $count)` for strings with variables.
 
 ---
 
@@ -96,14 +96,14 @@ Set-Content $file $content -Encoding UTF8       # adds BOM → PHP namespace err
 
 ## 5. Plugin Architecture
 
-- **Namespace:** `AI_SEO_Keeper`
-- **PSR-4 autoloader:** `includes/autoload.php` maps `AI_SEO_Keeper\ClassName` → `includes/class-classname.php`
+- **Namespace:** `AI_SEO_Captain`
+- **PSR-4 autoloader:** `includes/autoload.php` maps `AI_SEO_Captain\ClassName` → `includes/class-classname.php`
 - **Admin sub-modules:** `includes/admin/class-admin-ajax.php`, `class-admin-rollout.php`, `class-admin-import-export.php`, `class-admin-taxonomy.php`, `class-seo-analysis.php`
 - **View files** are in `includes/admin/view-*.php` — they are pure output templates, no business logic.
-- **Do not modify** core WordPress files. All plugin code lives under `wp-content/plugins/ai-seo-keeper/`.
+- **Do not modify** core WordPress files. All plugin code lives under `wp-content/plugins/ai-seo-captain/`.
 - **Module pattern:** New features go in `includes/` sub-classes, registered via `class-admin.php` hooks.
 - **Asset auto-loading:** Create `assets/js/page-{slug}.js` or `assets/css/page-{slug}.css` — auto-enqueued by slug.
-- **DB auto-upgrade:** `plugins_loaded` checks `ai_seo_keeper_db_version` vs `AI_SEO_KEEPER_VERSION`.
+- **DB auto-upgrade:** `plugins_loaded` checks `ai_seo_captain_db_version` vs `AI_SEO_KEEPER_VERSION`.
 - **Current version:** 1.3.1 with 5 SQL tables, 17 post meta keys, 4 term meta keys, 10 admin pages.
 
 ---
@@ -138,7 +138,7 @@ signal intent but keep it `public`.
 
 Run unit tests after every change:
 ```powershell
-cd "wp-content/plugins/ai-seo-keeper"
+cd "wp-content/plugins/ai-seo-captain"
 c:\xampp\php\php.exe -d extension=php_zip.dll vendor\bin\phpunit --testsuite Unit
 ```
 

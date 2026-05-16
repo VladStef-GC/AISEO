@@ -2,7 +2,7 @@
 
 **Created**: 2026-05-13  
 **Status**: ✅ COMPLETED — All features implemented in v1.3.1  
-**Goal**: Make AI SEO Keeper fully scale-aware. Gate features behind indexing + audit. Allow large sites to work in saved subsets ("Runs") instead of all-or-nothing.
+**Goal**: Make SEO Captain fully scale-aware. Gate features behind indexing + audit. Allow large sites to work in saved subsets ("Runs") instead of all-or-nothing.
 
 ---
 
@@ -125,7 +125,7 @@ private function has_any_audit_data(): bool
     global $wpdb;
     $result = $wpdb->get_var(
         "SELECT COUNT(*) FROM {$wpdb->postmeta} 
-         WHERE meta_key = '_ai_seo_keeper_page_audit' LIMIT 1"
+         WHERE meta_key = '_ai_seo_captain_page_audit' LIMIT 1"
     );
     return (int) $result > 0;
 }
@@ -182,7 +182,7 @@ private function has_any_audit_data(): bool
 **File**: `includes/class-activator.php` — add 5th table
 
 ```sql
-CREATE TABLE {$prefix}ai_seo_keeper_runs (
+CREATE TABLE {$prefix}ai_seo_captain_runs (
     id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
     user_id bigint(20) unsigned NOT NULL DEFAULT 0,
     name varchar(255) NOT NULL,
@@ -211,7 +211,7 @@ CREATE TABLE {$prefix}ai_seo_keeper_runs (
 **File**: `includes/class-run-manager.php`
 
 ```php
-namespace AI_SEO_Keeper;
+namespace AI_SEO_Captain;
 
 class Run_Manager {
     public function create_run(string $name, array $page_ids, string $model = ''): int;
@@ -326,22 +326,22 @@ When multiple Runs are selected:
 ## Database Schema After Implementation
 
 ### Existing Tables (unchanged)
-1. `wp_ai_seo_keeper_content_index` — All indexed pages
-2. `wp_ai_seo_keeper_conversations` — Chat conversations
-3. `wp_ai_seo_keeper_messages` — Chat messages
-4. `wp_ai_seo_keeper_redirects` — Redirects & 404s
+1. `wp_ai_seo_captain_content_index` — All indexed pages
+2. `wp_ai_seo_captain_conversations` — Chat conversations
+3. `wp_ai_seo_captain_messages` — Chat messages
+4. `wp_ai_seo_captain_redirects` — Redirects & 404s
 
 ### New Table
-5. `wp_ai_seo_keeper_runs` — Saved analysis scopes (page lists)
+5. `wp_ai_seo_captain_runs` — Saved analysis scopes (page lists)
 
 ### Existing PostMeta Keys (unchanged — Runs reference these, not duplicate them)
-- `_ai_seo_keeper_meta_title`
-- `_ai_seo_keeper_meta_description`
-- `_ai_seo_keeper_focus_keyphrase`
-- `_ai_seo_keeper_page_audit`
-- `_ai_seo_keeper_audit_skip`
-- `_ai_seo_keeper_frontend_active`
-- `_ai_seo_keeper_approved_suggestion_id`
+- `_ai_seo_captain_meta_title`
+- `_ai_seo_captain_meta_description`
+- `_ai_seo_captain_focus_keyphrase`
+- `_ai_seo_captain_page_audit`
+- `_ai_seo_captain_audit_skip`
+- `_ai_seo_captain_frontend_active`
+- `_ai_seo_captain_approved_suggestion_id`
 - + social, canonical, robots, schema keys
 
 ---

@@ -5,11 +5,11 @@
   <img src="https://img.shields.io/badge/license-proprietary-lightgrey?style=flat-square" alt="License" />
 </p>
 
-# AI SEO Keeper
+# SEO Captain
 
 **The AI-powered SEO copilot for WordPress.**
 
-AI SEO Keeper uses artificial intelligence to generate, manage, and optimize every aspect of your site's SEO — from meta tags and schema markup to full page audits, content editing, and search engine notifications — all from a single plugin.
+SEO Captain uses artificial intelligence to generate, manage, and optimize every aspect of your site's SEO — from meta tags and schema markup to full page audits, content editing, and search engine notifications — all from a single plugin.
 
 ---
 
@@ -277,7 +277,7 @@ Professional redirect management built in:
 
 ### 🌐 Frontend SEO Output
 
-When enabled, AI SEO Keeper renders optimized SEO tags in your page `<head>`:
+When enabled, SEO Captain renders optimized SEO tags in your page `<head>`:
 
 - `<title>` with custom SEO title or template fallback
 - `<meta name="description">` with AI-generated or manual description
@@ -296,7 +296,7 @@ JSON-LD structured data output for search engines:
 - **Per-page schema type** selection (Article, Product, FAQ, etc.)
 - **Organization schema** with social profiles
 - **Local Business schema** (see Local SEO below)
-- **Breadcrumb schema** via shortcode `[ai_seo_keeper_breadcrumbs]`
+- **Breadcrumb schema** via shortcode `[ai_seo_captain_breadcrumbs]`
 - Toggle on/off globally via feature flags
 
 ---
@@ -471,7 +471,7 @@ Seamless one-click migration from Yoast SEO:
 - Maps and copies: focus keyphrase, meta title, meta description
 - Handles robots directives with basic mapping
 - Optionally enables frontend output on imported items
-- Skips pages that already have AI SEO Keeper data (safe to run multiple times)
+- Skips pages that already have SEO Captain data (safe to run multiple times)
 - Detailed report: posts detected, fields imported, items updated, skipped, unsupported directives
 
 ---
@@ -522,16 +522,16 @@ Native block editor integration:
 
 ## Installation
 
-1. Upload the `ai-seo-keeper` folder to `/wp-content/plugins/`
+1. Upload the `ai-seo-captain` folder to `/wp-content/plugins/`
 2. Activate the plugin in **Plugins → Installed Plugins**
-3. Navigate to **AI SEO Keeper → Settings** and enter your AI provider API key
+3. Navigate to **SEO Captain → Settings** and enter your AI provider API key
 4. Run the **Setup Wizard** to index your site, generate metadata, and audit all pages
 
 ---
 
 ## Configuration
 
-After activation, configure the plugin in **AI SEO Keeper → Settings**:
+After activation, configure the plugin in **SEO Captain → Settings**:
 
 1. **AI Provider** — Choose OpenAI or Google, enter your API key, select model
 2. **Feature Toggles** — Enable/disable meta titles, descriptions, Open Graph, Twitter Cards, canonical URLs, robots directives, schema
@@ -563,12 +563,12 @@ php -d extension=php_zip.dll vendor/bin/phpunit --testsuite Unit
 ## For Developers
 
 - **Code Architecture:** See [`docs/CODE-MAP.md`](docs/CODE-MAP.md) for the complete codebase map
-- **Namespace:** `AI_SEO_Keeper` with PSR-4 autoloader (`includes/autoload.php`)
+- **Namespace:** `AI_SEO_Captain` with PSR-4 autoloader (`includes/autoload.php`)
 - **Modular admin:** `class-admin.php` is a slim coordinator delegating to focused sub-modules in `includes/admin/` (AJAX, rollout, import/export, taxonomy, SEO analysis)
 - **Adding new admin pages:** Create a render stub + view file + optional CSS/JS (auto-detected by filename convention)
 - **All AJAX handlers** use WordPress nonces for security
 - **All user inputs** are sanitized via `sanitize_text_field()`, `wp_unslash()`, and `esc_*()` functions
-- **DB auto-upgrade:** `plugins_loaded` hook checks `ai_seo_keeper_db_version` vs `AI_SEO_KEEPER_VERSION` and runs `Activator::activate()` on version mismatch
+- **DB auto-upgrade:** `plugins_loaded` hook checks `ai_seo_captain_db_version` vs `AI_SEO_KEEPER_VERSION` and runs `Activator::activate()` on version mismatch
 
 ---
 
