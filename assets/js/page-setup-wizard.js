@@ -3,7 +3,7 @@
  *
  * All PHP data is passed via wp_localize_script as the global `aiskWizard` object.
  */
-(function($) {
+(function ($) {
     'use strict';
 
     var nonce = aiskWizard.nonce;
@@ -51,31 +51,31 @@
         var startTime = null;
         var interval = null;
         return {
-            start: function() {
+            start: function () {
                 startTime = Date.now();
                 var self = this;
-                interval = setInterval(function() {
+                interval = setInterval(function () {
                     self.update();
                 }, 1000);
             },
-            pause: function() {
+            pause: function () {
                 if (interval) clearInterval(interval);
             },
-            resume: function() {
+            resume: function () {
                 var self = this;
-                interval = setInterval(function() {
+                interval = setInterval(function () {
                     self.update();
                 }, 1000);
             },
-            stop: function() {
+            stop: function () {
                 if (interval) clearInterval(interval);
             },
-            update: function() {
+            update: function () {
                 if (!startTime) return;
                 var elapsed = Math.floor((Date.now() - startTime) / 1000);
                 $(displayEl).text('\u23F1 ' + formatTime(elapsed));
             },
-            getText: function() {
+            getText: function () {
                 if (!startTime) return '';
                 return formatTime(Math.floor((Date.now() - startTime) / 1000));
             }
@@ -231,7 +231,7 @@
 
         $('body').append($overlay).append($modal);
 
-        setTimeout(function() {
+        setTimeout(function () {
             $overlay.addClass('is-visible');
             $modal.addClass('is-visible');
         }, 10);
@@ -239,7 +239,7 @@
         function closeModal() {
             $overlay.removeClass('is-visible');
             $modal.removeClass('is-visible');
-            setTimeout(function() {
+            setTimeout(function () {
                 $overlay.remove();
                 $modal.remove();
             }, 200);
@@ -249,7 +249,7 @@
         $modal.find('.aisk-modal__close').on('click', closeModal);
 
         // ── Redo: Full site ──
-        $modal.on('click', '[data-action="redo-full"]', function() {
+        $modal.on('click', '[data-action="redo-full"]', function () {
             closeModal();
             onConfirm({
                 ids: publishedIds,
@@ -258,7 +258,7 @@
         });
 
         // ── Redo: Existing list ──
-        $modal.on('click', '[data-action="redo-run"]', function() {
+        $modal.on('click', '[data-action="redo-run"]', function () {
             var redoRunId = parseInt($(this).data('run-id'), 10);
             for (var i = 0; i < runsData.length; i++) {
                 if (parseInt(runsData[i].id, 10) === redoRunId) {
@@ -277,7 +277,7 @@
         });
 
         // ── New: Process All ──
-        $modal.find('[data-action="all"]').on('click', function() {
+        $modal.find('[data-action="all"]').on('click', function () {
             closeModal();
             onConfirm({
                 ids: publishedIds,
@@ -289,7 +289,7 @@
         var allPages = [];
         var loadedPages = false;
 
-        $modal.find('[data-action="list"]').on('click', function() {
+        $modal.find('[data-action="list"]').on('click', function () {
             $modal.find('.aisk-modal__options').slideUp(200);
             $modal.find('.aisk-modal__redo-list').slideUp(200);
             $modal.find('.aisk-modal__section-label').slideUp(200);
@@ -302,7 +302,7 @@
                 $.post(ajaxUrl, {
                     action: 'ai_seo_keeper_get_pages_for_selector',
                     nonce: nonce
-                }, function(response) {
+                }, function (response) {
                     if (response.success) {
                         allPages = response.data.pages;
                         renderPageList(allPages);
@@ -330,20 +330,20 @@
         }
 
         // Search filter
-        $modal.on('input', '.aisk-modal__search', function() {
+        $modal.on('input', '.aisk-modal__search', function () {
             var term = $(this).val().toLowerCase();
-            $modal.find('.aisk-modal__page-row').each(function() {
+            $modal.find('.aisk-modal__page-row').each(function () {
                 var text = $(this).text().toLowerCase();
                 $(this).toggle(text.indexOf(term) !== -1);
             });
         });
 
         // Post type filter
-        $modal.on('click', '.aisk-modal__filter', function() {
+        $modal.on('click', '.aisk-modal__filter', function () {
             $modal.find('.aisk-modal__filter').removeClass('is-active');
             $(this).addClass('is-active');
             var filter = $(this).data('filter');
-            $modal.find('.aisk-modal__page-row').each(function() {
+            $modal.find('.aisk-modal__page-row').each(function () {
                 if (filter === 'all') {
                     $(this).show();
                 } else {
@@ -353,15 +353,15 @@
         });
 
         // Select / Deselect all
-        $modal.on('click', '.aisk-modal__select-all', function() {
+        $modal.on('click', '.aisk-modal__select-all', function () {
             $modal.find('.aisk-modal__page-row:visible input[type="checkbox"]').prop('checked', true).trigger('change');
         });
-        $modal.on('click', '.aisk-modal__deselect-all', function() {
+        $modal.on('click', '.aisk-modal__deselect-all', function () {
             $modal.find('.aisk-modal__page-row input[type="checkbox"]').prop('checked', false).trigger('change');
         });
 
         // Count selected
-        $modal.on('change', 'input[type="checkbox"]', function() {
+        $modal.on('change', 'input[type="checkbox"]', function () {
             var count = $modal.find('.aisk-modal__page-row input:checked').length;
             $modal.find('.aisk-modal__count').text(count + ' selected');
             var hasName = $.trim($modal.find('.aisk-modal__list-name').val()).length > 0;
@@ -369,14 +369,14 @@
         });
 
         // List name validation
-        $modal.on('input', '.aisk-modal__list-name', function() {
+        $modal.on('input', '.aisk-modal__list-name', function () {
             var count = $modal.find('.aisk-modal__page-row input:checked').length;
             var hasName = $.trim($(this).val()).length > 0;
             $modal.find('.aisk-modal__create-list').prop('disabled', count === 0 || !hasName);
         });
 
         // Back button
-        $modal.on('click', '.aisk-modal__back', function() {
+        $modal.on('click', '.aisk-modal__back', function () {
             $modal.find('.aisk-modal__list-panel').slideUp(200);
             $modal.find('.aisk-modal__options').slideDown(300);
             $modal.find('.aisk-modal__redo-list').slideDown(300);
@@ -385,11 +385,11 @@
         });
 
         // Create List & Process
-        $modal.on('click', '.aisk-modal__create-list', function() {
+        $modal.on('click', '.aisk-modal__create-list', function () {
             var $btn = $(this);
             var name = $.trim($modal.find('.aisk-modal__list-name').val());
             var selectedIds = [];
-            $modal.find('.aisk-modal__page-row input:checked').each(function() {
+            $modal.find('.aisk-modal__page-row input:checked').each(function () {
                 selectedIds.push(parseInt($(this).val(), 10));
             });
 
@@ -402,7 +402,7 @@
                 nonce: nonce,
                 name: name,
                 page_ids: JSON.stringify(selectedIds)
-            }, function(response) {
+            }, function (response) {
                 if (response.success) {
                     var rd = response.data;
                     runsData.push({
@@ -423,7 +423,7 @@
                     $btn.prop('disabled', false).text('Create List & Process');
                     alert(response.data.message || 'Error creating list.');
                 }
-            }).fail(function() {
+            }).fail(function () {
                 $btn.prop('disabled', false).text('Create List & Process');
                 alert('Network error. Please try again.');
             });
@@ -453,7 +453,7 @@
         this.consecutiveErrors = 0;
     }
 
-    BatchProcessor.prototype.start = function() {
+    BatchProcessor.prototype.start = function () {
         var self = this;
         this.state = 'running';
         this.timer.start();
@@ -466,7 +466,7 @@
         $(this.btnPause).show();
         $(this.btnStop).show();
 
-        $(this.btnPause).off('click').on('click', function() {
+        $(this.btnPause).off('click').on('click', function () {
             if (self.state === 'running') {
                 self.state = 'paused';
                 self.timer.pause();
@@ -486,7 +486,7 @@
             }
         });
 
-        $(this.btnStop).off('click').on('click', function() {
+        $(this.btnStop).off('click').on('click', function () {
             self.state = 'stopped';
             self.timer.stop();
             $(self.btnPause).hide();
@@ -503,7 +503,7 @@
         this.processNext();
     };
 
-    BatchProcessor.prototype.processNext = function() {
+    BatchProcessor.prototype.processNext = function () {
         if (this.state === 'paused' || this.state === 'stopped') return;
 
         if (this.current >= this.ids.length) {
@@ -539,7 +539,7 @@
             action: this.ajaxAction,
             nonce: nonce,
             post_id: postId
-        }, function(response) {
+        }, function (response) {
             self.consecutiveErrors = 0;
             if (response.success) {
                 if (response.data.skipped) {
@@ -559,7 +559,7 @@
             }
             self.current++;
             self.processNext();
-        }).fail(function(jqXHR, textStatus) {
+        }).fail(function (jqXHR, textStatus) {
             self.stats.errors++;
             self.consecutiveErrors++;
             var detail = textStatus === 'timeout' ? 'Request timed out' : 'Network error (' + textStatus + ')';
@@ -569,7 +569,7 @@
         });
     };
 
-    BatchProcessor.prototype.finish = function() {
+    BatchProcessor.prototype.finish = function () {
         this.state = 'done';
         this.timer.stop();
         $(this.prefix + '-bar').css('width', '100%');
@@ -603,7 +603,7 @@
     }
 
     // ── Delete list handler (delegated) ───────────────────────
-    $(document).on('click', '.aisk-run-delete', function(e) {
+    $(document).on('click', '.aisk-run-delete', function (e) {
         e.stopPropagation();
         var btn = $(this);
         var runId = parseInt(btn.data('run-id'), 10);
@@ -613,23 +613,23 @@
             action: 'ai_seo_keeper_delete_run',
             nonce: nonce,
             run_id: runId
-        }, function(response) {
+        }, function (response) {
             if (response.success) {
-                $('.aisk-run-badge[data-run-id="' + runId + '"]').fadeOut(300, function() {
+                $('.aisk-run-badge[data-run-id="' + runId + '"]').fadeOut(300, function () {
                     $(this).remove();
                 });
-                runsData = runsData.filter(function(r) {
+                runsData = runsData.filter(function (r) {
                     return parseInt(r.id, 10) !== runId;
                 });
             } else {
                 btn.prop('disabled', false).text('\u00D7');
             }
-        }).fail(function() {
+        }).fail(function () {
             btn.prop('disabled', false).text('\u00D7');
         });
     });
 
-    $('#aisk-btn-index').on('click', function() {
+    $('#aisk-btn-index').on('click', function () {
         var btn = $(this);
         btn.prop('disabled', true).text('Indexing...');
         $('#aisk-s1-progress').show();
@@ -641,7 +641,7 @@
         $.post(ajaxUrl, {
             action: aiskWizard.ajaxIndexAction,
             nonce: nonce
-        }, function(response) {
+        }, function (response) {
             $('#aisk-s1-bar').css('width', '100%');
             if (response.success) {
                 publishedIds = response.data.publishedIds || [];
@@ -655,7 +655,7 @@
                 showError('#aisk-s1', response.data && response.data.message ? response.data.message : 'Unknown error');
                 btn.prop('disabled', false).text('Retry Indexing');
             }
-        }).fail(function(jqXHR, textStatus) {
+        }).fail(function (jqXHR, textStatus) {
             showError('#aisk-s1', 'Network error (' + textStatus + '). Please check your connection and try again.');
             btn.prop('disabled', false).text('Retry Indexing');
         });
@@ -665,9 +665,9 @@
 
     var s2processor = null;
 
-    $('#aisk-btn-generate').on('click', function() {
+    $('#aisk-btn-generate').on('click', function () {
         var self = this;
-        confirmLargeOperation('SEO Metadata Generation', publishedIds.length, 3, 'metadata', function(result) {
+        confirmLargeOperation('SEO Metadata Generation', publishedIds.length, 3, 'metadata', function (result) {
             var idsToUse = result.ids;
             var s2RunId = result.runId;
             $('#aisk-s2-log').show();
@@ -683,7 +683,7 @@
                 btnPause: '#aisk-btn-s2-pause',
                 btnStop: '#aisk-btn-s2-stop',
                 timerEl: '#aisk-s2-elapsed',
-                onItem: function(response) {
+                onItem: function (response) {
                     var d = response.data;
                     if (d.skipped) {
                         $('#aisk-s2-log').prepend('<div class="aisk-log-entry" style="color:#50575e;">\u23ED <strong>' + esc(d.title) + '</strong> \u2014 skipped (already has metadata)</div>');
@@ -691,7 +691,7 @@
                         $('#aisk-s2-log').prepend('<div class="aisk-log-entry" style="color:#00a32a;">\u2713 <strong>' + esc(d.title) + '</strong> \u2014 ' + esc(d.seo_title) + '</div>');
                     }
                 },
-                onDone: function(stats) {
+                onDone: function (stats) {
                     $('#aisk-s2-status').text('Done in ' + s2processor.timer.getText() + '.');
                     $('#aisk-s2-done').show();
                     $('#aisk-s2-result').text(stats.processed + ' generated, ' + stats.skipped + ' skipped, ' + stats.errors + ' errors.');
@@ -708,7 +708,7 @@
                         });
                     }
                 },
-                onError: function(postId, title, msg) {
+                onError: function (postId, title, msg) {
                     $('#aisk-s2-log').prepend('<div class="aisk-log-entry" style="color:#d63638;">\u2717 <strong>' + esc(title) + '</strong> \u2014 ' + esc(msg) + '</div>');
                 }
             });
@@ -781,7 +781,7 @@
         }
         $('#aisk-s3-tabs').show();
 
-        var sorted = allAudits.slice().sort(function(a, b) {
+        var sorted = allAudits.slice().sort(function (a, b) {
             return b.score - a.score;
         });
         var totalIssues = 0;
@@ -842,32 +842,32 @@
 
         var filtered = allAudits.slice();
 
-        if (filterVal === 'critical') filtered = filtered.filter(function(d) {
+        if (filterVal === 'critical') filtered = filtered.filter(function (d) {
             return d.score < 40;
         });
-        else if (filterVal === 'warning') filtered = filtered.filter(function(d) {
+        else if (filterVal === 'warning') filtered = filtered.filter(function (d) {
             return d.score >= 40 && d.score < 70;
         });
-        else if (filterVal === 'good') filtered = filtered.filter(function(d) {
+        else if (filterVal === 'good') filtered = filtered.filter(function (d) {
             return d.score >= 70;
         });
-        else if (filterVal === 'skipped') filtered = filtered.filter(function(d) {
+        else if (filterVal === 'skipped') filtered = filtered.filter(function (d) {
             return d.audit_skipped || skippedIds.indexOf(d.post_id) !== -1;
         });
-        else if (filterVal === 'not-skipped') filtered = filtered.filter(function(d) {
+        else if (filterVal === 'not-skipped') filtered = filtered.filter(function (d) {
             return !d.audit_skipped && skippedIds.indexOf(d.post_id) === -1;
         });
 
-        if (sortOrder === 'score-asc') filtered.sort(function(a, b) {
+        if (sortOrder === 'score-asc') filtered.sort(function (a, b) {
             return a.score - b.score;
         });
-        else if (sortOrder === 'score-desc') filtered.sort(function(a, b) {
+        else if (sortOrder === 'score-desc') filtered.sort(function (a, b) {
             return b.score - a.score;
         });
-        else if (sortOrder === 'title-asc') filtered.sort(function(a, b) {
+        else if (sortOrder === 'title-asc') filtered.sort(function (a, b) {
             return a.title.localeCompare(b.title);
         });
-        else if (sortOrder === 'issues-desc') filtered.sort(function(a, b) {
+        else if (sortOrder === 'issues-desc') filtered.sort(function (a, b) {
             return (b.issues ? b.issues.length : 0) - (a.issues ? a.issues.length : 0);
         });
 
@@ -883,12 +883,12 @@
     }
 
     // Sort/filter change handlers
-    $('#aisk-sort-order, #aisk-score-filter').on('change', function() {
+    $('#aisk-sort-order, #aisk-score-filter').on('change', function () {
         refreshDetailsTab();
     });
 
     // ── Skip toggle (delegated) ───────────────────────────────
-    $(document).on('click', '.aisk-skip-toggle', function(e) {
+    $(document).on('click', '.aisk-skip-toggle', function (e) {
         e.preventDefault();
         var btn = $(this);
         var postId = parseInt(btn.data('postid'), 10);
@@ -897,12 +897,12 @@
             action: aiskWizard.ajaxToggleSkipAction,
             nonce: nonce,
             post_id: postId
-        }).done(function(res) {
+        }).done(function (res) {
             if (res.success) {
                 if (res.data.skipped) {
                     if (skippedIds.indexOf(postId) === -1) skippedIds.push(postId);
                 } else {
-                    skippedIds = skippedIds.filter(function(id) {
+                    skippedIds = skippedIds.filter(function (id) {
                         return id !== postId;
                     });
                 }
@@ -915,13 +915,13 @@
                 refreshDetailsTab();
                 refreshSkipTab();
             }
-        }).always(function() {
+        }).always(function () {
             btn.prop('disabled', false);
         });
     });
 
     // ── Save skip patterns ────────────────────────────────────
-    $('#aisk-btn-save-patterns').on('click', function() {
+    $('#aisk-btn-save-patterns').on('click', function () {
         var btn = $(this);
         var patterns = $('#aisk-skip-patterns').val();
         btn.prop('disabled', true).text('Saving\u2026');
@@ -930,12 +930,12 @@
             action: aiskWizard.ajaxSaveSkipPatternsAction,
             nonce: nonce,
             patterns: patterns
-        }).done(function(res) {
+        }).done(function (res) {
             if (res.success) {
                 var msg = 'Saved! ' + res.data.matched_count + ' page(s) match current patterns.';
                 $('#aisk-patterns-feedback').text(msg).show();
             }
-        }).always(function() {
+        }).always(function () {
             btn.prop('disabled', false).text('Save Patterns');
         });
     });
@@ -965,11 +965,11 @@
         refreshDetailsTab();
     }
 
-    $('#aisk-btn-audit').on('click', function() {
+    $('#aisk-btn-audit').on('click', function () {
         var btn = $(this);
         var isRerun = btn.text().indexOf('Re-Run') !== -1;
 
-        var idsForCount = publishedIds.filter(function(id) {
+        var idsForCount = publishedIds.filter(function (id) {
             return skippedIds.indexOf(id) === -1;
         });
         if (!isRerun && allAudits.length > 0) {
@@ -977,12 +977,12 @@
             for (var c = 0; c < allAudits.length; c++) {
                 auditedCheck[allAudits[c].post_id] = true;
             }
-            idsForCount = idsForCount.filter(function(id) {
+            idsForCount = idsForCount.filter(function (id) {
                 return !auditedCheck[id];
             });
         }
 
-        confirmLargeOperation('Full SEO Audit', idsForCount.length, 5, 'audit', function(result) {
+        confirmLargeOperation('Full SEO Audit', idsForCount.length, 5, 'audit', function (result) {
             var idsFromModal = result.ids;
             var s3RunId = result.runId;
             $('#aisk-s3-done').hide();
@@ -993,7 +993,7 @@
             if (idsFromModal.length < publishedIds.length) {
                 idsToProcess = idsFromModal;
             } else {
-                idsToProcess = publishedIds.filter(function(id) {
+                idsToProcess = publishedIds.filter(function (id) {
                     return skippedIds.indexOf(id) === -1;
                 });
                 if (!isRerun && allAudits.length > 0) {
@@ -1001,7 +1001,7 @@
                     for (var i = 0; i < allAudits.length; i++) {
                         auditedIds[allAudits[i].post_id] = true;
                     }
-                    idsToProcess = idsToProcess.filter(function(id) {
+                    idsToProcess = idsToProcess.filter(function (id) {
                         return !auditedIds[id];
                     });
                 }
@@ -1032,12 +1032,12 @@
                 btnPause: '#aisk-btn-s3-pause',
                 btnStop: '#aisk-btn-s3-stop',
                 timerEl: '#aisk-s3-elapsed',
-                onItem: function(response) {
+                onItem: function (response) {
                     addOrUpdateAudit(response.data);
                     refreshSummaryTab();
                     refreshDetailsTab();
                 },
-                onDone: function(stats) {
+                onDone: function (stats) {
                     var total = stats.processed + stats.cached;
                     $('#aisk-s3-status').text('Done in ' + s3processor.timer.getText() + '.');
                     $('#aisk-s3-done').show();
@@ -1058,7 +1058,7 @@
                         });
                     }
                 },
-                onError: function(postId, title, msg) {
+                onError: function (postId, title, msg) {
                     $('#aisk-s3-results').prepend(
                         '<div style="border:1px solid #d63638;padding:12px;margin-bottom:12px;background:#fcf0f1;border-radius:4px;">' +
                         '<strong>' + esc(title) + '</strong> \u2014 <span style="color:#d63638;">' + esc(msg) + '</span></div>'
@@ -1072,7 +1072,7 @@
 
     // ── Data Management: Clear SEO Data ──────────────────────────
 
-    $('.aisk-clear-data-btn').on('click', function() {
+    $('.aisk-clear-data-btn').on('click', function () {
         var $btn = $(this);
         var scope = $btn.data('scope');
         var labels = {
@@ -1106,7 +1106,7 @@
         );
 
         $('body').append($confirmOverlay).append($confirmModal);
-        setTimeout(function() {
+        setTimeout(function () {
             $confirmOverlay.addClass('is-visible');
             $confirmModal.addClass('is-visible');
         }, 10);
@@ -1114,7 +1114,7 @@
         function closeConfirm() {
             $confirmOverlay.removeClass('is-visible');
             $confirmModal.removeClass('is-visible');
-            setTimeout(function() {
+            setTimeout(function () {
                 $confirmOverlay.remove();
                 $confirmModal.remove();
             }, 200);
@@ -1123,24 +1123,24 @@
         $confirmOverlay.on('click', closeConfirm);
         $confirmModal.find('.aisk-modal__close, .aisk-confirm-cancel').on('click', closeConfirm);
 
-        $confirmModal.find('.aisk-confirm-proceed').on('click', function() {
+        $confirmModal.find('.aisk-confirm-proceed').on('click', function () {
             closeConfirm();
             $btn.prop('disabled', true).text('Clearing...');
             $.post(ajaxUrl, {
                 action: 'ai_seo_keeper_clear_seo_data',
                 nonce: nonce,
                 scope: scope
-            }, function(response) {
+            }, function (response) {
                 if (response.success) {
                     $('#aisk-clear-feedback').text('\u2713 ' + response.data.message).show();
-                    setTimeout(function() {
+                    setTimeout(function () {
                         location.reload();
                     }, 1200);
                 } else {
                     $('#aisk-clear-feedback').text('\u2717 ' + (response.data.message || 'Error')).css('color', '#d63638').show();
                     $btn.prop('disabled', false);
                 }
-            }).fail(function() {
+            }).fail(function () {
                 $('#aisk-clear-feedback').text('\u2717 Network error.').css('color', '#d63638').show();
                 $btn.prop('disabled', false);
             });

@@ -181,7 +181,11 @@ class Admin
         add_action('admin_post_' . self::BULK_FRONTEND_ACTION, array($this->rollout, 'handle_bulk_frontend_rollout'));
         add_action('admin_post_' . self::YOAST_IMPORT_ACTION, array($this->import_export, 'handle_import_yoast'));
         add_action('admin_post_ai_seo_keeper_export', array($this->import_export, 'handle_export'));
-        add_action('admin_post_ai_seo_keeper_import', array($this->import_export, 'handle_import'));
+
+        // --- Import v2 AJAX handlers ---
+        add_action('wp_ajax_ai_seo_keeper_import_validate', array($this->import_export, 'ajax_import_validate'));
+        add_action('wp_ajax_ai_seo_keeper_import_match', array($this->import_export, 'ajax_import_match'));
+        add_action('wp_ajax_ai_seo_keeper_import_process', array($this->import_export, 'ajax_import_process'));
 
         // --- AJAX handlers → delegates ---
         add_action('wp_ajax_' . self::AJAX_SAVE_ACTION, array($this->ajax, 'handle_save_editor_meta'));
@@ -2383,6 +2387,11 @@ JS;
         $import_status = isset($_GET['import_status']) ? sanitize_key($_GET['import_status']) : '';
         $import_msg    = isset($_GET['import_msg']) ? sanitize_text_field(wp_unslash($_GET['import_msg'])) : '';
 
+        wp_localize_script('ai-seo-page-export-import', 'aiskImportExport', array(
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce'    => wp_create_nonce('ai_seo_keeper_import_v2'),
+        ));
+
         require __DIR__ . '/admin/view-export-import.php';
     }
 
@@ -3222,7 +3231,7 @@ JS;
                 </div>
             <?php endif; ?>
         </div>
-        <?php
+    <?php
         wp_add_inline_script('ai-seo-admin-common', '(function($){$(document).on("click",".ai-seo-keeper-copy-link",function(){var u=$(this).data("url"),t=$(this).data("title"),h=\'<a href="\'+u+\'">\'+t+"</a>";if(navigator.clipboard){navigator.clipboard.writeText(h)}var b=$(this);b.text("Copied!");setTimeout(function(){b.text("Copy link")},1500)})})(jQuery);');
 
         return ob_get_clean();

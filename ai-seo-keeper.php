@@ -3,7 +3,7 @@
 /**
  * Plugin Name: AI SEO Keeper
  * Description: AI-assisted SEO copilot for WordPress with metadata approval workflows, audits, discovery documents, schema, and refresh signaling.
- * Version: 1.3.0
+ * Version: 1.0.0-beta
  * Requires at least: 6.7
  * Requires PHP: 7.4
  * Author: Green Coders
@@ -14,7 +14,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('AI_SEO_KEEPER_VERSION', '1.3.1');
+define('AI_SEO_KEEPER_VERSION', '1.0.0-beta');
 define('AI_SEO_KEEPER_FILE', __FILE__);
 define('AI_SEO_KEEPER_PATH', plugin_dir_path(__FILE__));
 define('AI_SEO_KEEPER_URL', plugin_dir_url(__FILE__));

@@ -5,6 +5,10 @@ namespace AI_SEO_Keeper\Admin;
 use AI_SEO_Keeper\Plugin;
 use AI_SEO_Keeper\Settings;
 use AI_SEO_Keeper\Admin as AdminBase;
+use AI_SEO_Keeper\ImportExport\Exporter;
+use AI_SEO_Keeper\ImportExport\Matcher;
+use AI_SEO_Keeper\ImportExport\Importer;
+use AI_SEO_Keeper\ImportExport\Url_Rewriter;
 
 /**
  * Export, Import, and Yoast migration handlers.
@@ -37,7 +41,7 @@ class Admin_Import_Export
     }
 
     // ------------------------------------------------------------------
-    //  Export
+    //  Export (v2 — uses Exporter class)
     // ------------------------------------------------------------------
 
     public function handle_export(): void
@@ -47,171 +51,299 @@ class Admin_Import_Export
         }
         check_admin_referer('ai_seo_keeper_export');
 
-        $data = array(
-            'plugin'      => 'ai-seo-keeper',
-            'version'     => defined('AI_SEO_KEEPER_VERSION') ? AI_SEO_KEEPER_VERSION : '1.0.0',
-            'exported_at' => gmdate('c'),
-            'site_url'    => home_url('/'),
-        );
-
-        // Settings.
+        $sections = array();
         if (! empty($_POST['export_settings'])) {
-            $data['settings'] = $this->settings->get();
-            // Never export API keys.
-            unset($data['settings']['api_key'], $data['settings']['google_api_key']);
+            $sections[] = 'settings';
         }
-
-        // Per-page SEO metadata.
         if (! empty($_POST['export_seo_meta'])) {
-            global $wpdb;
-            $meta_keys = array(
-                '_ai_seo_keeper_meta_title',
-                '_ai_seo_keeper_meta_description',
-                '_ai_seo_keeper_focus_keyphrase',
-                '_ai_seo_keeper_social_title',
-                '_ai_seo_keeper_social_description',
-                '_ai_seo_keeper_social_image',
-                '_ai_seo_keeper_schema_type',
-                '_ai_seo_keeper_canonical_url',
-                '_ai_seo_keeper_robots_directives',
-                '_ai_seo_keeper_frontend_enabled',
-                '_ai_seo_keeper_cornerstone',
-                '_ai_seo_keeper_hreflang',
-            );
-            $placeholders = implode(',', array_fill(0, count($meta_keys), '%s'));
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            $rows = $wpdb->get_results(
-                $wpdb->prepare(
-                    "SELECT p.ID, p.post_title, p.post_name, pm.meta_key, pm.meta_value
-                    FROM {$wpdb->postmeta} pm
-                    INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
-                    WHERE pm.meta_key IN ({$placeholders})
-                        AND pm.meta_value != ''
-                    ORDER BY p.ID ASC",
-                    ...$meta_keys
-                ),
-                ARRAY_A
-            );
-
-            $seo_meta = array();
-            foreach ($rows as $row) {
-                $pid = (int) $row['ID'];
-                if (! isset($seo_meta[$pid])) {
-                    $seo_meta[$pid] = array(
-                        'post_id'    => $pid,
-                        'post_title' => $row['post_title'],
-                        'post_slug'  => $row['post_name'],
-                        'meta'       => array(),
-                    );
-                }
-                $seo_meta[$pid]['meta'][$row['meta_key']] = $row['meta_value'];
-            }
-            $data['seo_meta'] = array_values($seo_meta);
+            $sections[] = 'seo_meta_posts';
         }
-
-        // Redirects.
+        if (! empty($_POST['export_seo_terms'])) {
+            $sections[] = 'seo_meta_terms';
+        }
+        if (! empty($_POST['export_audits'])) {
+            $sections[] = 'audits';
+        }
         if (! empty($_POST['export_redirects'])) {
-            global $wpdb;
-            $redirects_table = $wpdb->prefix . 'ai_seo_keeper_redirects';
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-            $redirects = $wpdb->get_results(
-                "SELECT source_url, target_url, status_code, type FROM {$redirects_table} WHERE type = 'redirect' ORDER BY source_url ASC",
-                ARRAY_A
-            );
-            $data['redirects'] = is_array($redirects) ? $redirects : array();
+            $sections[] = 'redirects';
+        }
+        if (! empty($_POST['export_four_oh_four'])) {
+            $sections[] = 'four_oh_four';
+        }
+        if (! empty($_POST['export_runs'])) {
+            $sections[] = 'runs';
+        }
+        if (! empty($_POST['export_chat_history'])) {
+            $sections[] = 'chat_history';
         }
 
-        $json = wp_json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        if (empty($sections)) {
+            $sections = array('settings', 'seo_meta_posts', 'seo_meta_terms', 'audits', 'redirects');
+        }
+
+        $exporter = new Exporter($this->settings);
+        $data     = $exporter->build($sections);
+        $domain   = $data['source_domain'] ?? 'site';
+        $json     = wp_json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         header('Content-Type: application/json; charset=utf-8');
-        header('Content-Disposition: attachment; filename="ai-seo-keeper-export-' . gmdate('Y-m-d') . '.json"');
+        header('Content-Disposition: attachment; filename="ai-seo-keeper-export-' . sanitize_file_name($domain) . '-' . gmdate('Y-m-d') . '.json"');
         header('Content-Length: ' . strlen($json));
         echo $json;
         exit;
     }
 
     // ------------------------------------------------------------------
-    //  Import
+    //  Import — AJAX handlers (v2 multi-step flow)
     // ------------------------------------------------------------------
 
-    public function handle_import(): void
+    /**
+     * AJAX: Validate uploaded import file and store in transient.
+     */
+    public function ajax_import_validate(): void
     {
+        check_ajax_referer('ai_seo_keeper_import_v2', '_nonce');
         if (! current_user_can('manage_options')) {
-            wp_die('Unauthorized');
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
         }
-        check_admin_referer('ai_seo_keeper_import');
-
-        $redirect_url = admin_url('admin.php?page=ai-seo-keeper-export-import');
 
         if (empty($_FILES['import_file']['tmp_name']) || 0 !== (int) $_FILES['import_file']['error']) {
-            wp_redirect(add_query_arg(array('import_status' => 'error', 'import_msg' => 'No file uploaded or upload error.'), $redirect_url));
-            exit;
+            wp_send_json_error(array('message' => 'No file uploaded or upload error.'));
+        }
+
+        // File extension check.
+        $filename = sanitize_file_name($_FILES['import_file']['name'] ?? '');
+        if ('.json' !== strtolower(substr($filename, -5))) {
+            wp_send_json_error(array('message' => 'Invalid file type. Only .json files are accepted.'));
+        }
+
+        // File size check (10 MB limit).
+        $max_size = 10 * 1024 * 1024;
+        if ($_FILES['import_file']['size'] > $max_size) {
+            wp_send_json_error(array('message' => 'File is too large. Maximum allowed size is 10 MB.'));
         }
 
         $json = file_get_contents($_FILES['import_file']['tmp_name']); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
         $data = json_decode($json, true);
 
         if (! is_array($data) || 'ai-seo-keeper' !== ($data['plugin'] ?? '')) {
-            wp_redirect(add_query_arg(array('import_status' => 'error', 'import_msg' => 'Invalid import file. Must be an AI SEO Keeper export.'), $redirect_url));
-            exit;
+            wp_send_json_error(array('message' => 'Invalid file. Must be an AI SEO Keeper export.'));
         }
 
-        $imported = array();
+        // Store in transient (1 hour TTL).
+        $transient_key = 'aisk_import_' . get_current_user_id();
+        set_transient($transient_key, $data, HOUR_IN_SECONDS);
 
-        // Import settings.
-        if (! empty($data['settings']) && is_array($data['settings'])) {
-            $current = $this->settings->get();
-            // Preserve existing API keys — never import them.
-            $data['settings']['api_key']        = $current['api_key'] ?? '';
-            $data['settings']['google_api_key'] = $current['google_api_key'] ?? '';
-            update_option(Settings::OPTION_NAME, wp_parse_args($data['settings'], $current));
-            $imported[] = 'settings';
+        wp_send_json_success(array(
+            'source_domain'     => $data['source_domain'] ?? '',
+            'plugin_version'    => $data['plugin_version'] ?? $data['version'] ?? '',
+            'format_version'    => $data['format_version'] ?? '1.0',
+            'exported_at'       => $data['exported_at'] ?? '',
+            'sections_included' => $data['sections_included'] ?? array_keys($data['data'] ?? array()),
+            'counts'            => $data['counts'] ?? array(),
+            'current_domain'    => wp_parse_url(home_url(), PHP_URL_HOST),
+        ));
+    }
+
+    /**
+     * AJAX: Run matching algorithm and return results.
+     */
+    public function ajax_import_match(): void
+    {
+        check_ajax_referer('ai_seo_keeper_import_v2', '_nonce');
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
         }
 
-        // Import SEO metadata.
-        if (! empty($data['seo_meta']) && is_array($data['seo_meta'])) {
-            $meta_count = 0;
-            foreach ($data['seo_meta'] as $entry) {
-                $post_id = (int) ($entry['post_id'] ?? 0);
-                if ($post_id <= 0 || ! get_post($post_id)) {
-                    continue;
+        $data = get_transient('aisk_import_' . get_current_user_id());
+        if (! is_array($data)) {
+            wp_send_json_error(array('message' => 'Import session expired. Please upload the file again.'));
+        }
+
+        $matcher      = new Matcher();
+        $post_matches = $matcher->match_posts($data['data']['seo_meta_posts'] ?? array());
+        $term_matches = $matcher->match_terms($data['data']['seo_meta_terms'] ?? array());
+
+        // Also match audit entries to posts.
+        $audit_posts  = array();
+        $audit_data   = $data['data']['audits']['audit_meta'] ?? array();
+        if (! empty($audit_data)) {
+            // Convert audit match_keys to the same format as seo_meta_posts for matching.
+            $audit_as_posts = array();
+            foreach ($audit_data as $entry) {
+                $audit_as_posts[] = array('match_key' => $entry['match_key'] ?? array());
+            }
+            $audit_posts = $matcher->match_posts($audit_as_posts);
+        }
+
+        // Store match results in transient.
+        $match_data = array(
+            'post_matches'  => $post_matches,
+            'term_matches'  => $term_matches,
+            'audit_matches' => $audit_posts,
+        );
+        set_transient('aisk_import_matches_' . get_current_user_id(), $match_data, HOUR_IN_SECONDS);
+
+        wp_send_json_success(array(
+            'posts' => array(
+                'strong'   => $post_matches['strong'],
+                'fuzzy'    => $post_matches['fuzzy'],
+                'orphaned' => $post_matches['orphaned'],
+                'total'    => count($post_matches['strong']) + count($post_matches['fuzzy']) + count($post_matches['orphaned']),
+            ),
+            'terms' => array(
+                'strong'   => $term_matches['strong'],
+                'fuzzy'    => $term_matches['fuzzy'],
+                'orphaned' => $term_matches['orphaned'],
+                'total'    => count($term_matches['strong']) + count($term_matches['fuzzy']) + count($term_matches['orphaned']),
+            ),
+        ));
+    }
+
+    /**
+     * AJAX: Process import chunk.
+     */
+    public function ajax_import_process(): void
+    {
+        check_ajax_referer('ai_seo_keeper_import_v2', '_nonce');
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
+        }
+
+        $uid  = get_current_user_id();
+        $data = get_transient('aisk_import_' . $uid);
+        if (! is_array($data)) {
+            wp_send_json_error(array('message' => 'Import session expired.'));
+        }
+
+        $match_data = get_transient('aisk_import_matches_' . $uid);
+        if (! is_array($match_data)) {
+            wp_send_json_error(array('message' => 'Match data expired. Please re-run matching.'));
+        }
+
+        $mode             = sanitize_key($_POST['mode'] ?? 'update');
+        $valid_modes      = array('update', 'overwrite', 'force');
+        if (! in_array($mode, $valid_modes, true)) {
+            wp_send_json_error(array('message' => 'Invalid import mode.'));
+        }
+        $sections         = isset($_POST['sections']) ? array_map('sanitize_key', (array) $_POST['sections']) : array();
+        $step             = sanitize_key($_POST['step'] ?? '');
+        $approved_fuzzy   = isset($_POST['approved_fuzzy']) ? array_map('intval', (array) $_POST['approved_fuzzy']) : array();
+        $rewrite_urls     = ! empty($_POST['rewrite_urls']);
+
+        // Build URL rewriter.
+        $source_domain = $data['source_domain'] ?? '';
+        $target_domain = wp_parse_url(home_url(), PHP_URL_HOST);
+        $url_rewriter  = new Url_Rewriter($source_domain, $target_domain, $rewrite_urls);
+
+        $importer = new Importer($this->settings, $url_rewriter, $mode);
+
+        // Build the active match list (strong + approved fuzzy).
+        $active_post_matches = $match_data['post_matches']['strong'] ?? array();
+        foreach ($match_data['post_matches']['fuzzy'] ?? array() as $fuzzy) {
+            if (in_array((int) $fuzzy['export_index'], $approved_fuzzy, true)) {
+                $active_post_matches[] = $fuzzy;
+            }
+        }
+
+        $active_term_matches = $match_data['term_matches']['strong'] ?? array();
+        $approved_fuzzy_terms = isset($_POST['approved_fuzzy_terms']) ? array_map('intval', (array) $_POST['approved_fuzzy_terms']) : array();
+        foreach ($match_data['term_matches']['fuzzy'] ?? array() as $fuzzy) {
+            if (in_array((int) $fuzzy['export_index'], $approved_fuzzy_terms, true)) {
+                $active_term_matches[] = $fuzzy;
+            }
+        }
+
+        $result = array('step' => $step, 'done' => false, 'log' => array());
+
+        switch ($step) {
+            case 'settings':
+                if (in_array('settings', $sections, true) && ! empty($data['data']['settings'])) {
+                    $r = $importer->import_settings($data['data']['settings']);
+                    $result['log'][] = 'Settings: ' . $r['imported'] . ' imported, ' . $r['skipped'] . ' skipped';
                 }
-                if (! empty($entry['meta']) && is_array($entry['meta'])) {
-                    foreach ($entry['meta'] as $key => $value) {
-                        // Only allow known meta keys.
-                        if (0 !== strpos($key, '_ai_seo_keeper_')) {
-                            continue;
+                $result['next_step'] = 'seo_meta_posts';
+                break;
+
+            case 'seo_meta_posts':
+                if (in_array('seo_meta_posts', $sections, true) && ! empty($data['data']['seo_meta_posts'])) {
+                    $offset    = (int) ($_POST['offset'] ?? 0);
+                    $chunk_size = 20;
+                    $chunk     = array_slice($active_post_matches, $offset, $chunk_size);
+
+                    if (! empty($chunk)) {
+                        $r = $importer->import_post_meta_chunk($data['data']['seo_meta_posts'], $chunk);
+                        $result['log']       = array_merge($result['log'], $r['log']);
+                        $result['progress']  = min($offset + $chunk_size, count($active_post_matches));
+                        $result['total']     = count($active_post_matches);
+
+                        if ($offset + $chunk_size < count($active_post_matches)) {
+                            $result['next_step']   = 'seo_meta_posts';
+                            $result['next_offset'] = $offset + $chunk_size;
+                            break;
                         }
-                        update_post_meta($post_id, sanitize_key($key), sanitize_text_field($value));
-                    }
-                    $meta_count++;
-                }
-            }
-            $imported[] = "{$meta_count} pages SEO data";
-        }
-
-        // Import redirects.
-        if (! empty($data['redirects']) && is_array($data['redirects'])) {
-            $redir_instance = Plugin::instance()->get_redirects();
-            $redir_count    = 0;
-            if ($redir_instance) {
-                foreach ($data['redirects'] as $r) {
-                    if (! empty($r['source_url']) && ! empty($r['target_url'])) {
-                        $redir_instance->add_redirect(
-                            sanitize_text_field($r['source_url']),
-                            esc_url_raw($r['target_url']),
-                            (int) ($r['status_code'] ?? 301)
-                        );
-                        $redir_count++;
                     }
                 }
-            }
-            $imported[] = "{$redir_count} redirects";
+                $result['next_step'] = 'seo_meta_terms';
+                break;
+
+            case 'seo_meta_terms':
+                if (in_array('seo_meta_terms', $sections, true) && ! empty($data['data']['seo_meta_terms'])) {
+                    $r = $importer->import_term_meta_chunk($data['data']['seo_meta_terms'], $active_term_matches);
+                    $result['log'] = array_merge($result['log'], $r['log']);
+                }
+                $result['next_step'] = 'audits';
+                break;
+
+            case 'audits':
+                if (in_array('audits', $sections, true) && ! empty($data['data']['audits'])) {
+                    $r = $importer->import_audits($data['data']['audits'], $active_post_matches);
+                    $result['log'][] = 'Audits: ' . $r['imported'] . ' imported, ' . $r['skipped'] . ' skipped';
+                }
+                $result['next_step'] = 'redirects';
+                break;
+
+            case 'redirects':
+                if (in_array('redirects', $sections, true) && ! empty($data['data']['redirects'])) {
+                    $r = $importer->import_redirects($data['data']['redirects']);
+                    $result['log'][] = 'Redirects: ' . $r['imported'] . ' imported, ' . $r['skipped'] . ' skipped';
+                }
+                $result['next_step'] = 'four_oh_four';
+                break;
+
+            case 'four_oh_four':
+                if (in_array('four_oh_four', $sections, true) && ! empty($data['data']['four_oh_four'])) {
+                    $r = $importer->import_404s($data['data']['four_oh_four']);
+                    $result['log'][] = '404 Log: ' . $r['imported'] . ' imported, ' . $r['skipped'] . ' skipped';
+                }
+                $result['next_step'] = 'runs';
+                break;
+
+            case 'runs':
+                if (in_array('runs', $sections, true) && ! empty($data['data']['runs'])) {
+                    $r = $importer->import_runs($data['data']['runs']);
+                    $result['log'][] = 'Runs: ' . $r['imported'] . ' imported';
+                }
+                $result['next_step'] = 'chat_history';
+                break;
+
+            case 'chat_history':
+                if (in_array('chat_history', $sections, true) && ! empty($data['data']['chat_history'])) {
+                    $r = $importer->import_chat_history($data['data']['chat_history'], $active_post_matches);
+                    $result['log'][] = 'Chat: ' . $r['conversations'] . ' conversations, ' . $r['messages'] . ' messages';
+                }
+                $result['done'] = true;
+                // Clean up transients.
+                delete_transient('aisk_import_' . $uid);
+                delete_transient('aisk_import_matches_' . $uid);
+                break;
+
+            default:
+                $result['next_step'] = 'settings';
+                break;
         }
 
-        $msg = empty($imported) ? 'Nothing to import.' : 'Imported: ' . implode(', ', $imported) . '.';
-        wp_redirect(add_query_arg(array('import_status' => 'success', 'import_msg' => $msg), $redirect_url));
-        exit;
+        wp_send_json_success($result);
     }
 
     // ------------------------------------------------------------------
