@@ -2700,6 +2700,22 @@ JS;
         <div class="ai-seo-captain-editor-panel">
             <?php echo $this->render_editor_panel_styles(); ?>
 
+            <?php if (! $has_api_key) : ?>
+                <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 18px;margin:0 0 16px;border-radius:6px;font-size:14px;line-height:1.6;color:#1d2327;background:linear-gradient(135deg,#fff8e1 0%,#fff3cd 100%);border:1px solid #f0c36d;border-left:5px solid #ffb900;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+                    <span style="flex-shrink:0;font-size:22px;line-height:1;margin-top:1px;color:#d68308;">&#9888;</span>
+                    <div style="flex:1;">
+                        <strong style="display:block;font-weight:700;font-size:14px;margin-bottom:4px;"><?php esc_html_e('API key missing', 'ai-seo-captain'); ?></strong>
+                        <span style="font-size:13px;color:#50575e;"><?php
+                                                                    printf(
+                                                                        /* translators: %s: link to settings page */
+                                                                        esc_html__('Add an API key in %s before the generation tools can be activated.', 'ai-seo-captain'),
+                                                                        '<a href="' . esc_url(admin_url('admin.php?page=ai-seo-captain-settings')) . '" style="color:#6a14d1;font-weight:600;text-decoration:underline;">' . esc_html__('SEO Captain Settings', 'ai-seo-captain') . '</a>'
+                                                                    );
+                                                                    ?></span>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <p class="ai-seo-captain-panel-intro">This is the page-level workspace for SEO Captain. Generate metadata drafts, define SEO and social overrides, choose schema and advanced directives, and control whether approved output is allowed on the frontend.</p>
 
             <div class="ai-seo-captain-toolbar">
@@ -3080,9 +3096,6 @@ JS;
                 </section>
             </div>
 
-            <?php if (! $has_api_key) : ?>
-                <p class="ai-seo-captain-missing-key">Add an API key in SEO Captain Settings before the generation tools can be activated.</p>
-            <?php endif; ?>
         </div>
     <?php
     }
