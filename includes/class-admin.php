@@ -77,6 +77,8 @@ class Admin
 
     public const SCHEMA_TYPE_META_KEY = '_ai_seo_captain_schema_type';
 
+    public const EXCLUDE_SITEMAP_META_KEY = '_ai_seo_captain_exclude_sitemap';
+
     private const TITLE_MIN_LENGTH = 30;
 
     private const TITLE_MAX_LENGTH = 60;
@@ -224,6 +226,11 @@ class Admin
         add_action('wp_ajax_ai_seo_captain_mark_run_step', array($this->ajax, 'handle_mark_run_step'));
         add_action('wp_ajax_ai_seo_captain_clear_seo_data', array($this->ajax, 'handle_clear_seo_data'));
 
+        // --- Cron Manager AJAX handlers ---
+        add_action('wp_ajax_ai_seo_captain_cron_pause', array($this->ajax, 'handle_cron_pause'));
+        add_action('wp_ajax_ai_seo_captain_cron_resume', array($this->ajax, 'handle_cron_resume'));
+        add_action('wp_ajax_ai_seo_captain_cron_run_now', array($this->ajax, 'handle_cron_run_now'));
+
         // --- Taxonomy SEO fields → delegate ---
         add_action('admin_init', array($this->taxonomy, 'register'));
 
@@ -272,6 +279,12 @@ class Admin
             self::ROBOTS_DIRECTIVES_META_KEY => array(
                 'type'         => 'string',
                 'description'  => 'SEO Captain robots directives',
+                'single'       => true,
+                'default'      => '',
+            ),
+            self::EXCLUDE_SITEMAP_META_KEY => array(
+                'type'         => 'string',
+                'description'  => 'SEO Captain exclude from sitemap flag',
                 'single'       => true,
                 'default'      => '',
             ),
@@ -407,7 +420,7 @@ class Admin
             'manage_options',
             'ai-seo-captain',
             array($this, 'render_dashboard'),
-            'dashicons-chart-area',
+            AI_SEO_KEEPER_URL . 'assets/img/ai-seo-captain.svg',
             58
         );
 
@@ -508,6 +521,15 @@ class Admin
             'manage_options',
             'ai-seo-captain-site-chat',
             array($this, 'render_site_chat_page')
+        );
+
+        add_submenu_page(
+            'ai-seo-captain',
+            'Scheduled Tasks',
+            'Scheduled Tasks',
+            'manage_options',
+            'ai-seo-captain-cron-manager',
+            array($this, 'render_cron_manager_page')
         );
     }
 
@@ -700,6 +722,7 @@ class Admin
             'ai-seo-captain-export-import' => 'export-import',
             'ai-seo-captain-setup'         => 'setup-wizard',
             'ai-seo-captain-site-chat'     => 'site-chat',
+            'ai-seo-captain-cron-manager'  => 'cron-manager',
         );
 
         // Determine the page slug from the hook suffix.
@@ -1320,6 +1343,7 @@ jQuery(function ($) {
             ai_seo_captain_robots_directives: $('#ai-seo-captain-robots-directives').val(),
             ai_seo_captain_frontend_enabled: $('#ai-seo-captain-frontend-enabled').is(':checked') ? 1 : 0,
             ai_seo_captain_cornerstone: $('#ai-seo-captain-cornerstone').is(':checked') ? 1 : 0,
+            ai_seo_captain_exclude_sitemap: $('#ai-seo-captain-exclude-sitemap').is(':checked') ? 1 : 0,
             ai_seo_captain_hreflang: $('#ai-seo-captain-hreflang').val()
         })
             .done(function (response) {
@@ -2541,6 +2565,21 @@ JS;
         require __DIR__ . '/admin/view-site-chat.php';
     }
 
+    public function render_cron_manager_page(): void
+    {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
+        $cron_manager     = Plugin::instance()->get_cron_manager();
+        $readiness        = $this->get_plugin_readiness();
+        $readiness_banner = $this->get_readiness_banner_html($readiness);
+        $jobs             = $cron_manager ? $cron_manager->get_all_jobs_status() : array();
+        $log              = $cron_manager ? $cron_manager->get_execution_log(50) : array();
+
+        require __DIR__ . '/admin/view-cron-manager.php';
+    }
+
     public function render_settings_page(): void
     {
         if (! current_user_can('manage_options')) {
@@ -3066,6 +3105,15 @@ JS;
                                 <span>Force this page to use its approved AI suggestion and saved SEO overrides on the frontend when the global SEO Captain settings also allow it.</span>
                             </label>
                             <span class="ai-seo-captain-field-help">This is still useful when automatic search appearance is turned off, or when you want this page explicitly managed with page-level SEO data.</span>
+                        </div>
+
+                        <div class="ai-seo-captain-field ai-seo-captain-toggle-field">
+                            <span class="ai-seo-captain-field-label">Exclude from sitemap</span>
+                            <label class="ai-seo-captain-checkbox-row">
+                                <input id="ai-seo-captain-exclude-sitemap" type="checkbox" name="ai_seo_captain_exclude_sitemap" value="1" <?php checked(! empty(get_post_meta($post->ID, self::EXCLUDE_SITEMAP_META_KEY, true))); ?> />
+                                <span>Remove this page from the XML sitemap. The page remains accessible but won't be listed in the sitemap file sent to search engines.</span>
+                            </label>
+                            <span class="ai-seo-captain-field-help">Use this when you want the page indexed but not explicitly submitted via the sitemap (e.g., thin landing pages, utility pages).</span>
                         </div>
 
                         <div class="ai-seo-captain-field ai-seo-captain-toggle-field">
@@ -4622,6 +4670,7 @@ HTML;
         $frontend_enabled = empty($raw_input['ai_seo_captain_frontend_enabled']) ? '' : '1';
         $title_branding_off = empty($raw_input['ai_seo_captain_title_branding_off']) ? '' : '1';
         $cornerstone = empty($raw_input['ai_seo_captain_cornerstone']) ? '' : '1';
+        $exclude_sitemap = empty($raw_input['ai_seo_captain_exclude_sitemap']) ? '' : '1';
 
         $limited_fields = $this->apply_editor_text_limits(
             array(
@@ -4721,6 +4770,12 @@ HTML;
             delete_post_meta($post_id, '_ai_seo_captain_cornerstone');
         } else {
             update_post_meta($post_id, '_ai_seo_captain_cornerstone', '1');
+        }
+
+        if ('' === $exclude_sitemap) {
+            delete_post_meta($post_id, self::EXCLUDE_SITEMAP_META_KEY);
+        } else {
+            update_post_meta($post_id, self::EXCLUDE_SITEMAP_META_KEY, '1');
         }
 
         // Hreflang manual entries.

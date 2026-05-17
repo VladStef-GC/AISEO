@@ -1176,6 +1176,8 @@ class Admin_Ajax
                     '_ai_seo_captain_title_branding_off',
                     '_ai_seo_captain_cornerstone',
                     '_ai_seo_captain_hreflang',
+                    '_ai_seo_captain_keywords',
+                    '_ai_seo_captain_exclude_sitemap',
                     '_ai_seo_captain_pending_content_changes',
                     '_ai_seo_captain_content_backup'
                 )"
@@ -1230,6 +1232,85 @@ class Admin_Ajax
         wp_send_json_success(array(
             'message' => sprintf(__('%d entries cleared.', 'ai-seo-captain'), $deleted),
             'deleted' => $deleted,
+        ));
+    }
+
+    // ------------------------------------------------------------------
+    //  Cron Manager — pause, resume, run now
+    // ------------------------------------------------------------------
+
+    public function handle_cron_pause(): void
+    {
+        check_ajax_referer('ai_seo_captain_cron_manager', 'nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
+        }
+
+        $hook = isset($_POST['hook']) ? sanitize_text_field(wp_unslash($_POST['hook'])) : '';
+        if (empty($hook)) {
+            wp_send_json_error(array('message' => __('Missing job identifier.', 'ai-seo-captain')), 400);
+        }
+
+        $cron = \AI_SEO_Captain\Plugin::instance()->get_cron_manager();
+        if (! $cron || ! $cron->pause_job($hook)) {
+            wp_send_json_error(array('message' => __('Unknown job.', 'ai-seo-captain')), 400);
+        }
+
+        wp_send_json_success(array('message' => __('Task paused.', 'ai-seo-captain')));
+    }
+
+    public function handle_cron_resume(): void
+    {
+        check_ajax_referer('ai_seo_captain_cron_manager', 'nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
+        }
+
+        $hook = isset($_POST['hook']) ? sanitize_text_field(wp_unslash($_POST['hook'])) : '';
+        if (empty($hook)) {
+            wp_send_json_error(array('message' => __('Missing job identifier.', 'ai-seo-captain')), 400);
+        }
+
+        $cron = \AI_SEO_Captain\Plugin::instance()->get_cron_manager();
+        if (! $cron || ! $cron->resume_job($hook)) {
+            wp_send_json_error(array('message' => __('Unknown job.', 'ai-seo-captain')), 400);
+        }
+
+        wp_send_json_success(array('message' => __('Task resumed.', 'ai-seo-captain')));
+    }
+
+    public function handle_cron_run_now(): void
+    {
+        check_ajax_referer('ai_seo_captain_cron_manager', 'nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
+        }
+
+        $hook = isset($_POST['hook']) ? sanitize_text_field(wp_unslash($_POST['hook'])) : '';
+        if (empty($hook)) {
+            wp_send_json_error(array('message' => __('Missing job identifier.', 'ai-seo-captain')), 400);
+        }
+
+        $cron = \AI_SEO_Captain\Plugin::instance()->get_cron_manager();
+        if (! $cron) {
+            wp_send_json_error(array('message' => __('Cron manager not available.', 'ai-seo-captain')));
+        }
+
+        $result = $cron->run_job_now($hook);
+
+        if ('error' === $result['status']) {
+            wp_send_json_error(array(
+                'message'  => $result['message'],
+                'duration' => $result['duration'],
+            ));
+        }
+
+        wp_send_json_success(array(
+            'message'  => $result['message'],
+            'duration' => $result['duration'],
         ));
     }
 }

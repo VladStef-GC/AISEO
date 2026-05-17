@@ -15,6 +15,8 @@ class IndexNow
 
         add_action('template_redirect', array($this, 'maybe_output_key_file'), 0);
         add_action('save_post', array($this, 'handle_post_save'), 30, 3);
+        add_action('before_delete_post', array($this, 'handle_post_delete'), 10, 1);
+        add_action('trashed_post', array($this, 'handle_post_trash'), 10, 1);
     }
 
     public function maybe_output_key_file(): void
@@ -67,6 +69,70 @@ class IndexNow
         }
 
         $this->submit_post($post_id, $update ? 'post_update' : 'post_publish');
+    }
+
+    /**
+     * Notify IndexNow before a post is permanently deleted.
+     *
+     * Fires on `before_delete_post` so we can still get the permalink.
+     */
+    public function handle_post_delete(int $post_id): void
+    {
+        $this->maybe_submit_removed_post($post_id, 'post_delete');
+    }
+
+    /**
+     * Notify IndexNow when a post is trashed.
+     */
+    public function handle_post_trash(int $post_id): void
+    {
+        $this->maybe_submit_removed_post($post_id, 'post_trash');
+    }
+
+    /**
+     * Submit a post URL to IndexNow when it is being removed/trashed.
+     *
+     * Only submits if the post was published and of a supported type.
+     */
+    private function maybe_submit_removed_post(int $post_id, string $reason): void
+    {
+        $options = $this->settings->get();
+
+        if (empty($options['indexnow_enabled']) || empty($options['indexnow_auto_submit'])) {
+            return;
+        }
+
+        $post = get_post($post_id);
+
+        if (! $post instanceof \WP_Post) {
+            return;
+        }
+
+        // For trashed posts, WP changes status to 'trash' before firing the hook,
+        // but we still want to notify IndexNow. Check the original status for trash.
+        $status = $post->post_status;
+        if ('trash' === $status) {
+            // The post was just trashed — it was previously published (or other).
+            // We can't know the previous status reliably here, so submit anyway.
+            // IndexNow will just inform the search engine to re-check the URL.
+            $status = 'publish';
+        }
+
+        if ('publish' !== $status) {
+            return;
+        }
+
+        if (! $this->is_supported_post_type((string) $post->post_type)) {
+            return;
+        }
+
+        // Get permalink before it's gone.
+        $permalink = get_permalink($post_id);
+        if (! $permalink) {
+            return;
+        }
+
+        $this->submit_urls(array((string) $permalink), $reason);
     }
 
     public function submit_post(int $post_id, string $reason = 'manual'): array

@@ -34,6 +34,7 @@ ai-seo-captain/
 │   ├── class-meta-keys.php        ← Centralized post/term meta key constants
 │   ├── class-run-manager.php      ← Runs CRUD, step tracking, page selector data
 │   ├── class-site-chat.php        ← AI Strategist chat handler (send, clear, focus pages)
+│   ├── class-cron-manager.php     ← Scheduled tasks: registration, execution, logging, pause/resume
 │   ├── class-woocommerce-integration.php ← WooCommerce detection and product-aware features
 │   │
 │   └── admin/                     ← Extracted view templates and admin sub-modules
@@ -52,7 +53,8 @@ ai-seo-captain/
 │       ├── view-keywords.php
 │       ├── view-export-import.php
 │       ├── view-setup-wizard.php
-│       └── view-site-chat.php
+│       ├── view-site-chat.php
+│       └── view-cron-manager.php
 │
 ├── assets/
 │   ├── css/
@@ -60,6 +62,7 @@ ai-seo-captain/
 │   │   ├── page-settings.css      ← Settings page styles
 │   │   ├── page-setup-wizard.css  ← Setup Wizard page styles
 │   │   ├── page-site-chat.css     ← AI Strategist page styles
+│   │   ├── page-cron-manager.css  ← Scheduled Tasks page styles
 │   │   └── gutenberg-sidebar.css  ← Gutenberg sidebar panel styles
 │   ├── img/
 │   │   └── info-icon.svg          ← Purple-to-green gradient info icon
@@ -71,6 +74,7 @@ ai-seo-captain/
 │       ├── page-documents.js      ← Document SEO title/description save, "Used on" toggle
 │       ├── page-settings.js       ← Settings page interactions
 │       ├── page-site-chat.js      ← AI Strategist chat interface, focus pages, runs
+│       ├── page-cron-manager.js   ← Scheduled Tasks page AJAX controls
 │       └── gutenberg-sidebar.js   ← Gutenberg sidebar panel registration
 │
 ├── tests/
@@ -119,6 +123,7 @@ ai-seo-captain.php
         ├── class-redirects.php
         ├── class-indexnow.php
         ├── class-discovery.php
+        ├── class-cron-manager.php
         └── class-woocommerce-integration.php
 ```
 
@@ -146,6 +151,7 @@ Each admin page follows the **thin-stub pattern**:
 | Image SEO | `ai-seo-captain-images` | `render_image_seo_page()` | `view-images.php` | — | `page-images.js` |
 | Keywords | `ai-seo-captain-keywords` | `render_keyword_tracking_page()` | `view-keywords.php` | — | — |
 | AI Strategist | `ai-seo-captain-site-chat` | `render_site_chat_page()` | `view-site-chat.php` | `page-site-chat.css` | `page-site-chat.js` |
+| Scheduled Tasks | `ai-seo-captain-cron-manager` | `render_cron_manager_page()` | `view-cron-manager.php` | `page-cron-manager.css` | `page-cron-manager.js` |
 | Export/Import | `ai-seo-captain-export-import` | `render_export_import_page()` | `view-export-import.php` | — | — |
 
 ### Asset Loading
@@ -189,6 +195,14 @@ All AJAX handlers are registered in `class-admin.php` via `wp_ajax_{action}` and
 | `ai_seo_captain_toggle_audit_skip` | `handle_toggle_audit_skip()` | Toggle audit skip flag |
 | `ai_seo_captain_save_skip_patterns` | `handle_save_skip_patterns()` | Save audit skip patterns |
 | `ai_seo_captain_clear_seo_data` | `handle_clear_seo_data()` | Scope-based data clearing |
+
+### Cron Manager AJAX (class-admin-ajax.php)
+
+| Action | Method | Purpose |
+|--------|--------|---------|
+| `ai_seo_captain_cron_pause` | `handle_cron_pause()` | Pause a scheduled task |
+| `ai_seo_captain_cron_resume` | `handle_cron_resume()` | Resume a paused task |
+| `ai_seo_captain_cron_run_now` | `handle_cron_run_now()` | Execute a task immediately |
 
 ### Runs AJAX (class-admin-ajax.php)
 
@@ -267,6 +281,8 @@ Created by `class-activator.php` on plugin activation. Auto-upgraded via `plugin
 | `_ai_seo_captain_cornerstone` | Cornerstone content flag |
 | `_ai_seo_captain_audit_skip` | Audit skip flag |
 | `_ai_seo_captain_title_branding_off` | Per-page title branding opt-out |
+| `_ai_seo_captain_keywords` | Additional keywords (comma-separated) |
+| `_ai_seo_captain_exclude_sitemap` | Exclude from XML sitemap flag |
 | `_ai_seo_captain_hreflang` | Hreflang entries |
 
 ## Term Meta Keys
@@ -289,7 +305,7 @@ Registered on all public post types. Contains these tabs:
 | **SEO** | Focus keyphrase, SEO title (30-60 chars), meta description (70-155 chars), AI generate, approve |
 | **Social** | Social title, description, image upload, preview |
 | **Schema** | Schema type selector |
-| **Advanced** | Canonical URL, robots directives (noindex, nofollow, noodp, etc.), cornerstone flag, hreflang |
+| **Advanced** | Canonical URL, robots directives, exclude from sitemap, frontend gate, cornerstone flag, hreflang |
 | **Checks** | Focus keyphrase analysis, readability scoring, link anchor quality, transition words |
 | **Links** | Internal/external link analysis, outbound/inbound link counts |
 

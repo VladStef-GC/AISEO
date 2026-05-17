@@ -1,0 +1,280 @@
+/* page-cron-manager.css — Scheduled Tasks page styles */
+
+/* Summary Cards */
+.aisc-cron-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(140px, 1fr));
+    gap: 16px;
+    max-width: 800px;
+    margin: 20px 0;
+}
+
+.aisc-cron-card {
+    background: #fff;
+    border: 1px solid var(--aisc-border, #dcdcde);
+    border-radius: var(--aisc-radius, 6px);
+    padding: 20px;
+    text-align: center;
+    transition: var(--aisc-transition, 0.2s ease);
+}
+
+.aisc-cron-card:hover {
+    box-shadow: var(--aisc-shadow, 0 2px 8px rgba(0, 0, 0, 0.08));
+}
+
+.aisc-cron-card__number {
+    display: block;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--aisc-text, #1e1e1e);
+}
+
+.aisc-cron-card__label {
+    display: block;
+    font-size: 13px;
+    color: #646970;
+    margin-top: 4px;
+}
+
+.aisc-cron-card--active .aisc-cron-card__number {
+    color: var(--aisc-success, #1c9739);
+}
+
+.aisc-cron-card--paused .aisc-cron-card__number {
+    color: var(--aisc-warning, #dba617);
+}
+
+.aisc-cron-card--error .aisc-cron-card__number {
+    color: var(--aisc-danger, #d63638);
+}
+
+/* Sections */
+.aisc-cron-section {
+    margin: 28px 0;
+}
+
+.aisc-cron-section h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--aisc-border, #dcdcde);
+}
+
+/* Tables */
+.aisc-cron-table {
+    border-collapse: collapse;
+    border: 1px solid var(--aisc-border, #dcdcde);
+}
+
+.aisc-cron-table th {
+    background: #f6f7f7;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--aisc-border, #dcdcde);
+}
+
+.aisc-cron-table td {
+    padding: 12px 14px;
+    font-size: 13px;
+    border-bottom: 1px solid #f0f0f1;
+    vertical-align: top;
+}
+
+.aisc-cron-table tbody tr:hover {
+    background: #f9f9f9;
+}
+
+/* Task name and description */
+.aisc-cron-task-name {
+    font-size: 14px;
+    color: var(--aisc-text, #1e1e1e);
+}
+
+.aisc-cron-task-desc {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #646970;
+    line-height: 1.5;
+}
+
+.aisc-cron-last-message {
+    margin-top: 6px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.4;
+    max-width: 500px;
+    word-break: break-word;
+}
+
+.aisc-cron-last-message--success {
+    background: #ecfdf3;
+    color: #166534;
+    border-left: 3px solid var(--aisc-success, #1c9739);
+}
+
+.aisc-cron-last-message--error {
+    background: #fef2f2;
+    color: #991b1b;
+    border-left: 3px solid var(--aisc-danger, #d63638);
+}
+
+.aisc-cron-last-message--skipped {
+    background: #fffbeb;
+    color: #92400e;
+    border-left: 3px solid var(--aisc-warning, #dba617);
+}
+
+/* Schedule badge */
+.aisc-cron-schedule {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #f0f0f1;
+    border-radius: 3px;
+    font-size: 12px;
+    color: #50575e;
+}
+
+/* Status badges */
+.aisc-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.aisc-badge--active {
+    background: #ecfdf3;
+    color: #166534;
+}
+
+.aisc-badge--paused {
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.aisc-badge--error {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+/* Action buttons */
+.aisc-cron-actions {
+    white-space: nowrap;
+}
+
+.aisc-cron-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px !important;
+    font-size: 12px !important;
+    line-height: 1.6 !important;
+    min-height: 28px;
+}
+
+.aisc-cron-btn .dashicons {
+    font-size: 16px;
+    width: 16px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.aisc-cron-btn[disabled] {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.aisc-cron-btn.is-loading .dashicons::before {
+    content: "\f463";
+    animation: aisc-spin 1s linear infinite;
+}
+
+@keyframes aisc-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Trigger badge */
+.aisc-cron-trigger {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #f0f0f1;
+    border-radius: 3px;
+    font-size: 11px;
+    color: #50575e;
+}
+
+/* Log table */
+.aisc-cron-log-table .aisc-cron-log-message {
+    max-width: 400px;
+    word-break: break-word;
+    color: #50575e;
+}
+
+.aisc-cron-empty {
+    padding: 20px;
+    background: #fff;
+    border: 1px solid var(--aisc-border, #dcdcde);
+    border-radius: var(--aisc-radius, 6px);
+    text-align: center;
+    color: #646970;
+}
+
+/* Toast notification */
+.aisc-cron-toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 100001;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+}
+
+.aisc-cron-toast.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.aisc-cron-toast--success {
+    background: #166534;
+    color: #fff;
+}
+
+.aisc-cron-toast--error {
+    background: #991b1b;
+    color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 782px) {
+    .aisc-cron-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .aisc-cron-table th:nth-child(5),
+    .aisc-cron-table td:nth-child(5) {
+        display: none;
+    }
+}

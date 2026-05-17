@@ -1225,4 +1225,163 @@ class Content_Indexer
 
         return count($records);
     }
+
+    /**
+     * Upsert a single post into the content index.
+     *
+     * Called automatically on save_post / untrashed_post hooks.
+     * Uses REPLACE INTO (atomic upsert) on the UNIQUE KEY (object_type, object_id).
+     */
+    public function upsert_post(int $post_id): bool
+    {
+        global $wpdb;
+
+        $post = get_post($post_id);
+
+        if (! $post instanceof \WP_Post) {
+            return false;
+        }
+
+        if (! $this->is_indexable_post($post)) {
+            // Post is not indexable (wrong type, attachment, etc.) — remove if present.
+            $this->delete_from_index($post_id);
+            return false;
+        }
+
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
+
+        $result = $wpdb->replace(
+            $table_name,
+            array(
+                'object_id'    => (int) $post->ID,
+                'object_type'  => 'post',
+                'post_type'    => (string) $post->post_type,
+                'status'       => (string) $post->post_status,
+                'title'        => (string) $post->post_title,
+                'slug'         => (string) $post->post_name,
+                'permalink'    => (string) get_permalink($post),
+                'parent_id'    => (int) $post->post_parent,
+                'excerpt'      => wp_trim_words(wp_strip_all_tags(Content_Helper::get_content($post)), 120, '...'),
+                'content_hash' => md5((string) $post->post_title . '|' . Content_Helper::get_content($post)),
+                'modified_gmt' => $post->post_modified_gmt,
+                'indexed_at'   => current_time('mysql', true),
+            ),
+            array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s')
+        );
+
+        return false !== $result;
+    }
+
+    /**
+     * Remove a single post from the content index.
+     *
+     * Called automatically on delete_post / trashed_post hooks.
+     */
+    public function delete_from_index(int $post_id): bool
+    {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
+
+        $deleted = $wpdb->delete(
+            $table_name,
+            array(
+                'object_id'   => $post_id,
+                'object_type' => 'post',
+            ),
+            array('%d', '%s')
+        );
+
+        return false !== $deleted;
+    }
+
+    /**
+     * Verify index integrity: remove orphaned entries, add missing posts.
+     *
+     * Used by the daily cron health check and available for manual repair.
+     *
+     * @return array{removed: int, added: int, total: int}
+     */
+    public function verify_index_integrity(): array
+    {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
+        $removed = 0;
+        $added   = 0;
+
+        // 1. Remove entries for posts that no longer exist or are not indexable.
+        $indexed_ids = $wpdb->get_col(
+            "SELECT object_id FROM {$table_name} WHERE object_type = 'post'"
+        );
+
+        if (is_array($indexed_ids) && ! empty($indexed_ids)) {
+            foreach ($indexed_ids as $object_id) {
+                $post = get_post((int) $object_id);
+                if (! $post instanceof \WP_Post || ! $this->is_indexable_post($post)) {
+                    $this->delete_from_index((int) $object_id);
+                    ++$removed;
+                }
+            }
+        }
+
+        // 2. Add entries for published posts that are missing from the index.
+        $post_types = get_post_types(array('public' => true), 'names');
+        unset($post_types['attachment']);
+
+        $statuses = array('publish', 'draft', 'private', 'pending', 'future');
+
+        foreach ($post_types as $post_type) {
+            $posts = get_posts(array(
+                'post_type'      => $post_type,
+                'post_status'    => $statuses,
+                'posts_per_page' => -1,
+                'fields'         => 'ids',
+            ));
+
+            foreach ($posts as $pid) {
+                $exists = $wpdb->get_var(
+                    $wpdb->prepare(
+                        "SELECT 1 FROM {$table_name} WHERE object_type = 'post' AND object_id = %d LIMIT 1",
+                        $pid
+                    )
+                );
+
+                if (! $exists) {
+                    $this->upsert_post((int) $pid);
+                    ++$added;
+                }
+            }
+        }
+
+        $total = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table_name}");
+
+        return array(
+            'removed' => $removed,
+            'added'   => $added,
+            'total'   => $total,
+        );
+    }
+
+    /**
+     * Check if a post is eligible for the content index.
+     */
+    private function is_indexable_post(\WP_Post $post): bool
+    {
+        // Must be a public post type (excludes attachment).
+        $public_types = get_post_types(array('public' => true), 'names');
+        unset($public_types['attachment']);
+
+        if (! isset($public_types[$post->post_type])) {
+            return false;
+        }
+
+        // Must be in an indexable status.
+        $allowed_statuses = array('publish', 'draft', 'private', 'pending', 'future');
+        if (! in_array($post->post_status, $allowed_statuses, true)) {
+            return false;
+        }
+
+        return true;
+    }
 }

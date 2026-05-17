@@ -27,7 +27,20 @@ add_action('init', static function () {
 });
 
 register_activation_hook(__FILE__, array('AI_SEO_Captain\\Activator', 'activate'));
-register_deactivation_hook(__FILE__, 'flush_rewrite_rules');
+register_activation_hook(__FILE__, static function () {
+    // Schedule cron jobs on activation (deferred so Plugin boots first on next load).
+    $settings = new AI_SEO_Captain\Settings();
+    $indexer  = new AI_SEO_Captain\Content_Indexer();
+    $cron     = new AI_SEO_Captain\Cron_Manager($settings, $indexer);
+    $cron->schedule_all();
+});
+register_deactivation_hook(__FILE__, static function () {
+    $settings = new AI_SEO_Captain\Settings();
+    $indexer  = new AI_SEO_Captain\Content_Indexer();
+    $cron     = new AI_SEO_Captain\Cron_Manager($settings, $indexer);
+    $cron->unschedule_all();
+    flush_rewrite_rules();
+});
 
 add_action(
     'plugins_loaded',

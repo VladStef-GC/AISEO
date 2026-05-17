@@ -260,6 +260,11 @@ class Sitemap
                 continue;
             }
 
+            // Explicit "Exclude from Sitemap" checkbox.
+            if ('1' === (string) get_post_meta($post->ID, '_ai_seo_captain_exclude_sitemap', true)) {
+                continue;
+            }
+
             $permalink = (string) get_permalink($post);
 
             if ('' === $permalink) {

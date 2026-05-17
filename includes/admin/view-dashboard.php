@@ -27,7 +27,10 @@ defined('ABSPATH') || exit;
 /** @var string $readiness_banner */
 ?>
 <div class="wrap">
-    <h1><?php esc_html_e('SEO Captain', 'ai-seo-captain'); ?></h1>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
+        <img src="<?php echo esc_url(AI_SEO_KEEPER_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="SEO Captain" style="width:40px;height:40px;" />
+        <h1 style="margin:0;"><?php esc_html_e('SEO Captain', 'ai-seo-captain'); ?></h1>
+    </div>
     <p><?php esc_html_e('SEO Captain now covers AI-assisted metadata workflows, saved page-level SEO overrides, audit workflows, discovery documents, richer schema, and refresh signaling without silently fighting the existing SEO stack.', 'ai-seo-captain'); ?></p>
 
     <?php echo $readiness_banner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped 

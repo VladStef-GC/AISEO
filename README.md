@@ -32,6 +32,8 @@ SEO Captain uses artificial intelligence to generate, manage, and optimize every
 | 🎬 | **Video SEO** | Manage SEO titles and descriptions for YouTube, Vimeo, and self-hosted videos across your site |
 | 📄 | **Document SEO** | Optimize PDF, Word, Excel, PowerPoint, and other document metadata for search |
 | 🛒 | **WooCommerce Integration** | Product-aware filtering in wizard, bulk editor, and keyword tracking |
+| 🔄 | **Automatic Content Index** | Real-time incremental index updates on post create, update, trash, and delete |
+| ⏱️ | **Scheduled Tasks Manager** | Built-in cron dashboard with health checks, stale cleanup, sitemap pinging, and full control UI |
 | 🔍 | **Skip Rules** | Exclude pages by URL pattern from both metadata generation and audits |
 
 ---
@@ -68,6 +70,7 @@ SEO Captain uses artificial intelligence to generate, manage, and optimize every
   - [Yoast SEO Migration](#-yoast-seo-migration)
   - [Data Management](#-data-management)
   - [WooCommerce Integration](#-woocommerce-integration)
+  - [Scheduled Tasks](#-scheduled-tasks)
   - [Gutenberg Sidebar](#-gutenberg-sidebar)
 - [Requirements](#requirements)
 - [Installation](#installation)
@@ -247,6 +250,7 @@ Full sitemap suite replacing WordPress core sitemaps:
 - Browser-friendly XSL stylesheet for human-readable display
 - Auto-added to `robots.txt`
 - Configurable: include/exclude posts, pages, categories, tags
+- **Per-page "Exclude from Sitemap" checkbox** in the editor Advanced tab — independent from noindex
 
 ---
 
@@ -258,7 +262,8 @@ Instant search engine notification when content changes:
 - **Bulk submit:** Send all frontend-ready URLs at once from the Audit page
 - **Key management:** Generates and hosts your IndexNow key at `/.well-known/indexnow.txt`
 - **Submission log:** Track every submission with status, reason, URL count, and timestamp
-- **Smart triggers:** Fires on post publish, post update, manual submit, and bulk rollout
+- **Smart triggers:** Fires on post publish, post update, post trash, post delete, manual submit, and bulk rollout
+- **Deletion awareness:** Notifies search engines when content is trashed or permanently deleted
 - Localhost-aware — skips live API calls during development
 
 ---
@@ -272,6 +277,21 @@ Professional redirect management built in:
 - **404 Monitor:** Automatically logs every 404 error with URL, referrer, user agent, and timestamp
 - **One-click cleanup:** Clear the 404 log when resolved
 - **Hit counter:** Track how many times each redirect fires
+
+---
+
+### ⏱️ Scheduled Tasks
+
+Built-in cron job management with full observability:
+
+- **Index Health Check** (daily) — Detects and repairs orphaned or missing entries in the content index
+- **Stale Data Cleanup** (weekly) — Prunes old IndexNow logs, orphaned conversations, and expired data
+- **Sitemap Ping** (twice daily) — Notifies Google and Bing to re-crawl the XML sitemap
+- **Admin dashboard** — View all tasks with status badges (Active / Paused / Error), last run time, next run, and execution duration
+- **Pause / Resume / Run Now** — Full per-task control via AJAX with toast notifications
+- **Execution log** — Last 100 runs with timestamp, status, duration, message, and trigger type (Scheduled / Manual)
+- **Transient-based locking** — Prevents concurrent execution of the same job
+- **Auto-scheduling** — Jobs are registered on activation, unscheduled on deactivation, and self-heal on existing installs
 
 ---
 

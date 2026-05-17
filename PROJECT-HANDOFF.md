@@ -49,8 +49,12 @@ SEO Captain is a hybrid AI plus deterministic SEO plugin for WordPress. It is th
 - AI Content Editor with changeset-based editing, preview, apply/discard, backup/restore, and multi-builder support.- AI audit context includes per-page video embed counts and linked document counts for comprehensive media awareness.- **Redirects & 404 Monitor** with 301/302/307 redirect management, 404 error logging, hit counters, and AJAX-based add/delete.
 - **Scale-aware Runs system**: saved named page lists, `completed_steps` tracking per run, create/delete runs via AJAX.
 - **Skip Rules**: URL pattern matching to exclude pages from both metadata generation and full audits; server-side enforced in `handle_bulk_generate()`.
-- **Data Management**: scope-based clearing (metadata, audits, everything) with confirmation modals; deletes 17 post meta keys + 4 term meta keys + conversations + messages + IndexNow log + runs + active_runs user meta.
+- **Data Management**: scope-based clearing (metadata, audits, everything) with confirmation modals; deletes 19 post meta keys + 4 term meta keys + conversations + messages + IndexNow log + runs + active_runs user meta.
 - **WooCommerce integration**: automatic detection, product-aware filtering in wizard modal, bulk editor, and site structure tree.
+- **Incremental Content Index**: real-time index updates via `save_post`, `delete_post`, `trashed_post`, `untrashed_post` hooks — no manual re-index needed for day-to-day changes. Full re-index still available.
+- **IndexNow deletion awareness**: notifies search engines via `before_delete_post` and `trashed_post` hooks when published content is removed.
+- **Exclude from Sitemap**: per-page checkbox in the editor Advanced tab, independent from robots directives (noindex). Stored as `_ai_seo_captain_exclude_sitemap` meta.
+- **Scheduled Tasks Manager**: three cron jobs (Index Health, Stale Cleanup, Sitemap Ping) with dedicated admin page showing status, controls (Pause/Resume/Run Now), and execution log.
 - **Automated test suite**: 81 PHPUnit tests, 141 assertions, all passing.
 - GreenCoders design identity in the editor metabox with promoted accordion style, branded button styles, and custom help-tip iconography.
 
