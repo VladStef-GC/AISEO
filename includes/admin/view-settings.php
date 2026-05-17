@@ -60,9 +60,14 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
         <h1 style="margin:0;"><?php esc_html_e('SEO Captain Settings', 'ai-seo-captain'); ?></h1>
     </div>
     <?php if ('' !== $settings_message) : ?>
-        <div class="notice <?php echo 'success' === $settings_status ? 'notice-success' : 'notice-error'; ?> is-dismissible">
-            <p><?php echo esc_html($settings_message); ?></p>
-        </div>
+        <?php
+        echo \AI_SEO_Captain\Admin::render_banner(
+            'success' === $settings_status ? 'is-success' : 'is-error',
+            'success' === $settings_status ? esc_html__('Settings saved', 'ai-seo-captain') : esc_html__('Error', 'ai-seo-captain'),
+            esc_html($settings_message),
+            true
+        );
+        ?>
     <?php endif; ?>
 
     <form method="post" action="options.php">
@@ -353,9 +358,13 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                             <td>
                                 <?php $wc_active = class_exists('WooCommerce', false); ?>
                                 <?php if (! $wc_active) : ?>
-                                    <div class="notice notice-info inline" style="margin:0 0 12px;padding:8px 12px;">
-                                        <p style="margin:0;"><?php esc_html_e('WooCommerce is not installed or active. Install WooCommerce to enable this integration.', 'ai-seo-captain'); ?></p>
-                                    </div>
+                                    <?php
+                                    echo \AI_SEO_Captain\Admin::render_banner(
+                                        'is-info',
+                                        esc_html__('WooCommerce not detected', 'ai-seo-captain'),
+                                        esc_html__('WooCommerce is not installed or active. Install WooCommerce to enable this integration.', 'ai-seo-captain')
+                                    );
+                                    ?>
                                 <?php endif; ?>
                                 <label style="display:block;margin-bottom:8px;">
                                     <input type="checkbox" id="ai-seo-wc-enabled" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[wc_integration_enabled]" value="1" <?php checked(! empty($options['wc_integration_enabled'])); ?> <?php echo $wc_active ? '' : 'disabled'; ?> />

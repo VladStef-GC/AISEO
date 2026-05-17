@@ -44,9 +44,14 @@ defined('ABSPATH') || exit;
     ?>
 
     <?php if ('' !== $audit_message) : ?>
-        <div class="notice <?php echo 'success' === $audit_status ? 'notice-success' : 'notice-error'; ?> is-dismissible">
-            <p><?php echo esc_html($audit_message); ?></p>
-        </div>
+        <?php
+        echo \AI_SEO_Captain\Admin::render_banner(
+            'success' === $audit_status ? 'is-success' : 'is-error',
+            'success' === $audit_status ? esc_html__('Success', 'ai-seo-captain') : esc_html__('Error', 'ai-seo-captain'),
+            esc_html($audit_message),
+            true
+        );
+        ?>
     <?php endif; ?>
 
     <div style="display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:16px;max-width:1120px;margin-top:24px;">

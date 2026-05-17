@@ -21,9 +21,14 @@ defined('ABSPATH') || exit;
     </div>
 
     <?php if ('' !== $import_msg) : ?>
-        <div class="notice <?php echo 'success' === $import_status ? 'notice-success' : 'notice-error'; ?> is-dismissible">
-            <p><?php echo esc_html($import_msg); ?></p>
-        </div>
+        <?php
+        echo \AI_SEO_Captain\Admin::render_banner(
+            'success' === $import_status ? 'is-success' : 'is-error',
+            'success' === $import_status ? esc_html__('Import complete', 'ai-seo-captain') : esc_html__('Import failed', 'ai-seo-captain'),
+            esc_html($import_msg),
+            true
+        );
+        ?>
     <?php endif; ?>
 
     <div class="aisc-ei-wrap">

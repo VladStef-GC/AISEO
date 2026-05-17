@@ -2957,22 +2957,23 @@ JS;
                             // Chat readiness banner.
                             $chat_readiness_banner = '';
                             if (0 === $chat_readiness) {
-                                $chat_readiness_banner =
-                                    '<div style="background:#fff3cd;border-left:4px solid #ffb300;padding:10px 14px;margin-bottom:12px;font-size:13px;border-radius:4px;">' .
-                                    '<strong>⚠ AI Assistant unavailable</strong><br>' .
-                                    'No SEO metadata has been generated for this page yet. Use <strong>Generate with AI</strong> or fill in SEO fields manually, then save to enable the AI assistant.' .
-                                    '</div>';
+                                $chat_readiness_banner = self::render_banner(
+                                    'is-warning',
+                                    esc_html__('AI Assistant unavailable', 'ai-seo-captain'),
+                                    esc_html__('No SEO metadata has been generated for this page yet. Use Generate with AI or fill in SEO fields manually, then save to enable the AI assistant.', 'ai-seo-captain')
+                                );
                             } elseif (1 === $chat_readiness) {
-                                $chat_readiness_banner =
-                                    '<div style="background:#fef8ee;border-left:4px solid #dba617;padding:10px 14px;margin-bottom:12px;font-size:13px;border-radius:4px;">' .
-                                    '<strong>ℹ Limited context</strong> — AI can see SEO metadata fields only. ' .
-                                    'Run a <strong>full AI Audit</strong> on this page (in the SEO tab) for deeper content analysis and better recommendations.' .
-                                    '</div>';
+                                $chat_readiness_banner = self::render_banner(
+                                    'is-info',
+                                    esc_html__('Limited context', 'ai-seo-captain'),
+                                    esc_html__('AI can see SEO metadata fields only. Run a full AI Audit on this page (in the SEO tab) for deeper content analysis and better recommendations.', 'ai-seo-captain')
+                                );
                             } else {
-                                $chat_readiness_banner =
-                                    '<div style="background:#edf7ee;border-left:4px solid #00a32a;padding:10px 14px;margin-bottom:12px;font-size:13px;border-radius:4px;">' .
-                                    '<strong>✓ Full page insights available</strong> — AI has access to SEO metadata and audit results for the most accurate analysis.' .
-                                    '</div>';
+                                $chat_readiness_banner = self::render_banner(
+                                    'is-info',
+                                    esc_html__('Full page insights available', 'ai-seo-captain'),
+                                    esc_html__('AI has access to SEO metadata and audit results for the most accurate analysis.', 'ai-seo-captain')
+                                );
                             }
 
                             $ai_assistant_content = $chat_readiness_banner;

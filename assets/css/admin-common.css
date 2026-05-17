@@ -691,6 +691,17 @@
     color: #6a14d1;
 }
 
+/* ── Success (green) ── */
+.ai-seo-captain-notice.is-success {
+    background: linear-gradient(135deg, #f0faf0 0%, #edf7ee 100%);
+    border: 1px solid #8ec98e;
+    border-left: 7px solid #00a32a;
+}
+
+.ai-seo-captain-notice.is-success .ai-seo-captain-notice__icon.dashicons {
+    color: #00a32a;
+}
+
 @keyframes aisc-pulse {
 
     0%,

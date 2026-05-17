@@ -37,9 +37,14 @@ defined('ABSPATH') || exit;
     ?>
 
     <?php if ($sync_count > 0) : ?>
-        <div class="notice notice-success is-dismissible">
-            <p><?php echo esc_html(sprintf(__('Site index synced. %d content records stored.', 'ai-seo-captain'), $sync_count)); ?></p>
-        </div>
+        <?php
+        echo \AI_SEO_Captain\Admin::render_banner(
+            'is-success',
+            esc_html__('Index synced', 'ai-seo-captain'),
+            esc_html(sprintf(__('Site index synced. %d content records stored.', 'ai-seo-captain'), $sync_count)),
+            true
+        );
+        ?>
     <?php endif; ?>
 
     <div style="display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:16px;max-width:1120px;margin-top:24px;">

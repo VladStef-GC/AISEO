@@ -49,10 +49,14 @@ defined('ABSPATH') || exit;
     </div>
 
     <?php if (! empty($cannibalized)) : ?>
-        <div style="background:#fff3cd;border:1px solid #ffc107;padding:16px;max-width:1120px;margin-bottom:20px;">
-            <h2 style="margin-top:0;color:#856404;"><?php esc_html_e('Keyword Cannibalization', 'ai-seo-captain'); ?></h2>
-            <p style="margin:0 0 12px;color:#856404;"><?php esc_html_e('These keyphrases target multiple pages. Consider consolidating content or differentiating the focus keyphrase for each page.', 'ai-seo-captain'); ?></p>
-            <table class="widefat striped">
+        <?php
+        echo \AI_SEO_Captain\Admin::render_banner(
+            'is-warning',
+            esc_html__('Keyword Cannibalization', 'ai-seo-captain'),
+            esc_html__('These keyphrases target multiple pages. Consider consolidating content or differentiating the focus keyphrase for each page.', 'ai-seo-captain')
+        );
+        ?>
+            <table class="widefat striped" style="max-width:1120px;margin-bottom:20px;">
                 <thead>
                     <tr>
                         <th><?php esc_html_e('Keyphrase', 'ai-seo-captain'); ?></th>
@@ -75,7 +79,6 @@ defined('ABSPATH') || exit;
                     <?php endforeach; ?>
                 </tbody>
             </table>
-        </div>
     <?php endif; ?>
 
     <?php if (! empty($keyphrase_map)) : ?>
