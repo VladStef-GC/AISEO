@@ -42,9 +42,9 @@ defined('ABSPATH') || exit;
 /** @var int    $max_pages */
 ?>
 <div class="wrap aisc-wizard">
-    <h1>ðŸš€ <?php esc_html_e('SEO Captain â€” Setup Wizard', 'ai-seo-captain'); ?></h1>
+    <h1>🚀 <?php esc_html_e('SEO Captain — Setup Wizard', 'ai-seo-captain'); ?></h1>
     <p style="font-size: 14px; max-width: 700px;">
-        <?php esc_html_e('This wizard indexes your site, generates AI-powered SEO metadata, and runs a full page audit â€” all in three easy steps.', 'ai-seo-captain'); ?>
+        <?php esc_html_e('This wizard indexes your site, generates AI-powered SEO metadata, and runs a full page audit — all in three easy steps.', 'ai-seo-captain'); ?>
     </p>
 
     <?php if (! $has_api_key) : ?>
@@ -217,7 +217,7 @@ defined('ABSPATH') || exit;
                     <!-- Top 10 / Bottom 10 tables side by side -->
                     <div style="display:flex;gap:20px;flex-wrap:wrap;">
                         <div style="flex:1;min-width:300px;">
-                            <h4 style="margin:0 0 8px;color:#00a32a;">&#127942; Top 10 â€” Best SEO Scores</h4>
+                            <h4 style="margin:0 0 8px;color:#00a32a;">&#127942; Top 10 — Best SEO Scores</h4>
                             <table id="aisc-top10-table" class="widefat striped" style="font-size:13px;">
                                 <thead>
                                     <tr>
@@ -231,7 +231,7 @@ defined('ABSPATH') || exit;
                             </table>
                         </div>
                         <div style="flex:1;min-width:300px;">
-                            <h4 style="margin:0 0 8px;color:#d63638;">&#9888; Bottom 10 â€” Needs Attention</h4>
+                            <h4 style="margin:0 0 8px;color:#d63638;">&#9888; Bottom 10 — Needs Attention</h4>
                             <table id="aisc-bottom10-table" class="widefat striped" style="font-size:13px;">
                                 <thead>
                                     <tr>
@@ -320,7 +320,7 @@ defined('ABSPATH') || exit;
             <?php esc_html_e('Data Management', 'ai-seo-captain'); ?>
         </h3>
         <p style="font-size:13px;color:#787c82;margin:0 0 16px;">
-            <?php esc_html_e('Clear generated SEO data from the database. This cannot be undone â€” you will need to re-run the affected steps.', 'ai-seo-captain'); ?>
+            <?php esc_html_e('Clear generated SEO data from the database. This cannot be undone — you will need to re-run the affected steps.', 'ai-seo-captain'); ?>
         </p>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
             <button type="button" class="button aisc-clear-data-btn" data-scope="metadata" style="color:#b32d2e;border-color:#b32d2e;">

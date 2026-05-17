@@ -408,6 +408,7 @@ class Admin_Import_Export
 
         $field_map = array(
             'focus_keyphrase'    => AdminBase::FOCUS_KEYPHRASE_META_KEY,
+            'keywords'           => AdminBase::KEYWORDS_META_KEY,
             'seo_title'          => AdminBase::META_TITLE_KEY,
             'seo_description'    => AdminBase::META_DESCRIPTION_KEY,
             'social_title'       => AdminBase::SOCIAL_TITLE_META_KEY,

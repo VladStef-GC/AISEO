@@ -63,6 +63,8 @@ class Admin
 
     public const FOCUS_KEYPHRASE_META_KEY = '_ai_seo_captain_focus_keyphrase';
 
+    public const KEYWORDS_META_KEY = '_ai_seo_captain_keywords';
+
     public const SOCIAL_TITLE_META_KEY = '_ai_seo_captain_social_title';
 
     public const SOCIAL_DESCRIPTION_META_KEY = '_ai_seo_captain_social_description';
@@ -258,6 +260,12 @@ class Admin
             self::FOCUS_KEYPHRASE_META_KEY => array(
                 'type'         => 'string',
                 'description'  => 'SEO Captain focus keyphrase',
+                'single'       => true,
+                'default'      => '',
+            ),
+            self::KEYWORDS_META_KEY => array(
+                'type'         => 'string',
+                'description'  => 'SEO Captain keywords (comma-separated)',
                 'single'       => true,
                 'default'      => '',
             ),
@@ -2611,6 +2619,7 @@ JS;
         $options          = $this->settings->get();
         $summary          = $this->content_indexer->get_summary();
         $focus_keyphrase  = (string) get_post_meta($post->ID, self::FOCUS_KEYPHRASE_META_KEY, true);
+        $seo_keywords     = (string) get_post_meta($post->ID, self::KEYWORDS_META_KEY, true);
         $seo_title        = (string) get_post_meta($post->ID, self::META_TITLE_KEY, true);
         $seo_description  = (string) get_post_meta($post->ID, self::META_DESCRIPTION_KEY, true);
         $social_title     = (string) get_post_meta($post->ID, self::SOCIAL_TITLE_META_KEY, true);
@@ -2817,6 +2826,12 @@ JS;
                             <span class="ai-seo-captain-field-label">Focus keyphrase</span>
                             <input id="ai-seo-captain-focus-keyphrase" type="text" name="ai_seo_captain_focus_keyphrase" value="<?php echo esc_attr($focus_keyphrase); ?>" />
                             <span class="ai-seo-captain-field-help">The main keyword or phrase this page should rank for. AI uses it to optimize your title, description, and content.</span>
+                        </label>
+
+                        <label class="ai-seo-captain-field">
+                            <span class="ai-seo-captain-field-label">Keywords</span>
+                            <input id="ai-seo-captain-keywords" type="text" name="ai_seo_captain_keywords" value="<?php echo esc_attr($seo_keywords); ?>" />
+                            <span class="ai-seo-captain-field-help">Comma-separated keywords for this page. Used by AI for content optimization and displayed in the Bulk Editor.</span>
                         </label>
 
                         <label class="ai-seo-captain-field ai-seo-captain-field-textarea-wide">
@@ -4582,6 +4597,7 @@ HTML;
     public function persist_editor_meta(int $post_id, array $raw_input): array
     {
         $focus_keyphrase = isset($raw_input['ai_seo_captain_focus_keyphrase']) ? sanitize_text_field(wp_unslash($raw_input['ai_seo_captain_focus_keyphrase'])) : '';
+        $seo_keywords = isset($raw_input['ai_seo_captain_keywords']) ? sanitize_text_field(wp_unslash($raw_input['ai_seo_captain_keywords'])) : '';
         $seo_title = isset($raw_input['ai_seo_captain_meta_title']) ? sanitize_text_field(wp_unslash($raw_input['ai_seo_captain_meta_title'])) : '';
         $seo_description = isset($raw_input['ai_seo_captain_meta_description']) ? sanitize_textarea_field(wp_unslash($raw_input['ai_seo_captain_meta_description'])) : '';
         $social_title = isset($raw_input['ai_seo_captain_social_title']) ? sanitize_text_field(wp_unslash($raw_input['ai_seo_captain_social_title'])) : '';
@@ -4620,6 +4636,12 @@ HTML;
             delete_post_meta($post_id, self::FOCUS_KEYPHRASE_META_KEY);
         } else {
             update_post_meta($post_id, self::FOCUS_KEYPHRASE_META_KEY, $focus_keyphrase);
+        }
+
+        if ('' === $seo_keywords) {
+            delete_post_meta($post_id, self::KEYWORDS_META_KEY);
+        } else {
+            update_post_meta($post_id, self::KEYWORDS_META_KEY, $seo_keywords);
         }
 
         if ('' === $seo_title) {
@@ -4698,6 +4720,7 @@ HTML;
 
         return array(
             'focus_keyphrase' => $focus_keyphrase,
+            'keywords' => $seo_keywords,
             'seo_title' => $seo_title,
             'seo_description' => $seo_description,
             'social_title' => $social_title,

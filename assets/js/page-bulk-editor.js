@@ -7,11 +7,13 @@
     var nonce = aiSeoBulkEditor.nonce;
 
     // Enable save button when content changes.
-    $('#ai-seo-bulk-table').on('input', '.ai-seo-bulk-title, .ai-seo-bulk-desc', function () {
+    $('#ai-seo-bulk-table').on('input', '.ai-seo-bulk-title, .ai-seo-bulk-desc, .ai-seo-bulk-keyphrase, .ai-seo-bulk-keywords', function () {
         var row = $(this).closest('tr');
         var titleChanged = row.find('.ai-seo-bulk-title').val() !== row.find('.ai-seo-bulk-title').data('original');
         var descChanged = row.find('.ai-seo-bulk-desc').val() !== row.find('.ai-seo-bulk-desc').data('original');
-        row.find('.ai-seo-bulk-save').prop('disabled', !(titleChanged || descChanged));
+        var keyphraseChanged = row.find('.ai-seo-bulk-keyphrase').val() !== row.find('.ai-seo-bulk-keyphrase').data('original');
+        var keywordsChanged = row.find('.ai-seo-bulk-keywords').val() !== row.find('.ai-seo-bulk-keywords').data('original');
+        row.find('.ai-seo-bulk-save').prop('disabled', !(titleChanged || descChanged || keyphraseChanged || keywordsChanged));
     });
 
     // Save individual row.
@@ -26,12 +28,16 @@
             _nonce: nonce,
             post_id: postId,
             seo_title: row.find('.ai-seo-bulk-title').val(),
-            seo_description: row.find('.ai-seo-bulk-desc').val()
+            seo_description: row.find('.ai-seo-bulk-desc').val(),
+            focus_keyphrase: row.find('.ai-seo-bulk-keyphrase').val(),
+            keywords: row.find('.ai-seo-bulk-keywords').val()
         }, function (resp) {
             if (resp.success) {
                 btn.text('Saved ✓');
                 row.find('.ai-seo-bulk-title').data('original', row.find('.ai-seo-bulk-title').val());
                 row.find('.ai-seo-bulk-desc').data('original', row.find('.ai-seo-bulk-desc').val());
+                row.find('.ai-seo-bulk-keyphrase').data('original', row.find('.ai-seo-bulk-keyphrase').val());
+                row.find('.ai-seo-bulk-keywords').data('original', row.find('.ai-seo-bulk-keywords').val());
                 setTimeout(function () { btn.text('Save'); }, 1500);
             } else {
                 btn.text('Error').prop('disabled', false);

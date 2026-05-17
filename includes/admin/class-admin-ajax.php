@@ -888,9 +888,23 @@ class Admin_Ajax
 
         $seo_title       = isset($_POST['seo_title']) ? sanitize_text_field(wp_unslash($_POST['seo_title'])) : '';
         $seo_description = isset($_POST['seo_description']) ? sanitize_textarea_field(wp_unslash($_POST['seo_description'])) : '';
+        $focus_keyphrase = isset($_POST['focus_keyphrase']) ? sanitize_text_field(wp_unslash($_POST['focus_keyphrase'])) : '';
+        $keywords        = isset($_POST['keywords']) ? sanitize_text_field(wp_unslash($_POST['keywords'])) : '';
 
         update_post_meta($post_id, AdminBase::META_TITLE_KEY, $seo_title);
         update_post_meta($post_id, AdminBase::META_DESCRIPTION_KEY, $seo_description);
+
+        if ('' === $focus_keyphrase) {
+            delete_post_meta($post_id, AdminBase::FOCUS_KEYPHRASE_META_KEY);
+        } else {
+            update_post_meta($post_id, AdminBase::FOCUS_KEYPHRASE_META_KEY, $focus_keyphrase);
+        }
+
+        if ('' === $keywords) {
+            delete_post_meta($post_id, AdminBase::KEYWORDS_META_KEY);
+        } else {
+            update_post_meta($post_id, AdminBase::KEYWORDS_META_KEY, $keywords);
+        }
 
         wp_send_json_success(array('message' => __('Saved.', 'ai-seo-captain')));
     }

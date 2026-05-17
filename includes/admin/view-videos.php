@@ -31,6 +31,14 @@ defined('ABSPATH') || exit;
     <?php echo $readiness_banner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped 
     ?>
 
+    <div class="ai-seo-captain-notice is-live">
+        <span class="ai-seo-captain-notice__icon" aria-hidden="true">&#9888;</span>
+        <div class="ai-seo-captain-notice__body">
+            <strong class="ai-seo-captain-notice__title"><?php esc_html_e('Live changes', 'ai-seo-captain'); ?></strong>
+            <span class="ai-seo-captain-notice__text"><?php esc_html_e('All edits saved on this page are published instantly and visible to visitors right away — no additional publish step is needed.', 'ai-seo-captain'); ?></span>
+        </div>
+    </div>
+
     <div style="display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:16px;max-width:700px;margin:20px 0;">
         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
             <p style="font-size:28px;margin:0;font-weight:600;"><?php echo (int) $total_videos; ?></p>
@@ -118,6 +126,8 @@ defined('ABSPATH') || exit;
                         <td data-sort-value="<?php echo esc_attr(strtolower($v['page_title'])); ?>">
                             <?php if (! empty($v['page_title'])) : ?>
                                 <a href="<?php echo esc_url(admin_url('post.php?post=' . $v['post_id'] . '&action=edit')); ?>" style="font-size:12px;"><?php echo esc_html($v['page_title']); ?></a>
+                            <?php else : ?>
+                                <span style="color:#a7aaad;font-size:12px;font-style:italic;"><?php esc_html_e('Unattached', 'ai-seo-captain'); ?></span>
                             <?php endif; ?>
                         </td>
                         <td>

@@ -623,6 +623,30 @@
     color: #2271b1;
 }
 
+/* ── Live (orange/red — instant publish warning) ── */
+.ai-seo-captain-notice.is-live {
+    background: linear-gradient(135deg, #fff4e6 0%, #ffe8cc 100%);
+    border: 1px solid #f5a623;
+    border-left: 5px solid #e65100;
+}
+
+.ai-seo-captain-notice.is-live .ai-seo-captain-notice__icon {
+    color: #e65100;
+    animation: aisc-pulse 2s ease-in-out infinite;
+}
+
+@keyframes aisc-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: .5;
+    }
+}
+
 /* ── Icon ── */
 .ai-seo-captain-notice__icon {
     flex-shrink: 0;

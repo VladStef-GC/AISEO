@@ -14,6 +14,7 @@ class Exporter
         '_ai_seo_captain_meta_title',
         '_ai_seo_captain_meta_description',
         '_ai_seo_captain_focus_keyphrase',
+        '_ai_seo_captain_keywords',
         '_ai_seo_captain_social_title',
         '_ai_seo_captain_social_description',
         '_ai_seo_captain_social_image',

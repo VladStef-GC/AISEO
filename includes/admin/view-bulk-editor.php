@@ -33,6 +33,14 @@ defined('ABSPATH') || exit;
     <?php echo $readiness_banner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped 
     ?>
 
+    <div class="ai-seo-captain-notice is-live">
+        <span class="ai-seo-captain-notice__icon" aria-hidden="true">&#9888;</span>
+        <div class="ai-seo-captain-notice__body">
+            <strong class="ai-seo-captain-notice__title"><?php esc_html_e('Live changes', 'ai-seo-captain'); ?></strong>
+            <span class="ai-seo-captain-notice__text"><?php esc_html_e('All edits saved on this page are published instantly and visible to visitors right away — no additional publish step is needed.', 'ai-seo-captain'); ?></span>
+        </div>
+    </div>
+
     <!-- Filters & Search -->
     <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:16px 0;">
         <form method="get" style="margin:0;display:flex;align-items:center;gap:8px;">
@@ -72,6 +80,7 @@ defined('ABSPATH') || exit;
             <tbody>
                 <?php
                 $keyphrase_meta_key = \AI_SEO_Captain\Admin::FOCUS_KEYPHRASE_META_KEY;
+                $keywords_meta_key = \AI_SEO_Captain\Admin::KEYWORDS_META_KEY;
                 $row_counter = ($paged - 1) * $per_page;
                 while ($query->have_posts()) : $query->the_post();
                     $row_counter++;
@@ -79,17 +88,7 @@ defined('ABSPATH') || exit;
                     $seo_title_val = get_post_meta($post_id, $meta_title_key, true);
                     $seo_desc_val = get_post_meta($post_id, $meta_desc_key, true);
                     $keyphrase_val = get_post_meta($post_id, $keyphrase_meta_key, true);
-                    $post_terms = array();
-                    foreach (get_object_taxonomies(get_post_type(), 'objects') as $tax) {
-                        if (! $tax->public) continue;
-                        $terms = get_the_terms($post_id, $tax->name);
-                        if (! empty($terms) && ! is_wp_error($terms)) {
-                            foreach ($terms as $t) {
-                                $post_terms[] = $t->name;
-                            }
-                        }
-                    }
-                    $keywords_val = implode(', ', $post_terms);
+                    $keywords_val = (string) get_post_meta($post_id, $keywords_meta_key, true);
                 ?>
                     <tr data-post-id="<?php echo (int) $post_id; ?>">
                         <td style="text-align:center;color:#787c82;font-size:12px;" class="aisc-row-num"><?php echo (int) $row_counter; ?></td>
@@ -103,8 +102,12 @@ defined('ABSPATH') || exit;
                         <td data-sort-value="<?php echo esc_attr(strtolower($seo_desc_val)); ?>">
                             <textarea class="large-text ai-seo-bulk-desc" rows="2" data-original="<?php echo esc_attr($seo_desc_val); ?>"><?php echo esc_textarea($seo_desc_val); ?></textarea>
                         </td>
-                        <td class="aisc-col-keyphrase" style="display:none;font-size:13px;color:#1d2327;" data-sort-value="<?php echo esc_attr(strtolower($keyphrase_val)); ?>"><?php echo esc_html($keyphrase_val); ?></td>
-                        <td class="aisc-col-keywords" style="display:none;font-size:13px;color:#50575e;" data-sort-value="<?php echo esc_attr(strtolower($keywords_val)); ?>"><?php echo esc_html($keywords_val); ?></td>
+                        <td class="aisc-col-keyphrase" style="display:none;" data-sort-value="<?php echo esc_attr(strtolower($keyphrase_val)); ?>">
+                            <input type="text" class="large-text ai-seo-bulk-keyphrase" value="<?php echo esc_attr($keyphrase_val); ?>" data-original="<?php echo esc_attr($keyphrase_val); ?>" placeholder="<?php esc_attr_e('Focus keyphrase…', 'ai-seo-captain'); ?>" />
+                        </td>
+                        <td class="aisc-col-keywords" style="display:none;" data-sort-value="<?php echo esc_attr(strtolower($keywords_val)); ?>">
+                            <input type="text" class="large-text ai-seo-bulk-keywords" value="<?php echo esc_attr($keywords_val); ?>" data-original="<?php echo esc_attr($keywords_val); ?>" placeholder="<?php esc_attr_e('keyword1, keyword2, …', 'ai-seo-captain'); ?>" />
+                        </td>
                         <td>
                             <button type="button" class="button button-small ai-seo-bulk-save" disabled><?php esc_html_e('Save', 'ai-seo-captain'); ?></button>
                         </td>
