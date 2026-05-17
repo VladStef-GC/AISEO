@@ -39,6 +39,10 @@ register_deactivation_hook(__FILE__, static function () {
     $indexer  = new AI_SEO_Captain\Content_Indexer();
     $cron     = new AI_SEO_Captain\Cron_Manager($settings, $indexer);
     $cron->unschedule_all();
+
+    // Clean up cache drop-ins and WP_CACHE constant.
+    AI_SEO_Captain\Cache\Cache_Manager::deactivate();
+
     flush_rewrite_rules();
 });
 

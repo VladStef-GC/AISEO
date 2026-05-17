@@ -72,6 +72,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
 
     <form method="post" action="options.php">
         <?php settings_fields('ai_seo_captain_settings'); ?>
+        <input type="hidden" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[_save_source]" value="settings">
 
         <div class="ai-seo-accordion">
 

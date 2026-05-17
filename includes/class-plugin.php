@@ -28,6 +28,8 @@ final class Plugin
 
     private ?Cron_Manager $cron_manager = null;
 
+    private ?Cache\Cache_Manager $cache_manager = null;
+
     public static function instance(): Plugin
     {
         if (null === self::$instance) {
@@ -47,6 +49,10 @@ final class Plugin
         $this->sitemap         = new Sitemap($this->settings);
         $this->redirects       = new Redirects($this->settings);
         $this->cron_manager    = new Cron_Manager($this->settings, $this->content_indexer);
+
+        // Cache system — boot after sitemap so preloader can access it.
+        $this->cache_manager = new Cache\Cache_Manager($this->settings);
+        $this->cache_manager->boot();
 
         // Ensure cron jobs are scheduled (covers existing installs upgrading).
         $this->cron_manager->schedule_all();
@@ -118,5 +124,13 @@ final class Plugin
     public function get_cron_manager(): ?Cron_Manager
     {
         return $this->cron_manager;
+    }
+
+    /**
+     * Get the Cache Manager instance.
+     */
+    public function get_cache_manager(): ?Cache\Cache_Manager
+    {
+        return $this->cache_manager;
     }
 }

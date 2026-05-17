@@ -384,7 +384,8 @@ class Admin
      */
     public static function render_banner(string $severity, string $title, string $text, bool $dismissible = false, string $dismiss_key = ''): string
     {
-        $icon_url = esc_url(AI_SEO_KEEPER_URL . 'assets/img/seo-captain-side-d.svg');
+        $icon_file = ('is-success' === $severity) ? 'seo-captain-side-ok-d.svg' : 'seo-captain-side-d.svg';
+        $icon_url  = esc_url(AI_SEO_KEEPER_URL . 'assets/img/' . $icon_file);
         $dismiss_html = '';
         $data_attr = '';
 
@@ -557,6 +558,15 @@ class Admin
             'ai-seo-captain-cron-manager',
             array($this, 'render_cron_manager_page')
         );
+
+        add_submenu_page(
+            'ai-seo-captain',
+            'Cache',
+            'Cache',
+            'manage_options',
+            'ai-seo-captain-cache',
+            array($this, 'render_cache_page')
+        );
     }
 
     public function enqueue_editor_assets(string $hook_suffix): void
@@ -613,6 +623,12 @@ class Admin
                 'brandingSuffixLength' => function_exists('mb_strlen')
                     ? mb_strlen($this->settings->get_branding_suffix())
                     : strlen($this->settings->get_branding_suffix()),
+                'cacheNonce' => wp_create_nonce('aisc_cache_nonce'),
+                'purgePostCacheAction' => 'aisc_purge_post_cache',
+                'cachePurgingText' => __('Clearing page cache...', 'ai-seo-captain'),
+                'cachePurgedText' => __('Page cache cleared — changes are live.', 'ai-seo-captain'),
+                'cachePurgeErrorText' => __('Could not clear the page cache.', 'ai-seo-captain'),
+                'pluginUrl' => AI_SEO_KEEPER_URL,
             )
         );
 
@@ -754,6 +770,7 @@ class Admin
             'ai-seo-captain-setup'         => 'setup-wizard',
             'ai-seo-captain-site-chat'     => 'site-chat',
             'ai-seo-captain-cron-manager'  => 'cron-manager',
+            'ai-seo-captain-cache'         => 'cache',
         );
 
         // Determine the page slug from the hook suffix.
@@ -1846,6 +1863,67 @@ jQuery(function ($) {
     $(document).on('input', '#ai-seo-captain-social-image', function () {
         refreshSeoDraftFeedback($(this).closest('.ai-seo-captain-editor-panel'));
     });
+
+    // ── Clear Page Cache ────────────────────────────────────────
+    $(document).on('click', '.ai-seo-captain-clear-page-cache', function () {
+        var $btn = $(this);
+        var postId = $btn.data('postId');
+        var $status = $btn.closest('.ai-seo-captain-toolbar').find('.ai-seo-captain-save-status');
+
+        if (!postId) {
+            $status.text(aiSeoKeeperEditor.missingPostText).css('color', '#8a2424');
+            return;
+        }
+
+        $btn.prop('disabled', true);
+        $status.text(aiSeoKeeperEditor.cachePurgingText).css('color', 'inherit');
+
+        $.post(aiSeoKeeperEditor.ajaxUrl, {
+            action: aiSeoKeeperEditor.purgePostCacheAction,
+            nonce: aiSeoKeeperEditor.cacheNonce,
+            post_id: postId
+        }, function (response) {
+            if (response.success) {
+                $status.text(response.data.message || aiSeoKeeperEditor.cachePurgedText).css('color', '#135e16');
+                showEditorCacheBanner(response.data.message, 'is-success');
+            } else {
+                $status.text(response.data.message || aiSeoKeeperEditor.cachePurgeErrorText).css('color', '#8a2424');
+                showEditorCacheBanner(response.data.message || aiSeoKeeperEditor.cachePurgeErrorText, 'is-error');
+            }
+        }).fail(function () {
+            $status.text(aiSeoKeeperEditor.cachePurgeErrorText).css('color', '#8a2424');
+            showEditorCacheBanner(aiSeoKeeperEditor.cachePurgeErrorText, 'is-error');
+        }).always(function () {
+            $btn.prop('disabled', false);
+        });
+    });
+
+    function showEditorCacheBanner(message, severity) {
+        var iconFile = (severity === 'is-success') ? 'seo-captain-side-ok-d.svg' : 'seo-captain-side-d.svg';
+        var iconUrl = (aiSeoKeeperEditor.pluginUrl || '') + 'assets/img/' + iconFile;
+        var title = severity === 'is-error' ? 'Error' : 'Cache Cleared';
+        var html = '<div class="ai-seo-captain-notice ' + severity + '" style="margin:8px 0;">'
+            + '<img src="' + iconUrl + '" alt="" class="ai-seo-captain-notice__icon" />'
+            + '<div class="ai-seo-captain-notice__body">'
+            + '<strong class="ai-seo-captain-notice__title">' + title + '</strong>'
+            + '<span class="ai-seo-captain-notice__text">' + message + '</span>'
+            + '</div>'
+            + '<button type="button" class="ai-seo-captain-notice__dismiss" aria-label="Dismiss">&times;</button>'
+            + '</div>';
+
+        var $panel = $('.ai-seo-captain-editor-panel');
+        $panel.find('.ai-seo-captain-cache-banner').remove();
+        var $banner = $('<div class="ai-seo-captain-cache-banner">' + html + '</div>');
+        $panel.find('.ai-seo-captain-toolbar-note').after($banner);
+
+        $banner.find('.ai-seo-captain-notice__dismiss').on('click', function () {
+            $banner.fadeOut(200, function () { $(this).remove(); });
+        });
+
+        setTimeout(function () {
+            $banner.fadeOut(300, function () { $(this).remove(); });
+        }, 6000);
+    }
 });
 JS;
     }
@@ -2628,6 +2706,22 @@ JS;
         require __DIR__ . '/admin/view-cron-manager.php';
     }
 
+    public function render_cache_page(): void
+    {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
+        $cache_manager    = Plugin::instance()->get_cache_manager();
+        $options          = $this->settings->get();
+        $cache_status     = $cache_manager ? $cache_manager->get_status() : array();
+        $readiness        = $this->get_plugin_readiness();
+        $readiness_banner = $this->get_readiness_banner_html($readiness);
+        $wc_active        = class_exists('WooCommerce');
+
+        require __DIR__ . '/admin/view-cache.php';
+    }
+
     public function render_settings_page(): void
     {
         if (! current_user_can('manage_options')) {
@@ -2812,6 +2906,9 @@ JS;
                 <div class="ai-seo-captain-toolbar-actions">
                     <button type="button" class="button button-primary ai-seo-captain-generate-draft" <?php disabled(! $has_api_key); ?>>Generate with AI</button>
                     <button type="button" class="button button-secondary ai-seo-captain-save-draft">Save SEO draft</button>
+                    <?php if (! empty($options['cache_enabled'])) : ?>
+                        <button type="button" class="button ai-seo-captain-clear-page-cache" data-post-id="<?php echo (int) $post->ID; ?>" title="<?php esc_attr_e('Force-clear all cached versions of this page', 'ai-seo-captain'); ?>" style="margin-left:auto;background:#00a32a;color:#fff;border-color:#00a32a;"><span class="dashicons dashicons-performance" style="font-size:16px;line-height:1.6;margin-right:2px;"></span><?php esc_html_e('Clear Page Cache', 'ai-seo-captain'); ?></button>
+                    <?php endif; ?>
                 </div>
                 <span class="ai-seo-captain-save-status" aria-live="polite"></span>
             </div>

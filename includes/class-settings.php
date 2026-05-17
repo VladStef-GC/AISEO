@@ -42,6 +42,7 @@ class Settings
         'canonical'        => 'Canonical URL',
         'robots'           => 'Robots Directives',
         'schema'           => 'Schema Output',
+        'cache'            => 'Page Cache & Performance',
     );
 
     public function __construct()
@@ -145,6 +146,26 @@ class Settings
             'crawl_remove_shortlink'         => 0,
             'crawl_remove_rsd_link'          => 0,
             'crawl_remove_feed_links'        => 0,
+
+            // Cache Module.
+            'cache_enabled'              => 0,
+            'cache_page_enabled'         => 1,
+            'cache_page_ttl'             => 86400,
+            'cache_browser_enabled'      => 1,
+            'cache_gzip_enabled'         => 1,
+            'cache_object_enabled'       => 0,
+            'cache_preload_enabled'      => 1,
+            'cache_preload_batch_size'   => 5,
+            'cache_minify_css'           => 0,
+            'cache_minify_js'            => 0,
+            'cache_minify_html'          => 0,
+            'cache_lazy_load'            => 1,
+            'cache_lazy_skip_count'      => 2,
+            'cache_exclude_urls'         => '',
+            'cache_exclude_cookies'      => '',
+            'cache_exclude_useragents'   => '',
+            'cache_query_string_cache'   => 0,
+            'cache_wc_exclude_cart'      => 1,
         );
 
         foreach (self::FEATURE_FLAGS as $feature_key => $label) {
@@ -291,12 +312,16 @@ class Settings
         $current = $this->get();
         $output  = self::defaults();
 
+        // Determine which page is saving so we only touch its checkboxes.
+        $save_source = isset($input['_save_source']) ? sanitize_key($input['_save_source']) : 'settings';
+        $is_cache_save = ('cache' === $save_source);
+
         $raw_provider = isset($input['provider']) ? sanitize_key($input['provider']) : (string) $current['provider'];
         $supported_providers = self::get_supported_providers();
         $output['provider'] = in_array($raw_provider, $supported_providers, true) ? $raw_provider : (string) $current['provider'];
 
         $raw_model = isset($input['model']) ? sanitize_text_field($input['model']) : (string) $current['model'];
-        $output['custom_model_enabled'] = empty($input['custom_model_enabled']) ? 0 : 1;
+        $output['custom_model_enabled'] = $is_cache_save ? $current['custom_model_enabled'] : (empty($input['custom_model_enabled']) ? 0 : 1);
         $output['custom_model_id'] = isset($input['custom_model_id']) ? self::sanitize_custom_model_id((string) $input['custom_model_id']) : (string) ($current['custom_model_id'] ?? '');
 
         if (! empty($output['custom_model_enabled']) && '' !== $output['custom_model_id']) {
@@ -313,10 +338,10 @@ class Settings
         $output['site_chat_context']    = isset($input['site_chat_context']) ? sanitize_textarea_field($input['site_chat_context']) : ($current['site_chat_context'] ?? '');
         $output['google_tracking_code'] = isset($input['google_tracking_code']) ? sanitize_text_field($input['google_tracking_code']) : '';
         $output['bing_tracking_code']   = isset($input['bing_tracking_code']) ? sanitize_text_field($input['bing_tracking_code']) : '';
-        $output['editor_chat_enabled']  = empty($input['editor_chat_enabled']) ? 0 : 1;
-        $output['frontend_output_enabled'] = empty($input['frontend_output_enabled']) ? 0 : 1;
-        $output['frontend_override_conflicts'] = empty($input['frontend_override_conflicts']) ? 0 : 1;
-        $output['search_appearance_auto_enabled'] = empty($input['search_appearance_auto_enabled']) ? 0 : 1;
+        $output['editor_chat_enabled']  = $is_cache_save ? $current['editor_chat_enabled'] : (empty($input['editor_chat_enabled']) ? 0 : 1);
+        $output['frontend_output_enabled'] = $is_cache_save ? $current['frontend_output_enabled'] : (empty($input['frontend_output_enabled']) ? 0 : 1);
+        $output['frontend_override_conflicts'] = $is_cache_save ? $current['frontend_override_conflicts'] : (empty($input['frontend_override_conflicts']) ? 0 : 1);
+        $output['search_appearance_auto_enabled'] = $is_cache_save ? $current['search_appearance_auto_enabled'] : (empty($input['search_appearance_auto_enabled']) ? 0 : 1);
         $output['search_title_separator'] = isset($input['search_title_separator']) ? $this->sanitize_separator((string) $input['search_title_separator']) : $current['search_title_separator'];
         $output['site_brand'] = isset($input['site_brand']) ? sanitize_text_field(wp_unslash($input['site_brand'])) : $current['site_brand'];
         $output['search_title_template_post'] = isset($input['search_title_template_post']) ? $this->sanitize_template((string) $input['search_title_template_post']) : $current['search_title_template_post'];
@@ -329,25 +354,25 @@ class Settings
         $output['search_title_template_search'] = isset($input['search_title_template_search']) ? $this->sanitize_template((string) $input['search_title_template_search']) : $current['search_title_template_search'];
         $output['search_title_template_archive'] = isset($input['search_title_template_archive']) ? $this->sanitize_template((string) $input['search_title_template_archive']) : $current['search_title_template_archive'];
         $output['search_title_template_404'] = isset($input['search_title_template_404']) ? $this->sanitize_template((string) $input['search_title_template_404']) : $current['search_title_template_404'];
-        $output['noindex_categories'] = empty($input['noindex_categories']) ? 0 : 1;
-        $output['noindex_tags'] = empty($input['noindex_tags']) ? 0 : 1;
-        $output['noindex_author_archives'] = empty($input['noindex_author_archives']) ? 0 : 1;
-        $output['noindex_date_archives'] = empty($input['noindex_date_archives']) ? 0 : 1;
-        $output['noindex_search_results'] = empty($input['noindex_search_results']) ? 0 : 1;
-        $output['noindex_format_archives'] = empty($input['noindex_format_archives']) ? 0 : 1;
-        $output['sitemap_enabled'] = empty($input['sitemap_enabled']) ? 0 : 1;
-        $output['sitemap_include_posts'] = empty($input['sitemap_include_posts']) ? 0 : 1;
-        $output['sitemap_include_pages'] = empty($input['sitemap_include_pages']) ? 0 : 1;
-        $output['sitemap_include_categories'] = empty($input['sitemap_include_categories']) ? 0 : 1;
-        $output['sitemap_include_tags'] = empty($input['sitemap_include_tags']) ? 0 : 1;
-        $output['sitemap_include_wc_products']    = empty($input['sitemap_include_wc_products'])    ? 0 : 1;
-        $output['sitemap_include_wc_product_cat'] = empty($input['sitemap_include_wc_product_cat']) ? 0 : 1;
-        $output['sitemap_include_wc_product_tag'] = empty($input['sitemap_include_wc_product_tag']) ? 0 : 1;
-        $output['wc_integration_enabled']         = empty($input['wc_integration_enabled'])         ? 0 : 1;
-        $output['wc_schema_enrichment_enabled']   = empty($input['wc_schema_enrichment_enabled'])   ? 0 : 1;
-        $output['wc_ai_context_enabled']          = empty($input['wc_ai_context_enabled'])          ? 0 : 1;
-        $output['indexnow_enabled'] = empty($input['indexnow_enabled']) ? 0 : 1;
-        $output['indexnow_auto_submit'] = empty($input['indexnow_auto_submit']) ? 0 : 1;
+        $output['noindex_categories'] = $is_cache_save ? $current['noindex_categories'] : (empty($input['noindex_categories']) ? 0 : 1);
+        $output['noindex_tags'] = $is_cache_save ? $current['noindex_tags'] : (empty($input['noindex_tags']) ? 0 : 1);
+        $output['noindex_author_archives'] = $is_cache_save ? $current['noindex_author_archives'] : (empty($input['noindex_author_archives']) ? 0 : 1);
+        $output['noindex_date_archives'] = $is_cache_save ? $current['noindex_date_archives'] : (empty($input['noindex_date_archives']) ? 0 : 1);
+        $output['noindex_search_results'] = $is_cache_save ? $current['noindex_search_results'] : (empty($input['noindex_search_results']) ? 0 : 1);
+        $output['noindex_format_archives'] = $is_cache_save ? $current['noindex_format_archives'] : (empty($input['noindex_format_archives']) ? 0 : 1);
+        $output['sitemap_enabled'] = $is_cache_save ? $current['sitemap_enabled'] : (empty($input['sitemap_enabled']) ? 0 : 1);
+        $output['sitemap_include_posts'] = $is_cache_save ? $current['sitemap_include_posts'] : (empty($input['sitemap_include_posts']) ? 0 : 1);
+        $output['sitemap_include_pages'] = $is_cache_save ? $current['sitemap_include_pages'] : (empty($input['sitemap_include_pages']) ? 0 : 1);
+        $output['sitemap_include_categories'] = $is_cache_save ? $current['sitemap_include_categories'] : (empty($input['sitemap_include_categories']) ? 0 : 1);
+        $output['sitemap_include_tags'] = $is_cache_save ? $current['sitemap_include_tags'] : (empty($input['sitemap_include_tags']) ? 0 : 1);
+        $output['sitemap_include_wc_products']    = $is_cache_save ? $current['sitemap_include_wc_products'] : (empty($input['sitemap_include_wc_products'])    ? 0 : 1);
+        $output['sitemap_include_wc_product_cat'] = $is_cache_save ? $current['sitemap_include_wc_product_cat'] : (empty($input['sitemap_include_wc_product_cat']) ? 0 : 1);
+        $output['sitemap_include_wc_product_tag'] = $is_cache_save ? $current['sitemap_include_wc_product_tag'] : (empty($input['sitemap_include_wc_product_tag']) ? 0 : 1);
+        $output['wc_integration_enabled']         = $is_cache_save ? $current['wc_integration_enabled'] : (empty($input['wc_integration_enabled'])         ? 0 : 1);
+        $output['wc_schema_enrichment_enabled']   = $is_cache_save ? $current['wc_schema_enrichment_enabled'] : (empty($input['wc_schema_enrichment_enabled'])   ? 0 : 1);
+        $output['wc_ai_context_enabled']          = $is_cache_save ? $current['wc_ai_context_enabled'] : (empty($input['wc_ai_context_enabled'])          ? 0 : 1);
+        $output['indexnow_enabled'] = $is_cache_save ? $current['indexnow_enabled'] : (empty($input['indexnow_enabled']) ? 0 : 1);
+        $output['indexnow_auto_submit'] = $is_cache_save ? $current['indexnow_auto_submit'] : (empty($input['indexnow_auto_submit']) ? 0 : 1);
         $output['indexnow_key'] = isset($input['indexnow_key']) ? preg_replace('/[^a-zA-Z0-9]/', '', (string) $input['indexnow_key']) : $current['indexnow_key'];
         $output['audit_skip_patterns'] = isset($input['audit_skip_patterns']) ? sanitize_textarea_field($input['audit_skip_patterns']) : $current['audit_skip_patterns'];
 
@@ -360,7 +385,7 @@ class Settings
         $output['robots_txt_custom'] = isset($input['robots_txt_custom']) ? sanitize_textarea_field($input['robots_txt_custom']) : $current['robots_txt_custom'];
 
         // Local SEO / Business Schema.
-        $output['local_seo_enabled'] = empty($input['local_seo_enabled']) ? 0 : 1;
+        $output['local_seo_enabled'] = $is_cache_save ? $current['local_seo_enabled'] : (empty($input['local_seo_enabled']) ? 0 : 1);
         $valid_business_types = array('LocalBusiness', 'Store', 'Restaurant', 'HealthAndBeautyBusiness', 'LegalService', 'FinancialService', 'EducationalOrganization', 'LodgingBusiness', 'SportsActivityLocation', 'EntertainmentBusiness', 'HomeAndConstructionBusiness', 'AutomotiveBusiness', 'MedicalBusiness', 'ProfessionalService', 'RealEstateAgent');
         $output['local_business_type'] = isset($input['local_business_type']) && in_array($input['local_business_type'], $valid_business_types, true) ? $input['local_business_type'] : $current['local_business_type'];
         foreach (array('local_business_name', 'local_street', 'local_city', 'local_state', 'local_zip', 'local_country', 'local_phone', 'local_email', 'local_price_range') as $lk) {
@@ -375,16 +400,27 @@ class Settings
         // RSS Feed Optimization.
         $output['rss_before_content'] = isset($input['rss_before_content']) ? wp_kses_post($input['rss_before_content']) : $current['rss_before_content'];
         $output['rss_after_content'] = isset($input['rss_after_content']) ? wp_kses_post($input['rss_after_content']) : $current['rss_after_content'];
-        $output['rss_featured_image'] = empty($input['rss_featured_image']) ? 0 : 1;
+        $output['rss_featured_image'] = $is_cache_save ? $current['rss_featured_image'] : (empty($input['rss_featured_image']) ? 0 : 1);
         $output['rss_publication_delay'] = isset($input['rss_publication_delay']) ? max(0, (int) $input['rss_publication_delay']) : $current['rss_publication_delay'];
 
         // Crawl Budget Optimization.
         foreach (array('crawl_disable_author_archives', 'crawl_disable_date_archives', 'crawl_disable_attachment_pages', 'crawl_disable_search_indexing', 'crawl_disable_format_archives', 'crawl_remove_wp_version', 'crawl_remove_shortlink', 'crawl_remove_rsd_link', 'crawl_remove_feed_links') as $ck) {
-            $output[$ck] = empty($input[$ck]) ? 0 : 1;
+            $output[$ck] = $is_cache_save ? $current[$ck] : (empty($input[$ck]) ? 0 : 1);
         }
 
+        // Cache Module — only process cache checkboxes when saving from the cache page.
+        foreach (array('cache_enabled', 'cache_page_enabled', 'cache_browser_enabled', 'cache_gzip_enabled', 'cache_object_enabled', 'cache_preload_enabled', 'cache_minify_css', 'cache_minify_js', 'cache_minify_html', 'cache_lazy_load', 'cache_query_string_cache', 'cache_wc_exclude_cart') as $cache_key) {
+            $output[$cache_key] = $is_cache_save ? (empty($input[$cache_key]) ? 0 : 1) : $current[$cache_key];
+        }
+        $output['cache_page_ttl'] = $is_cache_save ? (isset($input['cache_page_ttl']) ? max(300, min(604800, (int) $input['cache_page_ttl'])) : $current['cache_page_ttl']) : $current['cache_page_ttl'];
+        $output['cache_preload_batch_size'] = $is_cache_save ? (isset($input['cache_preload_batch_size']) ? max(1, min(50, (int) $input['cache_preload_batch_size'])) : $current['cache_preload_batch_size']) : $current['cache_preload_batch_size'];
+        $output['cache_lazy_skip_count'] = $is_cache_save ? (isset($input['cache_lazy_skip_count']) ? max(0, min(10, (int) $input['cache_lazy_skip_count'])) : $current['cache_lazy_skip_count']) : $current['cache_lazy_skip_count'];
+        $output['cache_exclude_urls'] = $is_cache_save ? (isset($input['cache_exclude_urls']) ? sanitize_textarea_field($input['cache_exclude_urls']) : $current['cache_exclude_urls']) : $current['cache_exclude_urls'];
+        $output['cache_exclude_cookies'] = $is_cache_save ? (isset($input['cache_exclude_cookies']) ? sanitize_textarea_field($input['cache_exclude_cookies']) : $current['cache_exclude_cookies']) : $current['cache_exclude_cookies'];
+        $output['cache_exclude_useragents'] = $is_cache_save ? (isset($input['cache_exclude_useragents']) ? sanitize_textarea_field($input['cache_exclude_useragents']) : $current['cache_exclude_useragents']) : $current['cache_exclude_useragents'];
+
         foreach (self::FEATURE_FLAGS as $feature_key => $label) {
-            $output['feature_' . $feature_key] = empty($input['feature_' . $feature_key]) ? 0 : 1;
+            $output['feature_' . $feature_key] = $is_cache_save ? $current['feature_' . $feature_key] : (empty($input['feature_' . $feature_key]) ? 0 : 1);
         }
 
         return $output;
