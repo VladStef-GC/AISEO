@@ -574,6 +574,11 @@ class Admin
         wp_enqueue_media();
         wp_enqueue_script('jquery');
 
+        // Banner styles needed for editor metabox notices.
+        $url = AI_SEO_KEEPER_URL . 'assets/';
+        $ver = AI_SEO_KEEPER_VERSION;
+        wp_enqueue_style('ai-seo-admin-common', $url . 'css/admin-common.css', array(), $ver);
+
         wp_localize_script(
             'jquery',
             'aiSeoKeeperEditor',
@@ -2869,11 +2874,15 @@ JS;
                                 <span class="ai-seo-captain-audit-status" style="font-size:12px;color:#787c82;"></span>
                             </div>
                         <?php else : ?>
-                            <div style="display:flex;align-items:center;gap:12px;margin:10px 0;padding:8px 12px;background:#fef8ee;border-radius:4px;border:1px solid #f0c33c;">
-                                <span style="font-size:13px;">No AI SEO audit has been run on this page yet.</span>
-                                <button type="button" class="button button-small button-primary ai-seo-captain-run-page-audit" <?php disabled(! $has_api_key); ?>>▶ Run AI Audit</button>
-                                <span class="ai-seo-captain-audit-status" style="font-size:12px;color:#787c82;"></span>
-                            </div>
+                            <?php
+                            $audit_btn = '<button type="button" class="button button-small button-primary ai-seo-captain-run-page-audit" ' . disabled(! $has_api_key, true, false) . '>&#9654; ' . esc_html__('Run AI Audit', 'ai-seo-captain') . '</button>'
+                                . ' <span class="ai-seo-captain-audit-status" style="font-size:12px;color:#787c82;"></span>';
+                            echo self::render_banner(
+                                'is-warning',
+                                esc_html__('No AI SEO audit', 'ai-seo-captain'),
+                                esc_html__('No AI SEO audit has been run on this page yet.', 'ai-seo-captain') . ' ' . $audit_btn
+                            );
+                            ?>
                         <?php endif; ?>
 
                         <p class="ai-seo-captain-snippet-summary-text">Length and focus-keyphrase signals update as you type.</p>
