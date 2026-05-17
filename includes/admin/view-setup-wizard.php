@@ -56,7 +56,7 @@ defined('ABSPATH') || exit;
             'is-warning',
             esc_html__('No API key configured.', 'ai-seo-captain'),
             '<a href="' . esc_url(admin_url('admin.php?page=ai-seo-captain-settings')) . '">' . esc_html__('Go to Settings', 'ai-seo-captain') . '</a> '
-            . esc_html__('and add your AI provider API key before running the wizard.', 'ai-seo-captain')
+                . esc_html__('and add your AI provider API key before running the wizard.', 'ai-seo-captain')
         );
         ?>
     <?php endif; ?>

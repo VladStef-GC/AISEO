@@ -582,7 +582,7 @@
     gap: 14px;
     padding: 16px 20px;
     margin: 16px 0 24px;
-    border-radius: var(--aisc-radius);
+    border-radius: 0;
     font-size: 14px;
     line-height: 1.6;
     color: #1d2327;
@@ -601,8 +601,8 @@
 /* ── Icon (SVG image) ── */
 .ai-seo-captain-notice__icon {
     flex-shrink: 0;
-    width: 28px;
-    height: 28px;
+    width: 60px;
+    height: 60px;
     margin-top: 1px;
     object-fit: contain;
 }
@@ -639,7 +639,7 @@
 .ai-seo-captain-notice.is-warning {
     background: linear-gradient(135deg, #fff8e1 0%, #fff3cd 100%);
     border: 1px solid #f0c36d;
-    border-left: 5px solid #ffb900;
+    border-left: 7px solid #ffb900;
 }
 
 .ai-seo-captain-notice.is-warning .ai-seo-captain-notice__icon.dashicons {
@@ -650,7 +650,7 @@
 .ai-seo-captain-notice.is-error {
     background: linear-gradient(135deg, #fff5f5 0%, #fce8e8 100%);
     border: 1px solid #f1a1a1;
-    border-left: 5px solid #d63638;
+    border-left: 7px solid #d63638;
 }
 
 .ai-seo-captain-notice.is-error .ai-seo-captain-notice__icon.dashicons {
@@ -661,7 +661,7 @@
 .ai-seo-captain-notice.is-info {
     background: linear-gradient(135deg, #f0f6fc 0%, #e7f1fb 100%);
     border: 1px solid #a3c9f1;
-    border-left: 5px solid #2271b1;
+    border-left: 7px solid #2271b1;
 }
 
 .ai-seo-captain-notice.is-info .ai-seo-captain-notice__icon.dashicons {
@@ -672,7 +672,7 @@
 .ai-seo-captain-notice.is-live {
     background: linear-gradient(135deg, #fff4e6 0%, #ffe8cc 100%);
     border: 1px solid #f5a623;
-    border-left: 5px solid #e65100;
+    border-left: 7px solid #e65100;
 }
 
 .ai-seo-captain-notice.is-live .ai-seo-captain-notice__icon.dashicons {
@@ -684,7 +684,7 @@
 .ai-seo-captain-notice.is-news {
     background: linear-gradient(135deg, #f5f0ff 0%, #ede4fb 100%);
     border: 1px solid #c4b0e6;
-    border-left: 5px solid #6a14d1;
+    border-left: 7px solid #6a14d1;
 }
 
 .ai-seo-captain-notice.is-news .ai-seo-captain-notice__icon.dashicons {
@@ -716,7 +716,7 @@
 }
 
 .ai-seo-captain-notice__text {
-    font-size: 13px;
+    font-size: 15px;
     color: #50575e;
 }
 
