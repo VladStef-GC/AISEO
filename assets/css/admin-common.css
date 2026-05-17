@@ -749,6 +749,71 @@
     position: relative;
 }
 
+/* ── Toggle slider (replaces standard checkboxes for settings) ── */
+.aisc-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    gap: 10px;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.aisc-toggle input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.aisc-toggle__track {
+    position: relative;
+    flex-shrink: 0;
+    width: 44px;
+    height: 24px;
+    background: #b4b9be;
+    border-radius: 12px;
+    transition: background .2s ease;
+}
+
+.aisc-toggle__track::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .2);
+    transition: transform .2s ease;
+}
+
+.aisc-toggle input[type="checkbox"]:checked+.aisc-toggle__track {
+    background: #089564;
+}
+
+.aisc-toggle input[type="checkbox"]:checked+.aisc-toggle__track::after {
+    transform: translateX(20px);
+}
+
+.aisc-toggle input[type="checkbox"]:focus-visible+.aisc-toggle__track {
+    outline: 2px solid #089564;
+    outline-offset: 2px;
+}
+
+.aisc-toggle input[type="checkbox"]:disabled+.aisc-toggle__track {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.aisc-toggle__label {
+    font-size: 13px;
+    line-height: 1.4;
+}
+
 .ai-seo-box h2 {
     margin-top: 0;
     font-size: 14px;

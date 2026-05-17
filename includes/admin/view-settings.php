@@ -113,9 +113,10 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                                 <p class="description" style="margin-top:8px;">
                                     Curated text-generation models only. Image, TTS, realtime, and transcription models are intentionally excluded.
                                 </p>
-                                <label class="ai-seo-custom-model-toggle" style="display:block;margin-top:8px;">
+                                <label class="aisc-toggle ai-seo-custom-model-toggle" style="display:flex;margin-top:8px;">
                                     <input id="ai-seo-custom-model-enabled" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[custom_model_enabled]" value="1" <?php checked($custom_model_enabled); ?> />
-                                    Advanced: use custom model ID
+                                    <span class="aisc-toggle__track"></span>
+                                    <span class="aisc-toggle__label">Advanced: use custom model ID</span>
                                 </label>
                                 <div id="ai-seo-custom-model-wrap" class="ai-seo-custom-model-wrap" <?php echo $custom_model_enabled ? '' : 'hidden'; ?>>
                                     <input
@@ -205,9 +206,10 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                             <td>
                                 <fieldset>
                                     <?php foreach (Settings::FEATURE_FLAGS as $feature_key => $feature_label) : ?>
-                                        <label style="display:block;margin-bottom:8px;">
+                                        <label class="aisc-toggle" style="display:flex;margin-bottom:8px;">
                                             <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[feature_<?php echo esc_attr($feature_key); ?>]" value="1" <?php checked(! empty($options['feature_' . $feature_key])); ?> />
-                                            <?php echo esc_html($feature_label); ?>
+                                            <span class="aisc-toggle__track"></span>
+                                            <span class="aisc-toggle__label"><?php echo esc_html($feature_label); ?></span>
                                         </label>
                                     <?php endforeach; ?>
                                 </fieldset>
@@ -216,22 +218,25 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                         <tr>
                             <th scope="row"><label for="ai-seo-editor-chat">Editor chat</label></th>
                             <td>
-                                <label>
+                                <label class="aisc-toggle">
                                     <input id="ai-seo-editor-chat" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[editor_chat_enabled]" value="1" <?php checked(! empty($options['editor_chat_enabled'])); ?> />
-                                    Enable the page-level AI assistant in the editor.
+                                    <span class="aisc-toggle__track"></span>
+                                    <span class="aisc-toggle__label">Enable the page-level AI assistant in the editor.</span>
                                 </label>
                             </td>
                         </tr>
                         <tr>
                             <th scope="row"><label for="ai-seo-frontend-output">Frontend output</label></th>
                             <td>
-                                <label style="display:block;margin-bottom:8px;">
+                                <label class="aisc-toggle" style="display:flex;margin-bottom:8px;">
                                     <input id="ai-seo-frontend-output" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[frontend_output_enabled]" value="1" <?php checked(! empty($options['frontend_output_enabled'])); ?> />
-                                    Output approved AI metadata and saved page-level SEO fields on the frontend.
+                                    <span class="aisc-toggle__track"></span>
+                                    <span class="aisc-toggle__label">Output approved AI metadata and saved page-level SEO fields on the frontend.</span>
                                 </label>
-                                <label style="display:block;">
+                                <label class="aisc-toggle" style="display:flex;">
                                     <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[frontend_override_conflicts]" value="1" <?php checked(! empty($options['frontend_override_conflicts'])); ?> />
-                                    Allow output even when another SEO plugin is active.
+                                    <span class="aisc-toggle__track"></span>
+                                    <span class="aisc-toggle__label">Allow output even when another SEO plugin is active.</span>
                                 </label>
                                 <p class="description">Keep the second option off unless you explicitly want SEO Captain to render alongside another SEO plugin.</p>
                             </td>
@@ -239,9 +244,10 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                         <tr>
                             <th scope="row"><label for="ai-seo-search-appearance-auto">Search appearance</label></th>
                             <td>
-                                <label style="display:block;margin-bottom:8px;">
+                                <label class="aisc-toggle" style="display:flex;margin-bottom:8px;">
                                     <input id="ai-seo-search-appearance-auto" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[search_appearance_auto_enabled]" value="1" <?php checked(! empty($options['search_appearance_auto_enabled'])); ?> />
-                                    Enable baseline SEO output for public singular content.
+                                    <span class="aisc-toggle__track"></span>
+                                    <span class="aisc-toggle__label">Enable baseline SEO output for public singular content.</span>
                                 </label>
                                 <p class="description" style="margin:0 0 12px;">Standalone search-appearance mode: builds titles from templates, derives meta descriptions from excerpt/content.</p>
                                 <p style="margin:0 0 8px;"><strong>Tokens:</strong> <code>%%title%%</code>, <code>%%sitename%%</code>, <code>%%sep%%</code></p>
@@ -299,56 +305,67 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                                 </p>
                                 <hr style="margin:16px 0;" />
                                 <p style="margin:0 0 8px;"><strong>Indexing controls for non-singular pages</strong></p>
-                                <label style="display:block;margin-bottom:6px;">
+                                <label class="aisc-toggle" style="display:flex;margin-bottom:6px;">
                                     <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[noindex_categories]" value="1" <?php checked(! empty($options['noindex_categories'])); ?> />
-                                    Set categories to <code>noindex</code>
+                                    <span class="aisc-toggle__track"></span>
+                                    <span class="aisc-toggle__label">Set categories to <code>noindex</code></span>
                                 </label>
-                                <label style="display:block;margin-bottom:6px;">
+                                <label class="aisc-toggle" style="display:flex;margin-bottom:6px;">
                                     <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[noindex_tags]" value="1" <?php checked(! empty($options['noindex_tags'])); ?> />
-                                    Set tags to <code>noindex</code>
+                                    <span class="aisc-toggle__track"></span>
+                                    <span class="aisc-toggle__label">Set tags to <code>noindex</code></span>
                                 </label>
-                                <label style="display:block;margin-bottom:6px;">
+                                <label class="aisc-toggle" style="display:flex;margin-bottom:6px;">
                                     <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[noindex_author_archives]" value="1" <?php checked(! empty($options['noindex_author_archives'])); ?> />
-                                    Set author archives to <code>noindex</code>
+                                    <span class="aisc-toggle__track"></span>
+                                    <span class="aisc-toggle__label">Set author archives to <code>noindex</code></span>
                                 </label>
-                                <label style="display:block;margin-bottom:6px;">
+                                <label class="aisc-toggle" style="display:flex;margin-bottom:6px;">
                                     <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[noindex_date_archives]" value="1" <?php checked(! empty($options['noindex_date_archives'])); ?> />
-                                    Set date archives to <code>noindex</code>
+                                    <span class="aisc-toggle__track"></span>
+                                    <span class="aisc-toggle__label">Set date archives to <code>noindex</code></span>
                                 </label>
-                                <label style="display:block;margin-bottom:6px;">
+                                <label class="aisc-toggle" style="display:flex;margin-bottom:6px;">
                                     <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[noindex_search_results]" value="1" <?php checked(! empty($options['noindex_search_results'])); ?> />
-                                    Set search results to <code>noindex</code>
+                                    <span class="aisc-toggle__track"></span>
+                                    <span class="aisc-toggle__label">Set search results to <code>noindex</code></span>
                                 </label>
-                                <label style="display:block;margin-bottom:6px;">
+                                <label class="aisc-toggle" style="display:flex;margin-bottom:6px;">
                                     <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[noindex_format_archives]" value="1" <?php checked(! empty($options['noindex_format_archives'])); ?> />
-                                    Set format/other archives to <code>noindex</code>
+                                    <span class="aisc-toggle__track"></span>
+                                    <span class="aisc-toggle__label">Set format/other archives to <code>noindex</code></span>
                                 </label>
                             </td>
                         </tr>
                         <tr>
                             <th scope="row">XML Sitemap</th>
                             <td>
-                                <label style="display:block;margin-bottom:8px;">
-                                    <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_enabled]" value="1" <?php checked(! empty($options['sitemap_enabled'])); ?> />
-                                    Enable XML Sitemap (replaces WordPress core sitemaps).
+                                <label class="aisc-toggle" style="display:flex;margin-bottom:8px;">
+                                    <input id="ai-seo-sitemap-enabled" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_enabled]" value="1" <?php checked(! empty($options['sitemap_enabled'])); ?> />
+                                    <span class="aisc-toggle__track"></span>
+                                    <span class="aisc-toggle__label">Enable XML Sitemap (replaces WordPress core sitemaps).</span>
                                 </label>
                                 <p class="description" style="margin:0 0 12px;">Generates <code>/sitemap_index.xml</code> with separate sitemaps per content type.</p>
-                                <fieldset style="margin-left:16px;">
-                                    <label style="display:block;margin-bottom:6px;">
+                                <fieldset id="ai-seo-sitemap-options" style="margin-left:16px;<?php echo empty($options['sitemap_enabled']) ? 'opacity:.5;pointer-events:none;' : ''; ?>">
+                                    <label class="aisc-toggle" style="display:flex;margin-bottom:6px;">
                                         <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_include_posts]" value="1" <?php checked(! empty($options['sitemap_include_posts'])); ?> />
-                                        Include posts
+                                        <span class="aisc-toggle__track"></span>
+                                        <span class="aisc-toggle__label">Include posts</span>
                                     </label>
-                                    <label style="display:block;margin-bottom:6px;">
+                                    <label class="aisc-toggle" style="display:flex;margin-bottom:6px;">
                                         <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_include_pages]" value="1" <?php checked(! empty($options['sitemap_include_pages'])); ?> />
-                                        Include pages
+                                        <span class="aisc-toggle__track"></span>
+                                        <span class="aisc-toggle__label">Include pages</span>
                                     </label>
-                                    <label style="display:block;margin-bottom:6px;">
+                                    <label class="aisc-toggle" style="display:flex;margin-bottom:6px;">
                                         <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_include_categories]" value="1" <?php checked(! empty($options['sitemap_include_categories'])); ?> />
-                                        Include categories
+                                        <span class="aisc-toggle__track"></span>
+                                        <span class="aisc-toggle__label">Include categories</span>
                                     </label>
-                                    <label style="display:block;margin-bottom:6px;">
+                                    <label class="aisc-toggle" style="display:flex;margin-bottom:6px;">
                                         <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_include_tags]" value="1" <?php checked(! empty($options['sitemap_include_tags'])); ?> />
-                                        Include tags
+                                        <span class="aisc-toggle__track"></span>
+                                        <span class="aisc-toggle__label">Include tags</span>
                                     </label>
                                 </fieldset>
                             </td>
@@ -366,36 +383,42 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                                     );
                                     ?>
                                 <?php endif; ?>
-                                <label style="display:block;margin-bottom:8px;">
+                                <label class="aisc-toggle" style="display:flex;margin-bottom:8px;">
                                     <input type="checkbox" id="ai-seo-wc-enabled" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[wc_integration_enabled]" value="1" <?php checked(! empty($options['wc_integration_enabled'])); ?> <?php echo $wc_active ? '' : 'disabled'; ?> />
-                                    <strong><?php esc_html_e('Enable WooCommerce integration', 'ai-seo-captain'); ?></strong>
+                                    <span class="aisc-toggle__track"></span>
+                                    <span class="aisc-toggle__label"><strong><?php esc_html_e('Enable WooCommerce integration', 'ai-seo-captain'); ?></strong></span>
                                 </label>
                                 <p class="description" style="margin:0 0 12px;"><?php esc_html_e('When enabled, SEO Captain enriches product schema, Open Graph tags, WC archive pages, sitemaps, and AI-generated content with WooCommerce product data.', 'ai-seo-captain'); ?></p>
 
                                 <fieldset id="ai-seo-wc-options" style="margin-left:16px;<?php echo empty($options['wc_integration_enabled']) ? 'opacity:.5;pointer-events:none;' : ''; ?>">
                                     <legend style="font-weight:600;margin-bottom:8px;"><?php esc_html_e('Schema &amp; Open Graph', 'ai-seo-captain'); ?></legend>
-                                    <label style="display:block;margin-bottom:6px;">
+                                    <label class="aisc-toggle" style="display:flex;margin-bottom:6px;">
                                         <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[wc_schema_enrichment_enabled]" value="1" <?php checked(! empty($options['wc_schema_enrichment_enabled'])); ?> />
-                                        <?php esc_html_e('Enrich Product schema with price, SKU, rating, brand, availability', 'ai-seo-captain'); ?>
+                                        <span class="aisc-toggle__track"></span>
+                                        <span class="aisc-toggle__label"><?php esc_html_e('Enrich Product schema with price, SKU, rating, brand, availability', 'ai-seo-captain'); ?></span>
                                     </label>
-                                    <label style="display:block;margin-bottom:6px;">
+                                    <label class="aisc-toggle" style="display:flex;margin-bottom:6px;">
                                         <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[wc_ai_context_enabled]" value="1" <?php checked(! empty($options['wc_ai_context_enabled'])); ?> />
-                                        <?php esc_html_e('Include product data in AI generation context (price, SKU, brand, categories)', 'ai-seo-captain'); ?>
+                                        <span class="aisc-toggle__track"></span>
+                                        <span class="aisc-toggle__label"><?php esc_html_e('Include product data in AI generation context (price, SKU, brand, categories)', 'ai-seo-captain'); ?></span>
                                     </label>
 
                                     <?php if (! empty($options['sitemap_enabled'])) : ?>
                                         <legend style="font-weight:600;margin:12px 0 8px;"><?php esc_html_e('Sitemap', 'ai-seo-captain'); ?></legend>
-                                        <label style="display:block;margin-bottom:6px;">
+                                        <label class="aisc-toggle" style="display:flex;margin-bottom:6px;">
                                             <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_include_wc_products]" value="1" <?php checked(! empty($options['sitemap_include_wc_products'])); ?> />
-                                            <?php esc_html_e('Include products in sitemap', 'ai-seo-captain'); ?>
+                                            <span class="aisc-toggle__track"></span>
+                                            <span class="aisc-toggle__label"><?php esc_html_e('Include products in sitemap', 'ai-seo-captain'); ?></span>
                                         </label>
-                                        <label style="display:block;margin-bottom:6px;">
+                                        <label class="aisc-toggle" style="display:flex;margin-bottom:6px;">
                                             <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_include_wc_product_cat]" value="1" <?php checked(! empty($options['sitemap_include_wc_product_cat'])); ?> />
-                                            <?php esc_html_e('Include product categories in sitemap', 'ai-seo-captain'); ?>
+                                            <span class="aisc-toggle__track"></span>
+                                            <span class="aisc-toggle__label"><?php esc_html_e('Include product categories in sitemap', 'ai-seo-captain'); ?></span>
                                         </label>
-                                        <label style="display:block;margin-bottom:6px;">
+                                        <label class="aisc-toggle" style="display:flex;margin-bottom:6px;">
                                             <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_include_wc_product_tag]" value="1" <?php checked(! empty($options['sitemap_include_wc_product_tag'])); ?> />
-                                            <?php esc_html_e('Include product tags in sitemap', 'ai-seo-captain'); ?>
+                                            <span class="aisc-toggle__track"></span>
+                                            <span class="aisc-toggle__label"><?php esc_html_e('Include product tags in sitemap', 'ai-seo-captain'); ?></span>
                                         </label>
                                     <?php endif; ?>
                                 </fieldset>
@@ -411,13 +434,15 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                         <tr>
                             <th scope="row"><label for="ai-seo-indexnow-enabled">IndexNow</label></th>
                             <td>
-                                <label style="display:block;margin-bottom:8px;">
+                                <label class="aisc-toggle" style="display:flex;margin-bottom:8px;">
                                     <input id="ai-seo-indexnow-enabled" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[indexnow_enabled]" value="1" <?php checked($indexnow_enabled); ?> />
-                                    Enable IndexNow refresh signaling.
+                                    <span class="aisc-toggle__track"></span>
+                                    <span class="aisc-toggle__label">Enable IndexNow refresh signaling.</span>
                                 </label>
-                                <label style="display:block;margin-bottom:8px;">
+                                <label class="aisc-toggle" style="display:flex;margin-bottom:8px;">
                                     <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[indexnow_auto_submit]" value="1" <?php checked($indexnow_auto_submit); ?> />
-                                    Auto-submit URLs when content is saved.
+                                    <span class="aisc-toggle__track"></span>
+                                    <span class="aisc-toggle__label">Auto-submit URLs when content is saved.</span>
                                 </label>
                                 <p style="margin:0 0 8px;"><strong>Key:</strong> <code><?php echo esc_html($indexnow_key); ?></code></p>
                                 <?php if ('' !== $indexnow_key_url) : ?>
@@ -486,7 +511,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                         <tr>
                             <th scope="row">Enable Local SEO</th>
                             <td>
-                                <label><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_seo_enabled]" value="1" <?php checked(! empty($options['local_seo_enabled'])); ?> /> Output LocalBusiness schema on the front page</label>
+                                <label class="aisc-toggle"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_seo_enabled]" value="1" <?php checked(! empty($options['local_seo_enabled'])); ?> /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label">Output LocalBusiness schema on the front page</span></label>
                             </td>
                         </tr>
                         <tr>
@@ -617,7 +642,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                         </tr>
                         <tr>
                             <th scope="row">Featured image in feed</th>
-                            <td><label><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[rss_featured_image]" value="1" <?php checked(! empty($options['rss_featured_image'])); ?> /> Prepend featured image to each feed item</label></td>
+                            <td><label class="aisc-toggle"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[rss_featured_image]" value="1" <?php checked(! empty($options['rss_featured_image'])); ?> /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label">Prepend featured image to each feed item</span></label></td>
                         </tr>
                         <tr>
                             <th scope="row"><label for="ai-seo-rss-delay">Publication delay (minutes)</label></th>
@@ -643,11 +668,11 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                             <th scope="row">Disable archive pages</th>
                             <td>
                                 <fieldset>
-                                    <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_author_archives]" value="1" <?php checked(! empty($options['crawl_disable_author_archives'])); ?> /> Disable author archives (redirect to homepage)</label>
-                                    <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_date_archives]" value="1" <?php checked(! empty($options['crawl_disable_date_archives'])); ?> /> Disable date archives (redirect to homepage)</label>
-                                    <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_format_archives]" value="1" <?php checked(! empty($options['crawl_disable_format_archives'])); ?> /> Disable post format archives</label>
-                                    <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_attachment_pages]" value="1" <?php checked(! empty($options['crawl_disable_attachment_pages'])); ?> /> Disable attachment pages (redirect to parent or file)</label>
-                                    <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_search_indexing]" value="1" <?php checked(! empty($options['crawl_disable_search_indexing'])); ?> /> Block search results pages from indexing</label>
+                                    <label class="aisc-toggle" style="display:flex;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_author_archives]" value="1" <?php checked(! empty($options['crawl_disable_author_archives'])); ?> /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label">Disable author archives (redirect to homepage)</span></label>
+                                    <label class="aisc-toggle" style="display:flex;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_date_archives]" value="1" <?php checked(! empty($options['crawl_disable_date_archives'])); ?> /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label">Disable date archives (redirect to homepage)</span></label>
+                                    <label class="aisc-toggle" style="display:flex;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_format_archives]" value="1" <?php checked(! empty($options['crawl_disable_format_archives'])); ?> /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label">Disable post format archives</span></label>
+                                    <label class="aisc-toggle" style="display:flex;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_attachment_pages]" value="1" <?php checked(! empty($options['crawl_disable_attachment_pages'])); ?> /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label">Disable attachment pages (redirect to parent or file)</span></label>
+                                    <label class="aisc-toggle" style="display:flex;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_search_indexing]" value="1" <?php checked(! empty($options['crawl_disable_search_indexing'])); ?> /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label">Block search results pages from indexing</span></label>
                                 </fieldset>
                             </td>
                         </tr>
@@ -655,10 +680,10 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                             <th scope="row">Clean up &lt;head&gt;</th>
                             <td>
                                 <fieldset>
-                                    <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_remove_wp_version]" value="1" <?php checked(! empty($options['crawl_remove_wp_version'])); ?> /> Remove WordPress version meta tag</label>
-                                    <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_remove_shortlink]" value="1" <?php checked(! empty($options['crawl_remove_shortlink'])); ?> /> Remove shortlink tag</label>
-                                    <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_remove_rsd_link]" value="1" <?php checked(! empty($options['crawl_remove_rsd_link'])); ?> /> Remove RSD (Really Simple Discovery) link</label>
-                                    <label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_remove_feed_links]" value="1" <?php checked(! empty($options['crawl_remove_feed_links'])); ?> /> Remove RSS feed links from &lt;head&gt;</label>
+                                    <label class="aisc-toggle" style="display:flex;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_remove_wp_version]" value="1" <?php checked(! empty($options['crawl_remove_wp_version'])); ?> /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label">Remove WordPress version meta tag</span></label>
+                                    <label class="aisc-toggle" style="display:flex;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_remove_shortlink]" value="1" <?php checked(! empty($options['crawl_remove_shortlink'])); ?> /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label">Remove shortlink tag</span></label>
+                                    <label class="aisc-toggle" style="display:flex;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_remove_rsd_link]" value="1" <?php checked(! empty($options['crawl_remove_rsd_link'])); ?> /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label">Remove RSD (Really Simple Discovery) link</span></label>
+                                    <label class="aisc-toggle" style="display:flex;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_remove_feed_links]" value="1" <?php checked(! empty($options['crawl_remove_feed_links'])); ?> /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label">Remove RSS feed links from &lt;head&gt;</span></label>
                                 </fieldset>
                             </td>
                         </tr>

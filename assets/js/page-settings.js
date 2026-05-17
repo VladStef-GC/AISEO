@@ -205,6 +205,16 @@ jQuery(function ($) {
     updateCustomModeVisibility();
     updateTemperatureHint();
 
+    // Sitemap panel toggle.
+    var smToggle = document.getElementById('ai-seo-sitemap-enabled');
+    var smPanel = document.getElementById('ai-seo-sitemap-options');
+    if (smToggle && smPanel) {
+        smToggle.addEventListener('change', function () {
+            smPanel.style.opacity = this.checked ? '1' : '.5';
+            smPanel.style.pointerEvents = this.checked ? '' : 'none';
+        });
+    }
+
     // WooCommerce panel toggle.
     var wcToggle = document.getElementById('ai-seo-wc-enabled');
     var wcPanel = document.getElementById('ai-seo-wc-options');

@@ -2817,11 +2817,11 @@ JS;
             </div>
             <p class="ai-seo-captain-toolbar-note">Generate fills the draft fields only. Save SEO draft persists them without publishing or updating the main page content.</p>
 
-            <div style="margin:6px 0 10px;padding:6px 10px;background:#f6f7f7;border:1px solid #dcdcde;border-radius:4px;">
-                <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;">
+            <div style="margin:6px 0 10px;padding:8px 12px;background:#f6f7f7;border:1px solid #dcdcde;border-radius:4px;">
+                <label class="aisc-toggle">
                     <input type="checkbox" id="ai-seo-captain-deep-analysis" value="1" />
-                    <strong><?php esc_html_e('Deep analysis', 'ai-seo-captain'); ?></strong>
-                    <span style="color:#50575e;">&mdash; <?php esc_html_e('AI will read body content from topically related pages across the site (uses more tokens).', 'ai-seo-captain'); ?></span>
+                    <span class="aisc-toggle__track"></span>
+                    <span class="aisc-toggle__label"><strong><?php esc_html_e('Deep analysis', 'ai-seo-captain'); ?></strong> &mdash; <?php esc_html_e('AI will read body content from topically related pages across the site (uses more tokens).', 'ai-seo-captain'); ?></span>
                 </label>
             </div>
 
@@ -2953,9 +2953,10 @@ JS;
                                 <?php endif; ?>
                             </div>
                             <?php echo $this->render_field_counter('ai-seo-captain-meta-title', $seo_title, self::TITLE_MAX_LENGTH, $title_branding_off ? '' : $branding_suffix); ?>
-                            <label style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:12px;color:#50575e;">
+                            <label class="aisc-toggle" style="margin-top:4px;">
                                 <input id="ai-seo-captain-title-branding-off" type="checkbox" name="ai_seo_captain_title_branding_off" value="1" <?php checked($title_branding_off); ?> />
-                                Use as full title (skip auto separator &amp; brand)
+                                <span class="aisc-toggle__track"></span>
+                                <span class="aisc-toggle__label">Use as full title (skip auto separator &amp; brand)</span>
                             </label>
                             <span class="ai-seo-captain-field-help">The page-specific title. Separator + brand (<strong><?php echo esc_html('' !== $branding_suffix ? $branding_suffix : 'none set'); ?></strong>) are appended automatically from <a href="<?php echo esc_url(admin_url('admin.php?page=ai-seo-captain-settings')); ?>">Settings</a>. Check the box above to use this field as the complete title.</span>
                         </label>
@@ -3156,27 +3157,30 @@ JS;
 
                         <div class="ai-seo-captain-field ai-seo-captain-toggle-field">
                             <span class="ai-seo-captain-field-label">Page-level frontend gate</span>
-                            <label class="ai-seo-captain-checkbox-row">
+                            <label class="aisc-toggle">
                                 <input id="ai-seo-captain-frontend-enabled" type="checkbox" name="ai_seo_captain_frontend_enabled" value="1" <?php checked($frontend_post_enabled); ?> />
-                                <span>Force this page to use its approved AI suggestion and saved SEO overrides on the frontend when the global SEO Captain settings also allow it.</span>
+                                <span class="aisc-toggle__track"></span>
+                                <span class="aisc-toggle__label">Force this page to use its approved AI suggestion and saved SEO overrides on the frontend when the global SEO Captain settings also allow it.</span>
                             </label>
                             <span class="ai-seo-captain-field-help">This is still useful when automatic search appearance is turned off, or when you want this page explicitly managed with page-level SEO data.</span>
                         </div>
 
                         <div class="ai-seo-captain-field ai-seo-captain-toggle-field">
                             <span class="ai-seo-captain-field-label">Exclude from sitemap</span>
-                            <label class="ai-seo-captain-checkbox-row">
+                            <label class="aisc-toggle">
                                 <input id="ai-seo-captain-exclude-sitemap" type="checkbox" name="ai_seo_captain_exclude_sitemap" value="1" <?php checked(! empty(get_post_meta($post->ID, self::EXCLUDE_SITEMAP_META_KEY, true))); ?> />
-                                <span>Remove this page from the XML sitemap. The page remains accessible but won't be listed in the sitemap file sent to search engines.</span>
+                                <span class="aisc-toggle__track"></span>
+                                <span class="aisc-toggle__label">Remove this page from the XML sitemap. The page remains accessible but won't be listed in the sitemap file sent to search engines.</span>
                             </label>
                             <span class="ai-seo-captain-field-help">Use this when you want the page indexed but not explicitly submitted via the sitemap (e.g., thin landing pages, utility pages).</span>
                         </div>
 
                         <div class="ai-seo-captain-field ai-seo-captain-toggle-field">
                             <span class="ai-seo-captain-field-label">Cornerstone content</span>
-                            <label class="ai-seo-captain-checkbox-row">
+                            <label class="aisc-toggle">
                                 <input id="ai-seo-captain-cornerstone" type="checkbox" name="ai_seo_captain_cornerstone" value="1" <?php checked(! empty(get_post_meta($post->ID, '_ai_seo_captain_cornerstone', true))); ?> />
-                                <span>Mark this page as cornerstone content — your most important, comprehensive articles.</span>
+                                <span class="aisc-toggle__track"></span>
+                                <span class="aisc-toggle__label">Mark this page as cornerstone content — your most important, comprehensive articles.</span>
                             </label>
                             <span class="ai-seo-captain-field-help">Cornerstone pages get higher priority in the sitemap, are prioritized in internal linking suggestions, and receive extra audit weight.</span>
                         </div>

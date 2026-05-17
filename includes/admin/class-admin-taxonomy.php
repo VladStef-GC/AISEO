@@ -62,7 +62,7 @@ class Admin_Taxonomy
         <tr class="form-field">
             <th scope="row"><?php esc_html_e('Noindex', 'ai-seo-captain'); ?></th>
             <td>
-                <label><input type="checkbox" name="ai_seo_captain_noindex" value="1" <?php checked($noindex, '1'); ?> /> <?php esc_html_e('Prevent search engines from indexing this taxonomy archive', 'ai-seo-captain'); ?></label>
+                <label class="aisc-toggle"><input type="checkbox" name="ai_seo_captain_noindex" value="1" <?php checked($noindex, '1'); ?> /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label"><?php esc_html_e('Prevent search engines from indexing this taxonomy archive', 'ai-seo-captain'); ?></span></label>
             </td>
         </tr>
 <?php

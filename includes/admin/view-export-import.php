@@ -45,14 +45,14 @@ defined('ABSPATH') || exit;
                 <fieldset>
                     <legend class="aisc-ei-section-title"><?php esc_html_e('Sections to Export', 'ai-seo-captain'); ?></legend>
                     <div class="aisc-checkbox-grid">
-                        <label><input type="checkbox" name="export_settings" value="1" checked /> <?php esc_html_e('Plugin Settings', 'ai-seo-captain'); ?></label>
-                        <label><input type="checkbox" name="export_seo_meta" value="1" checked /> <?php esc_html_e('SEO Metadata (Posts & Pages)', 'ai-seo-captain'); ?></label>
-                        <label><input type="checkbox" name="export_seo_terms" value="1" checked /> <?php esc_html_e('SEO Metadata (Categories & Tags)', 'ai-seo-captain'); ?></label>
-                        <label><input type="checkbox" name="export_audits" value="1" checked /> <?php esc_html_e('Page Audits & Content Index', 'ai-seo-captain'); ?></label>
-                        <label><input type="checkbox" name="export_redirects" value="1" checked /> <?php esc_html_e('Redirect Rules', 'ai-seo-captain'); ?></label>
-                        <label><input type="checkbox" name="export_four_oh_four" value="1" /> <?php esc_html_e('404 Log', 'ai-seo-captain'); ?></label>
-                        <label><input type="checkbox" name="export_runs" value="1" /> <?php esc_html_e('Batch Run Lists', 'ai-seo-captain'); ?></label>
-                        <label><input type="checkbox" name="export_chat_history" value="1" /> <?php esc_html_e('AI Chat History', 'ai-seo-captain'); ?></label>
+                        <label class="aisc-toggle"><input type="checkbox" name="export_settings" value="1" checked /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label"><?php esc_html_e('Plugin Settings', 'ai-seo-captain'); ?></span></label>
+                        <label class="aisc-toggle"><input type="checkbox" name="export_seo_meta" value="1" checked /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label"><?php esc_html_e('SEO Metadata (Posts & Pages)', 'ai-seo-captain'); ?></span></label>
+                        <label class="aisc-toggle"><input type="checkbox" name="export_seo_terms" value="1" checked /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label"><?php esc_html_e('SEO Metadata (Categories & Tags)', 'ai-seo-captain'); ?></span></label>
+                        <label class="aisc-toggle"><input type="checkbox" name="export_audits" value="1" checked /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label"><?php esc_html_e('Page Audits & Content Index', 'ai-seo-captain'); ?></span></label>
+                        <label class="aisc-toggle"><input type="checkbox" name="export_redirects" value="1" checked /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label"><?php esc_html_e('Redirect Rules', 'ai-seo-captain'); ?></span></label>
+                        <label class="aisc-toggle"><input type="checkbox" name="export_four_oh_four" value="1" /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label"><?php esc_html_e('404 Log', 'ai-seo-captain'); ?></span></label>
+                        <label class="aisc-toggle"><input type="checkbox" name="export_runs" value="1" /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label"><?php esc_html_e('Batch Run Lists', 'ai-seo-captain'); ?></span></label>
+                        <label class="aisc-toggle"><input type="checkbox" name="export_chat_history" value="1" /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label"><?php esc_html_e('AI Chat History', 'ai-seo-captain'); ?></span></label>
                     </div>
                 </fieldset>
 
@@ -153,7 +153,7 @@ defined('ABSPATH') || exit;
                     <div>
                         <strong><?php esc_html_e('Domain Mismatch', 'ai-seo-captain'); ?></strong>
                         <p id="aisc-domain-info" style="margin:4px 0 6px;"></p>
-                        <label><input type="checkbox" id="aisc-rewrite-urls" checked /> <?php esc_html_e('Automatically rewrite URLs from source domain to this site', 'ai-seo-captain'); ?></label>
+                        <label class="aisc-toggle"><input type="checkbox" id="aisc-rewrite-urls" checked /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label"><?php esc_html_e('Automatically rewrite URLs from source domain to this site', 'ai-seo-captain'); ?></span></label>
                     </div>
                 </div>
 
