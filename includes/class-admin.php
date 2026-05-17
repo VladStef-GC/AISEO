@@ -2739,6 +2739,11 @@ JS;
         <div class="ai-seo-captain-editor-panel">
             <?php echo $this->render_editor_panel_styles(); ?>
 
+            <div style="text-align:center;padding:18px 0 12px;">
+                <img src="<?php echo esc_url(AI_SEO_KEEPER_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="SEO Captain" style="width:64px;height:64px;display:inline-block;" />
+                <div style="margin-top:6px;font-size:15px;font-weight:700;letter-spacing:1.5px;color:#1d2327;text-transform:uppercase;">SEO Captain</div>
+            </div>
+
             <?php if (! $has_api_key) : ?>
                 <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 18px;margin:0 0 16px;border-radius:6px;font-size:14px;line-height:1.6;color:#1d2327;background:linear-gradient(135deg,#fff8e1 0%,#fff3cd 100%);border:1px solid #f0c36d;border-left:5px solid #ffb900;box-shadow:0 1px 4px rgba(0,0,0,.08);">
                     <span style="flex-shrink:0;font-size:22px;line-height:1;margin-top:1px;color:#d68308;">&#9888;</span>

@@ -34,7 +34,10 @@ defined('ABSPATH') || exit;
 /** @var string $bulk_frontend_action */
 ?>
 <div class="wrap">
-    <h1><?php esc_html_e('SEO Captain Audit', 'ai-seo-captain'); ?></h1>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
+        <img src="<?php echo esc_url(AI_SEO_KEEPER_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="SEO Captain" style="width:40px;height:40px;" />
+        <h1 style="margin:0;"><?php esc_html_e('SEO Captain Audit', 'ai-seo-captain'); ?></h1>
+    </div>
     <p><?php esc_html_e('Deterministic audit layer for content coverage, approval rollout, duplicate signals, and thin content. This page is the stable operational baseline before AI adds strategic prioritization.', 'ai-seo-captain'); ?></p>
 
     <?php echo $readiness_banner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped 
