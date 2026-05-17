@@ -165,6 +165,27 @@ jQuery(function ($) {
             $('#aisc-oc-check').text(d.object_cache_dropin ? '✓' : '✗');
             $('#aisc-wpcache-check').text(d.wp_cache_constant ? '✓ Enabled' : '✗ Disabled');
 
+            // Update accordion badges and buttons to stay in sync.
+            if (d.advanced_cache) {
+                $('#aisc-ac-status').removeClass('aisc-badge--inactive').addClass('aisc-badge--active').text('Installed');
+                $('#aisc-install-ac').hide();
+                $('#aisc-remove-ac').show();
+            } else {
+                $('#aisc-ac-status').removeClass('aisc-badge--active').addClass('aisc-badge--inactive').text('Not Installed');
+                $('#aisc-remove-ac').hide();
+                $('#aisc-install-ac').show();
+            }
+
+            if (d.htaccess_installed) {
+                $('#aisc-htaccess-status').removeClass('aisc-badge--inactive').addClass('aisc-badge--active').text('Installed');
+                $('#aisc-install-htaccess').hide();
+                $('#aisc-remove-htaccess').show();
+            } else {
+                $('#aisc-htaccess-status').removeClass('aisc-badge--active').addClass('aisc-badge--inactive').text('Not Installed');
+                $('#aisc-remove-htaccess').hide();
+                $('#aisc-install-htaccess').show();
+            }
+
             // Update last purge.
             if (d.last_purge && d.last_purge > 0) {
                 var ago = timeSince(d.last_purge * 1000);
@@ -172,6 +193,51 @@ jQuery(function ($) {
             }
         });
     }
+
+    // ── Advanced Cache Drop-in ──────────────────────────────────
+    $('#aisc-install-ac').on('click', function () {
+        var $btn = $(this);
+        $btn.prop('disabled', true);
+
+        cacheAjax('aisc_install_dropin', { dropin_type: 'advanced-cache' }).done(function (res) {
+            if (res.success) {
+                showBanner(res.data.message, 'is-success');
+                $('#aisc-ac-status').removeClass('aisc-badge--inactive').addClass('aisc-badge--active').text('Installed');
+                $('#aisc-ac-check').text('✓');
+                $('#aisc-wpcache-check').text('✓ Enabled');
+                $btn.hide();
+                $('#aisc-remove-ac').show();
+            } else {
+                showBanner(res.data.message, 'is-error');
+            }
+        }).fail(function () {
+            showBanner('Request failed. Please try again.', 'is-error');
+        }).always(function () {
+            $btn.prop('disabled', false);
+        });
+    });
+
+    $('#aisc-remove-ac').on('click', function () {
+        var $btn = $(this);
+        $btn.prop('disabled', true);
+
+        cacheAjax('aisc_remove_dropin', { dropin_type: 'advanced-cache' }).done(function (res) {
+            if (res.success) {
+                showBanner(res.data.message, 'is-success');
+                $('#aisc-ac-status').removeClass('aisc-badge--active').addClass('aisc-badge--inactive').text('Not Installed');
+                $('#aisc-ac-check').text('✗');
+                $('#aisc-wpcache-check').text('✗ Disabled');
+                $btn.hide();
+                $('#aisc-install-ac').show();
+            } else {
+                showBanner(res.data.message, 'is-error');
+            }
+        }).fail(function () {
+            showBanner('Request failed. Please try again.', 'is-error');
+        }).always(function () {
+            $btn.prop('disabled', false);
+        });
+    });
 
     // ── .htaccess Management ────────────────────────────────────
     $('#aisc-install-htaccess').on('click', function () {
@@ -204,6 +270,29 @@ jQuery(function ($) {
                 $('#aisc-htaccess-status').removeClass('aisc-badge--active').addClass('aisc-badge--inactive').text('Not Installed');
                 $btn.hide();
                 $('#aisc-install-htaccess').show();
+            } else {
+                showBanner(res.data.message, 'is-error');
+            }
+        }).fail(function () {
+            showBanner('Request failed. Please try again.', 'is-error');
+        }).always(function () {
+            $btn.prop('disabled', false);
+        });
+    });
+
+    // ── Restore .htaccess from backup ───────────────────────────
+    $('#aisc-restore-htaccess').on('click', function () {
+        if (!confirm('Restore .htaccess from the most recent backup? This will overwrite the current file.')) {
+            return;
+        }
+
+        var $btn = $(this);
+        $btn.prop('disabled', true);
+
+        cacheAjax('aisc_restore_htaccess').done(function (res) {
+            if (res.success) {
+                showBanner(res.data.message, 'is-success');
+                refreshStatus();
             } else {
                 showBanner(res.data.message, 'is-error');
             }

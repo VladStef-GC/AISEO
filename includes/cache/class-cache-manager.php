@@ -57,6 +57,7 @@ class Cache_Manager
         add_action('wp_ajax_aisc_remove_htaccess', array($this, 'ajax_remove_htaccess'));
         add_action('wp_ajax_aisc_purge_this_url', array($this, 'ajax_purge_this_url'));
         add_action('wp_ajax_aisc_purge_post_cache', array($this, 'ajax_purge_post_cache'));
+        add_action('wp_ajax_aisc_restore_htaccess', array($this, 'ajax_restore_htaccess'));
 
         if (empty($this->options['cache_enabled'])) {
             return;
@@ -443,6 +444,37 @@ class Cache_Manager
         }
     }
 
+    public function ajax_restore_htaccess(): void
+    {
+        check_ajax_referer('aisc_cache_nonce', 'nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'));
+        }
+
+        if (null === $this->browser_cache) {
+            $this->browser_cache = new Browser_Cache($this->options);
+        }
+
+        $latest = $this->browser_cache->get_latest_backup();
+
+        if (null === $latest) {
+            wp_send_json_error(array('message' => __('No backup found to restore.', 'ai-seo-captain')));
+        }
+
+        $result = $this->browser_cache->restore_htaccess();
+
+        if ($result) {
+            wp_send_json_success(array('message' => sprintf(
+                /* translators: %s: backup filename */
+                __('.htaccess restored from backup (%s).', 'ai-seo-captain'),
+                $latest['filename']
+            )));
+        } else {
+            wp_send_json_error(array('message' => __('Failed to restore .htaccess from backup.', 'ai-seo-captain')));
+        }
+    }
+
     public function ajax_purge_this_url(): void
     {
         check_ajax_referer('aisc_cache_nonce', 'nonce');
@@ -608,6 +640,9 @@ class Cache_Manager
             return;
         }
 
+        // Backup wp-config.php before modification.
+        $this->backup_wp_config($config_file, $config);
+
         // Remove existing WP_CACHE definition if present.
         $config = preg_replace("/define\s*\(\s*['\"]WP_CACHE['\"]\s*,\s*(?:true|false)\s*\)\s*;\s*(?:\/\/[^\n]*)?\n?/i", '', $config);
 
@@ -618,6 +653,46 @@ class Cache_Manager
 
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
         file_put_contents($config_file, $config, LOCK_EX);
+    }
+
+    /**
+     * Create a timestamped backup of wp-config.php before modification.
+     */
+    private function backup_wp_config(string $file_path, string $contents): void
+    {
+        $backup_dir = WP_CONTENT_DIR . '/cache/ai-seo-captain/backups/';
+
+        if (! is_dir($backup_dir)) {
+            wp_mkdir_p($backup_dir);
+
+            $index = $backup_dir . 'index.php';
+            if (! file_exists($index)) {
+                // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+                file_put_contents($index, '<?php // Silence is golden.');
+            }
+
+            $guard = $backup_dir . '.htaccess';
+            if (! file_exists($guard)) {
+                // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+                file_put_contents($guard, "Deny from all\n");
+            }
+        }
+
+        $timestamp   = gmdate('Y-m-d_H-i-s');
+        $backup_file = $backup_dir . 'wp-config_' . $timestamp . '.bak';
+
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+        file_put_contents($backup_file, $contents, LOCK_EX);
+
+        // Keep only the 5 most recent wp-config backups.
+        $files = glob($backup_dir . 'wp-config_*.bak');
+        if (is_array($files) && count($files) > 5) {
+            sort($files);
+            $to_delete = array_slice($files, 0, count($files) - 5);
+            foreach ($to_delete as $old) {
+                wp_delete_file($old);
+            }
+        }
     }
 
     /**

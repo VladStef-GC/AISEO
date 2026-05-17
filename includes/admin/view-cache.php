@@ -194,6 +194,21 @@ $option_name = Settings::OPTION_NAME;
                             </td>
                         </tr>
                     </table>
+
+                    <div style="margin-top:12px;padding:10px 14px;background:#f6f7f7;border:1px solid #dcdcde;border-radius:4px;">
+                        <strong><?php esc_html_e('Advanced Cache Drop-in', 'ai-seo-captain'); ?></strong>
+                        <p class="description" style="margin:4px 0 8px;"><?php esc_html_e('Install advanced-cache.php to wp-content/ so cached pages are served before WordPress fully loads. This also sets the WP_CACHE constant in wp-config.php.', 'ai-seo-captain'); ?></p>
+                        <span id="aisc-ac-status" class="aisc-badge <?php echo $ac_installed ? 'aisc-badge--active' : 'aisc-badge--inactive'; ?>" style="margin-right:8px;">
+                            <?php echo $ac_installed ? esc_html__('Installed', 'ai-seo-captain') : esc_html__('Not Installed', 'ai-seo-captain'); ?>
+                        </span>
+                        <button type="button" class="button button-small button-primary" id="aisc-install-ac" <?php echo $ac_installed ? 'style="display:none;"' : ''; ?>>
+                            <?php esc_html_e('Install Drop-in', 'ai-seo-captain'); ?>
+                        </button>
+                        <button type="button" class="button button-small" id="aisc-remove-ac" <?php echo ! $ac_installed ? 'style="display:none;"' : ''; ?>>
+                            <?php esc_html_e('Remove Drop-in', 'ai-seo-captain'); ?>
+                        </button>
+                        <p class="description" style="margin-top:6px;"><?php esc_html_e('A backup of wp-config.php is created automatically before the WP_CACHE constant is changed.', 'ai-seo-captain'); ?></p>
+                    </div>
                 </div>
             </div>
 
@@ -228,6 +243,21 @@ $option_name = Settings::OPTION_NAME;
                                 <button type="button" class="button button-small" id="aisc-remove-htaccess" <?php echo $htaccess_on ? '' : 'style="display:none;"'; ?>>
                                     <?php esc_html_e('Remove Rules', 'ai-seo-captain'); ?>
                                 </button>
+                                <button type="button" class="button button-small" id="aisc-restore-htaccess" style="margin-left:8px;" title="<?php esc_attr_e('Restore .htaccess from the most recent backup', 'ai-seo-captain'); ?>">
+                                    <span class="dashicons dashicons-backup" style="font-size:14px;line-height:1.8;margin-right:2px;"></span>
+                                    <?php esc_html_e('Restore Backup', 'ai-seo-captain'); ?>
+                                </button>
+                                <p class="description" style="margin-top:6px;">
+                                    <?php esc_html_e('A backup of .htaccess is created automatically before every change. Up to 5 backups are kept.', 'ai-seo-captain'); ?>
+                                    <br>
+                                    <?php
+                                    printf(
+                                        /* translators: %s: backup directory path */
+                                        esc_html__('Backups are stored in: %s', 'ai-seo-captain'),
+                                        '<code>wp-content/cache/ai-seo-captain/backups/</code>'
+                                    );
+                                    ?>
+                                </p>
                             </td>
                         </tr>
                     </table>
