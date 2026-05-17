@@ -51,9 +51,14 @@ defined('ABSPATH') || exit;
     </p>
 
     <?php if (! $has_api_key) : ?>
-        <div class="notice notice-warning" style="margin-top:12px;">
-            <p><strong><?php esc_html_e('No API key configured.', 'ai-seo-captain'); ?></strong> <a href="<?php echo esc_url(admin_url('admin.php?page=ai-seo-captain-settings')); ?>"><?php esc_html_e('Go to Settings', 'ai-seo-captain'); ?></a> <?php esc_html_e('and add your AI provider API key before running the wizard.', 'ai-seo-captain'); ?></p>
-        </div>
+        <?php
+        echo \AI_SEO_Captain\Admin::render_banner(
+            'is-warning',
+            esc_html__('No API key configured.', 'ai-seo-captain'),
+            '<a href="' . esc_url(admin_url('admin.php?page=ai-seo-captain-settings')) . '">' . esc_html__('Go to Settings', 'ai-seo-captain') . '</a> '
+            . esc_html__('and add your AI provider API key before running the wizard.', 'ai-seo-captain')
+        );
+        ?>
     <?php endif; ?>
 
     <!-- STEP 1: INDEX -->

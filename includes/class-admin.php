@@ -372,6 +372,39 @@ class Admin
      * @param array $readiness Result of get_plugin_readiness().
      * @return string Banner HTML, or empty string if everything is ready.
      */
+    /**
+     * Build a unified plugin banner (notice).
+     *
+     * @param string $severity  CSS modifier: is-warning | is-error | is-info | is-live | is-news
+     * @param string $title     Bold headline.
+     * @param string $text      Supporting text (may contain HTML links).
+     * @param bool   $dismissible  Whether the banner can be dismissed.
+     * @param string $dismiss_key  Optional key for persistent dismissal (stored in user meta).
+     * @return string HTML string.
+     */
+    public static function render_banner(string $severity, string $title, string $text, bool $dismissible = false, string $dismiss_key = ''): string
+    {
+        $icon_url = esc_url(AI_SEO_KEEPER_URL . 'assets/img/seo-captain-side-d.svg');
+        $dismiss_html = '';
+        $data_attr = '';
+
+        if ($dismissible) {
+            $dismiss_html = '<button type="button" class="ai-seo-captain-notice__dismiss" aria-label="Dismiss">&times;</button>';
+            if ('' !== $dismiss_key) {
+                $data_attr = ' data-dismiss-key="' . esc_attr($dismiss_key) . '"';
+            }
+        }
+
+        return '<div class="ai-seo-captain-notice ' . esc_attr($severity) . '"' . $data_attr . '>'
+            . '<img src="' . $icon_url . '" alt="" class="ai-seo-captain-notice__icon" />'
+            . '<div class="ai-seo-captain-notice__body">'
+            . '<strong class="ai-seo-captain-notice__title">' . $title . '</strong>'
+            . '<span class="ai-seo-captain-notice__text">' . $text . '</span>'
+            . '</div>'
+            . $dismiss_html
+            . '</div>';
+    }
+
     public function get_readiness_banner_html(array $readiness): string
     {
         if ($readiness['is_ready']) {
@@ -382,7 +415,6 @@ class Admin
 
         if (! $readiness['has_index']) {
             $severity = 'is-error';
-            $icon     = 'dashicons-warning';
             $title    = esc_html__('Site Not Indexed', 'ai-seo-captain');
             $text     = sprintf(
                 /* translators: %s: link to Setup Wizard */
@@ -391,7 +423,6 @@ class Admin
             );
         } else {
             $severity = 'is-warning';
-            $icon     = 'dashicons-info-outline';
             $title    = sprintf(
                 /* translators: %d: page count */
                 esc_html__('Site Indexed — %d Pages', 'ai-seo-captain'),
@@ -404,12 +435,7 @@ class Admin
             );
         }
 
-        return '<div class="ai-seo-captain-notice ' . $severity . '">'
-            . '<span class="dashicons ' . $icon . ' ai-seo-captain-notice__icon"></span>'
-            . '<div class="ai-seo-captain-notice__body">'
-            . '<strong class="ai-seo-captain-notice__title">' . $title . '</strong>'
-            . '<span class="ai-seo-captain-notice__text">' . $text . '</span>'
-            . '</div></div>';
+        return self::render_banner($severity, $title, $text);
     }
 
     public function register_menu(): void
@@ -2745,19 +2771,17 @@ JS;
             </div>
 
             <?php if (! $has_api_key) : ?>
-                <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 18px;margin:0 0 16px;border-radius:6px;font-size:14px;line-height:1.6;color:#1d2327;background:linear-gradient(135deg,#fff8e1 0%,#fff3cd 100%);border:1px solid #f0c36d;border-left:5px solid #ffb900;box-shadow:0 1px 4px rgba(0,0,0,.08);">
-                    <span style="flex-shrink:0;font-size:22px;line-height:1;margin-top:1px;color:#d68308;">&#9888;</span>
-                    <div style="flex:1;">
-                        <strong style="display:block;font-weight:700;font-size:14px;margin-bottom:4px;"><?php esc_html_e('API key missing', 'ai-seo-captain'); ?></strong>
-                        <span style="font-size:13px;color:#50575e;"><?php
-                                                                    printf(
-                                                                        /* translators: %s: link to settings page */
-                                                                        esc_html__('Add an API key in %s before the generation tools can be activated.', 'ai-seo-captain'),
-                                                                        '<a href="' . esc_url(admin_url('admin.php?page=ai-seo-captain-settings')) . '" style="color:#6a14d1;font-weight:600;text-decoration:underline;">' . esc_html__('SEO Captain Settings', 'ai-seo-captain') . '</a>'
-                                                                    );
-                                                                    ?></span>
-                    </div>
-                </div>
+                <?php
+                echo self::render_banner(
+                    'is-warning',
+                    esc_html__('API key missing', 'ai-seo-captain'),
+                    sprintf(
+                        /* translators: %s: link to settings page */
+                        esc_html__('Add an API key in %s before the generation tools can be activated.', 'ai-seo-captain'),
+                        '<a href="' . esc_url(admin_url('admin.php?page=ai-seo-captain-settings')) . '">' . esc_html__('SEO Captain Settings', 'ai-seo-captain') . '</a>'
+                    )
+                );
+                ?>
             <?php endif; ?>
 
             <p class="ai-seo-captain-panel-intro">This is the page-level workspace for SEO Captain. Generate metadata drafts, define SEO and social overrides, choose schema and advanced directives, and control whether approved output is allowed on the frontend.</p>

@@ -579,8 +579,8 @@
 .ai-seo-captain-notice {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
-    padding: 14px 18px;
+    gap: 14px;
+    padding: 16px 20px;
     margin: 16px 0 24px;
     border-radius: var(--aisc-radius);
     font-size: 14px;
@@ -588,6 +588,51 @@
     color: #1d2327;
     max-width: 960px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    position: relative;
+    transition: opacity .25s ease, transform .25s ease;
+}
+
+.ai-seo-captain-notice.is-dismissing {
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+}
+
+/* ── Icon (SVG image) ── */
+.ai-seo-captain-notice__icon {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    margin-top: 1px;
+    object-fit: contain;
+}
+
+/* Fallback for dashicon icon usage (legacy) */
+.ai-seo-captain-notice__icon.dashicons {
+    width: auto;
+    height: auto;
+    font-size: 22px;
+    line-height: 1;
+}
+
+/* ── Dismiss button ── */
+.ai-seo-captain-notice__dismiss {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    color: #787c82;
+    font-size: 18px;
+    line-height: 1;
+    opacity: .6;
+    transition: opacity .15s;
+}
+
+.ai-seo-captain-notice__dismiss:hover {
+    opacity: 1;
 }
 
 /* ── Warning (amber) ── */
@@ -597,7 +642,7 @@
     border-left: 5px solid #ffb900;
 }
 
-.ai-seo-captain-notice.is-warning .ai-seo-captain-notice__icon {
+.ai-seo-captain-notice.is-warning .ai-seo-captain-notice__icon.dashicons {
     color: #d68308;
 }
 
@@ -608,7 +653,7 @@
     border-left: 5px solid #d63638;
 }
 
-.ai-seo-captain-notice.is-error .ai-seo-captain-notice__icon {
+.ai-seo-captain-notice.is-error .ai-seo-captain-notice__icon.dashicons {
     color: #d63638;
 }
 
@@ -619,7 +664,7 @@
     border-left: 5px solid #2271b1;
 }
 
-.ai-seo-captain-notice.is-info .ai-seo-captain-notice__icon {
+.ai-seo-captain-notice.is-info .ai-seo-captain-notice__icon.dashicons {
     color: #2271b1;
 }
 
@@ -630,9 +675,20 @@
     border-left: 5px solid #e65100;
 }
 
-.ai-seo-captain-notice.is-live .ai-seo-captain-notice__icon {
+.ai-seo-captain-notice.is-live .ai-seo-captain-notice__icon.dashicons {
     color: #e65100;
     animation: aisc-pulse 2s ease-in-out infinite;
+}
+
+/* ── News (purple/brand accent) ── */
+.ai-seo-captain-notice.is-news {
+    background: linear-gradient(135deg, #f5f0ff 0%, #ede4fb 100%);
+    border: 1px solid #c4b0e6;
+    border-left: 5px solid #6a14d1;
+}
+
+.ai-seo-captain-notice.is-news .ai-seo-captain-notice__icon.dashicons {
+    color: #6a14d1;
 }
 
 @keyframes aisc-pulse {
@@ -645,14 +701,6 @@
     50% {
         opacity: .5;
     }
-}
-
-/* ── Icon ── */
-.ai-seo-captain-notice__icon {
-    flex-shrink: 0;
-    font-size: 22px;
-    line-height: 1;
-    margin-top: 1px;
 }
 
 /* ── Content ── */

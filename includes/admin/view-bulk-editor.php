@@ -36,13 +36,13 @@ defined('ABSPATH') || exit;
     <?php echo $readiness_banner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped 
     ?>
 
-    <div class="ai-seo-captain-notice is-live">
-        <span class="ai-seo-captain-notice__icon" aria-hidden="true">&#9888;</span>
-        <div class="ai-seo-captain-notice__body">
-            <strong class="ai-seo-captain-notice__title"><?php esc_html_e('Live changes', 'ai-seo-captain'); ?></strong>
-            <span class="ai-seo-captain-notice__text"><?php esc_html_e('All edits saved on this page are published instantly and visible to visitors right away — no additional publish step is needed.', 'ai-seo-captain'); ?></span>
-        </div>
-    </div>
+    <?php
+    echo \AI_SEO_Captain\Admin::render_banner(
+        'is-live',
+        esc_html__('Live changes', 'ai-seo-captain'),
+        esc_html__('All edits saved on this page are published instantly and visible to visitors right away — no additional publish step is needed.', 'ai-seo-captain')
+    );
+    ?>
 
     <!-- Filters & Search -->
     <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:16px 0;">

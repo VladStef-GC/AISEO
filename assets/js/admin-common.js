@@ -40,4 +40,20 @@
         $.each(rows, function (i, row) { tbody.append(row); });
     });
 
+    /* ── Dismissible banner notices ──────────────────────────────────── */
+    $(document).on('click', '.ai-seo-captain-notice__dismiss', function () {
+        var $notice = $(this).closest('.ai-seo-captain-notice');
+        var key = $notice.data('dismiss-key');
+        $notice.addClass('is-dismissing');
+        setTimeout(function () { $notice.remove(); }, 260);
+        if (key) {
+            // Persist dismissal in user meta via AJAX (optional, for news banners)
+            $.post(ajaxurl, {
+                action: 'ai_seo_captain_dismiss_notice',
+                key: key,
+                _wpnonce: typeof aiscCommon !== 'undefined' ? aiscCommon.nonce : ''
+            });
+        }
+    });
+
 })(jQuery);
