@@ -1356,6 +1356,23 @@ jQuery(function ($) {
             return;
         }
 
+        // Guard: do not save if all draft fields are empty.
+        var hasContent = [
+            '#ai-seo-captain-focus-keyphrase',
+            '#ai-seo-captain-meta-title',
+            '#ai-seo-captain-meta-description',
+            '#ai-seo-captain-social-title',
+            '#ai-seo-captain-social-description',
+            '#ai-seo-captain-social-image',
+            '#ai-seo-captain-canonical-url',
+            '#ai-seo-captain-hreflang'
+        ].some(function (sel) { return $.trim($(sel).val()) !== ''; });
+
+        if (! hasContent) {
+            $status.text('Nothing to save — fill in at least one SEO field first.').css('color', '#dba617');
+            return;
+        }
+
         $button.prop('disabled', true);
         $status.text(aiSeoKeeperEditor.savingText).css('color', 'inherit');
 
@@ -3368,7 +3385,25 @@ JS;
     margin-top: 4px;
 }
 
-.ai-seo-captain-panel-intro,
+.ai-seo-captain-editor-panel > .ai-seo-captain-notice {
+    margin: 12px 0 16px;
+}
+
+.ai-seo-captain-editor-panel .ai-seo-captain-toolbar {
+    margin-top: 20px;
+    margin-bottom: 4px;
+}
+
+.ai-seo-captain-editor-panel .ai-seo-captain-toolbar-note {
+    margin: 4px 0 16px;
+}
+
+.ai-seo-captain-panel-intro {
+    font-size: 14px;
+    line-height: 1.65;
+    color: #5f6b7a;
+}
+
 .ai-seo-captain-panel-note,
 .ai-seo-captain-toolbar-note,
 .ai-seo-captain-field-help,
