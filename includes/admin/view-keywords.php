@@ -56,29 +56,29 @@ defined('ABSPATH') || exit;
             esc_html__('These keyphrases target multiple pages. Consider consolidating content or differentiating the focus keyphrase for each page.', 'ai-seo-captain')
         );
         ?>
-            <table class="widefat striped" style="max-width:1120px;margin-bottom:20px;">
-                <thead>
+        <table class="widefat striped" style="max-width:1120px;margin-bottom:20px;">
+            <thead>
+                <tr>
+                    <th><?php esc_html_e('Keyphrase', 'ai-seo-captain'); ?></th>
+                    <th><?php esc_html_e('Pages targeting it', 'ai-seo-captain'); ?></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($cannibalized as $group) : ?>
                     <tr>
-                        <th><?php esc_html_e('Keyphrase', 'ai-seo-captain'); ?></th>
-                        <th><?php esc_html_e('Pages targeting it', 'ai-seo-captain'); ?></th>
+                        <td><strong><?php echo esc_html($group['keyphrase']); ?></strong></td>
+                        <td>
+                            <?php foreach ($group['pages'] as $p) : ?>
+                                <div style="margin-bottom:4px;">
+                                    <a href="<?php echo esc_url(admin_url('post.php?post=' . $p['id'] . '&action=edit')); ?>"><?php echo esc_html($p['title']); ?></a>
+                                    <span style="color:#50575e;font-size:12px;">(<?php echo esc_html($p['post_type']); ?>)</span>
+                                </div>
+                            <?php endforeach; ?>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($cannibalized as $group) : ?>
-                        <tr>
-                            <td><strong><?php echo esc_html($group['keyphrase']); ?></strong></td>
-                            <td>
-                                <?php foreach ($group['pages'] as $p) : ?>
-                                    <div style="margin-bottom:4px;">
-                                        <a href="<?php echo esc_url(admin_url('post.php?post=' . $p['id'] . '&action=edit')); ?>"><?php echo esc_html($p['title']); ?></a>
-                                        <span style="color:#50575e;font-size:12px;">(<?php echo esc_html($p['post_type']); ?>)</span>
-                                    </div>
-                                <?php endforeach; ?>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
     <?php endif; ?>
 
     <?php if (! empty($keyphrase_map)) : ?>
