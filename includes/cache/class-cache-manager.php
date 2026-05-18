@@ -115,8 +115,8 @@ class Cache_Manager
             add_action('template_redirect', array($this, 'maybe_start_gzip'), -1);
         }
 
-        // Admin bar purge button.
-        add_action('admin_bar_menu', array($this, 'add_admin_bar_purge'), 100);
+        // Admin bar purge button — now handled by class-admin.php register_admin_bar_menu().
+        // add_action('admin_bar_menu', array($this, 'add_admin_bar_purge'), 100);
     }
 
     /**

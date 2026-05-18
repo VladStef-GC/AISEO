@@ -347,7 +347,7 @@ jQuery(function ($) {
     });
 
     // ── Admin Bar Purge Handlers ────────────────────────────────
-    $(document).on('click', '.aisc-purge-all-trigger a, #wp-admin-bar-aisc-purge-all a', function (e) {
+    $(document).on('click', '.aisc-purge-all-trigger a, #wp-admin-bar-ai-seo-captain-purge-all a', function (e) {
         e.preventDefault();
         if (!confirm('Purge all cache?')) return;
 
@@ -358,7 +358,7 @@ jQuery(function ($) {
         });
     });
 
-    $(document).on('click', '.aisc-purge-this-trigger a, #wp-admin-bar-aisc-purge-this a', function (e) {
+    $(document).on('click', '.aisc-purge-this-trigger a, #wp-admin-bar-ai-seo-captain-purge-this a', function (e) {
         e.preventDefault();
         var url = $(this).closest('[data-url]').data('url') || window.location.href;
 
