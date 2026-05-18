@@ -116,7 +116,8 @@ Plus site-wide: **orphaned content**, **duplicate titles**, **keyword cannibaliz
 | Feature | Details |
 |---------|---------|
 | **Redirect Manager** | 301/302/307 redirects with hit tracking |
-| **404 Monitor** | Auto-logs broken URLs with timestamps |
+| **404 Monitor** | Auto-logs broken URLs with hit count and timestamps; sortable + searchable table |
+| **Broken Link Scanner** | 5-phase scan (content, menus, attachments, trashed, 404 cross-ref); type filters, pagination, real hit counts |
 | **IndexNow** | Auto-submit to Bing/Yandex on content updates |
 | **Crawl Budget** | Disable author/date/format/attachment archives (301→home) |
 | **Head Cleanup** | Remove WP version, shortlink, RSD link, feed links |
@@ -175,7 +176,7 @@ Plus site-wide: **orphaned content**, **duplicate titles**, **keyword cannibaliz
 | **Document SEO** | Document metadata: PDF, Word, Excel, PPT, OpenDocument, RTF, TXT |
 | **Keywords** | Keyphrase analysis, distribution, conflicts |
 | **Export/Import** | Data migration, Yoast import |
-| **Redirects** | Redirect manager + 404 monitor |
+| **Redirects** | Redirect manager + 404 monitor + broken link scanner |
 
 ---
 
@@ -186,7 +187,7 @@ Plus site-wide: **orphaned content**, **duplicate titles**, **keyword cannibaliz
 | `wp_ai_seo_captain_content_index` | Site content index for AI context |
 | `wp_ai_seo_captain_conversations` | Chat conversation containers |
 | `wp_ai_seo_captain_messages` | Individual chat messages (AI + user) |
-| `wp_ai_seo_captain_redirects` | Redirects + 404 log entries |
+| `wp_ai_seo_captain_redirects` | Redirects + 404 log + broken link/media entries |
 | `wp_ai_seo_captain_runs` | Named batch operation tracking |
 
 **Post Meta Keys:** 17 (`_ai_seo_captain_*`)  

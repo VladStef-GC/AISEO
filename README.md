@@ -24,7 +24,7 @@ SEO Captain uses artificial intelligence to generate, manage, and optimize every
 | 💬 | **AI SEO Strategist** | Dedicated site-wide AI chat with focus-page scoping and run-based context |
 | 🔄 | **Yoast SEO Migration** | One-click import of all Yoast metadata — switch without losing anything |
 | 🗺️ | **Advanced XML Sitemaps** | Standard, News, and Video sitemaps with browser-friendly XSL styling |
-| 🔗 | **301/302/307 Redirects + 404 Monitor** | Manage redirects and catch broken links before they hurt rankings |
+| 🔗 | **Redirects + 404 Monitor + Broken Link Scanner** | Manage redirects, catch 404s, and scan for broken links/media across all content |
 | ⚡ | **IndexNow Integration** | Instantly notify search engines when content changes — no waiting for crawlers |
 | 🧠 | **AI Discovery Documents** | Auto-generated `llms.txt` makes your site discoverable by AI search agents |
 | 🏢 | **Local SEO & Business Schema** | Full local business markup with address, hours, map, and price range |
@@ -274,9 +274,30 @@ Professional redirect management built in:
 
 - **Redirect types:** 301 (permanent), 302 (temporary), 307 (temporary, preserve method)
 - **Add/delete redirects** via AJAX — no page reloads
-- **404 Monitor:** Automatically logs every 404 error with URL, referrer, user agent, and timestamp
+- **404 Monitor:** Automatically logs every 404 error with URL, hit count, and timestamp
+- **Sortable table headers** on URL, Hits, and Last hit columns with real-time search
 - **One-click cleanup:** Clear the 404 log when resolved
 - **Hit counter:** Track how many times each redirect fires
+
+#### Broken Link & Media Scanner
+
+Automatic 5-phase scan detects broken internal links and missing media across your entire site:
+
+1. **Content scan** — Checks all `<a>` and `<img>` URLs in post content against the filesystem and published posts
+2. **Navigation menus** — Verifies all menu item links resolve to existing content
+3. **Media Library** — Confirms all attachment files exist on disk
+4. **Trashed content** — Finds formerly-published posts that now return 404
+5. **404 Monitor cross-reference** — Validates media-type 404 entries against the actual filesystem
+
+**Broken Links table features:**
+- **Type filter buttons** — Filter by Images, Documents, Video, Links, CSS, JS, or Other
+- **Real-time search bar** — Find broken URLs instantly
+- **Sortable columns** — Type, URL, Hits, Detected (ascending/descending)
+- **"Referenced in" column** — Shows which post/page contains the broken reference (links to editor)
+- **Hit count from 404 Monitor** — Real hit count pulled from the 404 Monitor, not just detection count
+- **Colored type badges** — Visual indicators (📷 Image, 🔗 Link, 📄 Doc, 🎬 Video, 🎨 CSS, ⚡ JS)
+- **Client-side pagination** — 30 items per page with navigation controls
+- **Scheduled daily scan** via WP Cron + on-demand "Scan Now" button with progress bar
 
 ---
 
@@ -285,6 +306,7 @@ Professional redirect management built in:
 Built-in cron job management with full observability:
 
 - **Index Health Check** (daily) — Detects and repairs orphaned or missing entries in the content index
+- **Broken Link Scan** (daily) — Runs the 5-phase broken link/media scanner and updates the Broken Links tab
 - **Stale Data Cleanup** (weekly) — Prunes old IndexNow logs, orphaned conversations, and expired data
 - **Sitemap Ping** (twice daily) — Notifies Google and Bing to re-crawl the XML sitemap
 - **Admin dashboard** — View all tasks with status badges (Active / Paused / Error), last run time, next run, and execution duration

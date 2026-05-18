@@ -533,7 +533,8 @@ class Redirects
                             ?>
                                 <tr data-type-filter="<?php echo esc_attr($url_category); ?>">
                                     <td data-sort-value="<?php echo esc_attr($url_category); ?>">
-                                        <?php echo self::render_type_badge($url_category); // phpcs:ignore ?>
+                                        <?php echo self::render_type_badge($url_category); // phpcs:ignore 
+                                        ?>
                                     </td>
                                     <td data-sort-value="<?php echo esc_attr(strtolower($entry->source_url)); ?>"><code style="word-break:break-all;font-size:12px;"><?php echo esc_html($entry->source_url); ?></code></td>
                                     <td>

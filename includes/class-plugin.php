@@ -223,10 +223,10 @@ final class Plugin
         }
 
         // Parent node
-        $icon_url = AI_SEO_CAPTAIN_URL . 'assets/img/ai-seo-captain.svg';
+        $icon_url = AI_SEO_CAPTAIN_URL . 'assets/img/ai-seo-captain-wp.png';
         $admin_bar->add_node(array(
             'id'    => 'ai-seo-captain',
-            'title' => '<img src="' . esc_url($icon_url) . '" style="height:16px;width:16px;vertical-align:middle;margin-right:6px;padding-top:2px;" alt="" />' . 'SEO Captain',
+            'title' => '<img src="' . esc_url($icon_url) . '" style="height:22px;width:22px;vertical-align:middle;margin-right:6px;padding:0;border:0;" alt="" />' . 'SEO Captain',
             'href'  => admin_url('admin.php?page=ai-seo-captain'),
             'meta'  => array('title' => 'SEO Captain'),
         ));

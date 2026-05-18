@@ -551,7 +551,7 @@ class Admin
         add_submenu_page(
             'ai-seo-captain',
             'Redirects &amp; 404 Monitor',
-            'Redirects',
+            'Redirects &amp; 404',
             'manage_options',
             'ai-seo-captain-redirects',
             array($this, 'render_redirects_page')

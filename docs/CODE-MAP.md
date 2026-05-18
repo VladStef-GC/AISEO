@@ -27,7 +27,8 @@ ai-seo-captain/
 │   ├── class-audit-engine.php     ← Readiness scoring, coverage, duplicate detection
 │   ├── class-history-store.php    ← Conversation & message logging (chat + generation)
 │   ├── class-sitemap.php          ← XML sitemap generation (index, news, video)
-│   ├── class-redirects.php        ← 301/302/307 redirect manager + 404 logging
+│   ├── class-redirects.php        ← 301/302/307 redirect manager + 404 logging + broken links tab
+│   ├── class-broken-link-scanner.php ← 5-phase broken link/media scanner (content, menus, attachments, trashed, 404 cross-ref)
 │   ├── class-indexnow.php         ← IndexNow refresh signaling integration
 │   ├── class-discovery.php        ← AI discovery documents (llms.txt)
 │   ├── class-activator.php        ← Database table creation (5 tables) on activation
@@ -71,8 +72,7 @@ ai-seo-captain/
 │       ├── page-bulk-editor.js    ← Bulk Editor AJAX save per row
 │       ├── page-images.js         ← Image SEO alt-text save, "Used on" toggle
 │       ├── page-videos.js         ← Video SEO title/description save
-│       ├── page-documents.js      ← Document SEO title/description save, "Used on" toggle
-│       ├── page-settings.js       ← Settings page interactions
+│       ├── page-documents.js      ← Document SEO title/description save, "Used on" toggle│       ├── page-redirects.js     ← Redirects page: add/delete, 404 clear, broken link scanner, type filter, search, pagination│       ├── page-settings.js       ← Settings page interactions
 │       ├── page-site-chat.js      ← AI Strategist chat interface, focus pages, runs
 │       ├── page-cron-manager.js   ← Scheduled Tasks page AJAX controls
 │       └── gutenberg-sidebar.js   ← Gutenberg sidebar panel registration
@@ -121,6 +121,7 @@ ai-seo-captain.php
         │     └── class-settings.php
         ├── class-sitemap.php
         ├── class-redirects.php
+        ├── class-broken-link-scanner.php
         ├── class-indexnow.php
         ├── class-discovery.php
         ├── class-cron-manager.php
@@ -146,7 +147,7 @@ Each admin page follows the **thin-stub pattern**:
 | Audit | `ai-seo-captain-audit` | `render_audit_page()` | `view-audit.php` | — | — |
 | Setup Wizard | `ai-seo-captain-setup` | `render_setup_wizard_page()` | `view-setup-wizard.php` | `page-setup-wizard.css` | *(inline)* |
 | Settings | `ai-seo-captain-settings` | `render_settings_page()` | `view-settings.php` | `page-settings.css` | `page-settings.js` |
-| Redirects | `ai-seo-captain-redirects` | `render_redirects_page()` | *(delegated to Redirects class)* | — | — |
+| Redirects | `ai-seo-captain-redirects` | `render_redirects_page()` | *(delegated to Redirects class)* | — | `page-redirects.js` |
 | Bulk Editor | `ai-seo-captain-bulk-editor` | `render_bulk_editor_page()` | `view-bulk-editor.php` | — | `page-bulk-editor.js` |
 | Image SEO | `ai-seo-captain-images` | `render_image_seo_page()` | `view-images.php` | — | `page-images.js` |
 | Keywords | `ai-seo-captain-keywords` | `render_keyword_tracking_page()` | `view-keywords.php` | — | — |
@@ -227,6 +228,13 @@ All AJAX handlers are registered in `class-admin.php` via `wp_ajax_{action}` and
 | `ai_seo_captain_add_redirect` | `ajax_add_redirect()` | Add redirect rule |
 | `ai_seo_captain_delete_redirect` | `ajax_delete_redirect()` | Delete redirect rule |
 | `ai_seo_captain_clear_404s` | `ajax_clear_404s()` | Clear 404 monitor log |
+
+### Broken Link Scanner AJAX (class-broken-link-scanner.php)
+
+| Action | Method | Purpose |
+|--------|--------|---------|
+| `aisc_broken_scan_start` | `ajax_scan_start()` | Start a broken link/media scan |
+| `aisc_broken_scan_status` | `ajax_scan_status()` | Poll scan progress (phase, counts) |
 
 ---
 
