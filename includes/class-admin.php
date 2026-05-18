@@ -4051,21 +4051,17 @@ JS;
 }
 
 .ai-seo-captain-accordion-item.is-promoted {
-    border: 2px solid transparent;
-    background-image: linear-gradient(#fff, #fff), linear-gradient(135deg, #643d87 0%, #1db954 100%);
-    background-origin: border-box;
-    background-clip: padding-box, border-box;
-    box-shadow: 0 4px 18px rgba(100, 61, 135, 0.13);
+    border: 1px solid #dcdcde;
 }
 
 .ai-seo-captain-accordion-item.is-promoted .ai-seo-captain-accordion-toggle {
-    background: linear-gradient(135deg, #643d87 0%, #1db954 100%);
+    background: linear-gradient(135deg, #282626 0%, #6a6e6c 100%);
     color: #ffffff;
 }
 
 .ai-seo-captain-accordion-item.is-promoted .ai-seo-captain-accordion-toggle:hover,
 .ai-seo-captain-accordion-item.is-promoted .ai-seo-captain-accordion-toggle:focus-visible {
-    background: linear-gradient(135deg, #7a4fa0 0%, #22d362 100%);
+    background: linear-gradient(135deg, #3a3838 0%, #7d8280 100%);
 }
 
 .ai-seo-captain-accordion-item.is-promoted .ai-seo-captain-accordion-symbol {
