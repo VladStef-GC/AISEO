@@ -150,4 +150,108 @@
     if ($scanBtn.prop('disabled') && $scanBtn.text().indexOf('Scanning') !== -1) {
         startPolling();
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Broken Links: Type filter, search, pagination
+    // ─────────────────────────────────────────────────────────────────────────
+    var BROKEN_PER_PAGE = 30;
+    var brokenCurrentPage = 1;
+    var brokenActiveFilter = 'all';
+
+    // Type filter buttons.
+    $(document).on('click', '.aisc-broken-filter', function () {
+        $('.aisc-broken-filter').removeClass('button-primary');
+        $(this).addClass('button-primary');
+        brokenActiveFilter = $(this).data('filter');
+        brokenCurrentPage = 1;
+        applyBrokenFilters();
+    });
+
+    // Real-time search.
+    $('#aisc-broken-search').on('input', function () {
+        brokenCurrentPage = 1;
+        applyBrokenFilters();
+    });
+
+    function applyBrokenFilters() {
+        var search = ($('#aisc-broken-search').val() || '').toLowerCase();
+        var $rows = $('#ai-seo-broken-table tbody tr');
+        var visible = [];
+
+        $rows.each(function () {
+            var $row = $(this);
+            var matchFilter = (brokenActiveFilter === 'all' || $row.data('type-filter') === brokenActiveFilter);
+            var matchSearch = !search || $row.text().toLowerCase().indexOf(search) !== -1;
+
+            if (matchFilter && matchSearch) {
+                visible.push($row);
+            }
+            $row.hide();
+        });
+
+        // Pagination.
+        var totalPages = Math.ceil(visible.length / BROKEN_PER_PAGE);
+        if (brokenCurrentPage > totalPages) brokenCurrentPage = totalPages || 1;
+        var start = (brokenCurrentPage - 1) * BROKEN_PER_PAGE;
+        var end = start + BROKEN_PER_PAGE;
+
+        for (var i = start; i < end && i < visible.length; i++) {
+            visible[i].show();
+        }
+
+        renderBrokenPagination(totalPages, visible.length);
+    }
+
+    function renderBrokenPagination(totalPages, totalItems) {
+        var $wrap = $('#aisc-broken-pagination');
+        var $pages = $wrap.find('.tablenav-pages');
+
+        if (totalPages <= 1) {
+            $wrap.hide();
+            return;
+        }
+
+        $wrap.show();
+        var html = '<span style="color:#50575e;font-size:13px;">Page ' + brokenCurrentPage + ' of ' + totalPages + ' (' + totalItems + ' items)</span> ';
+
+        if (brokenCurrentPage > 1) {
+            html += '<a href="#" class="aisc-broken-page" data-page="' + (brokenCurrentPage - 1) + '">&laquo; Prev</a> ';
+        }
+        for (var p = 1; p <= totalPages; p++) {
+            if (p === brokenCurrentPage) {
+                html += '<strong style="padding:4px 8px;">' + p + '</strong> ';
+            } else {
+                html += '<a href="#" class="aisc-broken-page" data-page="' + p + '" style="padding:4px 8px;">' + p + '</a> ';
+            }
+        }
+        if (brokenCurrentPage < totalPages) {
+            html += '<a href="#" class="aisc-broken-page" data-page="' + (brokenCurrentPage + 1) + '">Next &raquo;</a>';
+        }
+        $pages.html(html);
+    }
+
+    $(document).on('click', '.aisc-broken-page', function (e) {
+        e.preventDefault();
+        brokenCurrentPage = parseInt($(this).data('page'), 10);
+        applyBrokenFilters();
+        $('#ai-seo-broken-table')[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    // Initialize pagination on page load.
+    if ($('#ai-seo-broken-table').length) {
+        applyBrokenFilters();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 404 Monitor: Real-time search
+    // ─────────────────────────────────────────────────────────────────────────
+    $('#aisc-404-search').on('input', function () {
+        var search = ($(this).val() || '').toLowerCase();
+        $('#ai-seo-404-table tbody tr').each(function () {
+            var $row = $(this);
+            var match = !search || $row.text().toLowerCase().indexOf(search) !== -1;
+            $row.toggle(match);
+        });
+    });
+
 })(jQuery);

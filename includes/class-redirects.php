@@ -425,22 +425,27 @@ class Redirects
 
             <?php elseif ('404s' === $active_tab) : ?>
                 <?php if (! empty($errors_404)) : ?>
-                    <p><button type="button" class="button" id="ai-seo-clear-404s">Clear all 404s</button></p>
-                    <table class="widefat striped">
+                    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:0 0 16px;">
+                        <button type="button" class="button" id="ai-seo-clear-404s">Clear all 404s</button>
+                        <div style="flex:1;min-width:200px;max-width:360px;">
+                            <input type="text" id="aisc-404-search" placeholder="Search 404 URLs…" style="width:100%;padding:6px 10px;font-size:13px;border:1px solid #8c8f94;border-radius:4px;" />
+                        </div>
+                    </div>
+                    <table class="widefat striped ai-seo-sortable" id="ai-seo-404-table">
                         <thead>
                             <tr>
-                                <th>URL</th>
-                                <th>Hits</th>
-                                <th>Last hit</th>
-                                <th></th>
+                                <th class="ai-seo-sort" data-col="0">URL <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                                <th style="width:80px;" class="ai-seo-sort" data-col="1">Hits <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                                <th style="width:150px;" class="ai-seo-sort" data-col="2">Last hit <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                                <th style="width:80px;"></th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($errors_404 as $e) : ?>
                                 <tr data-id="<?php echo (int) $e->id; ?>">
-                                    <td><code><?php echo esc_html($e->source_url); ?></code></td>
-                                    <td><?php echo (int) $e->hit_count; ?></td>
-                                    <td><?php echo $e->last_hit ? esc_html($e->last_hit) : '—'; ?></td>
+                                    <td data-sort-value="<?php echo esc_attr(strtolower($e->source_url)); ?>"><code><?php echo esc_html($e->source_url); ?></code></td>
+                                    <td data-sort-value="<?php echo (int) $e->hit_count; ?>"><?php echo (int) $e->hit_count; ?></td>
+                                    <td data-sort-value="<?php echo esc_attr($e->last_hit ?? ''); ?>"><?php echo $e->last_hit ? esc_html($e->last_hit) : '—'; ?></td>
                                     <td><button type="button" class="button button-link-delete ai-seo-redir-delete" data-id="<?php echo (int) $e->id; ?>">Dismiss</button></td>
                                 </tr>
                             <?php endforeach; ?>
@@ -485,37 +490,152 @@ class Redirects
                 </div>
 
                 <?php if (! empty($broken_entries)) : ?>
-                    <table class="widefat striped">
+                    <?php
+                    // Classify entries by type for filter buttons.
+                    $type_counts = array('all' => 0, 'image' => 0, 'document' => 0, 'video' => 0, 'link' => 0, 'css' => 0, 'js' => 0, 'other' => 0);
+                    foreach ($broken_entries as $entry) {
+                        $type_counts['all']++;
+                        $cat = self::classify_url_type($entry->source_url, $entry->type);
+                        $type_counts[$cat] = ($type_counts[$cat] ?? 0) + 1;
+                    }
+                    ?>
+                    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:0 0 16px;">
+                        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                            <button type="button" class="button button-primary aisc-broken-filter" data-filter="all">All (<?php echo $type_counts['all']; ?>)</button>
+                            <?php if ($type_counts['image'] > 0) : ?><button type="button" class="button aisc-broken-filter" data-filter="image">Images (<?php echo $type_counts['image']; ?>)</button><?php endif; ?>
+                            <?php if ($type_counts['document'] > 0) : ?><button type="button" class="button aisc-broken-filter" data-filter="document">Documents (<?php echo $type_counts['document']; ?>)</button><?php endif; ?>
+                            <?php if ($type_counts['video'] > 0) : ?><button type="button" class="button aisc-broken-filter" data-filter="video">Video (<?php echo $type_counts['video']; ?>)</button><?php endif; ?>
+                            <?php if ($type_counts['link'] > 0) : ?><button type="button" class="button aisc-broken-filter" data-filter="link">Links (<?php echo $type_counts['link']; ?>)</button><?php endif; ?>
+                            <?php if ($type_counts['css'] > 0) : ?><button type="button" class="button aisc-broken-filter" data-filter="css">CSS (<?php echo $type_counts['css']; ?>)</button><?php endif; ?>
+                            <?php if ($type_counts['js'] > 0) : ?><button type="button" class="button aisc-broken-filter" data-filter="js">JS (<?php echo $type_counts['js']; ?>)</button><?php endif; ?>
+                            <?php if ($type_counts['other'] > 0) : ?><button type="button" class="button aisc-broken-filter" data-filter="other">Other (<?php echo $type_counts['other']; ?>)</button><?php endif; ?>
+                        </div>
+                        <div style="flex:1;min-width:200px;max-width:360px;">
+                            <input type="text" id="aisc-broken-search" placeholder="Search broken URLs…" style="width:100%;padding:6px 10px;font-size:13px;border:1px solid #8c8f94;border-radius:4px;" />
+                        </div>
+                    </div>
+
+                    <table class="widefat striped ai-seo-sortable" id="ai-seo-broken-table">
                         <thead>
                             <tr>
-                                <th>Type</th>
-                                <th>URL</th>
-                                <th>Details</th>
-                                <th>Detected</th>
+                                <th style="width:90px;" class="ai-seo-sort" data-col="0">Type <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                                <th class="ai-seo-sort" data-col="1">URL <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                                <th style="width:200px;">Referenced in</th>
+                                <th style="width:60px;" class="ai-seo-sort" data-col="3">Hits <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                                <th style="width:30%;">Details</th>
+                                <th style="width:130px;" class="ai-seo-sort" data-col="5">Detected <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($broken_entries as $entry) : ?>
-                                <tr>
+                            <?php foreach ($broken_entries as $entry) :
+                                $url_category = self::classify_url_type($entry->source_url, $entry->type);
+                                $referenced_in = self::extract_referenced_post($entry->target_url);
+                            ?>
+                                <tr data-type-filter="<?php echo esc_attr($url_category); ?>">
+                                    <td data-sort-value="<?php echo esc_attr($url_category); ?>">
+                                        <?php echo self::render_type_badge($url_category); // phpcs:ignore ?>
+                                    </td>
+                                    <td data-sort-value="<?php echo esc_attr(strtolower($entry->source_url)); ?>"><code style="word-break:break-all;font-size:12px;"><?php echo esc_html($entry->source_url); ?></code></td>
                                     <td>
-                                        <?php if ('broken_media' === $entry->type) : ?>
-                                            <span style="color:#d63638;font-weight:500;">&#128247; Media</span>
+                                        <?php if ($referenced_in['id'] > 0) : ?>
+                                            <a href="<?php echo esc_url(admin_url('post.php?post=' . $referenced_in['id'] . '&action=edit')); ?>" style="font-size:12px;"><?php echo esc_html($referenced_in['title']); ?></a>
+                                        <?php elseif (! empty($referenced_in['label'])) : ?>
+                                            <span style="font-size:12px;color:#555;"><?php echo esc_html($referenced_in['label']); ?></span>
                                         <?php else : ?>
-                                            <span style="color:#dba617;font-weight:500;">&#128279; Link</span>
+                                            <span style="font-size:12px;color:#999;">—</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td><code style="word-break:break-all;"><?php echo esc_html($entry->source_url); ?></code></td>
+                                    <td data-sort-value="<?php echo (int) $entry->hit_count; ?>"><?php echo (int) $entry->hit_count; ?></td>
                                     <td style="color:#555;font-size:12px;"><?php echo esc_html($entry->target_url); ?></td>
-                                    <td><?php echo $entry->last_hit ? esc_html($entry->last_hit) : '—'; ?></td>
+                                    <td data-sort-value="<?php echo esc_attr($entry->last_hit ?? ''); ?>"><?php echo $entry->last_hit ? esc_html($entry->last_hit) : '—'; ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    <div id="aisc-broken-pagination" class="tablenav bottom" style="margin-top:16px;text-align:center;display:none;">
+                        <div class="tablenav-pages" style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #dcdcde;border-radius:6px;padding:8px 18px;box-shadow:0 1px 3px rgba(0,0,0,.08);float:none;"></div>
+                    </div>
                 <?php else : ?>
                     <p style="color:#555;">No broken links or missing media detected. Run a scan to check your content.</p>
                 <?php endif; ?>
             <?php endif; ?>
         </div>
 <?php
+    }
+
+    /**
+     * Classify a URL into a category for filtering.
+     */
+    private static function classify_url_type(string $url, string $db_type): string
+    {
+        if ('broken_link' === $db_type) {
+            return 'link';
+        }
+
+        $url_lower = strtolower($url);
+
+        if (preg_match('/\.(jpe?g|png|gif|webp|svg|ico|bmp|tiff?)(\?|$)/i', $url_lower)) {
+            return 'image';
+        }
+        if (preg_match('/\.(mp4|webm|ogg|avi|mov|wmv|flv)(\?|$)/i', $url_lower)) {
+            return 'video';
+        }
+        if (preg_match('/\.(pdf|docx?|xlsx?|pptx?|txt|csv|rtf)(\?|$)/i', $url_lower)) {
+            return 'document';
+        }
+        if (preg_match('/\.css(\?|$)/i', $url_lower)) {
+            return 'css';
+        }
+        if (preg_match('/\.js(\?|$)/i', $url_lower)) {
+            return 'js';
+        }
+
+        return 'other';
+    }
+
+    /**
+     * Render a colored badge for the URL type.
+     */
+    private static function render_type_badge(string $category): string
+    {
+        $badges = array(
+            'image'    => array('#d63638', '📷 Image'),
+            'video'    => array('#8e44ad', '🎬 Video'),
+            'document' => array('#2271b1', '📄 Doc'),
+            'link'     => array('#dba617', '🔗 Link'),
+            'css'      => array('#00796b', '🎨 CSS'),
+            'js'       => array('#e65100', '⚡ JS'),
+            'other'    => array('#555', '📦 Other'),
+        );
+
+        $badge = $badges[$category] ?? $badges['other'];
+        return '<span style="color:' . $badge[0] . ';font-weight:500;font-size:12px;white-space:nowrap;">' . $badge[1] . '</span>';
+    }
+
+    /**
+     * Extract referenced post info from the detail/note text.
+     */
+    private static function extract_referenced_post(string $note): array
+    {
+        // Try to extract "post ID NNN" from the note.
+        if (preg_match('/post\s*ID\s*(\d+)/i', $note, $m)) {
+            $post_id = (int) $m[1];
+            $title = get_the_title($post_id);
+            if ($title) {
+                return array('id' => $post_id, 'title' => $title, 'label' => '');
+            }
+        }
+
+        // Try to extract navigation menu reference.
+        if (preg_match('/Navigation menu "([^"]+)"/i', $note, $m)) {
+            return array('id' => 0, 'title' => '', 'label' => 'Menu: ' . $m[1]);
+        }
+
+        // 404 Monitor cross-reference.
+        if (stripos($note, '404 Monitor') !== false) {
+            return array('id' => 0, 'title' => '', 'label' => '404 Monitor');
+        }
+
+        return array('id' => 0, 'title' => '', 'label' => '');
     }
 }
