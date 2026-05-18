@@ -776,7 +776,7 @@ class Admin
                     'snippetPreview' => __('Snippet Preview', 'ai-seo-captain'),
                     'seoFields'      => __('SEO Fields', 'ai-seo-captain'),
                     'seoChecks'      => __('SEO Checks', 'ai-seo-captain'),
-                    'aiAssistant'    => __('AI Commander', 'ai-seo-captain'),
+                    'aiCommander'    => __('AI Commander', 'ai-seo-captain'),
                     'seoTitle'       => __('SEO Title', 'ai-seo-captain'),
                     'metaDescription' => __('Meta Description', 'ai-seo-captain'),
                     'focusKeyphrase' => __('Focus Keyphrase', 'ai-seo-captain'),
@@ -1512,7 +1512,7 @@ jQuery(function ($) {
 
         var $button = $(this);
         var $panel = $button.closest('.ai-seo-captain-editor-panel');
-        var $chatStatus = $button.closest('.ai-seo-captain-assistant-panel').find('.ai-seo-captain-chat-status');
+        var $chatStatus = $button.closest('.ai-seo-captain-commander-panel').find('.ai-seo-captain-chat-status');
         var $status = $chatStatus.length ? $chatStatus : $panel.find('.ai-seo-captain-save-status');
         var $input = $panel.find('.ai-seo-captain-chat-input');
         var postId = $('#post_ID').val();
@@ -1721,7 +1721,7 @@ jQuery(function ($) {
     $(document).on('click', '.ai-seo-captain-discard-changes', function () {
         var $review = $(this).closest('.ai-seo-captain-content-review');
         $review.find('.ai-seo-captain-diff-review').slideUp(200);
-        var $chatStatus = $review.closest('.ai-seo-captain-assistant-panel').find('.ai-seo-captain-chat-status');
+        var $chatStatus = $review.closest('.ai-seo-captain-commander-panel').find('.ai-seo-captain-chat-status');
         if ($chatStatus.length) {
             $chatStatus.text('Changes disregarded. You can ask AI for a different plan.').css('color', '#787c82');
         }
@@ -1831,16 +1831,16 @@ jQuery(function ($) {
     });
 
     // ── AI Commander sub-tab switching ────────────────────────────────
-    $(document).on('click', '.ai-seo-captain-assistant-tab', function () {
+    $(document).on('click', '.ai-seo-captain-commander-tab', function () {
         var $tab = $(this);
         var target = $tab.data('target');
         var $group = $tab.closest('.ai-seo-captain-accordion-panel');
 
-        $group.find('.ai-seo-captain-assistant-tab').removeClass('is-active').css({'border-bottom-color': 'transparent', 'color': '#787c82'});
+        $group.find('.ai-seo-captain-commander-tab').removeClass('is-active').css({'border-bottom-color': 'transparent', 'color': '#787c82'});
         $tab.addClass('is-active').css({'border-bottom-color': '#643d87', 'color': '#1d2327'});
 
-        $group.find('.ai-seo-captain-assistant-panel').hide();
-        $group.find('.ai-seo-captain-assistant-panel[data-panel="' + target + '"]').show();
+        $group.find('.ai-seo-captain-commander-panel').hide();
+        $group.find('.ai-seo-captain-commander-panel[data-panel="' + target + '"]').show();
     });
 
     // ── Run AI Page Audit from editor ─────────────────────────────────
@@ -3161,18 +3161,18 @@ JS;
                                 );
                             }
 
-                            $ai_assistant_content = $chat_readiness_banner;
+                            $ai_commander_content = $chat_readiness_banner;
 
                             if ($chat_readiness > 0) {
-                                $ai_assistant_content .=
+                                $ai_commander_content .=
                                     '<div class="ai-seo-captain-chat-intro">Your AI SEO copilot — ask questions, get metadata suggestions, or request page content edits. Everything happens in one conversation. <span class="ai-seo-captain-help-tip" data-tip="AI sees your full page content, SEO title, meta description, focus keyphrase, snippet scores, audit results, related pages, and the full conversation history."></span></div>' .
 
-                                    '<div class="ai-seo-captain-assistant-tabs" style="display:flex;gap:0;border-bottom:2px solid #dcdcde;margin-bottom:12px;">' .
-                                    '<button type="button" class="ai-seo-captain-assistant-tab is-active" data-target="chat" style="padding:8px 16px;font-size:14px;font-weight:600;background:none;border:none;border-bottom:2px solid #643d87;margin-bottom:-2px;cursor:pointer;color:#1d2327;">💬 Chat</button>' .
-                                    '<button type="button" class="ai-seo-captain-assistant-tab" data-target="history" style="padding:8px 16px;font-size:14px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:#787c82;">📋 History</button>' .
+                                    '<div class="ai-seo-captain-commander-tabs" style="display:flex;gap:0;border-bottom:2px solid #dcdcde;margin-bottom:12px;">' .
+                                    '<button type="button" class="ai-seo-captain-commander-tab is-active" data-target="chat" style="padding:8px 16px;font-size:14px;font-weight:600;background:none;border:none;border-bottom:2px solid #643d87;margin-bottom:-2px;cursor:pointer;color:#1d2327;">💬 Chat</button>' .
+                                    '<button type="button" class="ai-seo-captain-commander-tab" data-target="history" style="padding:8px 16px;font-size:14px;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:#787c82;">📋 History</button>' .
                                     '</div>' .
 
-                                    '<div class="ai-seo-captain-assistant-panel" data-panel="chat">' .
+                                    '<div class="ai-seo-captain-commander-panel" data-panel="chat">' .
                                     '<textarea class="widefat ai-seo-captain-chat-input" rows="3" placeholder="Ask about SEO, request content edits, or follow up on previous advice — AI handles it all in one conversation…"></textarea>' .
                                     '<p class="ai-seo-captain-chat-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' .
                                     '<button type="button" class="button button-primary ai-seo-captain-send-chat" ' . disabled(! $has_api_key, true, false) . '>Send</button>' .
@@ -3184,7 +3184,7 @@ JS;
                                     '<div class="ai-seo-captain-content-review"></div>' .
                                     '</div>' .
 
-                                    '<div class="ai-seo-captain-assistant-panel" data-panel="history" style="display:none;">' .
+                                    '<div class="ai-seo-captain-commander-panel" data-panel="history" style="display:none;">' .
                                     '<div class="ai-seo-captain-history-shell">' . $this->render_history_markup($recent_suggestions, $recent_content_edits) . '</div>' .
                                     '</div>';
                             }
@@ -3192,7 +3192,7 @@ JS;
                             echo $this->render_accordion_section(
                                 $chat_accordion_id,
                                 'AI Commander (Chat) <span class="ai-seo-captain-help-tip" data-tip="Unified AI workspace: chat for SEO advice, edit page content, and view suggestion history — all in one place."></span>',
-                                $ai_assistant_content,
+                                $ai_commander_content,
                                 false,
                                 true
                             );

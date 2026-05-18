@@ -172,9 +172,9 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   LISTS PANEL — Strategist page
+   LISTS PANEL — AI Captain page
    ══════════════════════════════════════════════════════════════════════ */
-.aisc-strategist-lists {
+.aisc-captain-lists {
     background: #fff;
     border: 1px solid #dcdcde;
     border-radius: 6px;
@@ -182,7 +182,7 @@
     margin-bottom: 20px;
 }
 
-.aisc-strategist-lists__header h3 {
+.aisc-captain-lists__header h3 {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -191,15 +191,15 @@
     color: #1d2327;
 }
 
-.aisc-strategist-lists__header h3 .dashicons {
+.aisc-captain-lists__header h3 .dashicons {
     color: #2271b1;
 }
 
-.aisc-strategist-lists__header .description {
+.aisc-captain-lists__header .description {
     margin: 0 0 14px;
 }
 
-.aisc-strategist-lists__empty {
+.aisc-captain-lists__empty {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -208,7 +208,7 @@
     font-style: italic;
 }
 
-.aisc-strategist-lists__empty .dashicons {
+.aisc-captain-lists__empty .dashicons {
     font-size: 16px;
     width: 16px;
     height: 16px;
@@ -216,7 +216,7 @@
 }
 
 /* List cards grid */
-.aisc-strategist-lists__grid {
+.aisc-captain-lists__grid {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;

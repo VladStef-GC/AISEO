@@ -424,7 +424,7 @@
                 ),
 
                 // AI Commander
-                el(PanelBody, { title: cfg.i18n.aiAssistant, initialOpen: false },
+                el(PanelBody, { title: cfg.i18n.aiCommander, initialOpen: false },
                     el(PanelRow, null,
                         el(TextareaControl, {
                             label: cfg.i18n.askQuestion,

@@ -247,7 +247,7 @@ class Site_Chat
     {
         $parts = array();
 
-        $parts[] = 'Task: Answer the site owner as a site-wide SEO strategist.';
+        $parts[] = 'Task: Answer the site owner as a site-wide SEO captain.';
         $parts[] = 'Output format: {"reply":"...","notes":"..."}';
         $parts[] = 'Site: ' . get_bloginfo('name') . ' (' . home_url('/') . ')';
         $parts[] = 'Data collected: ' . wp_date('Y-m-d H:i') . ' (server time)';

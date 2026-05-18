@@ -26,16 +26,16 @@ defined('ABSPATH') || exit;
 
     <!-- Lists panel — always visible when index exists -->
     <?php if ($readiness['has_index']) : ?>
-        <div class="aisc-strategist-lists" id="aisc-strategist-lists">
-            <div class="aisc-strategist-lists__header">
+        <div class="aisc-captain-lists" id="aisc-captain-lists">
+            <div class="aisc-captain-lists__header">
                 <h3><span class="dashicons dashicons-list-view"></span> <?php esc_html_e('Your Lists', 'ai-seo-captain'); ?></h3>
                 <p class="description"><?php esc_html_e('Lists created from the Setup Wizard. AI Captain is enabled when at least one list or the full site has been audited.', 'ai-seo-captain'); ?></p>
             </div>
-            <div class="aisc-strategist-lists__grid" id="aisc-lists-grid">
+            <div class="aisc-captain-lists__grid" id="aisc-lists-grid">
                 <!-- Populated by JS from localized data -->
             </div>
             <?php if (empty($runs)) : ?>
-                <p class="aisc-strategist-lists__empty">
+                <p class="aisc-captain-lists__empty">
                     <span class="dashicons dashicons-info-outline"></span>
                     <?php
                     printf(
