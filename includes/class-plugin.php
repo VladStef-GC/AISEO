@@ -153,44 +153,52 @@ final class Plugin
         if (! current_user_can('manage_options') || ! is_admin_bar_showing()) {
             return;
         }
-        ?>
+?>
         <script>
-        (function(){
-            var ajaxUrl = '<?php echo esc_url(admin_url('admin-ajax.php')); ?>';
-            var nonce   = '<?php echo esc_js(wp_create_nonce('aisc_cache_nonce')); ?>';
+            (function() {
+                var ajaxUrl = '<?php echo esc_url(admin_url('admin-ajax.php')); ?>';
+                var nonce = '<?php echo esc_js(wp_create_nonce('aisc_cache_nonce')); ?>';
 
-            document.addEventListener('click', function(e){
-                var link = e.target.closest('.aisc-purge-all-trigger a, #wp-admin-bar-ai-seo-captain-purge-all a');
-                if (link) {
-                    e.preventDefault();
-                    if (!confirm('Purge all cache?')) return;
-                    fetch(ajaxUrl, {
-                        method: 'POST',
-                        headers: {'Content-Type':'application/x-www-form-urlencoded'},
-                        body: 'action=aisc_purge_cache&nonce=' + nonce
-                    }).then(function(r){return r.json();}).then(function(d){
-                        if(d.success) alert(d.data.message || 'Cache purged.');
-                    });
-                    return;
-                }
+                document.addEventListener('click', function(e) {
+                    var link = e.target.closest('.aisc-purge-all-trigger a, #wp-admin-bar-ai-seo-captain-purge-all a');
+                    if (link) {
+                        e.preventDefault();
+                        if (!confirm('Purge all cache?')) return;
+                        fetch(ajaxUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: 'action=aisc_purge_cache&nonce=' + nonce
+                        }).then(function(r) {
+                            return r.json();
+                        }).then(function(d) {
+                            if (d.success) alert(d.data.message || 'Cache purged.');
+                        });
+                        return;
+                    }
 
-                link = e.target.closest('.aisc-purge-this-trigger a, #wp-admin-bar-ai-seo-captain-purge-this a');
-                if (link) {
-                    e.preventDefault();
-                    var wrap = link.closest('[data-url]');
-                    var url = wrap ? wrap.getAttribute('data-url') : window.location.href;
-                    fetch(ajaxUrl, {
-                        method: 'POST',
-                        headers: {'Content-Type':'application/x-www-form-urlencoded'},
-                        body: 'action=aisc_purge_this_url&nonce=' + nonce + '&url=' + encodeURIComponent(url)
-                    }).then(function(r){return r.json();}).then(function(d){
-                        if(d.success) alert(d.data.message || 'Page cache purged.');
-                    });
-                }
-            });
-        })();
+                    link = e.target.closest('.aisc-purge-this-trigger a, #wp-admin-bar-ai-seo-captain-purge-this a');
+                    if (link) {
+                        e.preventDefault();
+                        var wrap = link.closest('[data-url]');
+                        var url = wrap ? wrap.getAttribute('data-url') : window.location.href;
+                        fetch(ajaxUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: 'action=aisc_purge_this_url&nonce=' + nonce + '&url=' + encodeURIComponent(url)
+                        }).then(function(r) {
+                            return r.json();
+                        }).then(function(d) {
+                            if (d.success) alert(d.data.message || 'Page cache purged.');
+                        });
+                    }
+                });
+            })();
         </script>
-        <?php
+<?php
     }
 
     /**
@@ -203,9 +211,10 @@ final class Plugin
         }
 
         // Parent node
+        $icon_url = AI_SEO_CAPTAIN_URL . 'assets/img/ai-seo-captain.svg';
         $admin_bar->add_node(array(
             'id'    => 'ai-seo-captain',
-            'title' => 'SEO Captain',
+            'title' => '<img src="' . esc_url($icon_url) . '" style="height:16px;width:16px;vertical-align:middle;margin-right:6px;padding-top:2px;" alt="" />' . 'SEO Captain',
             'href'  => admin_url('admin.php?page=ai-seo-captain'),
             'meta'  => array('title' => 'SEO Captain'),
         ));
