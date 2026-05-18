@@ -71,6 +71,8 @@ defined('ABSPATH') || exit;
         </div>
     </div>
 
+    <p style="margin:0 0 12px;font-size:12px;color:#646970;"><span class="dashicons dashicons-info-outline" style="font-size:14px;width:14px;height:14px;vertical-align:middle;margin-right:3px;"></span><?php esc_html_e('Purge Cache will also clear the page cache for all pages using that asset, forcing browsers to re-download it.', 'ai-seo-captain'); ?></p>
+
     <?php if (! empty($videos)) : ?>
         <table class="widefat striped ai-seo-sortable" id="ai-seo-video-table" style="table-layout:fixed;">
             <thead>
@@ -145,8 +147,8 @@ defined('ABSPATH') || exit;
         </table>
 
         <?php if ($total_pages > 1) : ?>
-            <div class="tablenav bottom" style="margin-top:12px;">
-                <div class="tablenav-pages">
+            <div class="tablenav bottom" style="margin-top:20px;text-align:center;">
+                <div class="tablenav-pages" style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #dcdcde;border-radius:6px;padding:8px 18px;box-shadow:0 1px 3px rgba(0,0,0,.08);float:none;">
                     <?php
                     echo paginate_links(array(
                         'base'    => add_query_arg('paged', '%#%'),
@@ -154,6 +156,8 @@ defined('ABSPATH') || exit;
                         'current' => $paged,
                         'total'   => $total_pages,
                         'type'    => 'plain',
+                        'prev_text' => '&laquo; ' . __('Previous', 'ai-seo-captain'),
+                        'next_text' => __('Next', 'ai-seo-captain') . ' &raquo;',
                     ));
                     ?>
                 </div>

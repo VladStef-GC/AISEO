@@ -778,6 +778,54 @@
     transition: background .2s ease;
 }
 
+/* ─── Pagination — centered & prominent ─── */
+.tablenav.bottom {
+    overflow: visible;
+}
+
+.tablenav-pages .page-numbers {
+    display: inline-block;
+    min-width: 32px;
+    height: 32px;
+    line-height: 32px;
+    text-align: center;
+    padding: 0 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    color: #2271b1;
+    background: #f0f0f1;
+    border: 1px solid #dcdcde;
+    transition: all .15s ease;
+}
+
+.tablenav-pages .page-numbers:hover {
+    background: #2271b1;
+    color: #fff;
+    border-color: #2271b1;
+}
+
+.tablenav-pages .page-numbers.current {
+    background: #2271b1;
+    color: #fff;
+    border-color: #2271b1;
+    font-weight: 600;
+    cursor: default;
+}
+
+.tablenav-pages .page-numbers.dots {
+    background: none;
+    border: none;
+    color: #50575e;
+    cursor: default;
+}
+
+.tablenav-pages .page-numbers.prev,
+.tablenav-pages .page-numbers.next {
+    font-weight: 600;
+}
+
 .aisc-toggle__track::after {
     content: '';
     position: absolute;

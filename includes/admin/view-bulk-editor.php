@@ -121,8 +121,8 @@ defined('ABSPATH') || exit;
         </table>
 
         <?php if ($total_pages > 1) : ?>
-            <div class="tablenav bottom" style="margin-top:12px;">
-                <div class="tablenav-pages">
+            <div class="tablenav bottom" style="margin-top:20px;text-align:center;">
+                <div class="tablenav-pages" style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #dcdcde;border-radius:6px;padding:8px 18px;box-shadow:0 1px 3px rgba(0,0,0,.08);float:none;">
                     <?php
                     echo paginate_links(array(
                         'base'    => add_query_arg('paged', '%#%'),
@@ -130,6 +130,8 @@ defined('ABSPATH') || exit;
                         'current' => $paged,
                         'total'   => $total_pages,
                         'type'    => 'plain',
+                        'prev_text' => '&laquo; ' . __('Previous', 'ai-seo-captain'),
+                        'next_text' => __('Next', 'ai-seo-captain') . ' &raquo;',
                     ));
                     ?>
                 </div>
