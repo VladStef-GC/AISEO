@@ -173,7 +173,7 @@ class Admin
 
         // --- Menu, assets, metabox ---
         add_action('admin_menu', array($this, 'register_menu'));
-        add_action('admin_bar_menu', array($this, 'register_admin_bar_menu'), 100);
+        // admin_bar_menu is registered in class-plugin.php (fires on both admin + frontend)
         add_action('admin_enqueue_scripts', array($this, 'enqueue_editor_assets'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_page_assets'));
         add_action('add_meta_boxes', array($this, 'register_editor_metabox'), 10, 2);
@@ -586,93 +586,6 @@ class Admin
             'ai-seo-captain-export-import',
             array($this, 'render_export_import_page')
         );
-    }
-
-    /**
-     * Add SEO Captain entries to the WordPress admin bar.
-     */
-    public function register_admin_bar_menu(\WP_Admin_Bar $admin_bar): void
-    {
-        if (! current_user_can('manage_options')) {
-            return;
-        }
-
-        // Parent node
-        $admin_bar->add_node(array(
-            'id'    => 'ai-seo-captain',
-            'title' => 'SEO Captain',
-            'href'  => admin_url('admin.php?page=ai-seo-captain'),
-            'meta'  => array('title' => 'SEO Captain'),
-        ));
-
-        // Child: AI Captain Chat (always available)
-        $admin_bar->add_node(array(
-            'id'     => 'ai-seo-captain-ai-captain',
-            'parent' => 'ai-seo-captain',
-            'title'  => 'AI Captain Chat',
-            'href'   => admin_url('admin.php?page=ai-seo-captain-site-chat'),
-            'meta'   => array('title' => 'Open AI Captain (site-wide chat)'),
-        ));
-
-        // Child: AI Commander Chat – always visible, disabled when not on a post editor
-        $commander_available = false;
-        $commander_href      = '#';
-        if (! is_admin() && is_singular()) {
-            $post_id = get_queried_object_id();
-            if ($post_id) {
-                $commander_href      = admin_url('post.php?post=' . $post_id . '&action=edit#ai-seo-captain-chat');
-                $commander_available = true;
-            }
-        } elseif (is_admin()) {
-            $screen = function_exists('get_current_screen') ? get_current_screen() : null;
-            if ($screen && 'post' === $screen->base) {
-                global $post;
-                if (! empty($post->ID)) {
-                    $commander_href      = '#ai-seo-captain-chat';
-                    $commander_available = true;
-                }
-            }
-        }
-
-        $admin_bar->add_node(array(
-            'id'     => 'ai-seo-captain-ai-commander',
-            'parent' => 'ai-seo-captain',
-            'title'  => $commander_available
-                ? 'AI Commander Chat'
-                : '<span style="opacity:.5;cursor:default;">AI Commander Chat</span>',
-            'href'   => $commander_available ? $commander_href : false,
-            'meta'   => array(
-                'title' => $commander_available
-                    ? 'Open AI Commander (page-level chat)'
-                    : 'AI Commander is only available when editing a page/post',
-                'class' => $commander_available ? '' : 'aisc-adminbar-disabled',
-            ),
-        ));
-
-        // ── Cache items (merged from Cache module) ───────────────────
-        $admin_bar->add_node(array(
-            'id'     => 'ai-seo-captain-purge-all',
-            'parent' => 'ai-seo-captain',
-            'title'  => __('Purge All Cache', 'ai-seo-captain'),
-            'href'   => '#',
-            'meta'   => array('class' => 'aisc-purge-all-trigger'),
-        ));
-
-        // Purge This Page – only enabled on singular frontend views
-        $purge_page_available = (! is_admin() && is_singular());
-        $admin_bar->add_node(array(
-            'id'     => 'ai-seo-captain-purge-this',
-            'parent' => 'ai-seo-captain',
-            'title'  => $purge_page_available
-                ? __('Purge This Page', 'ai-seo-captain')
-                : '<span style="opacity:.5;cursor:default;">' . __('Purge This Page', 'ai-seo-captain') . '</span>',
-            'href'   => $purge_page_available ? '#' : false,
-            'meta'   => array(
-                'class'    => $purge_page_available ? 'aisc-purge-this-trigger' : 'aisc-adminbar-disabled',
-                'data-url' => $purge_page_available ? esc_url(get_permalink()) : '',
-                'title'    => $purge_page_available ? '' : 'Only available on a single page/post frontend view',
-            ),
-        ));
     }
 
     public function enqueue_editor_assets(string $hook_suffix): void

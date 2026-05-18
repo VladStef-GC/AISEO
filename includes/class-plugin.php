@@ -77,6 +77,13 @@ final class Plugin
             add_action('init', 'flush_rewrite_rules', 99);
         }
 
+        // Admin bar menu — must fire on both admin and frontend for logged-in admins.
+        add_action('admin_bar_menu', array($this, 'register_admin_bar_menu'), 100);
+
+        // Inline JS for admin bar cache purge — fires on admin and frontend.
+        add_action('wp_footer', array($this, 'print_adminbar_purge_script'), 99);
+        add_action('admin_footer', array($this, 'print_adminbar_purge_script'), 99);
+
         if (is_admin()) {
             $this->ai_generator    = new AI_Generator($this->settings, $this->content_indexer);
             $this->admin           = new Admin($this->settings, $this->content_indexer, $this->ai_generator, $this->history_store, $this->indexnow);
@@ -136,5 +143,154 @@ final class Plugin
     public function get_cache_manager(): ?Cache\Cache_Manager
     {
         return $this->cache_manager;
+    }
+
+    /**
+     * Print a small inline script so admin bar cache purge works on every page.
+     */
+    public function print_adminbar_purge_script(): void
+    {
+        if (! current_user_can('manage_options') || ! is_admin_bar_showing()) {
+            return;
+        }
+        ?>
+        <script>
+        (function(){
+            var ajaxUrl = '<?php echo esc_url(admin_url('admin-ajax.php')); ?>';
+            var nonce   = '<?php echo esc_js(wp_create_nonce('aisc_cache_nonce')); ?>';
+
+            document.addEventListener('click', function(e){
+                var link = e.target.closest('.aisc-purge-all-trigger a, #wp-admin-bar-ai-seo-captain-purge-all a');
+                if (link) {
+                    e.preventDefault();
+                    if (!confirm('Purge all cache?')) return;
+                    fetch(ajaxUrl, {
+                        method: 'POST',
+                        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+                        body: 'action=aisc_purge_cache&nonce=' + nonce
+                    }).then(function(r){return r.json();}).then(function(d){
+                        if(d.success) alert(d.data.message || 'Cache purged.');
+                    });
+                    return;
+                }
+
+                link = e.target.closest('.aisc-purge-this-trigger a, #wp-admin-bar-ai-seo-captain-purge-this a');
+                if (link) {
+                    e.preventDefault();
+                    var wrap = link.closest('[data-url]');
+                    var url = wrap ? wrap.getAttribute('data-url') : window.location.href;
+                    fetch(ajaxUrl, {
+                        method: 'POST',
+                        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+                        body: 'action=aisc_purge_this_url&nonce=' + nonce + '&url=' + encodeURIComponent(url)
+                    }).then(function(r){return r.json();}).then(function(d){
+                        if(d.success) alert(d.data.message || 'Page cache purged.');
+                    });
+                }
+            });
+        })();
+        </script>
+        <?php
+    }
+
+    /**
+     * Admin bar menu — fires on both admin and frontend for logged-in users.
+     */
+    public function register_admin_bar_menu(\WP_Admin_Bar $admin_bar): void
+    {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
+        // Parent node
+        $admin_bar->add_node(array(
+            'id'    => 'ai-seo-captain',
+            'title' => 'SEO Captain',
+            'href'  => admin_url('admin.php?page=ai-seo-captain'),
+            'meta'  => array('title' => 'SEO Captain'),
+        ));
+
+        // Child: AI Captain Chat (always available)
+        $admin_bar->add_node(array(
+            'id'     => 'ai-seo-captain-ai-captain',
+            'parent' => 'ai-seo-captain',
+            'title'  => 'AI Captain Chat',
+            'href'   => admin_url('admin.php?page=ai-seo-captain-site-chat'),
+            'meta'   => array('title' => 'Open AI Captain (site-wide chat)'),
+        ));
+
+        // Child: AI Commander Chat – always visible, disabled when not on a post editor
+        $commander_available = false;
+        $commander_href      = '#';
+        $current_post_id     = 0;
+
+        if (! is_admin() && is_singular()) {
+            $current_post_id = get_queried_object_id();
+            if ($current_post_id) {
+                $commander_href      = admin_url('post.php?post=' . $current_post_id . '&action=edit#ai-seo-captain-chat');
+                $commander_available = true;
+            }
+        } elseif (is_admin()) {
+            $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+            if ($screen && 'post' === $screen->base) {
+                global $post;
+                if (! empty($post->ID)) {
+                    $current_post_id     = (int) $post->ID;
+                    $commander_href      = '#ai-seo-captain-chat';
+                    $commander_available = true;
+                }
+            }
+        }
+
+        $admin_bar->add_node(array(
+            'id'     => 'ai-seo-captain-ai-commander',
+            'parent' => 'ai-seo-captain',
+            'title'  => $commander_available
+                ? 'AI Commander Chat'
+                : '<span style="opacity:.5;cursor:default;">AI Commander Chat</span>',
+            'href'   => $commander_available ? $commander_href : false,
+            'meta'   => array(
+                'title' => $commander_available
+                    ? 'Open AI Commander (page-level chat)'
+                    : 'AI Commander is only available when editing a page/post',
+                'class' => $commander_available ? '' : 'aisc-adminbar-disabled',
+            ),
+        ));
+
+        // ── Cache items ──────────────────────────────────────────────
+        $admin_bar->add_node(array(
+            'id'     => 'ai-seo-captain-purge-all',
+            'parent' => 'ai-seo-captain',
+            'title'  => __('Purge All Cache', 'ai-seo-captain'),
+            'href'   => '#',
+            'meta'   => array('class' => 'aisc-purge-all-trigger'),
+        ));
+
+        // Purge This Page – enabled on singular frontend OR when editing a specific post
+        $purge_page_available = false;
+        $purge_url            = '';
+
+        if (! is_admin() && is_singular()) {
+            $purge_page_available = true;
+            $purge_url            = get_permalink();
+        } elseif ($current_post_id > 0) {
+            // Editing a post in admin — we can purge its frontend URL
+            $purge_page_available = true;
+            $purge_url            = get_permalink($current_post_id);
+        }
+
+        $admin_bar->add_node(array(
+            'id'     => 'ai-seo-captain-purge-this',
+            'parent' => 'ai-seo-captain',
+            'title'  => $purge_page_available
+                ? __('Purge This Page', 'ai-seo-captain')
+                : '<span style="opacity:.5;cursor:default;">' . __('Purge This Page', 'ai-seo-captain') . '</span>',
+            'href'   => $purge_page_available ? '#' : false,
+            'meta'   => array(
+                'class'    => $purge_page_available ? 'aisc-purge-this-trigger' : 'aisc-adminbar-disabled',
+                'data-url' => $purge_page_available ? esc_url($purge_url) : '',
+                'title'    => $purge_page_available ? '' : 'Only available when viewing or editing a page/post',
+            ),
+        ));
     }
 }
