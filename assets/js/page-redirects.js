@@ -114,22 +114,36 @@
         $scanBtn.prop('disabled', false).text('Scan Now');
         $scanProgress.hide();
         var r = data.result || data;
-        var msg = 'Scan complete. Found ' + (r.broken_media || 0) + ' broken media, ' + (r.broken_links || 0) + ' broken links.';
-        $scanStatus.text(msg);
-        showScanToast(msg);
+        var media = r.broken_media || 0;
+        var links = r.broken_links || 0;
+        var total = media + links;
+        var severity = total > 0 ? 'is-warning' : 'is-success';
+        var icon = total > 0 ? 'seo-captain-side-d.svg' : 'seo-captain-side-ok-d.svg';
+        var title = total > 0 ? 'Issues Found' : 'All Clear';
+        var text = total > 0
+            ? 'Scan complete. Found <strong>' + media + '</strong> broken media and <strong>' + links + '</strong> broken links.'
+            : 'Scan complete — no broken links or missing media detected.';
+
+        $scanStatus.text('');
+        showScanBanner(severity, icon, title, text);
         // Reload after short delay to refresh the results table.
-        setTimeout(function () { location.reload(); }, 1500);
+        setTimeout(function () { location.reload(); }, 2500);
     }
 
-    function showScanToast(message) {
-        var $toast = $('<div/>').css({
-            position: 'fixed', bottom: '32px', left: '50%', transform: 'translateX(-50%)',
-            background: '#1d2327', color: '#fff', padding: '12px 24px', borderRadius: '6px',
-            boxShadow: '0 4px 16px rgba(0,0,0,.18)', zIndex: 99999, fontSize: '14px',
-            opacity: 0, transition: 'opacity .3s'
-        }).text(message).appendTo('body');
-        setTimeout(function () { $toast.css('opacity', 1); }, 50);
-        setTimeout(function () { $toast.css('opacity', 0); setTimeout(function () { $toast.remove(); }, 400); }, 4000);
+    function showScanBanner(severity, icon, title, text) {
+        // Remove any previous banner.
+        $('#ai-seo-broken-scan-banner').remove();
+
+        var iconUrl = (aiscRedirects.pluginUrl || '') + 'assets/img/' + icon;
+        var html = '<div id="ai-seo-broken-scan-banner" class="ai-seo-captain-notice ' + severity + '" style="margin-top:12px;">'
+            + '<img src="' + iconUrl + '" alt="" class="ai-seo-captain-notice__icon" />'
+            + '<div class="ai-seo-captain-notice__body">'
+            + '<strong class="ai-seo-captain-notice__title">' + title + '</strong> '
+            + '<span class="ai-seo-captain-notice__text">' + text + '</span>'
+            + '</div></div>';
+
+        // Insert after the scan progress bar (below Scan Now button area).
+        $('#ai-seo-broken-scan-progress').after(html);
     }
 
     // If scan is already running on page load, start polling.

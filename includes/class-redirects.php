@@ -344,7 +344,8 @@ class Redirects
     public function render_admin_page(): void
     {
         wp_localize_script('ai-seo-page-redirects', 'aiscRedirects', array(
-            'nonce' => wp_create_nonce('ai_seo_captain_nonce'),
+            'nonce'     => wp_create_nonce('ai_seo_captain_nonce'),
+            'pluginUrl' => AI_SEO_CAPTAIN_URL,
         ));
 
         $redirects = $this->get_redirects();
