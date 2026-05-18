@@ -113,7 +113,8 @@
     function scanComplete(data) {
         $scanBtn.prop('disabled', false).text('Scan Now');
         $scanProgress.hide();
-        var msg = 'Scan complete. Found ' + (data.broken_media || 0) + ' broken media, ' + (data.broken_links || 0) + ' broken links.';
+        var r = data.result || data;
+        var msg = 'Scan complete. Found ' + (r.broken_media || 0) + ' broken media, ' + (r.broken_links || 0) + ' broken links.';
         $scanStatus.text(msg);
         showScanToast(msg);
         // Reload after short delay to refresh the results table.
