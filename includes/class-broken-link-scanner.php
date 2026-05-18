@@ -332,23 +332,40 @@ class Broken_Link_Scanner
         $path_part = null;
 
         if (0 === strpos($url, $upload_url)) {
-            // Full URL inside uploads.
+            // Full URL inside uploads (absolute).
             $path_part = substr($url, strlen($upload_url));
         } elseif (0 === strpos($url, '/wp-content/uploads/')) {
-            // Relative path.
+            // Relative path without subdirectory prefix.
             $path_part = substr($url, strlen('/wp-content/uploads/'));
         } else {
-            // URL might be in theme/plugin directory.
-            $content_url = content_url();
-            $content_dir = WP_CONTENT_DIR;
+            // Handle subdirectory installs (e.g. /greencoders/wp-content/uploads/...).
+            $site_path = wp_parse_url(home_url(), PHP_URL_PATH);
+            if ($site_path && '/' !== $site_path) {
+                $site_path = trailingslashit($site_path);
+                $sub_upload_path = $site_path . 'wp-content/uploads/';
+                $sub_content_path = $site_path . 'wp-content/';
 
-            if (0 === strpos($url, $content_url)) {
-                $relative = substr($url, strlen($content_url));
-                return $content_dir . $relative;
+                if (0 === strpos($url, $sub_upload_path)) {
+                    $path_part = substr($url, strlen($sub_upload_path));
+                } elseif (0 === strpos($url, $sub_content_path)) {
+                    $relative = substr($url, strlen($sub_content_path));
+                    return WP_CONTENT_DIR . '/' . $relative;
+                }
             }
 
-            // Can't map — skip.
-            return null;
+            // URL might be in theme/plugin directory (full URL).
+            if (null === $path_part) {
+                $content_url = content_url();
+                $content_dir = WP_CONTENT_DIR;
+
+                if (0 === strpos($url, $content_url)) {
+                    $relative = substr($url, strlen($content_url));
+                    return $content_dir . $relative;
+                }
+
+                // Can't map — skip.
+                return null;
+            }
         }
 
         if (null === $path_part) {
@@ -373,8 +390,27 @@ class Broken_Link_Scanner
             return true; // Homepage always resolves.
         }
 
+        // Strip site subdirectory prefix (e.g. /greencoders/) if present.
+        $site_path = wp_parse_url(home_url(), PHP_URL_PATH);
+        if ($site_path && '/' !== $site_path) {
+            $site_path = trailingslashit($site_path);
+            if (0 === strpos($path, $site_path)) {
+                $path = '/' . substr($path, strlen($site_path));
+            }
+            // Homepage with subdirectory (e.g. /greencoders/ itself).
+            if ($path === rtrim($site_path, '/') || $path === $site_path) {
+                return true;
+            }
+        }
+
+        if ('/' === $path || empty($path)) {
+            return true; // Homepage.
+        }
+
         // Try url_to_postid — WordPress's built-in URL resolver.
-        $post_id = url_to_postid($url);
+        // Pass the full URL for best results in subdirectory installs.
+        $full_url = 0 === strpos($url, 'http') ? $url : home_url($path);
+        $post_id = url_to_postid($full_url);
         if ($post_id > 0) {
             $status = get_post_status($post_id);
             return in_array($status, array('publish', 'private'), true);

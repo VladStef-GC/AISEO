@@ -52,7 +52,12 @@ class Redirects
 
         // Log 404s.
         if (is_404()) {
-            $this->log_404($request_path);
+            // Don't log the homepage or site root as 404 (can happen with bots/prefetch).
+            $site_path = wp_parse_url(home_url(), PHP_URL_PATH);
+            $is_homepage = ($request_path === '/' || $request_path === trailingslashit($site_path));
+            if (! $is_homepage) {
+                $this->log_404($request_path);
+            }
         }
     }
 
@@ -471,9 +476,9 @@ class Redirects
                     <div id="ai-seo-broken-scan-progress" style="margin-top:10px;display:<?php echo $is_running ? 'block' : 'none'; ?>;">
                         <div style="background:#e0e0e0;border-radius:4px;height:8px;width:100%;max-width:400px;">
                             <div id="ai-seo-broken-scan-bar" style="background:#0073aa;height:100%;border-radius:4px;width:<?php
-                                $pct = (! empty($scan_state['total_posts']) && $scan_state['total_posts'] > 0) ? round(($scan_state['scanned_posts'] / $scan_state['total_posts']) * 100) : 0;
-                                echo (int) $pct;
-                            ?>%;transition:width 0.3s;"></div>
+                                                                                                                            $pct = (! empty($scan_state['total_posts']) && $scan_state['total_posts'] > 0) ? round(($scan_state['scanned_posts'] / $scan_state['total_posts']) * 100) : 0;
+                                                                                                                            echo (int) $pct;
+                                                                                                                            ?>%;transition:width 0.3s;"></div>
                         </div>
                     </div>
                 </div>
