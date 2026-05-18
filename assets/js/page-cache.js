@@ -15,8 +15,8 @@ jQuery(function ($) {
     function showBanner(message, severity) {
         severity = severity || 'is-success';
         var iconFile = (severity === 'is-success') ? 'seo-captain-side-ok-d.svg' : 'seo-captain-side-d.svg';
-        var icon = (typeof AI_SEO_KEEPER_URL !== 'undefined')
-            ? AI_SEO_KEEPER_URL + 'assets/img/' + iconFile
+        var icon = (typeof AI_SEO_CAPTAIN_URL !== 'undefined')
+            ? AI_SEO_CAPTAIN_URL + 'assets/img/' + iconFile
             : '';
         var iconHtml = icon ? '<img src="' + icon + '" alt="" class="ai-seo-captain-notice__icon" />' : '';
         var title = severity === 'is-error' ? 'Error' : 'Success';
