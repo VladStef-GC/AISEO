@@ -484,4 +484,50 @@ class CacheTest extends TestCase
             @rmdir($cache_parent);
         }
     }
+
+    // ─── Minifier conflict detection ───────────────────────────────────
+
+    public function test_minifier_skips_when_autoptimize_active(): void
+    {
+        // Simulate Autoptimize with CSS minification enabled.
+        if (! defined('AUTOPTIMIZE_PLUGIN_VERSION')) {
+            define('AUTOPTIMIZE_PLUGIN_VERSION', '3.1.0');
+        }
+        // Set the Autoptimize option to 'on'.
+        global $aisc_test_options;
+        $aisc_test_options['autoptimize_css'] = 'on';
+
+        $minifier = new Minifier(array('cache_minify_css' => true, 'cache_minify_js' => true));
+
+        // Use reflection to call private method.
+        $method = new \ReflectionMethod($minifier, 'is_another_minifier_active');
+        $method->setAccessible(true);
+
+        $this->assertTrue($method->invoke($minifier));
+
+        // Cleanup.
+        unset($aisc_test_options['autoptimize_css']);
+    }
+
+    public function test_minifier_allows_when_no_conflict(): void
+    {
+        // With no conflicting plugin constants defined, should return false.
+        // Note: AUTOPTIMIZE_PLUGIN_VERSION was defined above but the option is not 'on'.
+        global $aisc_test_options;
+        $aisc_test_options['autoptimize_css'] = '';
+        $aisc_test_options['autoptimize_js']  = '';
+
+        $minifier = new Minifier(array('cache_minify_css' => true, 'cache_minify_js' => true));
+        $method   = new \ReflectionMethod($minifier, 'is_another_minifier_active');
+        $method->setAccessible(true);
+
+        // Autoptimize constant is defined but options are off => no conflict.
+        // Unless W3TC or another constant is defined, should be false.
+        if (defined('W3TC') || defined('FVM_VERSION')) {
+            $this->markTestSkipped('Other conflicting constants defined in test env.');
+        }
+        $this->assertFalse($method->invoke($minifier));
+
+        unset($aisc_test_options['autoptimize_css'], $aisc_test_options['autoptimize_js']);
+    }
 }

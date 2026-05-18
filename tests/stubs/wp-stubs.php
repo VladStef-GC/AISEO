@@ -94,6 +94,10 @@ if (! function_exists('wp_parse_args')) {
 if (! function_exists('get_option')) {
     function get_option(string $option, $default = false)
     {
+        global $aisc_test_options;
+        if (isset($aisc_test_options[$option])) {
+            return $aisc_test_options[$option];
+        }
         return $default;
     }
 }

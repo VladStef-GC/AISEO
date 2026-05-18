@@ -173,42 +173,67 @@ class Cache_Preloader
      */
     private function get_sitemap_urls(): array
     {
-        $sitemap_url = home_url('/sitemap_index.xml');
+        // Try plugin-generated sitemap index first, then WP core sitemaps.
+        $sitemap_candidates = array(
+            home_url('/sitemap_index.xml'),
+            home_url('/sitemap.xml'),
+            home_url('/wp-sitemap.xml'),
+        );
 
-        $response = wp_remote_get($sitemap_url, array(
-            'timeout'   => 15,
-            'sslverify' => false,
-        ));
-
-        if (is_wp_error($response) || 200 !== wp_remote_retrieve_response_code($response)) {
-            return array();
-        }
-
-        $body = wp_remote_retrieve_body($response);
-        $urls = array();
-
-        // Parse sitemap index to find child sitemaps.
-        $sitemap_locs = array();
-        if (preg_match_all('/<loc>([^<]+)<\/loc>/i', $body, $matches)) {
-            $sitemap_locs = $matches[1];
-        }
-
-        // Fetch each child sitemap and extract page URLs.
-        foreach ($sitemap_locs as $child_sitemap_url) {
-            $child_response = wp_remote_get($child_sitemap_url, array(
+        $body = '';
+        foreach ($sitemap_candidates as $sitemap_url) {
+            $response = wp_remote_get($sitemap_url, array(
                 'timeout'   => 15,
                 'sslverify' => false,
             ));
 
-            if (is_wp_error($child_response) || 200 !== wp_remote_retrieve_response_code($child_response)) {
-                continue;
+            if (! is_wp_error($response) && 200 === wp_remote_retrieve_response_code($response)) {
+                $body = wp_remote_retrieve_body($response);
+                break;
             }
+        }
 
-            $child_body = wp_remote_retrieve_body($child_response);
+        if (empty($body)) {
+            return array();
+        }
 
-            if (preg_match_all('/<loc>([^<]+)<\/loc>/i', $child_body, $child_matches)) {
-                $urls = array_merge($urls, $child_matches[1]);
+        $urls = array();
+
+        // Parse all <loc> entries.
+        $locs = array();
+        if (preg_match_all('/<loc>([^<]+)<\/loc>/i', $body, $matches)) {
+            $locs = $matches[1];
+        }
+
+        if (empty($locs)) {
+            return array();
+        }
+
+        // Determine if this is a sitemap index (entries point to other sitemaps)
+        // or a flat sitemap (entries are actual page URLs).
+        $is_index = (false !== strpos($body, '<sitemapindex')) || (false !== strpos($body, '<sitemap>'));
+
+        if ($is_index) {
+            // Fetch each child sitemap and extract page URLs.
+            foreach ($locs as $child_sitemap_url) {
+                $child_response = wp_remote_get($child_sitemap_url, array(
+                    'timeout'   => 15,
+                    'sslverify' => false,
+                ));
+
+                if (is_wp_error($child_response) || 200 !== wp_remote_retrieve_response_code($child_response)) {
+                    continue;
+                }
+
+                $child_body = wp_remote_retrieve_body($child_response);
+
+                if (preg_match_all('/<loc>([^<]+)<\/loc>/i', $child_body, $child_matches)) {
+                    $urls = array_merge($urls, $child_matches[1]);
+                }
             }
+        } else {
+            // Flat sitemap — <loc> entries are the page URLs directly.
+            $urls = $locs;
         }
 
         return array_unique($urls);

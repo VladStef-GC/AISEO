@@ -35,6 +35,11 @@ class Minifier
             return;
         }
 
+        // Skip if a known minification plugin is already active.
+        if ($this->is_another_minifier_active()) {
+            return;
+        }
+
         if ($this->minify_css || $this->minify_js) {
             add_action('template_redirect', array($this, 'start_output_buffer'), 1);
         }
@@ -197,5 +202,59 @@ class Minifier
         }
 
         return trim($js);
+    }
+
+    /**
+     * Detect if another minification/optimization plugin is already handling output.
+     *
+     * Prevents double-minification and wasted CPU cycles.
+     */
+    private function is_another_minifier_active(): bool
+    {
+        // Autoptimize.
+        if (defined('AUTOPTIMIZE_PLUGIN_VERSION')) {
+            if (get_option('autoptimize_css', '') === 'on' || get_option('autoptimize_js', '') === 'on') {
+                return true;
+            }
+        }
+
+        // WP Rocket.
+        if (defined('WP_ROCKET_VERSION')) {
+            $wp_rocket_opts = get_option('wp_rocket_settings', array());
+            if (! empty($wp_rocket_opts['minify_css']) || ! empty($wp_rocket_opts['minify_js'])) {
+                return true;
+            }
+        }
+
+        // LiteSpeed Cache.
+        if (defined('LSCWP_V')) {
+            $ls_optm = get_option('litespeed.conf.optm-css_min', '');
+            $ls_js   = get_option('litespeed.conf.optm-js_min', '');
+            if ($ls_optm || $ls_js) {
+                return true;
+            }
+        }
+
+        // W3 Total Cache.
+        if (defined('W3TC')) {
+            return true;
+        }
+
+        // WP Super Minify.
+        if (defined('FLAVOR_FLAVOR_FILE')) {
+            return true;
+        }
+
+        // Fast Velocity Minify.
+        if (defined('FVM_VERSION')) {
+            return true;
+        }
+
+        // SG Optimizer (SiteGround).
+        if (class_exists('SiteGround_Optimizer\\Minifier\\Minifier')) {
+            return true;
+        }
+
+        return false;
     }
 }

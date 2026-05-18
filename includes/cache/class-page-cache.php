@@ -148,7 +148,7 @@ class Page_Cache
             // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents
             $raw_meta = file_get_contents($meta_file);
             if (false !== $raw_meta) {
-                $meta = @unserialize($raw_meta);
+                $meta = @unserialize($raw_meta, array('allowed_classes' => false));
                 if (is_array($meta) && isset($meta['created'], $meta['ttl'])) {
                     if ((time() - $meta['created']) > $meta['ttl']) {
                         // Expired — remove stale files.
@@ -170,6 +170,10 @@ class Page_Cache
 
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents
         $html = file_get_contents($file);
+
+        if (false === $html) {
+            return false;
+        }
 
         // GZIP compression if accepted.
         if (isset($_SERVER['HTTP_ACCEPT_ENCODING']) && false !== strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') && function_exists('gzencode')) {
@@ -357,11 +361,12 @@ class Page_Cache
         $file   = $this->cache_dir . $prefix . '/' . $hash . '.html';
 
         if (file_exists($file)) {
+            $meta      = null;
             $meta_file = $this->cache_dir . $prefix . '/' . $hash . '.meta';
             if (file_exists($meta_file)) {
                 // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents
                 $raw = file_get_contents($meta_file);
-                $meta = @unserialize($raw);
+                $meta = @unserialize($raw, array('allowed_classes' => false));
                 if (is_array($meta) && isset($meta['created'], $meta['ttl'])) {
                     if ((time() - $meta['created']) > $meta['ttl']) {
                         // Expired — allow re-capture.
@@ -383,8 +388,13 @@ class Page_Cache
             // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents
             $cached_html = file_get_contents($file);
 
+            if (false === $cached_html) {
+                // File became unreadable between checks — let WordPress render normally.
+                return true;
+            }
+
             if (
-                false !== $cached_html && $this->gzip_enabled
+                $this->gzip_enabled
                 && isset($_SERVER['HTTP_ACCEPT_ENCODING'])
                 && false !== strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip')
                 && function_exists('gzencode')
@@ -393,7 +403,7 @@ class Page_Cache
                 header('Vary: Accept-Encoding');
                 echo gzencode($cached_html, 6);
             } else {
-                readfile($file);
+                echo $cached_html;
             }
             exit;
         }

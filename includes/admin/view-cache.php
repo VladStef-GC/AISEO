@@ -101,6 +101,13 @@ $option_name = Settings::OPTION_NAME;
         </button>
         <span id="aisc-cache-action-feedback" class="aisc-cache-feedback"></span>
     </div>
+    <p class="aisc-cache-actions-legend">
+        <strong><?php esc_html_e('Purge All Cache', 'ai-seo-captain'); ?></strong> &mdash;
+        <?php esc_html_e('Deletes all cached pages across the site. Every page will be regenerated fresh on the next visit.', 'ai-seo-captain'); ?>
+        <br>
+        <strong><?php esc_html_e('Preload Cache', 'ai-seo-captain'); ?></strong> &mdash;
+        <?php esc_html_e('Crawls all sitemap URLs in the background to rebuild the cache, so visitors immediately get fast cached pages.', 'ai-seo-captain'); ?>
+    </p>
 
     <!-- Preload Progress Bar (hidden by default) -->
     <div class="aisc-preload-progress" id="aisc-preload-progress" style="display:none;">

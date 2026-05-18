@@ -69,7 +69,7 @@ if (! file_exists($cache_file)) {
 if (file_exists($meta_file)) {
     $raw_meta = @file_get_contents($meta_file);
     if (false !== $raw_meta) {
-        $meta = @unserialize($raw_meta);
+        $meta = @unserialize($raw_meta, array('allowed_classes' => false));
         if (is_array($meta) && isset($meta['created'], $meta['ttl'])) {
             if ((time() - (int) $meta['created']) > (int) $meta['ttl']) {
                 // Expired — let WordPress handle the request normally.

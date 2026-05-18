@@ -1,4 +1,6 @@
-# Cache Module — Build Plan
+# Cache Module — Build Plan (ARCHIVED)
+
+> **Superseded by:** [`CACHE-SYSTEM.md`](CACHE-SYSTEM.md) — full technical reference.
 
 > **Target plugin:** AI SEO Captain v1.0.0-beta  
 > **Branch:** `Dev-env`  

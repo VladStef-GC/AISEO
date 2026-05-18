@@ -329,7 +329,9 @@ PHP;
             return false;
         }
 
-        return wp_delete_file($dropin_file) || ! file_exists($dropin_file);
+        wp_delete_file($dropin_file);
+
+        return ! file_exists($dropin_file);
     }
 
     /**
