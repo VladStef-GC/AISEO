@@ -711,9 +711,9 @@ class Cache_Manager
             $oc->remove();
         }
 
-        // Remove .htaccess rules.
+        // Remove .htaccess rules (skip backup since we're about to delete the backup directory).
         $bc = new Browser_Cache(array());
-        $bc->remove_htaccess();
+        $bc->remove_htaccess_without_backup();
 
         // Delete cache directory.
         $cache_dir = WP_CONTENT_DIR . '/cache/ai-seo-captain/';

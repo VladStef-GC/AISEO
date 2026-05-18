@@ -28,8 +28,14 @@ class Page_Cache
     /** @var array */
     private $exclude_cookies;
 
+    /** @var array */
+    private $exclude_useragents;
+
     /** @var bool */
     private $minify_html;
+
+    /** @var bool */
+    private $wc_exclude_cart;
 
     public function __construct(array $options = array())
     {
@@ -38,6 +44,7 @@ class Page_Cache
         $this->gzip_enabled       = ! empty($options['cache_gzip_enabled']);
         $this->cache_query_strings = ! empty($options['cache_query_string_cache']);
         $this->minify_html        = ! empty($options['cache_minify_html']);
+        $this->wc_exclude_cart    = ! isset($options['cache_wc_exclude_cart']) || ! empty($options['cache_wc_exclude_cart']);
         $this->exclude_urls       = array();
 
         if (! empty($options['cache_exclude_urls'])) {
@@ -47,6 +54,11 @@ class Page_Cache
         $this->exclude_cookies = array();
         if (! empty($options['cache_exclude_cookies'])) {
             $this->exclude_cookies = array_filter(array_map('trim', explode("\n", $options['cache_exclude_cookies'])));
+        }
+
+        $this->exclude_useragents = array();
+        if (! empty($options['cache_exclude_useragents'])) {
+            $this->exclude_useragents = array_filter(array_map('trim', explode("\n", $options['cache_exclude_useragents'])));
         }
     }
 
@@ -295,6 +307,19 @@ class Page_Cache
             return false;
         }
 
+        // Exclude WooCommerce dynamic pages (cart, checkout, my-account).
+        if ($this->wc_exclude_cart) {
+            if (function_exists('is_cart') && is_cart()) {
+                return false;
+            }
+            if (function_exists('is_checkout') && is_checkout()) {
+                return false;
+            }
+            if (function_exists('is_account_page') && is_account_page()) {
+                return false;
+            }
+        }
+
         // Check URL exclusion patterns.
         $request_uri = $this->get_request_uri();
         foreach ($this->exclude_urls as $pattern) {
@@ -311,6 +336,16 @@ class Page_Cache
         if (! empty($this->exclude_cookies)) {
             foreach ($this->exclude_cookies as $cookie_name) {
                 if (isset($_COOKIE[$cookie_name])) {
+                    return false;
+                }
+            }
+        }
+
+        // Check excluded user-agent patterns.
+        if (! empty($this->exclude_useragents) && isset($_SERVER['HTTP_USER_AGENT'])) {
+            $ua = sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT']));
+            foreach ($this->exclude_useragents as $pattern) {
+                if ('' !== $pattern && false !== stripos($ua, $pattern)) {
                     return false;
                 }
             }
@@ -337,12 +372,29 @@ class Page_Cache
 
             // Still valid — serve from cache and exit.
             if (! headers_sent()) {
+                header('Content-Type: text/html; charset=UTF-8');
                 header('X-Cache: HIT');
                 header('X-Cache-Engine: AI-SEO-Captain');
+
+                $ttl = (is_array($meta) && isset($meta['ttl'])) ? (int) $meta['ttl'] : $this->ttl;
+                header('Cache-Control: public, max-age=' . $ttl);
             }
 
             // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents
-            readfile($file);
+            $cached_html = file_get_contents($file);
+
+            if (
+                false !== $cached_html && $this->gzip_enabled
+                && isset($_SERVER['HTTP_ACCEPT_ENCODING'])
+                && false !== strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip')
+                && function_exists('gzencode')
+            ) {
+                header('Content-Encoding: gzip');
+                header('Vary: Accept-Encoding');
+                echo gzencode($cached_html, 6);
+            } else {
+                readfile($file);
+            }
             exit;
         }
 

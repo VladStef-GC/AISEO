@@ -113,13 +113,13 @@ class Minifier
     public static function minify_css(string $css): string
     {
         if ('' === trim($css)) {
-            return $css;
+            return '';
         }
 
         // Protect license comments.
         $protected = array();
         $css = preg_replace_callback('/\/\*!.*?\*\//s', function ($m) use (&$protected) {
-            $key = '/*AISC_LICENSE_' . count($protected) . '*/';
+            $key = '___AISC_LICENSE_' . count($protected) . '___';
             $protected[$key] = $m[0];
             return $key;
         }, $css);
@@ -152,13 +152,13 @@ class Minifier
     public static function minify_js(string $js): string
     {
         if ('' === trim($js)) {
-            return $js;
+            return '';
         }
 
         // Protect license comments.
         $protected = array();
         $js = preg_replace_callback('/\/\*!.*?\*\//s', function ($m) use (&$protected) {
-            $key = '/*AISC_LICENSE_' . count($protected) . '*/';
+            $key = '___AISC_LICENSE_' . count($protected) . '___';
             $protected[$key] = $m[0];
             return $key;
         }, $js);

@@ -129,6 +129,14 @@ class Browser_Cache
     }
 
     /**
+     * Remove rules from .htaccess without creating a backup (used during deactivation).
+     */
+    public function remove_htaccess_without_backup(): bool
+    {
+        return $this->remove_htaccess_internal(false);
+    }
+
+    /**
      * Internal removal — optionally creates a backup first.
      */
     private function remove_htaccess_internal(bool $with_backup): bool
@@ -258,16 +266,17 @@ class Browser_Cache
         foreach ($files as $file) {
             $filename = basename($file);
             // Extract timestamp from filename: htaccess_2026-05-18_14-30-00.bak
-            $date_part = str_replace(array('htaccess_', '.bak'), '', $filename);
-            $date_part = str_replace('_', ' ', $date_part);
-            $date_part = str_replace('-', ':', $date_part, $count);
-            // Only replace the last 2 hyphens with colons for time part.
-            $readable = preg_replace('/(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/', '$1-$2-$3 $4:$5:$6', $date_part);
+            // Format: htaccess_YYYY-MM-DD_HH-MM-SS.bak → YYYY-MM-DD HH:MM:SS
+            if (preg_match('/htaccess_(\d{4}-\d{2}-\d{2})_(\d{2})-(\d{2})-(\d{2})\.bak$/', $filename, $m)) {
+                $readable = $m[1] . ' ' . $m[2] . ':' . $m[3] . ':' . $m[4];
+            } else {
+                $readable = $filename;
+            }
 
             $backups[] = array(
                 'path'     => $file,
                 'filename' => $filename,
-                'date'     => $readable ?: $date_part,
+                'date'     => $readable,
                 'size'     => filesize($file),
             );
         }

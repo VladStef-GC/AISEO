@@ -163,3 +163,41 @@ if (! class_exists('WP_Post')) {
         }
     }
 }
+
+// --- Cache module stubs ---
+
+if (! defined('WP_CONTENT_DIR')) {
+    define('WP_CONTENT_DIR', sys_get_temp_dir() . '/aisc-test-wp-content');
+}
+
+if (! function_exists('wp_mkdir_p')) {
+    function wp_mkdir_p(string $target): bool
+    {
+        if (is_dir($target)) {
+            return true;
+        }
+        return mkdir($target, 0755, true);
+    }
+}
+
+if (! function_exists('wp_delete_file')) {
+    function wp_delete_file(string $file): void
+    {
+        if (file_exists($file)) {
+            @unlink($file);
+        }
+    }
+}
+
+if (! function_exists('size_format')) {
+    function size_format(int $bytes, int $decimals = 0): string
+    {
+        if ($bytes === 0) {
+            return '0 B';
+        }
+        $k = 1024;
+        $sizes = array('B', 'KB', 'MB', 'GB');
+        $i = (int) floor(log($bytes) / log($k));
+        return round($bytes / pow($k, $i), $decimals) . ' ' . $sizes[$i];
+    }
+}

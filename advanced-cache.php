@@ -85,7 +85,13 @@ if (file_exists($meta_file)) {
 header('Content-Type: text/html; charset=UTF-8');
 header('X-Cache: HIT');
 header('X-Cache-Engine: AI-SEO-Captain');
-header('Cache-Control: public, max-age=86400');
+
+// Use TTL from meta if available, otherwise default to 24 hours.
+$serve_ttl = 86400;
+if (isset($meta) && is_array($meta) && isset($meta['ttl'])) {
+    $serve_ttl = (int) $meta['ttl'];
+}
+header('Cache-Control: public, max-age=' . $serve_ttl);
 
 $html = @file_get_contents($cache_file);
 
