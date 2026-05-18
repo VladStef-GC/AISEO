@@ -77,7 +77,7 @@ jQuery(function ($) {
     // --- Block all interaction when plugin prerequisites are not met ---
     if (!isReady) {
         $send.prop('disabled', true);
-        $input.prop('disabled', true).attr('placeholder', 'Please complete site indexing and audit before using AI Strategist.');
+        $input.prop('disabled', true).attr('placeholder', 'Please complete site indexing and audit before using AI Captain.');
         $clear.prop('disabled', true);
         return; // Stop all further JS initialization.
     }

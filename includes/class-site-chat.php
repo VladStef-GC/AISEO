@@ -52,17 +52,17 @@ class Site_Chat
         $message = isset($_POST['message']) ? sanitize_textarea_field(wp_unslash($_POST['message'])) : '';
 
         if ('' === trim($message)) {
-            wp_send_json_error(array('message' => __('Enter a question before asking the AI assistant.', 'ai-seo-captain')), 400);
+            wp_send_json_error(array('message' => __('Enter a question before asking the AI Captain.', 'ai-seo-captain')), 400);
         }
 
         $options = $this->settings->get();
 
         if (empty($options['api_key'])) {
-            wp_send_json_error(array('message' => __('Add an API key in SEO Captain Settings before using the AI assistant.', 'ai-seo-captain')), 400);
+            wp_send_json_error(array('message' => __('Add an API key in SEO Captain Settings before using the AI Captain.', 'ai-seo-captain')), 400);
         }
 
         if (empty($options['editor_chat_enabled'])) {
-            wp_send_json_error(array('message' => __('The AI assistant is disabled in settings.', 'ai-seo-captain')), 400);
+            wp_send_json_error(array('message' => __('The AI Captain is disabled in settings.', 'ai-seo-captain')), 400);
         }
 
         try {
@@ -122,7 +122,7 @@ class Site_Chat
         $chat_messages = $this->get_recent_messages(20);
 
         wp_send_json_success(array(
-            'message'  => __('AI assistant replied.', 'ai-seo-captain'),
+            'message'  => __('AI Captain replied.', 'ai-seo-captain'),
             'chatHtml' => $this->render_chat_html($chat_messages),
         ));
     }
@@ -196,7 +196,7 @@ class Site_Chat
         $notes = isset($payload['notes']) ? sanitize_textarea_field((string) $payload['notes']) : '';
 
         if ('' === $reply) {
-            throw new \RuntimeException('The AI assistant did not return a usable reply.');
+            throw new \RuntimeException('The AI Captain did not return a usable reply.');
         }
 
         return array(
@@ -779,7 +779,7 @@ class Site_Chat
             <div class="ai-seo-captain-stack">
                 <?php foreach ($chat_messages as $entry) : ?>
                     <div class="ai-seo-captain-chat-item <?php echo 'assistant' === $entry['role'] ? 'is-assistant' : ''; ?>">
-                        <p style="margin:0 0 8px;"><strong><?php echo 'assistant' === $entry['role'] ? 'AI SEO Strategist' : 'You'; ?></strong></p>
+                        <p style="margin:0 0 8px;"><strong><?php echo 'assistant' === $entry['role'] ? 'AI Captain' : 'You'; ?></strong></p>
                         <?php if ('assistant' === $entry['role']) : ?>
                             <div class="ai-seo-captain-site-chat-reply"><?php echo wp_kses_post($this->render_markdown($entry['reply'])); ?></div>
                             <?php if ('' !== $entry['notes']) : ?>

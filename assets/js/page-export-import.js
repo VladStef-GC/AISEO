@@ -581,4 +581,171 @@
         return div.innerHTML;
     }
 
+    // ----------------------------------------------------------------
+    //  Cache Settings — Export / Import
+    // ----------------------------------------------------------------
+
+    // -- Cache Export --
+    $('#aisc-cache-export-btn').on('click', function () {
+        var $btn = $(this);
+        var $spinner = $('#aisc-cache-export-spinner');
+        var $result = $('#aisc-cache-export-result');
+        $btn.prop('disabled', true);
+        $spinner.addClass('is-active');
+        $result.empty();
+
+        $.post(cfg.ajax_url, {
+            action: 'ai_seo_captain_cache_settings_export',
+            _nonce: cfg.nonce
+        }, function (response) {
+            $btn.prop('disabled', false);
+            $spinner.removeClass('is-active');
+
+            if (response.success) {
+                var payload = response.data;
+                var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = 'ai-seo-captain-cache-settings-' + (payload.source_domain || 'site') + '-' + new Date().toISOString().slice(0, 10) + '.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                $result.html('<div class="notice notice-success inline" style="margin:0;"><p><strong>&#10003;</strong> Cache settings exported successfully.</p></div>');
+            } else {
+                $result.html('<div class="notice notice-error inline" style="margin:0;"><p>' + escHtml(response.data && response.data.message ? response.data.message : 'Export failed.') + '</p></div>');
+            }
+        }).fail(function () {
+            $btn.prop('disabled', false);
+            $spinner.removeClass('is-active');
+            $result.html('<div class="notice notice-error inline" style="margin:0;"><p>Request failed. Please try again.</p></div>');
+        });
+    });
+
+    // -- Cache Import --
+    (function () {
+        var $dropzone = $('#aisc-cache-dropzone');
+        var $fileInput = $('#aisc-cache-import-file');
+        var $fileInfo = $('#aisc-cache-file-info');
+        var $importBtn = $('#aisc-cache-import-btn');
+        var selectedCacheFile = null;
+
+        // Skip if the cache section isn't on this page.
+        if (!$dropzone.length) return;
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            return (bytes / 1024).toFixed(1) + ' KB';
+        }
+
+        function setCacheFile(file) {
+            if (!file) return;
+            if (file.size > 1048576) {
+                $('#aisc-cache-import-result').html('<div class="notice notice-error inline" style="margin:0;"><p>File too large. Cache settings files should be under 1 MB.</p></div>');
+                return;
+            }
+            if (!/\.json$/i.test(file.name)) {
+                $('#aisc-cache-import-result').html('<div class="notice notice-error inline" style="margin:0;"><p>Invalid file type. Only .json files are accepted.</p></div>');
+                return;
+            }
+            selectedCacheFile = file;
+            $('#aisc-cache-filename').text(file.name);
+            $('#aisc-cache-filesize').text(formatSize(file.size));
+            $fileInfo.show();
+            $dropzone.hide();
+            $importBtn.prop('disabled', false);
+            $('#aisc-cache-import-result').empty();
+        }
+
+        function clearCacheFile() {
+            selectedCacheFile = null;
+            $fileInput.val('');
+            $fileInfo.hide();
+            $dropzone.show();
+            $importBtn.prop('disabled', true);
+            $('#aisc-cache-import-result').empty();
+        }
+
+        // Click to open file picker.
+        $dropzone.on('click', function (e) {
+            if (e.target.id !== 'aisc-cache-import-file') {
+                $fileInput[0].click();
+            }
+        });
+
+        $fileInput.on('change', function () {
+            if (this.files && this.files[0]) setCacheFile(this.files[0]);
+        });
+
+        $('#aisc-cache-file-clear').on('click', function (e) {
+            e.stopPropagation();
+            clearCacheFile();
+        });
+
+        // Drag & drop.
+        $dropzone.on('dragover dragenter', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).addClass('drag-over');
+        }).on('dragleave', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).removeClass('drag-over');
+        }).on('drop', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).removeClass('drag-over');
+            var files = e.originalEvent.dataTransfer.files;
+            if (files && files[0]) setCacheFile(files[0]);
+        });
+
+        // Import button.
+        $importBtn.on('click', function () {
+            if (!selectedCacheFile) return;
+
+            var $btn = $(this);
+            var $spinner = $('#aisc-cache-import-spinner');
+            $btn.prop('disabled', true);
+            $spinner.addClass('is-active');
+
+            var formData = new FormData();
+            formData.append('action', 'ai_seo_captain_cache_settings_import');
+            formData.append('_nonce', cfg.nonce);
+            formData.append('cache_file', selectedCacheFile);
+
+            $.ajax({
+                url: cfg.ajax_url,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    $spinner.removeClass('is-active');
+                    if (response.success) {
+                        var d = response.data;
+                        $('#aisc-cache-import-result').html(
+                            '<div class="notice notice-success inline" style="margin:0;"><p>' +
+                            '<strong>&#10003;</strong> ' + escHtml(d.message || 'Import successful.') +
+                            (d.source ? ' <em>(from: ' + escHtml(d.source) + ')</em>' : '') +
+                            '</p></div>'
+                        );
+                    } else {
+                        $btn.prop('disabled', false);
+                        $('#aisc-cache-import-result').html(
+                            '<div class="notice notice-error inline" style="margin:0;"><p>' +
+                            escHtml(response.data && response.data.message ? response.data.message : 'Import failed.') +
+                            '</p></div>'
+                        );
+                    }
+                },
+                error: function () {
+                    $btn.prop('disabled', false);
+                    $spinner.removeClass('is-active');
+                    $('#aisc-cache-import-result').html('<div class="notice notice-error inline" style="margin:0;"><p>Request failed. Please try again.</p></div>');
+                }
+            });
+        });
+    })();
+
 })(jQuery);

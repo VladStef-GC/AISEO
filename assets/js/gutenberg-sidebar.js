@@ -423,7 +423,7 @@
                     el(ChecksList, { checks: checks })
                 ),
 
-                // AI Assistant
+                // AI Commander
                 el(PanelBody, { title: cfg.i18n.aiAssistant, initialOpen: false },
                     el(PanelRow, null,
                         el(TextareaControl, {

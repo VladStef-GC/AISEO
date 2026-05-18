@@ -222,7 +222,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                                 <label class="aisc-toggle">
                                     <input id="ai-seo-editor-chat" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[editor_chat_enabled]" value="1" <?php checked(! empty($options['editor_chat_enabled'])); ?> />
                                     <span class="aisc-toggle__track"></span>
-                                    <span class="aisc-toggle__label">Enable the page-level AI assistant in the editor.</span>
+                                    <span class="aisc-toggle__label">Enable the page-level AI Commander in the editor.</span>
                                 </label>
                             </td>
                         </tr>

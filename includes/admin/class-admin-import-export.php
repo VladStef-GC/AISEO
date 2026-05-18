@@ -575,4 +575,149 @@ class Admin_Import_Export
 
         return '';
     }
+
+    // ------------------------------------------------------------------
+    //  Cache Settings Export / Import (simple JSON — settings only)
+    // ------------------------------------------------------------------
+
+    /**
+     * All cache-related option keys that we export/import.
+     */
+    private static function cache_setting_keys(): array
+    {
+        return array(
+            'cache_enabled',
+            'cache_page_enabled',
+            'cache_page_ttl',
+            'cache_browser_enabled',
+            'cache_gzip_enabled',
+            'cache_object_enabled',
+            'cache_preload_enabled',
+            'cache_preload_batch_size',
+            'cache_minify_css',
+            'cache_minify_js',
+            'cache_minify_html',
+            'cache_lazy_load',
+            'cache_lazy_skip_count',
+            'cache_exclude_urls',
+            'cache_exclude_cookies',
+            'cache_exclude_useragents',
+            'cache_query_string_cache',
+            'cache_wc_exclude_cart',
+        );
+    }
+
+    /**
+     * AJAX: Export cache settings as a downloadable JSON payload.
+     */
+    public function ajax_cache_settings_export(): void
+    {
+        check_ajax_referer('ai_seo_captain_import_v2', '_nonce');
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
+        }
+
+        $all_options   = $this->settings->get();
+        $cache_settings = array();
+
+        foreach (self::cache_setting_keys() as $key) {
+            if (array_key_exists($key, $all_options)) {
+                $cache_settings[$key] = $all_options[$key];
+            }
+        }
+
+        wp_send_json_success(array(
+            'plugin'         => 'ai-seo-captain',
+            'type'           => 'cache_settings',
+            'version'        => AI_SEO_CAPTAIN_VERSION,
+            'exported_at'    => gmdate('Y-m-d H:i:s'),
+            'source_domain'  => wp_parse_url(home_url(), PHP_URL_HOST),
+            'cache_settings' => $cache_settings,
+        ));
+    }
+
+    /**
+     * AJAX: Import cache settings from uploaded JSON.
+     */
+    public function ajax_cache_settings_import(): void
+    {
+        check_ajax_referer('ai_seo_captain_import_v2', '_nonce');
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'), 403);
+        }
+
+        if (empty($_FILES['cache_file']['tmp_name']) || 0 !== (int) $_FILES['cache_file']['error']) {
+            wp_send_json_error(array('message' => 'No file uploaded or upload error.'));
+        }
+
+        $filename = sanitize_file_name($_FILES['cache_file']['name'] ?? '');
+        if ('.json' !== strtolower(substr($filename, -5))) {
+            wp_send_json_error(array('message' => 'Invalid file type. Only .json files are accepted.'));
+        }
+
+        // 1 MB limit for cache settings (they're tiny).
+        if ($_FILES['cache_file']['size'] > 1048576) {
+            wp_send_json_error(array('message' => 'File too large. Cache settings files should be under 1 MB.'));
+        }
+
+        $json = file_get_contents($_FILES['cache_file']['tmp_name']); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+        $data = json_decode($json, true);
+
+        if (! is_array($data) || 'ai-seo-captain' !== ($data['plugin'] ?? '') || 'cache_settings' !== ($data['type'] ?? '')) {
+            wp_send_json_error(array('message' => 'Invalid file. Must be an SEO Captain Cache Settings export.'));
+        }
+
+        $incoming = $data['cache_settings'] ?? array();
+        if (empty($incoming) || ! is_array($incoming)) {
+            wp_send_json_error(array('message' => 'No cache settings found in the file.'));
+        }
+
+        // Whitelist: only accept known cache keys.
+        $allowed_keys = array_flip(self::cache_setting_keys());
+        $to_apply     = array_intersect_key($incoming, $allowed_keys);
+
+        if (empty($to_apply)) {
+            wp_send_json_error(array('message' => 'No valid cache settings found in the file.'));
+        }
+
+        // Sanitize values.
+        $boolean_keys = array(
+            'cache_enabled',
+            'cache_page_enabled',
+            'cache_browser_enabled',
+            'cache_gzip_enabled',
+            'cache_object_enabled',
+            'cache_preload_enabled',
+            'cache_minify_css',
+            'cache_minify_js',
+            'cache_minify_html',
+            'cache_lazy_load',
+            'cache_query_string_cache',
+            'cache_wc_exclude_cart',
+        );
+        $int_keys = array('cache_page_ttl', 'cache_preload_batch_size', 'cache_lazy_skip_count');
+
+        foreach ($to_apply as $key => &$value) {
+            if (in_array($key, $boolean_keys, true)) {
+                $value = $value ? 1 : 0;
+            } elseif (in_array($key, $int_keys, true)) {
+                $value = absint($value);
+            } else {
+                // Text fields (exclusion lists) — sanitize.
+                $value = sanitize_textarea_field($value);
+            }
+        }
+        unset($value);
+
+        // Merge into existing options.
+        $current_options = $this->settings->get();
+        $merged          = array_merge($current_options, $to_apply);
+        update_option(Settings::OPTION_NAME, $merged);
+
+        wp_send_json_success(array(
+            'message'  => sprintf('Imported %d cache settings successfully.', count($to_apply)),
+            'imported' => array_keys($to_apply),
+            'source'   => $data['source_domain'] ?? 'unknown',
+        ));
+    }
 }

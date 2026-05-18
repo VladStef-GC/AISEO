@@ -173,6 +173,7 @@ class Admin
 
         // --- Menu, assets, metabox ---
         add_action('admin_menu', array($this, 'register_menu'));
+        add_action('admin_bar_menu', array($this, 'register_admin_bar_menu'), 100);
         add_action('admin_enqueue_scripts', array($this, 'enqueue_editor_assets'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_page_assets'));
         add_action('add_meta_boxes', array($this, 'register_editor_metabox'), 10, 2);
@@ -190,6 +191,10 @@ class Admin
         add_action('wp_ajax_ai_seo_captain_import_validate', array($this->import_export, 'ajax_import_validate'));
         add_action('wp_ajax_ai_seo_captain_import_match', array($this->import_export, 'ajax_import_match'));
         add_action('wp_ajax_ai_seo_captain_import_process', array($this->import_export, 'ajax_import_process'));
+
+        // --- Cache Settings Export/Import AJAX handlers ---
+        add_action('wp_ajax_ai_seo_captain_cache_settings_export', array($this->import_export, 'ajax_cache_settings_export'));
+        add_action('wp_ajax_ai_seo_captain_cache_settings_import', array($this->import_export, 'ajax_cache_settings_import'));
 
         // --- AJAX handlers → delegates ---
         add_action('wp_ajax_' . self::AJAX_SAVE_ACTION, array($this->ajax, 'handle_save_editor_meta'));
@@ -431,7 +436,7 @@ class Admin
             );
             $text = sprintf(
                 /* translators: %s: link to Setup Wizard */
-                esc_html__('No audit data found. Please %s to unlock AI-powered features like the AI Strategist.', 'ai-seo-captain'),
+                esc_html__('No audit data found. Please %s to unlock AI-powered features like the AI Captain.', 'ai-seo-captain'),
                 '<a href="' . $setup_url . '">' . esc_html__('run a full audit or audit specific pages', 'ai-seo-captain') . '</a>'
             );
         }
@@ -441,6 +446,7 @@ class Admin
 
     public function register_menu(): void
     {
+        // 1. SEO Captain (Dashboard)
         add_menu_page(
             'SEO Captain',
             'SEO Captain',
@@ -451,24 +457,7 @@ class Admin
             58
         );
 
-        add_submenu_page(
-            'ai-seo-captain',
-            'SEO Captain Audit',
-            'Audit',
-            'manage_options',
-            'ai-seo-captain-audit',
-            array($this, 'render_audit_page')
-        );
-
-        add_submenu_page(
-            'ai-seo-captain',
-            'SEO Captain Setup Wizard',
-            'Setup Wizard',
-            'manage_options',
-            'ai-seo-captain-setup',
-            array($this, 'render_setup_wizard_page')
-        );
-
+        // 2. Settings
         add_submenu_page(
             'ai-seo-captain',
             'SEO Captain Settings',
@@ -478,15 +467,37 @@ class Admin
             array($this, 'render_settings_page')
         );
 
+        // 3. Setup Wizard
         add_submenu_page(
             'ai-seo-captain',
-            'Redirects &amp; 404 Monitor',
-            'Redirects',
+            'SEO Captain Setup Wizard',
+            'Setup Wizard',
             'manage_options',
-            'ai-seo-captain-redirects',
-            array($this, 'render_redirects_page')
+            'ai-seo-captain-setup',
+            array($this, 'render_setup_wizard_page')
         );
 
+        // 4. Audit
+        add_submenu_page(
+            'ai-seo-captain',
+            'SEO Captain Audit',
+            'Audit',
+            'manage_options',
+            'ai-seo-captain-audit',
+            array($this, 'render_audit_page')
+        );
+
+        // 5. AI Captain (Chat)
+        add_submenu_page(
+            'ai-seo-captain',
+            'AI Captain (Chat)',
+            'AI Captain (Chat)',
+            'manage_options',
+            'ai-seo-captain-site-chat',
+            array($this, 'render_site_chat_page')
+        );
+
+        // 6. Bulk Editor
         add_submenu_page(
             'ai-seo-captain',
             'Bulk SEO Editor',
@@ -496,6 +507,7 @@ class Admin
             array($this, 'render_bulk_editor_page')
         );
 
+        // 7. Images
         add_submenu_page(
             'ai-seo-captain',
             'Image SEO',
@@ -505,6 +517,7 @@ class Admin
             array($this, 'render_image_seo_page')
         );
 
+        // 7. Video
         add_submenu_page(
             'ai-seo-captain',
             'Video SEO',
@@ -514,6 +527,7 @@ class Admin
             array($this, 'render_video_seo_page')
         );
 
+        // 7. Documents
         add_submenu_page(
             'ai-seo-captain',
             'Document SEO',
@@ -523,6 +537,7 @@ class Admin
             array($this, 'render_document_seo_page')
         );
 
+        // 8. Keywords
         add_submenu_page(
             'ai-seo-captain',
             'Keyword Tracking',
@@ -532,24 +547,17 @@ class Admin
             array($this, 'render_keyword_tracking_page')
         );
 
+        // 9. Redirects
         add_submenu_page(
             'ai-seo-captain',
-            'Export / Import',
-            'Export / Import',
+            'Redirects &amp; 404 Monitor',
+            'Redirects',
             'manage_options',
-            'ai-seo-captain-export-import',
-            array($this, 'render_export_import_page')
+            'ai-seo-captain-redirects',
+            array($this, 'render_redirects_page')
         );
 
-        add_submenu_page(
-            'ai-seo-captain',
-            'AI SEO Strategist',
-            'AI Strategist',
-            'manage_options',
-            'ai-seo-captain-site-chat',
-            array($this, 'render_site_chat_page')
-        );
-
+        // 10. Scheduled Tasks
         add_submenu_page(
             'ai-seo-captain',
             'Scheduled Tasks',
@@ -559,14 +567,76 @@ class Admin
             array($this, 'render_cron_manager_page')
         );
 
+        // 11. Cache System
         add_submenu_page(
             'ai-seo-captain',
-            'Cache',
-            'Cache',
+            'Cache System',
+            'Cache System',
             'manage_options',
             'ai-seo-captain-cache',
             array($this, 'render_cache_page')
         );
+
+        // Export / Import (kept accessible)
+        add_submenu_page(
+            'ai-seo-captain',
+            'Export / Import',
+            'Export / Import',
+            'manage_options',
+            'ai-seo-captain-export-import',
+            array($this, 'render_export_import_page')
+        );
+    }
+
+    /**
+     * Add SEO Captain entries to the WordPress admin bar.
+     */
+    public function register_admin_bar_menu(\WP_Admin_Bar $admin_bar): void
+    {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
+        // Parent node
+        $admin_bar->add_node(array(
+            'id'    => 'ai-seo-captain',
+            'title' => 'SEO Captain',
+            'href'  => admin_url('admin.php?page=ai-seo-captain'),
+            'meta'  => array('title' => 'SEO Captain'),
+        ));
+
+        // Child: AI Captain Chat
+        $admin_bar->add_node(array(
+            'id'     => 'ai-seo-captain-ai-captain',
+            'parent' => 'ai-seo-captain',
+            'title'  => 'AI Captain Chat',
+            'href'   => admin_url('admin.php?page=ai-seo-captain-site-chat'),
+            'meta'   => array('title' => 'Open AI Captain (site-wide chat)'),
+        ));
+
+        // Child: AI Commander Chat – links to editor for current post (when viewing a singular page)
+        $commander_href = '';
+        if (! is_admin() && is_singular()) {
+            $post_id = get_queried_object_id();
+            if ($post_id) {
+                $commander_href = admin_url('post.php?post=' . $post_id . '&action=edit#ai-seo-captain-chat');
+            }
+        } elseif (is_admin()) {
+            global $post;
+            if (! empty($post->ID) && in_array(get_current_screen() ? get_current_screen()->base : '', array('post'), true)) {
+                $commander_href = '#ai-seo-captain-chat';
+            }
+        }
+
+        if ('' !== $commander_href) {
+            $admin_bar->add_node(array(
+                'id'     => 'ai-seo-captain-ai-commander',
+                'parent' => 'ai-seo-captain',
+                'title'  => 'AI Commander Chat',
+                'href'   => $commander_href,
+                'meta'   => array('title' => 'Open AI Commander (page-level chat)'),
+            ));
+        }
     }
 
     public function enqueue_editor_assets(string $hook_suffix): void
@@ -605,14 +675,14 @@ class Admin
                 'approvingText' => 'Approving suggestion...',
                 'approvedText' => 'Suggestion approved for future output.',
                 'chattingText' => 'Thinking through your SEO question...',
-                'chatReplyText' => 'AI assistant replied.',
+                'chatReplyText' => 'AI Commander replied.',
                 'historyTitle' => 'Recent AI suggestion history',
                 'errorText' => 'Could not save the SEO draft.',
                 'generateErrorText' => 'Could not generate SEO suggestions.',
                 'approveErrorText' => 'Could not approve the suggestion.',
-                'chatErrorText' => 'Could not get an AI assistant reply.',
+                'chatErrorText' => 'Could not get an AI Commander reply.',
                 'missingPostText' => 'Save the post once before using the SEO draft button.',
-                'emptyChatText' => 'Enter a question before asking the AI assistant.',
+                'emptyChatText' => 'Enter a question before asking the AI Commander.',
                 'limits' => array(
                     'titleMin' => self::TITLE_MIN_LENGTH,
                     'titleMax' => self::TITLE_MAX_LENGTH,
@@ -706,7 +776,7 @@ class Admin
                     'snippetPreview' => __('Snippet Preview', 'ai-seo-captain'),
                     'seoFields'      => __('SEO Fields', 'ai-seo-captain'),
                     'seoChecks'      => __('SEO Checks', 'ai-seo-captain'),
-                    'aiAssistant'    => __('AI Assistant', 'ai-seo-captain'),
+                    'aiAssistant'    => __('AI Commander', 'ai-seo-captain'),
                     'seoTitle'       => __('SEO Title', 'ai-seo-captain'),
                     'metaDescription' => __('Meta Description', 'ai-seo-captain'),
                     'focusKeyphrase' => __('Focus Keyphrase', 'ai-seo-captain'),
@@ -714,13 +784,13 @@ class Admin
                     'saveDraft'      => __('Save Draft', 'ai-seo-captain'),
                     'generateAi'     => __('Generate with AI', 'ai-seo-captain'),
                     'askAi'          => __('Ask AI', 'ai-seo-captain'),
-                    'askQuestion'    => __('Ask the AI assistant', 'ai-seo-captain'),
+                    'askQuestion'    => __('Ask the AI Commander', 'ai-seo-captain'),
                     'chatPlaceholder' => __('e.g. How can I improve the title for this page?', 'ai-seo-captain'),
                     'saved'          => __('SEO draft saved.', 'ai-seo-captain'),
                     'saveError'      => __('Could not save the SEO draft.', 'ai-seo-captain'),
                     'generated'      => __('AI suggestion loaded. Review and save to keep it.', 'ai-seo-captain'),
                     'generateError'  => __('Could not generate SEO suggestions.', 'ai-seo-captain'),
-                    'chatError'      => __('Could not get an AI assistant reply.', 'ai-seo-captain'),
+                    'chatError'      => __('Could not get an AI Commander reply.', 'ai-seo-captain'),
                     'noTitle'        => __('No SEO title set', 'ai-seo-captain'),
                     'noDescription'  => __('No meta description set', 'ai-seo-captain'),
                     'saveToContinue' => __('Save the post once to see SEO checks.', 'ai-seo-captain'),
@@ -1760,7 +1830,7 @@ jQuery(function ($) {
         style.setProperty('--tip-left', Math.min(rect.left, window.innerWidth - 320) + 'px');
     });
 
-    // ── AI Assistant sub-tab switching ────────────────────────────────
+    // ── AI Commander sub-tab switching ────────────────────────────────
     $(document).on('click', '.ai-seo-captain-assistant-tab', function () {
         var $tab = $(this);
         var target = $tab.data('target');
@@ -3074,8 +3144,8 @@ JS;
                             if (0 === $chat_readiness) {
                                 $chat_readiness_banner = self::render_banner(
                                     'is-warning',
-                                    esc_html__('AI Assistant unavailable', 'ai-seo-captain'),
-                                    esc_html__('No SEO metadata has been generated for this page yet. Use Generate with AI or fill in SEO fields manually, then save to enable the AI assistant.', 'ai-seo-captain')
+                                    esc_html__('AI Commander unavailable', 'ai-seo-captain'),
+                                    esc_html__('No SEO metadata has been generated for this page yet. Use Generate with AI or fill in SEO fields manually, then save to enable the AI Commander.', 'ai-seo-captain')
                                 );
                             } elseif (1 === $chat_readiness) {
                                 $chat_readiness_banner = self::render_banner(
@@ -3121,7 +3191,7 @@ JS;
 
                             echo $this->render_accordion_section(
                                 $chat_accordion_id,
-                                'AI Assistant <span class="ai-seo-captain-help-tip" data-tip="Unified AI workspace: chat for SEO advice, edit page content, and view suggestion history — all in one place."></span>',
+                                'AI Commander (Chat) <span class="ai-seo-captain-help-tip" data-tip="Unified AI workspace: chat for SEO advice, edit page content, and view suggestion history — all in one place."></span>',
                                 $ai_assistant_content,
                                 false,
                                 true
@@ -5179,12 +5249,12 @@ HTML;
         ob_start();
     ?>
         <?php if (empty($chat_messages)) : ?>
-            <p class="ai-seo-captain-empty-state">No AI assistant messages yet for this page.</p>
+            <p class="ai-seo-captain-empty-state">No AI Commander messages yet for this page.</p>
         <?php else : ?>
             <div class="ai-seo-captain-stack">
                 <?php foreach ($chat_messages as $entry) : ?>
                     <div class="ai-seo-captain-chat-item <?php echo 'assistant' === $entry['role'] ? 'is-assistant' : ''; ?>">
-                        <p style="margin:0 0 8px;"><strong><?php echo 'assistant' === $entry['role'] ? 'AI assistant' : 'You'; ?></strong></p>
+                        <p style="margin:0 0 8px;"><strong><?php echo 'assistant' === $entry['role'] ? 'AI Commander' : 'You'; ?></strong></p>
                         <?php if ('assistant' === $entry['role']) : ?>
                             <p style="margin:0 0 8px;"><?php echo esc_html($entry['reply']); ?></p>
                             <?php if ('' !== $entry['suggested_title']) : ?>

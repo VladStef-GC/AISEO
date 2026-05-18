@@ -127,13 +127,13 @@ class AI_Generator
         $message = trim($message);
 
         if ('' === $message) {
-            throw new \RuntimeException('Enter a message before asking the AI assistant.');
+            throw new \RuntimeException('Enter a message before asking the AI Commander.');
         }
 
         $options = $this->settings->get();
 
         if (empty($options['api_key'])) {
-            throw new \RuntimeException('Add an API key in SEO Captain Settings before using the AI assistant.');
+            throw new \RuntimeException('Add an API key in SEO Captain Settings before using the AI Commander.');
         }
 
         $provider = (string) $options['provider'];
@@ -158,7 +158,7 @@ class AI_Generator
         $notes = isset($payload['notes']) ? sanitize_textarea_field((string) $payload['notes']) : '';
 
         if ('' === $reply) {
-            throw new \RuntimeException('The AI assistant did not return a usable reply.');
+            throw new \RuntimeException('The AI Commander did not return a usable reply.');
         }
 
         return array(

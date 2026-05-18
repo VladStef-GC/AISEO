@@ -258,13 +258,13 @@ class Admin_Ajax
         }
 
         if ('' === trim($message)) {
-            wp_send_json_error(array('message' => __('Enter a question before asking the AI assistant.', 'ai-seo-captain')), 400);
+            wp_send_json_error(array('message' => __('Enter a question before asking the AI Commander.', 'ai-seo-captain')), 400);
         }
 
         $options = $this->settings->get();
 
         if (empty($options['editor_chat_enabled'])) {
-            wp_send_json_error(array('message' => __('The AI assistant is disabled in settings.', 'ai-seo-captain')), 400);
+            wp_send_json_error(array('message' => __('The AI Commander is disabled in settings.', 'ai-seo-captain')), 400);
         }
 
         try {
@@ -312,7 +312,7 @@ class Admin_Ajax
         $chat_messages = $this->history_store->get_recent_chat_messages($post_id, 12);
 
         $response_data = array(
-            'message' => __('AI assistant replied.', 'ai-seo-captain'),
+            'message' => __('AI Commander replied.', 'ai-seo-captain'),
             'notes'   => $reply['notes'],
             'chatHtml' => $this->admin->render_chat_history_markup($chat_messages),
         );

@@ -35,7 +35,7 @@ defined('ABSPATH') || exit;
 
         <!-- ========== EXPORT PANEL ========== -->
         <div class="aisc-ei-panel">
-            <h2><span class="dashicons dashicons-download"></span> <?php esc_html_e('Export', 'ai-seo-captain'); ?></h2>
+            <h2><span class="dashicons dashicons-download"></span> <?php esc_html_e('Export SEO Captain Settings', 'ai-seo-captain'); ?></h2>
             <p><?php esc_html_e('Download a JSON file with your SEO Captain data. Choose which sections to include in the export.', 'ai-seo-captain'); ?></p>
 
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
@@ -67,7 +67,7 @@ defined('ABSPATH') || exit;
 
         <!-- ========== IMPORT PANEL ========== -->
         <div class="aisc-ei-panel">
-            <h2><span class="dashicons dashicons-upload"></span> <?php esc_html_e('Import', 'ai-seo-captain'); ?></h2>
+            <h2><span class="dashicons dashicons-upload"></span> <?php esc_html_e('Import SEO Captain Settings', 'ai-seo-captain'); ?></h2>
             <p><?php esc_html_e('Upload a previously exported JSON file. You\'ll preview page matches and choose your import mode before any data is changed.', 'ai-seo-captain'); ?></p>
 
             <!-- Step indicator -->
@@ -268,4 +268,63 @@ defined('ABSPATH') || exit;
             </div>
         </div>
     </div>
+
+    <hr style="margin:40px 0;border:none;border-top:2px solid #1d2327;max-width:800px;" />
+
+    <!-- ========== CACHE SETTINGS EXPORT / IMPORT ========== -->
+    <div class="aisc-ei-wrap">
+
+        <!-- Cache Export Panel -->
+        <div class="aisc-ei-panel">
+            <h2><span class="dashicons dashicons-download"></span> <?php esc_html_e('Export Cache Settings', 'ai-seo-captain'); ?></h2>
+            <p><?php esc_html_e('Download a compact JSON file with your entire Cache & Performance configuration — toggle states, TTL values, exclusion rules, and drop-in preferences. No cached page data is included.', 'ai-seo-captain'); ?></p>
+
+            <div class="aisc-info-bar aisc-info-bar-blue" style="margin-bottom:16px;">
+                <span class="dashicons dashicons-info-outline"></span>
+                <span><?php esc_html_e('Use this to back up your cache configuration before making changes, or to replicate the same setup on another site.', 'ai-seo-captain'); ?></span>
+            </div>
+
+            <div class="aisc-btn-row">
+                <button type="button" class="aisc-btn aisc-btn-primary" id="aisc-cache-export-btn">
+                    <span class="dashicons dashicons-download"></span>
+                    <?php esc_html_e('Download Cache Settings', 'ai-seo-captain'); ?>
+                </button>
+                <span id="aisc-cache-export-spinner" class="spinner"></span>
+            </div>
+            <div id="aisc-cache-export-result" style="margin-top:12px;"></div>
+        </div>
+
+        <!-- Cache Import Panel -->
+        <div class="aisc-ei-panel">
+            <h2><span class="dashicons dashicons-upload"></span> <?php esc_html_e('Import Cache Settings', 'ai-seo-captain'); ?></h2>
+            <p><?php esc_html_e('Upload a previously exported cache settings file to restore your configuration or apply settings from another site.', 'ai-seo-captain'); ?></p>
+
+            <div id="aisc-cache-dropzone" class="aisc-dropzone">
+                <span class="dashicons dashicons-cloud-upload"></span>
+                <p><?php esc_html_e('Click or drag & drop your cache settings .json file here', 'ai-seo-captain'); ?></p>
+                <p class="aisc-dropzone-hint"><?php esc_html_e('Only cache settings files exported from SEO Captain are accepted (max 1 MB)', 'ai-seo-captain'); ?></p>
+                <input type="file" id="aisc-cache-import-file" accept=".json" style="display:none;" />
+            </div>
+
+            <div id="aisc-cache-file-info" class="aisc-info-bar aisc-info-bar-blue" style="display:none;margin-top:12px;">
+                <span class="dashicons dashicons-media-code"></span>
+                <div>
+                    <strong id="aisc-cache-filename"></strong>
+                    <span id="aisc-cache-filesize" style="color:var(--aisc-text-muted);margin-left:8px;"></span>
+                </div>
+                <button type="button" class="button button-small" id="aisc-cache-file-clear" style="margin-left:auto;"><?php esc_html_e('Remove', 'ai-seo-captain'); ?></button>
+            </div>
+
+            <div class="aisc-btn-row" style="margin-top:16px;">
+                <button type="button" class="aisc-btn aisc-btn-primary" id="aisc-cache-import-btn" disabled>
+                    <span class="dashicons dashicons-upload"></span>
+                    <?php esc_html_e('Import Cache Settings', 'ai-seo-captain'); ?>
+                </button>
+                <span id="aisc-cache-import-spinner" class="spinner"></span>
+            </div>
+            <div id="aisc-cache-import-result" style="margin-top:12px;"></div>
+        </div>
+
+    </div>
+
 </div>
