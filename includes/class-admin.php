@@ -2146,7 +2146,8 @@ JS;
         $nonce = wp_create_nonce('ai_seo_captain_nonce');
 
         wp_localize_script('ai-seo-page-images', 'aiSeoImages', array(
-            'nonce' => $nonce,
+            'nonce'     => $nonce,
+            'pluginUrl' => AI_SEO_CAPTAIN_URL,
         ));
 
         require __DIR__ . '/admin/view-images.php';
@@ -2312,7 +2313,8 @@ JS;
         $nonce = wp_create_nonce('ai_seo_captain_nonce');
 
         wp_localize_script('ai-seo-page-videos', 'aiSeoVideos', array(
-            'nonce' => $nonce,
+            'nonce'     => $nonce,
+            'pluginUrl' => AI_SEO_CAPTAIN_URL,
         ));
 
         require __DIR__ . '/admin/view-videos.php';
@@ -2487,7 +2489,8 @@ JS;
         $nonce = wp_create_nonce('ai_seo_captain_nonce');
 
         wp_localize_script('ai-seo-page-documents', 'aiSeoDocs', array(
-            'nonce' => $nonce,
+            'nonce'     => $nonce,
+            'pluginUrl' => AI_SEO_CAPTAIN_URL,
         ));
 
         require __DIR__ . '/admin/view-documents.php';

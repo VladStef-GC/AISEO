@@ -57,7 +57,11 @@ class Cache_Manager
         add_action('wp_ajax_aisc_remove_htaccess', array($this, 'ajax_remove_htaccess'));
         add_action('wp_ajax_aisc_purge_this_url', array($this, 'ajax_purge_this_url'));
         add_action('wp_ajax_aisc_purge_post_cache', array($this, 'ajax_purge_post_cache'));
+        add_action('wp_ajax_aisc_purge_media_cache', array($this, 'ajax_purge_media_cache'));
         add_action('wp_ajax_aisc_restore_htaccess', array($this, 'ajax_restore_htaccess'));
+
+        // Media URL versioning — append ?v= for cache-busted attachments.
+        add_filter('wp_get_attachment_url', array($this, 'filter_attachment_url'), 10, 2);
 
         if (empty($this->options['cache_enabled'])) {
             return;
@@ -539,6 +543,130 @@ class Cache_Manager
         $pc->purge(get_feed_link());
 
         wp_send_json_success(array('message' => __('Page cache cleared — changes are live.', 'ai-seo-captain')));
+    }
+
+    /**
+     * AJAX: Purge browser cache for a specific media attachment.
+     *
+     * Sets a version timestamp on the attachment so that wp_get_attachment_url
+     * appends ?v=<timestamp>, forcing browsers to re-download the file.
+     * Also purges page cache for all pages referencing this attachment.
+     */
+    public function ajax_purge_media_cache(): void
+    {
+        check_ajax_referer('ai_seo_captain_nonce', '_nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => __('Unauthorized.', 'ai-seo-captain')));
+        }
+
+        $attachment_id = isset($_POST['attachment_id']) ? absint($_POST['attachment_id']) : 0;
+        $post_id       = isset($_POST['post_id']) ? absint($_POST['post_id']) : 0;
+
+        // For embedded videos with no attachment — just purge the parent page.
+        if (! $attachment_id && $post_id) {
+            $pc = $this->page_cache;
+            if (null === $pc) {
+                $pc = new Page_Cache($this->options);
+            }
+            $permalink = get_permalink($post_id);
+            if ($permalink) {
+                $pc->purge($permalink);
+            }
+            $pc->purge(home_url('/'));
+            wp_send_json_success(array('message' => __('Page cache purged for this video.', 'ai-seo-captain')));
+        }
+
+        if (! $attachment_id || 'attachment' !== get_post_type($attachment_id)) {
+            wp_send_json_error(array('message' => __('Invalid attachment.', 'ai-seo-captain')));
+        }
+
+        // Set cache version meta — used by the URL filter to append ?v= param.
+        update_post_meta($attachment_id, '_aisc_cache_ver', time());
+
+        // Purge page cache for pages that use this attachment.
+        $pages_purged = $this->purge_pages_using_attachment($attachment_id);
+
+        wp_send_json_success(array(
+            'message' => sprintf(
+                __('Media cache busted. %d page(s) purged.', 'ai-seo-captain'),
+                $pages_purged
+            ),
+        ));
+    }
+
+    /**
+     * Purge page cache for all posts/pages that reference a given attachment.
+     *
+     * @return int Number of pages purged.
+     */
+    private function purge_pages_using_attachment(int $attachment_id): int
+    {
+        global $wpdb;
+
+        $pc = $this->page_cache;
+        if (null === $pc) {
+            $pc = new Page_Cache($this->options);
+        }
+
+        $purged = 0;
+        $url = wp_get_attachment_url($attachment_id);
+        $filename = $url ? basename($url) : '';
+
+        // 1. Posts where this attachment is the featured image.
+        $featured_posts = $wpdb->get_col($wpdb->prepare(
+            "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_thumbnail_id' AND meta_value = %d",
+            $attachment_id
+        ));
+
+        // 2. Posts that embed this attachment in content (by filename).
+        $content_posts = array();
+        if ($filename) {
+            $content_posts = $wpdb->get_col($wpdb->prepare(
+                "SELECT ID FROM {$wpdb->posts} WHERE post_status = 'publish' AND post_content LIKE %s",
+                '%' . $wpdb->esc_like($filename) . '%'
+            ));
+        }
+
+        // 3. Parent post.
+        $parent_id = wp_get_post_parent_id($attachment_id);
+        $parent_posts = $parent_id ? array($parent_id) : array();
+
+        $all_post_ids = array_unique(array_merge($featured_posts, $content_posts, $parent_posts));
+
+        foreach ($all_post_ids as $post_id) {
+            $permalink = get_permalink((int) $post_id);
+            if ($permalink) {
+                $pc->purge($permalink);
+                $purged++;
+            }
+        }
+
+        // Also purge the homepage.
+        $pc->purge(home_url('/'));
+
+        return $purged;
+    }
+
+    /**
+     * Filter wp_get_attachment_url to append cache-bust version parameter.
+     *
+     * Only applies to attachments that have been explicitly "purge cache"-d,
+     * so there is zero overhead for all other media files.
+     *
+     * @param string $url           The attachment URL.
+     * @param int    $attachment_id The attachment post ID.
+     * @return string
+     */
+    public function filter_attachment_url(string $url, int $attachment_id): string
+    {
+        $ver = get_post_meta($attachment_id, '_aisc_cache_ver', true);
+
+        if (! empty($ver)) {
+            $url = add_query_arg('v', (int) $ver, $url);
+        }
+
+        return $url;
     }
 
     // ───────────────────────────────────────────────────────────

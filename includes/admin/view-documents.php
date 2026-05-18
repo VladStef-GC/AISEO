@@ -160,6 +160,8 @@ $format_labels = array(
                                     <span style="color:#dcdcde;margin:0 3px;">|</span>
                                 <?php endif; ?>
                                 <a href="<?php echo esc_url(admin_url('upload.php?item=' . $att_id)); ?>" style="font-size:11px;color:#50575e;"><?php esc_html_e('Edit in Media', 'ai-seo-captain'); ?></a>
+                                <br/>
+                                <a href="#" class="ai-seo-purge-media" data-att-id="<?php echo (int) $att_id; ?>" style="font-size:11px;color:#d63638;"><?php esc_html_e('Purge Cache', 'ai-seo-captain'); ?></a>
                             </div>
                         </td>
                         <td data-sort-value="<?php echo esc_attr(strtolower($seo_title)); ?>">

@@ -107,7 +107,11 @@ defined('ABSPATH') || exit;
                         </td>
                         <td data-sort-value="<?php echo esc_attr(strtolower($filename)); ?>">
                             <strong><?php echo esc_html($filename); ?></strong>
-                            <div style="margin-top:2px;"><a href="<?php echo esc_url(admin_url('upload.php?item=' . $att_id)); ?>" style="font-size:12px;color:#50575e;"><?php esc_html_e('Edit in Media', 'ai-seo-captain'); ?></a></div>
+                            <div style="margin-top:2px;">
+                                <a href="<?php echo esc_url(admin_url('upload.php?item=' . $att_id)); ?>" style="font-size:12px;color:#50575e;"><?php esc_html_e('Edit in Media', 'ai-seo-captain'); ?></a>
+                                <br/>
+                                <a href="#" class="ai-seo-purge-media" data-att-id="<?php echo (int) $att_id; ?>" style="font-size:12px;color:#d63638;"><?php esc_html_e('Purge Cache', 'ai-seo-captain'); ?></a>
+                            </div>
                         </td>
                         <td data-sort-value="<?php echo esc_attr(strtolower($alt)); ?>">
                             <input type="text" class="large-text ai-seo-img-alt" value="<?php echo esc_attr($alt); ?>" data-original="<?php echo esc_attr($alt); ?>" placeholder="<?php esc_attr_e('Enter alt text\u2026', 'ai-seo-captain'); ?>" />

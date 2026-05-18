@@ -102,7 +102,7 @@ defined('ABSPATH') || exit;
                         $detail_line .= ('' !== $detail_line ? ' · ' : '') . size_format($v['filesize']);
                     }
                 ?>
-                    <tr data-video-key="<?php echo esc_attr($v['key']); ?>" data-post-id="<?php echo (int) $v['post_id']; ?>">
+                    <tr data-video-key="<?php echo esc_attr($v['key']); ?>" data-post-id="<?php echo (int) $v['post_id']; ?>" data-att-id="<?php echo (int) $v['att_id']; ?>">
                         <td>
                             <?php if (! empty($v['thumbnail'])) : ?>
                                 <img src="<?php echo esc_url($v['thumbnail']); ?>" alt="" style="<?php echo $thumb_style; ?>" />
@@ -118,6 +118,9 @@ defined('ABSPATH') || exit;
                                 <?php if ('' !== $detail_line) : ?>
                                     <span style="margin-left:4px;"><?php echo esc_html($detail_line); ?></span>
                                 <?php endif; ?>
+                            </div>
+                            <div style="margin-top:2px;">
+                                <a href="#" class="ai-seo-purge-media" data-att-id="<?php echo (int) $v['att_id']; ?>" data-post-id="<?php echo (int) $v['post_id']; ?>" style="font-size:11px;color:#d63638;"><?php esc_html_e('Purge Cache', 'ai-seo-captain'); ?></a>
                             </div>
                         </td>
                         <td data-sort-value="<?php echo esc_attr(strtolower($v['seo_title'])); ?>">
