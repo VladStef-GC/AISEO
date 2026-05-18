@@ -115,7 +115,6 @@ class Broken_Link_Scanner
                 }
 
                 $state['offset'] += self::POSTS_PER_TICK;
-
             } elseif ('menus' === $phase) {
                 // Phase 2: Verify all navigation menu links resolve.
                 $results = $this->scan_nav_menus();
@@ -123,7 +122,6 @@ class Broken_Link_Scanner
                 $state['scanned_posts'] += $results['scanned'];
                 $state['phase'] = 'attachments';
                 $state['offset'] = 0;
-
             } elseif ('attachments' === $phase) {
                 // Phase 3: Verify attachment files exist on disk.
                 $attachments = $wpdb->get_results($wpdb->prepare(
@@ -761,6 +759,9 @@ class Broken_Link_Scanner
     {
         global $wpdb;
 
+        // Pull the real hit count from 404 Monitor for this URL (if it exists there).
+        $real_hits = $this->get_404_hit_count($url);
+
         // Avoid duplicates.
         $existing = $wpdb->get_var($wpdb->prepare(
             "SELECT id FROM {$this->table} WHERE source_url = %s AND type = %s LIMIT 1",
@@ -773,8 +774,8 @@ class Broken_Link_Scanner
             $wpdb->update(
                 $this->table,
                 array(
-                    'hit_count' => 1,
-                    'last_hit'  => current_time('mysql', true),
+                    'hit_count'  => $real_hits,
+                    'last_hit'   => current_time('mysql', true),
                     'target_url' => $note,
                 ),
                 array('id' => (int) $existing),
@@ -791,12 +792,58 @@ class Broken_Link_Scanner
                 'target_url'  => $note, // Reuse target_url field for the note/description.
                 'status_code' => 404,
                 'type'        => $type, // 'broken_media' or 'broken_link'
-                'hit_count'   => 1,
+                'hit_count'   => $real_hits,
                 'last_hit'    => current_time('mysql', true),
                 'created_at'  => current_time('mysql', true),
             ),
             array('%s', '%s', '%d', '%s', '%d', '%s', '%s')
         );
+    }
+
+    /**
+     * Look up the hit count from 404 Monitor for a given URL.
+     *
+     * Checks both the exact URL and common variants (with/without trailing slash,
+     * with/without site subdirectory prefix).
+     */
+    private function get_404_hit_count(string $url): int
+    {
+        global $wpdb;
+
+        // Normalise: try the URL as-is, with trailing slash, and without.
+        $variants = array(
+            $url,
+            rtrim($url, '/'),
+            trailingslashit($url),
+        );
+
+        // Also try with/without site subdirectory prefix.
+        $site_path = wp_parse_url(home_url(), PHP_URL_PATH);
+        if ($site_path && '/' !== $site_path) {
+            $site_path = trailingslashit($site_path);
+            $bare = ltrim($url, '/');
+            if (0 === strpos('/' . $bare, $site_path)) {
+                // URL has the subdirectory — add variant without it.
+                $without = '/' . substr('/' . $bare, strlen($site_path));
+                $variants[] = $without;
+                $variants[] = rtrim($without, '/');
+            } else {
+                // URL doesn't have subdirectory — add variant with it.
+                $with = $site_path . ltrim($bare, '/');
+                $variants[] = $with;
+                $variants[] = trailingslashit($with);
+            }
+        }
+
+        $variants = array_unique($variants);
+        $placeholders = implode(',', array_fill(0, count($variants), '%s'));
+
+        $hit_count = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT hit_count FROM {$this->table} WHERE type = '404' AND source_url IN ($placeholders) ORDER BY hit_count DESC LIMIT 1",
+            ...$variants
+        ));
+
+        return max(1, $hit_count);
     }
 
     /**
