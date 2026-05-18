@@ -68,11 +68,12 @@ class Broken_Link_Scanner
             $this->clear_broken_links();
             $state = array(
                 'running'       => true,
+                'phase'         => 'content', // content → menus → attachments → done
                 'offset'        => 0,
                 'broken_media'  => 0,
                 'broken_links'  => 0,
                 'scanned_posts' => 0,
-                'total_posts'   => $this->count_published_posts(),
+                'total_posts'   => $this->count_scannable_items(),
                 'started_at'    => current_time('mysql', true),
             );
         }
@@ -87,31 +88,97 @@ class Broken_Link_Scanner
                 return $this->state_to_result($state, false);
             }
 
-            // Fetch next batch of posts.
-            $posts = $wpdb->get_results($wpdb->prepare(
-                "SELECT ID, post_content, post_type FROM {$wpdb->posts}
-                 WHERE post_status = 'publish' AND post_type IN ('post', 'page', 'product')
-                 ORDER BY ID ASC LIMIT %d OFFSET %d",
-                self::POSTS_PER_TICK,
-                $state['offset']
-            ));
+            $phase = $state['phase'] ?? 'content';
 
-            if (empty($posts)) {
-                // Scan complete.
+            if ('content' === $phase) {
+                // Phase 1: Scan post_content of published content.
+                $posts = $wpdb->get_results($wpdb->prepare(
+                    "SELECT ID, post_content, post_type FROM {$wpdb->posts}
+                     WHERE post_status = 'publish' AND post_type IN ('post', 'page', 'product')
+                     ORDER BY ID ASC LIMIT %d OFFSET %d",
+                    self::POSTS_PER_TICK,
+                    $state['offset']
+                ));
+
+                if (empty($posts)) {
+                    // Move to next phase.
+                    $state['phase'] = 'menus';
+                    $state['offset'] = 0;
+                    continue;
+                }
+
+                foreach ($posts as $post) {
+                    $results = $this->scan_post($post);
+                    $state['broken_media'] += $results['broken_media'];
+                    $state['broken_links'] += $results['broken_links'];
+                    $state['scanned_posts']++;
+                }
+
+                $state['offset'] += self::POSTS_PER_TICK;
+
+            } elseif ('menus' === $phase) {
+                // Phase 2: Verify all navigation menu links resolve.
+                $results = $this->scan_nav_menus();
+                $state['broken_links'] += $results['broken_links'];
+                $state['scanned_posts'] += $results['scanned'];
+                $state['phase'] = 'attachments';
+                $state['offset'] = 0;
+
+            } elseif ('attachments' === $phase) {
+                // Phase 3: Verify attachment files exist on disk.
+                $attachments = $wpdb->get_results($wpdb->prepare(
+                    "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'attachment'
+                     ORDER BY ID ASC LIMIT %d OFFSET %d",
+                    self::POSTS_PER_TICK,
+                    $state['offset']
+                ));
+
+                if (empty($attachments)) {
+                    // Move to trashed content phase.
+                    $state['phase'] = 'trashed';
+                    $state['offset'] = 0;
+                    continue;
+                }
+
+                foreach ($attachments as $att) {
+                    $file = get_attached_file($att->ID);
+                    if ($file && ! file_exists($file)) {
+                        $url = wp_get_attachment_url($att->ID);
+                        $this->record_broken('broken_media', $url ?: "(attachment #{$att->ID})", sprintf(
+                            'Media Library file missing from disk: %s',
+                            $file
+                        ), $att->ID);
+                        $state['broken_media']++;
+                    }
+                    $state['scanned_posts']++;
+                }
+
+                $state['offset'] += self::POSTS_PER_TICK;
+            } elseif ('trashed' === $phase) {
+                // Phase 4: Find trashed/draft posts that were once published (SEO broken links).
+                $results = $this->scan_trashed_content();
+                $state['broken_links'] += $results['broken_links'];
+                $state['scanned_posts'] += $results['scanned'];
+                // Phase 5: Cross-reference 404 Monitor entries with filesystem.
+                $state['phase'] = 'verify_404s';
+            } elseif ('verify_404s' === $phase) {
+                // Phase 5: Check 404 Monitor entries for media files that don't exist on disk.
+                $results = $this->verify_404_media();
+                $state['broken_media'] += $results['broken_media'];
+                $state['scanned_posts'] += $results['scanned'];
+                // All phases complete.
+                $state['running'] = false;
+                $state['phase'] = 'done';
+                $state['completed_at'] = current_time('mysql', true);
+                $this->save_state($state);
+                return $this->state_to_result($state, true);
+            } else {
+                // Unknown phase — mark complete.
                 $state['running'] = false;
                 $state['completed_at'] = current_time('mysql', true);
                 $this->save_state($state);
                 return $this->state_to_result($state, true);
             }
-
-            foreach ($posts as $post) {
-                $results = $this->scan_post($post);
-                $state['broken_media'] += $results['broken_media'];
-                $state['broken_links'] += $results['broken_links'];
-                $state['scanned_posts']++;
-            }
-
-            $state['offset'] += self::POSTS_PER_TICK;
         }
     }
 
@@ -127,49 +194,101 @@ class Broken_Link_Scanner
             $this->clear_broken_links();
             $state = array(
                 'running'       => true,
+                'phase'         => 'content',
                 'offset'        => 0,
                 'broken_media'  => 0,
                 'broken_links'  => 0,
                 'scanned_posts' => 0,
-                'total_posts'   => $this->count_published_posts(),
+                'total_posts'   => $this->count_scannable_items(),
                 'started_at'    => current_time('mysql', true),
             );
         }
 
+        // Run with a 15-second time limit per tick.
+        $start = time();
         global $wpdb;
 
-        $posts = $wpdb->get_results($wpdb->prepare(
-            "SELECT ID, post_content, post_type FROM {$wpdb->posts}
-             WHERE post_status = 'publish' AND post_type IN ('post', 'page', 'product')
-             ORDER BY ID ASC LIMIT %d OFFSET %d",
-            self::POSTS_PER_TICK,
-            $state['offset']
-        ));
+        $phase = $state['phase'] ?? 'content';
 
-        if (empty($posts)) {
+        if ('content' === $phase) {
+            $posts = $wpdb->get_results($wpdb->prepare(
+                "SELECT ID, post_content, post_type FROM {$wpdb->posts}
+                 WHERE post_status = 'publish' AND post_type IN ('post', 'page', 'product')
+                 ORDER BY ID ASC LIMIT %d OFFSET %d",
+                self::POSTS_PER_TICK,
+                $state['offset']
+            ));
+
+            if (empty($posts)) {
+                $state['phase'] = 'menus';
+                $state['offset'] = 0;
+            } else {
+                foreach ($posts as $post) {
+                    $results = $this->scan_post($post);
+                    $state['broken_media'] += $results['broken_media'];
+                    $state['broken_links'] += $results['broken_links'];
+                    $state['scanned_posts']++;
+                }
+                $state['offset'] += self::POSTS_PER_TICK;
+            }
+        } elseif ('menus' === $phase) {
+            $results = $this->scan_nav_menus();
+            $state['broken_links'] += $results['broken_links'];
+            $state['scanned_posts'] += $results['scanned'];
+            $state['phase'] = 'attachments';
+            $state['offset'] = 0;
+        } elseif ('attachments' === $phase) {
+            $attachments = $wpdb->get_results($wpdb->prepare(
+                "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'attachment'
+                 ORDER BY ID ASC LIMIT %d OFFSET %d",
+                self::POSTS_PER_TICK,
+                $state['offset']
+            ));
+
+            if (empty($attachments)) {
+                $state['phase'] = 'trashed';
+                $state['offset'] = 0;
+            } else {
+                foreach ($attachments as $att) {
+                    $file = get_attached_file($att->ID);
+                    if ($file && ! file_exists($file)) {
+                        $url = wp_get_attachment_url($att->ID);
+                        $this->record_broken('broken_media', $url ?: "(attachment #{$att->ID})", sprintf(
+                            'Media Library file missing from disk: %s',
+                            $file
+                        ), $att->ID);
+                        $state['broken_media']++;
+                    }
+                    $state['scanned_posts']++;
+                }
+                $state['offset'] += self::POSTS_PER_TICK;
+            }
+        } elseif ('trashed' === $phase) {
+            $results = $this->scan_trashed_content();
+            $state['broken_links'] += $results['broken_links'];
+            $state['scanned_posts'] += $results['scanned'];
+            $state['phase'] = 'verify_404s';
+        } elseif ('verify_404s' === $phase) {
+            $results = $this->verify_404_media();
+            $state['broken_media'] += $results['broken_media'];
+            $state['scanned_posts'] += $results['scanned'];
+            $state['running'] = false;
+            $state['phase'] = 'done';
+            $state['completed_at'] = current_time('mysql', true);
+            $this->save_state($state);
+            return;
+        } else {
             $state['running'] = false;
             $state['completed_at'] = current_time('mysql', true);
             $this->save_state($state);
             return;
         }
 
-        foreach ($posts as $post) {
-            $results = $this->scan_post($post);
-            $state['broken_media'] += $results['broken_media'];
-            $state['broken_links'] += $results['broken_links'];
-            $state['scanned_posts']++;
-        }
-
-        $state['offset'] += self::POSTS_PER_TICK;
-
-        // If there are more posts, schedule next tick in 1 minute.
-        if ($state['scanned_posts'] < $state['total_posts']) {
+        // If still running, schedule next tick.
+        if (! empty($state['running']) && $state['phase'] !== 'done') {
             if (! wp_next_scheduled('ai_seo_captain_broken_link_scan')) {
                 wp_schedule_single_event(time() + 60, 'ai_seo_captain_broken_link_scan');
             }
-        } else {
-            $state['running'] = false;
-            $state['completed_at'] = current_time('mysql', true);
         }
 
         $this->save_state($state);
@@ -232,6 +351,185 @@ class Broken_Link_Scanner
         }
 
         return array('broken_media' => $broken_media, 'broken_links' => $broken_links);
+    }
+
+    /**
+     * Scan navigation menu items for broken links.
+     *
+     * @return array{broken_links: int, scanned: int}
+     */
+    private function scan_nav_menus(): array
+    {
+        global $wpdb;
+        $broken_links = 0;
+        $scanned = 0;
+
+        // Get all nav menu items.
+        $menu_items = $wpdb->get_results(
+            "SELECT ID, post_title FROM {$wpdb->posts}
+             WHERE post_type = 'nav_menu_item' AND post_status = 'publish'"
+        );
+
+        foreach ($menu_items as $item) {
+            $scanned++;
+            $type = get_post_meta($item->ID, '_menu_item_type', true);
+            $object_id = (int) get_post_meta($item->ID, '_menu_item_object_id', true);
+            $url = get_post_meta($item->ID, '_menu_item_url', true);
+
+            if ('post_type' === $type && $object_id > 0) {
+                // Menu links to a post/page — verify it's published.
+                $status = get_post_status($object_id);
+                if (! $status || ! in_array($status, array('publish', 'private'), true)) {
+                    $label = $item->post_title ?: "(menu item #{$item->ID})";
+                    $this->record_broken('broken_link', get_permalink($object_id) ?: "post_id:$object_id", sprintf(
+                        'Navigation menu "%s" links to unpublished/deleted content (post ID %d, status: %s).',
+                        $label,
+                        $object_id,
+                        $status ?: 'deleted'
+                    ), $item->ID);
+                    $broken_links++;
+                }
+            } elseif ('taxonomy' === $type && $object_id > 0) {
+                // Menu links to a term — verify it exists.
+                $term = get_term($object_id);
+                if (! $term || is_wp_error($term)) {
+                    $label = $item->post_title ?: "(menu item #{$item->ID})";
+                    $this->record_broken('broken_link', "term_id:$object_id", sprintf(
+                        'Navigation menu "%s" links to deleted taxonomy term (ID %d).',
+                        $label,
+                        $object_id
+                    ), $item->ID);
+                    $broken_links++;
+                }
+            } elseif ('custom' === $type && ! empty($url)) {
+                // Custom URL — verify if internal and resolves.
+                if ('#' === $url || empty(trim($url))) {
+                    continue;
+                }
+                if ($this->is_internal_url($url) && ! $this->internal_link_resolves($url)) {
+                    $label = $item->post_title ?: "(menu item #{$item->ID})";
+                    $this->record_broken('broken_link', $url, sprintf(
+                        'Navigation menu "%s" custom link does not resolve.',
+                        $label
+                    ), $item->ID);
+                    $broken_links++;
+                }
+            }
+        }
+
+        return array('broken_links' => $broken_links, 'scanned' => $scanned);
+    }
+
+    /**
+     * Scan for trashed/draft posts that were previously published.
+     * These represent SEO-damaging broken links (Google still has them indexed).
+     *
+     * @return array{broken_links: int, scanned: int}
+     */
+    private function scan_trashed_content(): array
+    {
+        global $wpdb;
+        $broken_links = 0;
+        $scanned = 0;
+
+        // Find posts/pages in trash or draft that have a slug (were once published).
+        $trashed = $wpdb->get_results(
+            "SELECT ID, post_name, post_type, post_status, post_title FROM {$wpdb->posts}
+             WHERE post_status IN ('trash', 'draft')
+               AND post_type IN ('post', 'page', 'product')
+               AND post_name != ''
+             ORDER BY ID ASC"
+        );
+
+        foreach ($trashed as $post) {
+            $scanned++;
+            $slug = str_replace('__trashed', '', $post->post_name);
+
+            // Build the URL this post would have had when published.
+            $url = home_url('/' . $slug . '/');
+
+            $this->record_broken('broken_link', $url, sprintf(
+                '%s "%s" is in %s (post ID %d). Was likely indexed by search engines — consider restoring or adding a redirect.',
+                ucfirst($post->post_type),
+                $post->post_title,
+                $post->post_status,
+                $post->ID
+            ), (int) $post->ID);
+            $broken_links++;
+        }
+
+        return array('broken_links' => $broken_links, 'scanned' => $scanned);
+    }
+
+    /**
+     * Cross-reference 404 Monitor entries: check if recorded 404 media URLs
+     * are files that genuinely don't exist on disk.
+     *
+     * @return array{broken_media: int, scanned: int}
+     */
+    private function verify_404_media(): array
+    {
+        global $wpdb;
+        $broken_media = 0;
+        $scanned = 0;
+
+        // Get media-related 404 entries from the monitor.
+        $media_extensions = array('jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'webm', 'pdf');
+        $like_clauses = array();
+        foreach ($media_extensions as $ext) {
+            $like_clauses[] = $wpdb->prepare("source_url LIKE %s", '%.' . $ext . '%');
+        }
+
+        $where = implode(' OR ', $like_clauses);
+        $entries_404 = $wpdb->get_results(
+            "SELECT id, source_url, hit_count FROM {$this->table}
+             WHERE type = '404' AND ($where)
+             ORDER BY hit_count DESC LIMIT 100"
+        );
+
+        foreach ($entries_404 as $entry) {
+            $scanned++;
+            $url = rtrim($entry->source_url, '/'); // Strip trailing slash from media URLs.
+
+            // Try to map this 404 URL to a filesystem path.
+            $path = $this->url_to_filepath($url);
+            if (null !== $path && ! file_exists($path)) {
+                $this->record_broken('broken_media', $url, sprintf(
+                    'File confirmed missing on disk. Hit %d times in 404 Monitor. Path: %s',
+                    (int) $entry->hit_count,
+                    $path
+                ), 0);
+                $broken_media++;
+            } elseif (null === $path) {
+                // Can't map to filesystem — try ABSPATH resolution.
+                $site_path = wp_parse_url(home_url(), PHP_URL_PATH);
+                $request_path = $url;
+                if ($site_path && '/' !== $site_path) {
+                    // Strip site subdirectory to get filesystem-relative path.
+                    $site_path = trailingslashit($site_path);
+                    if (0 === strpos($request_path, $site_path)) {
+                        $request_path = substr($request_path, strlen($site_path));
+                    }
+                } else {
+                    $request_path = ltrim($request_path, '/');
+                }
+
+                $abs_path = ABSPATH . $request_path;
+                // Remove trailing slash for file check.
+                $abs_path = rtrim($abs_path, '/\\');
+
+                if (! file_exists($abs_path)) {
+                    $this->record_broken('broken_media', $url, sprintf(
+                        'File confirmed missing. Hit %d times in 404 Monitor. Expected at: %s',
+                        (int) $entry->hit_count,
+                        $abs_path
+                    ), 0);
+                    $broken_media++;
+                }
+            }
+        }
+
+        return array('broken_media' => $broken_media, 'scanned' => $scanned);
     }
 
     /**
@@ -375,7 +673,7 @@ class Broken_Link_Scanner
         // Remove query string if present.
         $path_part = strtok($path_part, '?');
 
-        return $upload_dir . $path_part;
+        return $upload_dir . '/' . ltrim($path_part, '/');
     }
 
     /**
@@ -524,12 +822,14 @@ class Broken_Link_Scanner
         update_option(self::STATE_OPTION, $state, false);
     }
 
-    private function count_published_posts(): int
+    private function count_scannable_items(): int
     {
         global $wpdb;
+        // Posts + pages + products + nav menu items + attachments.
         return (int) $wpdb->get_var(
             "SELECT COUNT(*) FROM {$wpdb->posts}
-             WHERE post_status = 'publish' AND post_type IN ('post', 'page', 'product')"
+             WHERE (post_status = 'publish' AND post_type IN ('post', 'page', 'product', 'nav_menu_item'))
+                OR post_type = 'attachment'"
         );
     }
 
