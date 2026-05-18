@@ -53,6 +53,12 @@ class Cron_Manager
             'description' => 'Pings Google and Bing to re-crawl the XML sitemap. Runs twice daily to ensure search engines are aware of recent content changes.',
             'callback'    => 'run_sitemap_ping',
         ),
+        'ai_seo_captain_broken_link_scan' => array(
+            'schedule'    => 'daily',
+            'label'       => 'Broken Link & Media Scan',
+            'description' => 'Checks all published content for broken internal links and missing media files by verifying against the database and filesystem. No HTTP requests — zero performance impact.',
+            'callback'    => 'run_broken_link_scan',
+        ),
     );
 
     public function __construct(Settings $settings, Content_Indexer $indexer)
@@ -252,6 +258,37 @@ class Cron_Manager
             : 'HTTP ' . wp_remote_retrieve_response_code($bing);
 
         return sprintf('Bing: %s', $results['bing']);
+    }
+
+    /**
+     * Broken Link & Media Scan — delegates to the Broken_Link_Scanner.
+     */
+    private function run_broken_link_scan(): string
+    {
+        $scanner = Plugin::instance()->get_broken_link_scanner();
+
+        if (! $scanner) {
+            return 'Scanner not available.';
+        }
+
+        $scanner->cron_scan_tick();
+        $state = $scanner->get_state();
+
+        if (empty($state['running'])) {
+            $counts = $scanner->get_broken_counts();
+            return sprintf(
+                'Scan complete. Found %d broken media, %d broken links across %d posts.',
+                $counts['media'],
+                $counts['links'],
+                $state['scanned_posts'] ?? 0
+            );
+        }
+
+        return sprintf(
+            'Scan in progress: %d/%d posts processed.',
+            $state['scanned_posts'] ?? 0,
+            $state['total_posts'] ?? 0
+        );
     }
 
     // -------------------------------------------------------------------------

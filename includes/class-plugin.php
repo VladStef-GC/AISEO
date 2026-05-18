@@ -30,6 +30,8 @@ final class Plugin
 
     private ?Cache\Cache_Manager $cache_manager = null;
 
+    private ?Broken_Link_Scanner $broken_link_scanner = null;
+
     public static function instance(): Plugin
     {
         if (null === self::$instance) {
@@ -49,6 +51,8 @@ final class Plugin
         $this->sitemap         = new Sitemap($this->settings);
         $this->redirects       = new Redirects($this->settings);
         $this->cron_manager    = new Cron_Manager($this->settings, $this->content_indexer);
+        $this->broken_link_scanner = new Broken_Link_Scanner();
+        $this->broken_link_scanner->register_hooks();
 
         // Cache system — boot after sitemap so preloader can access it.
         $this->cache_manager = new Cache\Cache_Manager($this->settings);
@@ -135,6 +139,14 @@ final class Plugin
     public function get_cron_manager(): ?Cron_Manager
     {
         return $this->cron_manager;
+    }
+
+    /**
+     * Get the Broken Link Scanner instance.
+     */
+    public function get_broken_link_scanner(): ?Broken_Link_Scanner
+    {
+        return $this->broken_link_scanner;
     }
 
     /**

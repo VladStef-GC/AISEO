@@ -355,6 +355,11 @@ class Redirects
             <nav class="nav-tab-wrapper" style="margin-bottom:16px;">
                 <a href="<?php echo esc_url(add_query_arg('tab', 'redirects')); ?>" class="nav-tab <?php echo 'redirects' === $active_tab ? 'nav-tab-active' : ''; ?>">Redirects (<?php echo count($redirects); ?>)</a>
                 <a href="<?php echo esc_url(add_query_arg('tab', '404s')); ?>" class="nav-tab <?php echo '404s' === $active_tab ? 'nav-tab-active' : ''; ?>">404 Monitor (<?php echo count($errors_404); ?>)</a>
+                <?php
+                $scanner = Plugin::instance()->get_broken_link_scanner();
+                $broken_counts = $scanner ? $scanner->get_broken_counts() : array('total' => 0);
+                ?>
+                <a href="<?php echo esc_url(add_query_arg('tab', 'broken_links')); ?>" class="nav-tab <?php echo 'broken_links' === $active_tab ? 'nav-tab-active' : ''; ?>">Broken Links (<?php echo (int) $broken_counts['total']; ?>)</a>
             </nav>
 
             <?php if ('redirects' === $active_tab) : ?>
@@ -412,7 +417,7 @@ class Redirects
                     <p>No redirects configured yet.</p>
                 <?php endif; ?>
 
-            <?php else : ?>
+            <?php elseif ('404s' === $active_tab) : ?>
                 <?php if (! empty($errors_404)) : ?>
                     <p><button type="button" class="button" id="ai-seo-clear-404s">Clear all 404s</button></p>
                     <table class="widefat striped">
@@ -437,6 +442,71 @@ class Redirects
                     </table>
                 <?php else : ?>
                     <p>No 404 errors recorded yet.</p>
+                <?php endif; ?>
+
+            <?php elseif ('broken_links' === $active_tab) : ?>
+                <?php
+                $scan_state = $scanner ? $scanner->get_state() : array();
+                $broken_entries = $scanner ? $scanner->get_broken_entries() : array();
+                $is_running = ! empty($scan_state['running']);
+                ?>
+                <div style="margin-bottom:20px; padding:16px; background:#fff; border:1px solid #ccd0d4;">
+                    <h3 style="margin-top:0;">Broken Link & Media Scanner</h3>
+                    <p style="color:#555;">Scans all published posts, pages, and products for broken internal links and missing media files. Uses only database and filesystem checks — zero HTTP requests, no performance impact.</p>
+
+                    <div style="display:flex;align-items:center;gap:12px;margin-top:12px;">
+                        <button type="button" class="button button-primary" id="ai-seo-broken-scan-btn" <?php echo $is_running ? 'disabled' : ''; ?>>
+                            <?php echo $is_running ? 'Scanning…' : 'Scan Now'; ?>
+                        </button>
+                        <span id="ai-seo-broken-scan-status" style="color:#666;font-style:italic;">
+                            <?php if ($is_running) : ?>
+                                Scanning… <?php echo (int) ($scan_state['scanned_posts'] ?? 0); ?>/<?php echo (int) ($scan_state['total_posts'] ?? 0); ?> posts processed.
+                            <?php elseif (! empty($scan_state['completed_at'])) : ?>
+                                Last scan: <?php echo esc_html($scan_state['completed_at']); ?> UTC
+                            <?php else : ?>
+                                No scan run yet.
+                            <?php endif; ?>
+                        </span>
+                    </div>
+                    <div id="ai-seo-broken-scan-progress" style="margin-top:10px;display:<?php echo $is_running ? 'block' : 'none'; ?>;">
+                        <div style="background:#e0e0e0;border-radius:4px;height:8px;width:100%;max-width:400px;">
+                            <div id="ai-seo-broken-scan-bar" style="background:#0073aa;height:100%;border-radius:4px;width:<?php
+                                $pct = (! empty($scan_state['total_posts']) && $scan_state['total_posts'] > 0) ? round(($scan_state['scanned_posts'] / $scan_state['total_posts']) * 100) : 0;
+                                echo (int) $pct;
+                            ?>%;transition:width 0.3s;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <?php if (! empty($broken_entries)) : ?>
+                    <table class="widefat striped">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>URL</th>
+                                <th>Details</th>
+                                <th>Detected</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($broken_entries as $entry) : ?>
+                                <tr>
+                                    <td>
+                                        <?php if ('broken_media' === $entry->type) : ?>
+                                            <span style="color:#d63638;font-weight:500;">&#128247; Media</span>
+                                        <?php else : ?>
+                                            <span style="color:#dba617;font-weight:500;">&#128279; Link</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><code style="word-break:break-all;"><?php echo esc_html($entry->source_url); ?></code></td>
+                                    <td style="color:#555;font-size:12px;"><?php echo esc_html($entry->target_url); ?></td>
+                                    <td><?php echo $entry->last_hit ? esc_html($entry->last_hit) : '—'; ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php else : ?>
+                    <p style="color:#555;">No broken links or missing media detected. Run a scan to check your content.</p>
                 <?php endif; ?>
             <?php endif; ?>
         </div>
