@@ -19,7 +19,7 @@ $nonce = wp_create_nonce('ai_seo_captain_cron_manager');
 ?>
 <div class="wrap">
     <h1>
-        <img src="<?php echo esc_url(AI_SEO_KEEPER_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="" style="width:40px;height:40px;vertical-align:middle;margin-right:10px;" />
+        <img src="<?php echo esc_url(AI_SEO_CAPTAIN_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="" style="width:40px;height:40px;vertical-align:middle;margin-right:10px;" />
         <?php esc_html_e('Scheduled Tasks', 'ai-seo-captain'); ?>
     </h1>
     <p class="description"><?php esc_html_e('Monitor and control all SEO Captain background tasks. Tasks run automatically via WordPress Cron to keep your SEO data fresh and accurate.', 'ai-seo-captain'); ?></p>

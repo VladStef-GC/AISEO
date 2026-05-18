@@ -1169,61 +1169,58 @@ class Content_Indexer
         unset($post_types['attachment']);
 
         $statuses = array('publish', 'draft', 'private', 'pending', 'future');
-        $records  = array();
+        $total_count = 0;
+        $batch_size = 100;
+
+        $wpdb->query('START TRANSACTION');
+        $wpdb->query("DELETE FROM {$table_name}");
 
         foreach ($post_types as $post_type) {
-            $items = get_posts(
-                array(
-                    'post_type'      => $post_type,
-                    'post_status'    => $statuses,
-                    'posts_per_page' => -1,
-                    'orderby'        => 'menu_order title',
-                    'order'          => 'ASC',
-                )
-            );
+            $page = 1;
 
-            foreach ($items as $item) {
-                $records[] = array(
-                    'object_id'    => (int) $item->ID,
-                    'object_type'  => 'post',
-                    'post_type'    => (string) $item->post_type,
-                    'status'       => (string) $item->post_status,
-                    'title'        => (string) $item->post_title,
-                    'slug'         => (string) $item->post_name,
-                    'permalink'    => (string) get_permalink($item),
-                    'parent_id'    => (int) $item->post_parent,
-                    'excerpt'      => wp_trim_words(wp_strip_all_tags(Content_Helper::get_content($item)), 120, '...'),
-                    'content_hash' => md5((string) $item->post_title . '|' . Content_Helper::get_content($item)),
-                    'modified_gmt' => $item->post_modified_gmt,
-                    'indexed_at'   => current_time('mysql', true),
+            do {
+                $items = get_posts(
+                    array(
+                        'post_type'      => $post_type,
+                        'post_status'    => $statuses,
+                        'posts_per_page' => $batch_size,
+                        'paged'          => $page,
+                        'orderby'        => 'menu_order title',
+                        'order'          => 'ASC',
+                    )
                 );
-            }
+
+                foreach ($items as $item) {
+                    $wpdb->insert(
+                        $table_name,
+                        array(
+                            'object_id'    => (int) $item->ID,
+                            'object_type'  => 'post',
+                            'post_type'    => (string) $item->post_type,
+                            'status'       => (string) $item->post_status,
+                            'title'        => (string) $item->post_title,
+                            'slug'         => (string) $item->post_name,
+                            'permalink'    => (string) get_permalink($item),
+                            'parent_id'    => (int) $item->post_parent,
+                            'excerpt'      => wp_trim_words(wp_strip_all_tags(Content_Helper::get_content($item)), 120, '...'),
+                            'content_hash' => md5((string) $item->post_title . '|' . Content_Helper::get_content($item)),
+                            'modified_gmt' => $item->post_modified_gmt,
+                            'indexed_at'   => current_time('mysql', true),
+                        ),
+                        array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s')
+                    );
+                    ++$total_count;
+                }
+
+                // Free memory between batches.
+                wp_cache_flush();
+                ++$page;
+            } while (count($items) === $batch_size);
         }
 
-        $wpdb->query("TRUNCATE TABLE {$table_name}");
+        $wpdb->query('COMMIT');
 
-        foreach ($records as $record) {
-            $wpdb->insert(
-                $table_name,
-                $record,
-                array(
-                    '%d',
-                    '%s',
-                    '%s',
-                    '%s',
-                    '%s',
-                    '%s',
-                    '%s',
-                    '%d',
-                    '%s',
-                    '%s',
-                    '%s',
-                    '%s',
-                )
-            );
-        }
-
-        return count($records);
+        return $total_count;
     }
 
     /**
@@ -1311,46 +1308,45 @@ class Content_Indexer
         $added   = 0;
 
         // 1. Remove entries for posts that no longer exist or are not indexable.
-        $indexed_ids = $wpdb->get_col(
-            "SELECT object_id FROM {$table_name} WHERE object_type = 'post'"
-        );
-
-        if (is_array($indexed_ids) && ! empty($indexed_ids)) {
-            foreach ($indexed_ids as $object_id) {
-                $post = get_post((int) $object_id);
-                if (! $post instanceof \WP_Post || ! $this->is_indexable_post($post)) {
-                    $this->delete_from_index((int) $object_id);
-                    ++$removed;
-                }
-            }
-        }
-
-        // 2. Add entries for published posts that are missing from the index.
+        // Use a LEFT JOIN to find orphaned index entries in a single query.
         $post_types = get_post_types(array('public' => true), 'names');
         unset($post_types['attachment']);
-
         $statuses = array('publish', 'draft', 'private', 'pending', 'future');
 
-        foreach ($post_types as $post_type) {
-            $posts = get_posts(array(
-                'post_type'      => $post_type,
-                'post_status'    => $statuses,
-                'posts_per_page' => -1,
-                'fields'         => 'ids',
-            ));
+        $type_placeholders = implode(',', array_fill(0, count($post_types), '%s'));
+        $status_placeholders = implode(',', array_fill(0, count($statuses), '%s'));
 
-            foreach ($posts as $pid) {
-                $exists = $wpdb->get_var(
-                    $wpdb->prepare(
-                        "SELECT 1 FROM {$table_name} WHERE object_type = 'post' AND object_id = %d LIMIT 1",
-                        $pid
-                    )
-                );
+        // Find indexed IDs that either don't exist in wp_posts or have wrong type/status.
+        $orphan_query = $wpdb->prepare(
+            "SELECT ci.object_id FROM {$table_name} ci
+             LEFT JOIN {$wpdb->posts} p ON p.ID = ci.object_id
+             WHERE ci.object_type = 'post'
+             AND (p.ID IS NULL OR p.post_type NOT IN ({$type_placeholders}) OR p.post_status NOT IN ({$status_placeholders}))",
+            array_merge(array_values($post_types), $statuses)
+        );
 
-                if (! $exists) {
-                    $this->upsert_post((int) $pid);
-                    ++$added;
-                }
+        $orphan_ids = $wpdb->get_col($orphan_query);
+        if (! empty($orphan_ids)) {
+            $id_list = implode(',', array_map('intval', $orphan_ids));
+            $wpdb->query("DELETE FROM {$table_name} WHERE object_type = 'post' AND object_id IN ({$id_list})");
+            $removed = count($orphan_ids);
+        }
+
+        // 2. Add entries for posts that are missing from the index (single query).
+        $missing_query = $wpdb->prepare(
+            "SELECT p.ID FROM {$wpdb->posts} p
+             LEFT JOIN {$table_name} ci ON ci.object_id = p.ID AND ci.object_type = 'post'
+             WHERE p.post_type IN ({$type_placeholders})
+             AND p.post_status IN ({$status_placeholders})
+             AND ci.object_id IS NULL",
+            array_merge(array_values($post_types), $statuses)
+        );
+
+        $missing_ids = $wpdb->get_col($missing_query);
+        if (! empty($missing_ids)) {
+            foreach ($missing_ids as $pid) {
+                $this->upsert_post((int) $pid);
+                ++$added;
             }
         }
 

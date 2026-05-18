@@ -151,10 +151,10 @@ The working model is hybrid by design:
 
 ### Term meta (4 keys)
 
-- `_ai_seo_captain_term_title`
-- `_ai_seo_captain_term_description`
-- `_ai_seo_captain_term_canonical`
-- `_ai_seo_captain_term_noindex`
+- `_ai_seo_captain_seo_title`
+- `_ai_seo_captain_meta_description`
+- `_ai_seo_captain_canonical`
+- `_ai_seo_captain_noindex`
 
 ## Production scope now shipped
 

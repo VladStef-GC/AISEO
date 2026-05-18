@@ -3,7 +3,7 @@
 /**
  * Plugin Name: SEO Captain
  * Description: AI-assisted SEO copilot for WordPress with metadata approval workflows, audits, discovery documents, schema, and refresh signaling.
- * Version: 1.0.0-beta
+ * Version: 1.0.0
  * Requires at least: 6.7
  * Requires PHP: 7.4
  * Author: Green Coders
@@ -14,13 +14,13 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('AI_SEO_KEEPER_VERSION', '1.0.0-beta');
-define('AI_SEO_KEEPER_FILE', __FILE__);
-define('AI_SEO_KEEPER_PATH', plugin_dir_path(__FILE__));
-define('AI_SEO_KEEPER_URL', plugin_dir_url(__FILE__));
+define('AI_SEO_CAPTAIN_VERSION', '1.0.0');
+define('AI_SEO_CAPTAIN_FILE', __FILE__);
+define('AI_SEO_CAPTAIN_PATH', plugin_dir_path(__FILE__));
+define('AI_SEO_CAPTAIN_URL', plugin_dir_url(__FILE__));
 
-require_once AI_SEO_KEEPER_PATH . 'includes/autoload.php';
-require_once AI_SEO_KEEPER_PATH . 'includes/class-activator.php';
+require_once AI_SEO_CAPTAIN_PATH . 'includes/autoload.php';
+require_once AI_SEO_CAPTAIN_PATH . 'includes/class-activator.php';
 
 add_action('init', static function () {
     load_plugin_textdomain('ai-seo-captain', false, dirname(plugin_basename(__FILE__)) . '/languages');
@@ -51,9 +51,9 @@ add_action(
     static function () {
         // Auto-upgrade DB schema when version changes.
         $db_version = get_option('ai_seo_captain_db_version', '0');
-        if (version_compare($db_version, AI_SEO_KEEPER_VERSION, '<')) {
+        if (version_compare($db_version, AI_SEO_CAPTAIN_VERSION, '<')) {
             AI_SEO_Captain\Activator::activate();
-            update_option('ai_seo_captain_db_version', AI_SEO_KEEPER_VERSION);
+            update_option('ai_seo_captain_db_version', AI_SEO_CAPTAIN_VERSION);
         }
 
         AI_SEO_Captain\Plugin::instance()->boot();

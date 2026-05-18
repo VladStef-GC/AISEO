@@ -56,7 +56,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
 ?>
 <div class="wrap">
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
-        <img src="<?php echo esc_url(AI_SEO_KEEPER_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="SEO Captain" style="width:40px;height:40px;" />
+        <img src="<?php echo esc_url(AI_SEO_CAPTAIN_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="SEO Captain" style="width:40px;height:40px;" />
         <h1 style="margin:0;"><?php esc_html_e('SEO Captain Settings', 'ai-seo-captain'); ?></h1>
     </div>
     <?php if ('' !== $settings_message) : ?>

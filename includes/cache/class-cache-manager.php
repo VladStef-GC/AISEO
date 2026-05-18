@@ -550,7 +550,7 @@ class Cache_Manager
      */
     private function install_advanced_cache_dropin(): bool
     {
-        $source  = AI_SEO_KEEPER_PATH . 'advanced-cache.php';
+        $source  = AI_SEO_CAPTAIN_PATH . 'advanced-cache.php';
         $target  = WP_CONTENT_DIR . '/advanced-cache.php';
 
         if (! file_exists($source)) {

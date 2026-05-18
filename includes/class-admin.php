@@ -385,7 +385,7 @@ class Admin
     public static function render_banner(string $severity, string $title, string $text, bool $dismissible = false, string $dismiss_key = ''): string
     {
         $icon_file = ('is-success' === $severity) ? 'seo-captain-side-ok-d.svg' : 'seo-captain-side-d.svg';
-        $icon_url  = esc_url(AI_SEO_KEEPER_URL . 'assets/img/' . $icon_file);
+        $icon_url  = esc_url(AI_SEO_CAPTAIN_URL . 'assets/img/' . $icon_file);
         $dismiss_html = '';
         $data_attr = '';
 
@@ -447,7 +447,7 @@ class Admin
             'manage_options',
             'ai-seo-captain',
             array($this, 'render_dashboard'),
-            AI_SEO_KEEPER_URL . 'assets/img/ai-seo-captain.svg',
+            AI_SEO_CAPTAIN_URL . 'assets/img/ai-seo-captain.svg',
             58
         );
 
@@ -585,8 +585,8 @@ class Admin
         wp_enqueue_script('jquery');
 
         // Banner styles needed for editor metabox notices.
-        $url = AI_SEO_KEEPER_URL . 'assets/';
-        $ver = AI_SEO_KEEPER_VERSION;
+        $url = AI_SEO_CAPTAIN_URL . 'assets/';
+        $ver = AI_SEO_CAPTAIN_VERSION;
         wp_enqueue_style('ai-seo-admin-common', $url . 'css/admin-common.css', array(), $ver);
 
         wp_localize_script(
@@ -628,7 +628,7 @@ class Admin
                 'cachePurgingText' => __('Clearing page cache...', 'ai-seo-captain'),
                 'cachePurgedText' => __('Page cache cleared — changes are live.', 'ai-seo-captain'),
                 'cachePurgeErrorText' => __('Could not clear the page cache.', 'ai-seo-captain'),
-                'pluginUrl' => AI_SEO_KEEPER_URL,
+                'pluginUrl' => AI_SEO_CAPTAIN_URL,
             )
         );
 
@@ -647,8 +647,8 @@ class Admin
      */
     private function enqueue_gutenberg_sidebar(string $post_type): void
     {
-        $url = AI_SEO_KEEPER_URL . 'assets/';
-        $ver = AI_SEO_KEEPER_VERSION;
+        $url = AI_SEO_CAPTAIN_URL . 'assets/';
+        $ver = AI_SEO_CAPTAIN_VERSION;
 
         wp_enqueue_style(
             'ai-seo-captain-gutenberg-sidebar',
@@ -748,8 +748,8 @@ class Admin
             return;
         }
 
-        $url = AI_SEO_KEEPER_URL . 'assets/';
-        $ver = AI_SEO_KEEPER_VERSION;
+        $url = AI_SEO_CAPTAIN_URL . 'assets/';
+        $ver = AI_SEO_CAPTAIN_VERSION;
 
         // Shared styles and scripts for all plugin pages.
         wp_enqueue_style('ai-seo-admin-common', $url . 'css/admin-common.css', array(), $ver);
@@ -786,12 +786,12 @@ class Admin
             return;
         }
 
-        $css_file = AI_SEO_KEEPER_PATH . 'assets/css/page-' . $page_slug . '.css';
+        $css_file = AI_SEO_CAPTAIN_PATH . 'assets/css/page-' . $page_slug . '.css';
         if (file_exists($css_file)) {
             wp_enqueue_style('ai-seo-page-' . $page_slug, $url . 'css/page-' . $page_slug . '.css', array('ai-seo-admin-common'), $ver);
         }
 
-        $js_file = AI_SEO_KEEPER_PATH . 'assets/js/page-' . $page_slug . '.js';
+        $js_file = AI_SEO_CAPTAIN_PATH . 'assets/js/page-' . $page_slug . '.js';
         if (file_exists($js_file)) {
             wp_enqueue_script('ai-seo-page-' . $page_slug, $url . 'js/page-' . $page_slug . '.js', array('jquery', 'ai-seo-admin-common'), $ver, true);
         }
@@ -2882,7 +2882,7 @@ JS;
             <?php echo $this->render_editor_panel_styles(); ?>
 
             <div style="text-align:center;padding:18px 0 12px;">
-                <img src="<?php echo esc_url(AI_SEO_KEEPER_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="SEO Captain" style="width:64px;height:64px;display:inline-block;" />
+                <img src="<?php echo esc_url(AI_SEO_CAPTAIN_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="SEO Captain" style="width:64px;height:64px;display:inline-block;" />
                 <div style="margin-top:6px;font-size:15px;font-weight:700;letter-spacing:1.5px;color:#1d2327;text-transform:uppercase;">SEO Captain</div>
             </div>
 

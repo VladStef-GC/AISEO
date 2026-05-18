@@ -16,7 +16,7 @@ defined('ABSPATH') || exit;
 ?>
 <div class="wrap ai-seo-captain-site-chat-wrap">
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
-        <img src="<?php echo esc_url(AI_SEO_KEEPER_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="SEO Captain" style="width:40px;height:40px;" />
+        <img src="<?php echo esc_url(AI_SEO_CAPTAIN_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="SEO Captain" style="width:40px;height:40px;" />
         <h1 style="margin:0;"><?php esc_html_e('AI SEO Strategist', 'ai-seo-captain'); ?></h1>
     </div>
     <p class="description"><?php esc_html_e('Chat with AI about your entire site — structure, keyphrase conflicts, audit results, and strategic recommendations.', 'ai-seo-captain'); ?></p>

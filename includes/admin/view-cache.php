@@ -32,7 +32,7 @@ $option_name = Settings::OPTION_NAME;
 ?>
 <div class="wrap">
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
-        <img src="<?php echo esc_url(AI_SEO_KEEPER_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="SEO Captain" style="width:40px;height:40px;" />
+        <img src="<?php echo esc_url(AI_SEO_CAPTAIN_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="SEO Captain" style="width:40px;height:40px;" />
         <h1 style="margin:0;"><?php esc_html_e('Cache & Performance', 'ai-seo-captain'); ?></h1>
     </div>
     <p class="description"><?php esc_html_e('Full page cache, browser cache, minification, and lazy loading to speed up your site and improve Core Web Vitals.', 'ai-seo-captain'); ?></p>
@@ -506,5 +506,5 @@ $option_name = Settings::OPTION_NAME;
         nonce: '<?php echo esc_js($nonce); ?>',
         ajaxUrl: '<?php echo esc_url(admin_url('admin-ajax.php')); ?>'
     };
-    var AI_SEO_KEEPER_URL = '<?php echo esc_js(AI_SEO_KEEPER_URL); ?>';
+    var AI_SEO_CAPTAIN_URL = '<?php echo esc_js(AI_SEO_CAPTAIN_URL); ?>';
 </script>

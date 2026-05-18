@@ -804,9 +804,8 @@ class AI_Generator
         $effective_model = '' !== $model ? $model : 'gemini-2.0-flash';
         $temperature = $this->normalize_temperature($temperature);
         $url = sprintf(
-            'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s',
-            rawurlencode($effective_model),
-            rawurlencode(trim($api_key))
+            'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent',
+            rawurlencode($effective_model)
         );
 
         $response = wp_remote_post(
@@ -814,6 +813,7 @@ class AI_Generator
             array(
                 'headers' => array(
                     'Content-Type' => 'application/json',
+                    'x-goog-api-key' => trim($api_key),
                 ),
                 'timeout' => 60,
                 'body' => wp_json_encode(

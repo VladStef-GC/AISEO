@@ -59,7 +59,7 @@ $format_labels = array(
 ?>
 <div class="wrap">
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
-        <img src="<?php echo esc_url(AI_SEO_KEEPER_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="SEO Captain" style="width:40px;height:40px;" />
+        <img src="<?php echo esc_url(AI_SEO_CAPTAIN_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="SEO Captain" style="width:40px;height:40px;" />
         <h1 style="margin:0;"><?php esc_html_e('Document SEO', 'ai-seo-captain'); ?></h1>
     </div>
     <p class="description"><?php esc_html_e('Manage SEO titles and descriptions for documents (PDFs, Word, Excel, PowerPoint, etc.) uploaded to your site. Good metadata improves discoverability in search results.', 'ai-seo-captain'); ?></p>

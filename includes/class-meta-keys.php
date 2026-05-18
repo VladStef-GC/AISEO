@@ -30,6 +30,8 @@ final class Meta_Keys
     public const PENDING_CHANGES    = '_ai_seo_captain_pending_content_changes';
     public const CONTENT_BACKUP     = '_ai_seo_captain_content_backup';
     public const AUDIT_SKIP         = '_ai_seo_captain_audit_skip';
+    public const KEYWORDS           = '_ai_seo_captain_keywords';
+    public const EXCLUDE_SITEMAP    = '_ai_seo_captain_exclude_sitemap';
 
     // --- Term meta keys ---------------------------------------------------
 
@@ -65,6 +67,8 @@ final class Meta_Keys
             self::PENDING_CHANGES,
             self::CONTENT_BACKUP,
             self::AUDIT_SKIP,
+            self::KEYWORDS,
+            self::EXCLUDE_SITEMAP,
         );
     }
 

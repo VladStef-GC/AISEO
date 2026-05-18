@@ -1225,6 +1225,10 @@ class Admin_Ajax
             // Clear site audit log and IndexNow log.
             delete_option('ai_seo_captain_indexnow_log');
 
+            // Clear dynamic video meta keys.
+            $wpdb->query("DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE '_ai_seo_captain_video_title_%'");
+            $wpdb->query("DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE '_ai_seo_captain_video_desc_%'");
+
             // Clear active runs user meta for current user.
             delete_user_meta(get_current_user_id(), '_ai_seo_captain_active_runs');
         }

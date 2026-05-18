@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 // Prevent WordPress from loading when running tests.
 define('ABSPATH', __DIR__ . '/../');
-define('AI_SEO_KEEPER_VERSION', '1.2.0');
-define('AI_SEO_KEEPER_PATH', __DIR__ . '/../');
-define('AI_SEO_KEEPER_URL', 'http://localhost/');
+define('AI_SEO_CAPTAIN_VERSION', '1.0.0');
+define('AI_SEO_CAPTAIN_PATH', __DIR__ . '/../');
+define('AI_SEO_CAPTAIN_URL', 'http://localhost/');
 define('WPINC', 'wp-includes');
 
 // Plugin autoloader.

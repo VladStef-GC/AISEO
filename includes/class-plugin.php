@@ -54,8 +54,11 @@ final class Plugin
         $this->cache_manager = new Cache\Cache_Manager($this->settings);
         $this->cache_manager->boot();
 
-        // Ensure cron jobs are scheduled (covers existing installs upgrading).
-        $this->cron_manager->schedule_all();
+        // Ensure cron jobs are scheduled (safety net — runs once daily via transient).
+        if (false === get_transient('ai_seo_captain_cron_check')) {
+            $this->cron_manager->schedule_all();
+            set_transient('ai_seo_captain_cron_check', '1', DAY_IN_SECONDS);
+        }
 
         // --- Incremental content index hooks (must fire on admin, frontend & cron) ---
         add_action('save_post', array($this, 'handle_index_save_post'), 50, 2);
@@ -64,10 +67,11 @@ final class Plugin
         add_action('untrashed_post', array($this, 'handle_index_upsert_post'), 10);
 
         // WooCommerce integration — boots only when WC is active AND enabled in settings.
+        // Uses 'init' to guarantee WooCommerce has fully loaded (WC boots on plugins_loaded).
         $wc_options = $this->settings->get();
-        add_action('plugins_loaded', static function () use ($wc_options) {
+        add_action('init', static function () use ($wc_options) {
             WooCommerce_Integration::maybe_boot($wc_options);
-        }, 20);
+        }, 0);
 
         if ($this->sitemap->needs_flush()) {
             add_action('init', 'flush_rewrite_rules', 99);

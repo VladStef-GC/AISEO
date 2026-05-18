@@ -228,7 +228,10 @@ class Cron_Manager
     }
 
     /**
-     * Sitemap Ping — notify Google and Bing about sitemap updates.
+     * Sitemap Ping — notify Bing about sitemap updates.
+     *
+     * Note: Google deprecated their ping endpoint in 2023. Google now discovers
+     * sitemaps exclusively via robots.txt and Search Console.
      */
     private function run_sitemap_ping(): string
     {
@@ -241,21 +244,14 @@ class Cron_Manager
         $sitemap_url = home_url('/sitemap.xml');
         $results = array();
 
-        // Google (deprecated ping endpoint, but still used widely).
-        $google_url = 'https://www.google.com/ping?sitemap=' . rawurlencode($sitemap_url);
-        $google = wp_remote_get($google_url, array('timeout' => 15, 'sslverify' => true));
-        $results['google'] = is_wp_error($google)
-            ? 'error: ' . $google->get_error_message()
-            : 'HTTP ' . wp_remote_retrieve_response_code($google);
-
-        // Bing / IndexNow.
+        // Bing (still supports sitemap ping).
         $bing_url = 'https://www.bing.com/ping?sitemap=' . rawurlencode($sitemap_url);
         $bing = wp_remote_get($bing_url, array('timeout' => 15, 'sslverify' => true));
         $results['bing'] = is_wp_error($bing)
             ? 'error: ' . $bing->get_error_message()
             : 'HTTP ' . wp_remote_retrieve_response_code($bing);
 
-        return sprintf('Google: %s, Bing: %s', $results['google'], $results['bing']);
+        return sprintf('Bing: %s', $results['bing']);
     }
 
     // -------------------------------------------------------------------------

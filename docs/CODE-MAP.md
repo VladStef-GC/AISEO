@@ -289,10 +289,10 @@ Created by `class-activator.php` on plugin activation. Auto-upgraded via `plugin
 
 | Meta Key | Purpose |
 |----------|---------|
-| `_ai_seo_captain_term_title` | Taxonomy term SEO title |
-| `_ai_seo_captain_term_description` | Taxonomy term meta description |
-| `_ai_seo_captain_term_canonical` | Taxonomy term canonical URL |
-| `_ai_seo_captain_term_noindex` | Taxonomy term noindex override |
+| `_ai_seo_captain_seo_title` | Taxonomy term SEO title |
+| `_ai_seo_captain_meta_description` | Taxonomy term meta description |
+| `_ai_seo_captain_canonical` | Taxonomy term canonical URL |
+| `_ai_seo_captain_noindex` | Taxonomy term noindex override |
 
 ---
 

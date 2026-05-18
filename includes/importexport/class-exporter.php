@@ -59,7 +59,7 @@ class Exporter
         $data = array(
             'plugin'            => 'ai-seo-captain',
             'format_version'    => '2.0',
-            'plugin_version'    => defined('AI_SEO_KEEPER_VERSION') ? AI_SEO_KEEPER_VERSION : '1.0.0',
+            'plugin_version'    => defined('AI_SEO_CAPTAIN_VERSION') ? AI_SEO_CAPTAIN_VERSION : '1.0.0',
             'exported_at'       => gmdate('c'),
             'source_domain'     => wp_parse_url(home_url(), PHP_URL_HOST),
             'sections_included' => array_values($sections),

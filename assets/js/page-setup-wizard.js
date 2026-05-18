@@ -584,6 +584,7 @@
         markStepDone(1);
         $('#aisc-s1-done').show();
         $('#aisc-s1-result').text(aiscWizard.totalItems + ' pages indexed.');
+        $('#aisc-btn-index').prop('disabled', false).text('Re-Index Site');
         unlockStep(2);
         $('#aisc-skip-section').show();
     }
@@ -648,6 +649,7 @@
                 $('#aisc-s1-status').text('Done.');
                 $('#aisc-s1-done').show();
                 $('#aisc-s1-result').text(response.data.count + ' pages indexed.');
+                btn.prop('disabled', false).text('Re-Index Site');
                 markStepDone(1);
                 unlockStep(2);
                 $('#aisc-skip-section').show();
