@@ -208,12 +208,13 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                                 <fieldset>
                                     <?php foreach (Settings::FEATURE_FLAGS as $feature_key => $feature_label) : ?>
                                         <label class="aisc-toggle" style="display:flex;margin-bottom:8px;">
-                                            <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[feature_<?php echo esc_attr($feature_key); ?>]" value="1" <?php checked(! empty($options['feature_' . $feature_key])); ?> />
+                                            <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[feature_<?php echo esc_attr($feature_key); ?>]" value="1" <?php checked(! empty($options['feature_' . $feature_key])); ?> class="aisc-feature-toggle" />
                                             <span class="aisc-toggle__track"></span>
                                             <span class="aisc-toggle__label"><?php echo esc_html($feature_label); ?></span>
                                         </label>
                                     <?php endforeach; ?>
                                 </fieldset>
+                                <p class="description aisc-feature-warning" style="display:none;color:#d63638;margin-top:6px;">&#9888; Turning off a feature means SEO Captain will <strong>not publish</strong> that type of SEO data on the frontend, even if the data is saved.</p>
                             </td>
                         </tr>
                         <tr>
@@ -234,6 +235,7 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                                     <span class="aisc-toggle__track"></span>
                                     <span class="aisc-toggle__label">Output approved AI metadata and saved page-level SEO fields on the frontend.</span>
                                 </label>
+                                <p class="description aisc-frontend-warning" style="display:none;color:#d63638;margin:0 0 8px;">&#9888; When off, <strong>no SEO data</strong> from SEO Captain will appear on your site — not manually entered data, not AI-approved suggestions, nothing. Your data is still saved, but invisible to search engines until this is turned back on.</p>
                                 <label class="aisc-toggle" style="display:flex;">
                                     <input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[frontend_override_conflicts]" value="1" <?php checked(! empty($options['frontend_override_conflicts'])); ?> />
                                     <span class="aisc-toggle__track"></span>
@@ -710,3 +712,33 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
         <p class="description" style="margin:12px 0 0;">Imports focus keyphrase, SEO title, meta description, social fields, canonical URL, and noindex/nofollow. Existing SEO Captain values are preserved.</p>
     </div>
 </div>
+<script>
+    (function() {
+        /* Feature toggles warning */
+        var featureBoxes = document.querySelectorAll('.aisc-feature-toggle');
+        var featureWarn = document.querySelector('.aisc-feature-warning');
+
+        function checkFeatures() {
+            var anyOff = Array.prototype.some.call(featureBoxes, function(cb) {
+                return !cb.checked;
+            });
+            if (featureWarn) featureWarn.style.display = anyOff ? '' : 'none';
+        }
+        featureBoxes.forEach(function(cb) {
+            cb.addEventListener('change', checkFeatures);
+        });
+        checkFeatures();
+
+        /* Frontend output warning */
+        var frontendCb = document.getElementById('ai-seo-frontend-output');
+        var frontendWarn = document.querySelector('.aisc-frontend-warning');
+
+        function checkFrontend() {
+            if (frontendWarn) frontendWarn.style.display = (frontendCb && !frontendCb.checked) ? '' : 'none';
+        }
+        if (frontendCb) {
+            frontendCb.addEventListener('change', checkFrontend);
+        }
+        checkFrontend();
+    })();
+</script>

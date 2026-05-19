@@ -64,7 +64,7 @@ class Settings
             'google_tracking_code' => '',
             'bing_tracking_code'   => '',
             'editor_chat_enabled'  => 1,
-            'frontend_output_enabled' => 0,
+            'frontend_output_enabled' => 1,
             'frontend_override_conflicts' => 0,
             'search_appearance_auto_enabled' => 1,
             'search_title_separator' => '|',

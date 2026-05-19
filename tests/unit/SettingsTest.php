@@ -45,9 +45,9 @@ class SettingsTest extends TestCase
         $this->assertLessThanOrEqual(2.0, $temp);
     }
 
-    public function test_defaults_frontend_off_by_default(): void
+    public function test_defaults_frontend_on_by_default(): void
     {
-        $this->assertSame(0, Settings::defaults()['frontend_output_enabled']);
+        $this->assertSame(1, Settings::defaults()['frontend_output_enabled']);
     }
 
     // ------------------------------------------------------------------

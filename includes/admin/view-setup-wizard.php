@@ -93,7 +93,8 @@ defined('ABSPATH') || exit;
             <h2 style="margin:0;"><?php esc_html_e('Generate SEO Metadata', 'ai-seo-captain'); ?></h2>
             <span id="aisc-s2-elapsed" class="aisc-elapsed"></span>
         </div>
-        <p><?php esc_html_e('AI reads each page and generates an SEO title and meta description. Pages that already have metadata are skipped automatically.', 'ai-seo-captain'); ?></p>
+        <p><?php esc_html_e('AI reads each page and generates: SEO title, meta description, focus keyphrase, social title, and social description. Pages that already have all three core fields (title, description, and keyphrase) are skipped automatically — if any field is missing, AI fills only the missing ones.', 'ai-seo-captain'); ?></p>
+        <p style="font-size:13px;color:#d63638;"><strong><?php esc_html_e('⚠ Generated data is saved and goes live immediately — no manual publish or approval step is required. Make sure your Frontend Output setting is configured before running this.', 'ai-seo-captain'); ?></strong></p>
         <div class="aisc-controls">
             <button id="aisc-btn-generate" class="button button-primary button-hero" type="button" <?php disabled(! $has_index); ?>>
                 <?php echo $has_metadata ? esc_html__('Continue Generation', 'ai-seo-captain') : esc_html__('Start AI Generation', 'ai-seo-captain'); ?>
@@ -150,7 +151,7 @@ defined('ABSPATH') || exit;
             <h2 style="margin:0;"><?php esc_html_e('Full SEO Audit', 'ai-seo-captain'); ?></h2>
             <span id="aisc-s3-elapsed" class="aisc-elapsed"></span>
         </div>
-        <p><?php esc_html_e('AI analyzes each page individually: missing alt tags, content issues, heading structure, and specific improvement suggestions.', 'ai-seo-captain'); ?></p>
+        <p><?php esc_html_e('AI analyzes each page individually and produces a report: SEO score, detected issues, improvement suggestions, missing alt tags, word count, and heading structure. This is a read-only analysis — no SEO fields are modified. Results are cached so previously audited pages load instantly on subsequent runs.', 'ai-seo-captain'); ?></p>
         <?php if ($audited_count > 0 && ! $step3_all_done) : ?>
             <p style="font-size:13px;color:#50575e;">&#128204; <?php echo (int) $audited_count; ?> of <?php echo (int) $total_pages; ?> pages already audited. Previously audited pages load from cache instantly.</p>
         <?php endif; ?>
