@@ -47,6 +47,7 @@ class AI_Generator
         $seo_title = isset($payload['seo_title']) ? sanitize_text_field((string) $payload['seo_title']) : '';
         $meta_description = isset($payload['meta_description']) ? sanitize_textarea_field((string) $payload['meta_description']) : '';
         $focus_keyphrase = isset($payload['focus_keyphrase']) ? sanitize_text_field((string) $payload['focus_keyphrase']) : '';
+        $keywords = isset($payload['keywords']) ? sanitize_text_field((string) $payload['keywords']) : '';
         $social_title = isset($payload['social_title']) ? sanitize_text_field((string) $payload['social_title']) : '';
         $social_description = isset($payload['social_description']) ? sanitize_textarea_field((string) $payload['social_description']) : '';
         $notes = isset($payload['notes']) ? sanitize_textarea_field((string) $payload['notes']) : '';
@@ -59,6 +60,7 @@ class AI_Generator
             'seo_title' => $seo_title,
             'meta_description' => $meta_description,
             'focus_keyphrase' => $focus_keyphrase,
+            'keywords' => $keywords,
             'social_title' => $social_title,
             'social_description' => $social_description,
             'notes' => $notes,
@@ -191,9 +193,10 @@ class AI_Generator
         return trim(
             $base_prompt . "\n\n" .
                 'IDENTITY: You are the AI inside the "SEO Captain" WordPress plugin. This plugin handles ALL SEO. The user does NOT use Yoast, RankMath, or any other SEO plugin — never mention them.' . "\n" .
-                'Return only valid JSON with exactly these keys: seo_title, meta_description, focus_keyphrase, social_title, social_description, notes. ' .
+                'Return only valid JSON with exactly these keys: seo_title, meta_description, focus_keyphrase, keywords, social_title, social_description, notes. ' .
                 'Do not use markdown fences. Keep the title at or under 60 characters (total including branding). ' .
                 'Keep the meta description at or under 155 characters, ideally around 140-155. ' .
+                'keywords is a comma-separated list of 5-8 relevant SEO keywords/phrases for the page (used for internal tagging and meta keywords). ' .
                 'social_title is the Open Graph / Twitter sharing title — more engaging and attention-grabbing than seo_title, up to 70 characters. ' .
                 'social_description is the social sharing description — a compelling hook for clicks, up to 200 characters. ' .
                 'Be specific to the real page content and avoid generic claims. ' .
@@ -572,8 +575,8 @@ class AI_Generator
 
         $prompt_parts = array(
             'Task: Generate or refine the SEO title and meta description for the current WordPress page.',
-            'Output format: {"seo_title":"...","meta_description":"...","focus_keyphrase":"...","social_title":"...","social_description":"...","notes":"..."}',
-            'Requirements: Make the draft clearly differentiated from the related pages. Keep seo_title at or under ' . ('' !== $branding_suffix ? (string) $page_title_budget : '60') . ' characters and meta_description at or under 155 characters. social_title is the Open Graph / Twitter sharing title — it can be more engaging and attention-grabbing than seo_title, up to 70 characters. social_description is the social sharing description — a compelling hook for clicks, up to 200 characters. Do not invent services, guarantees, or facts not present on the page. The focus_keyphrase should be the single most important 2-4 word phrase this page should rank for. When a focus keyphrase is already provided, keep it in your output AND ensure it appears naturally in both seo_title and meta_description. Notes should be one or two short sentences explaining the positioning choice or why the existing draft was kept.',
+            'Output format: {"seo_title":"...","meta_description":"...","focus_keyphrase":"...","keywords":"...","social_title":"...","social_description":"...","notes":"..."}',
+            'Requirements: Make the draft clearly differentiated from the related pages. Keep seo_title at or under ' . ('' !== $branding_suffix ? (string) $page_title_budget : '60') . ' characters and meta_description at or under 155 characters. social_title is the Open Graph / Twitter sharing title — it can be more engaging and attention-grabbing than seo_title, up to 70 characters. social_description is the social sharing description — a compelling hook for clicks, up to 200 characters. keywords is a comma-separated list of 5-8 relevant SEO keywords/phrases for the page. Do not invent services, guarantees, or facts not present on the page. The focus_keyphrase should be the single most important 2-4 word phrase this page should rank for. When a focus keyphrase is already provided, keep it in your output AND ensure it appears naturally in both seo_title and meta_description. Notes should be one or two short sentences explaining the positioning choice or why the existing draft was kept.',
             'Site: ' . get_bloginfo('name'),
             'Page type: ' . $post->post_type,
             'Current page title: ' . (string) $post->post_title,

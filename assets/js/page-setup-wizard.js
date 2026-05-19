@@ -440,6 +440,7 @@
         this.onItem = config.onItem;
         this.onDone = config.onDone;
         this.onError = config.onError;
+        this.extraData = config.extraData || {};
         this.timer = createTimer(config.timerEl);
 
         this.current = 0;
@@ -535,11 +536,11 @@
             ' \u2717 ' + this.stats.errors
         );
 
-        $.post(ajaxUrl, {
+        $.post(ajaxUrl, $.extend({
             action: this.ajaxAction,
             nonce: nonce,
             post_id: postId
-        }, function (response) {
+        }, this.extraData), function (response) {
             self.consecutiveErrors = 0;
             if (response.success) {
                 if (response.data.skipped) {
@@ -685,10 +686,11 @@
                 btnPause: '#aisc-btn-s2-pause',
                 btnStop: '#aisc-btn-s2-stop',
                 timerEl: '#aisc-s2-elapsed',
+                extraData: { override_all: $('#aisc-s2-override').is(':checked') ? 1 : 0 },
                 onItem: function (response) {
                     var d = response.data;
                     if (d.skipped) {
-                        $('#aisc-s2-log').prepend('<div class="aisc-log-entry" style="color:#50575e;">\u23ED <strong>' + esc(d.title) + '</strong> \u2014 skipped (already has metadata)</div>');
+                        $('#aisc-s2-log').prepend('<div class="aisc-log-entry" style="color:#50575e;">\u23ED <strong>' + esc(d.title) + '</strong> \u2014 skipped (all fields populated)</div>');
                     } else {
                         $('#aisc-s2-log').prepend('<div class="aisc-log-entry" style="color:#00a32a;">\u2713 <strong>' + esc(d.title) + '</strong> \u2014 ' + esc(d.seo_title) + '</div>');
                     }

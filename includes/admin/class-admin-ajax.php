@@ -382,13 +382,27 @@ class Admin_Ajax
             return;
         }
 
-        $existing_title     = trim((string) get_post_meta($post_id, AdminBase::META_TITLE_KEY, true));
-        $existing_desc      = trim((string) get_post_meta($post_id, AdminBase::META_DESCRIPTION_KEY, true));
-        $existing_keyphrase = trim((string) get_post_meta($post_id, AdminBase::FOCUS_KEYPHRASE_META_KEY, true));
+        $override_all = ! empty($_POST['override_all']);
 
-        if ('' !== $existing_title && '' !== $existing_desc && '' !== $existing_keyphrase) {
+        $existing_title       = trim((string) get_post_meta($post_id, AdminBase::META_TITLE_KEY, true));
+        $existing_desc        = trim((string) get_post_meta($post_id, AdminBase::META_DESCRIPTION_KEY, true));
+        $existing_keyphrase   = trim((string) get_post_meta($post_id, AdminBase::FOCUS_KEYPHRASE_META_KEY, true));
+        $existing_keywords    = trim((string) get_post_meta($post_id, AdminBase::KEYWORDS_META_KEY, true));
+        $existing_social_title = trim((string) get_post_meta($post_id, AdminBase::SOCIAL_TITLE_META_KEY, true));
+        $existing_social_desc = trim((string) get_post_meta($post_id, AdminBase::SOCIAL_DESCRIPTION_META_KEY, true));
+
+        // When not overriding, skip only if ALL fields already have data.
+        if (
+            ! $override_all
+            && '' !== $existing_title
+            && '' !== $existing_desc
+            && '' !== $existing_keyphrase
+            && '' !== $existing_keywords
+            && '' !== $existing_social_title
+            && '' !== $existing_social_desc
+        ) {
             wp_send_json_success(array(
-                'message'  => 'Already has all metadata, skipped.',
+                'message'  => 'All metadata fields already populated, skipped.',
                 'skipped'  => true,
                 'post_id'  => $post_id,
                 'title'    => $post->post_title,
@@ -415,26 +429,24 @@ class Admin_Ajax
             ))
         );
 
-        if ('' === $existing_title) {
+        // Save fields: override mode writes all; default mode writes only empty fields.
+        if ($override_all || '' === $existing_title) {
             update_post_meta($post_id, AdminBase::META_TITLE_KEY, $suggestion['seo_title']);
         }
-        if ('' === $existing_desc) {
+        if ($override_all || '' === $existing_desc) {
             update_post_meta($post_id, AdminBase::META_DESCRIPTION_KEY, $suggestion['meta_description']);
         }
-        if ('' === $existing_keyphrase && ! empty($suggestion['focus_keyphrase'])) {
+        if (! empty($suggestion['focus_keyphrase']) && ($override_all || '' === $existing_keyphrase)) {
             update_post_meta($post_id, AdminBase::FOCUS_KEYPHRASE_META_KEY, $suggestion['focus_keyphrase']);
         }
-        if (! empty($suggestion['social_title'])) {
-            $existing_social_title = trim((string) get_post_meta($post_id, AdminBase::SOCIAL_TITLE_META_KEY, true));
-            if ('' === $existing_social_title) {
-                update_post_meta($post_id, AdminBase::SOCIAL_TITLE_META_KEY, $suggestion['social_title']);
-            }
+        if (! empty($suggestion['keywords']) && ($override_all || '' === $existing_keywords)) {
+            update_post_meta($post_id, AdminBase::KEYWORDS_META_KEY, sanitize_text_field($suggestion['keywords']));
         }
-        if (! empty($suggestion['social_description'])) {
-            $existing_social_desc = trim((string) get_post_meta($post_id, AdminBase::SOCIAL_DESCRIPTION_META_KEY, true));
-            if ('' === $existing_social_desc) {
-                update_post_meta($post_id, AdminBase::SOCIAL_DESCRIPTION_META_KEY, $suggestion['social_description']);
-            }
+        if (! empty($suggestion['social_title']) && ($override_all || '' === $existing_social_title)) {
+            update_post_meta($post_id, AdminBase::SOCIAL_TITLE_META_KEY, $suggestion['social_title']);
+        }
+        if (! empty($suggestion['social_description']) && ($override_all || '' === $existing_social_desc)) {
+            update_post_meta($post_id, AdminBase::SOCIAL_DESCRIPTION_META_KEY, $suggestion['social_description']);
         }
 
         try {
@@ -468,6 +480,7 @@ class Admin_Ajax
             'seo_title'          => $suggestion['seo_title'],
             'meta_description'   => $suggestion['meta_description'],
             'focus_keyphrase'    => $suggestion['focus_keyphrase'] ?? '',
+            'keywords'           => $suggestion['keywords'] ?? '',
             'social_title'       => $suggestion['social_title'] ?? '',
             'social_description' => $suggestion['social_description'] ?? '',
             'notes'              => $suggestion['notes'],
