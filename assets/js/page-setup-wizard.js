@@ -1041,6 +1041,9 @@
                 btnPause: '#aisc-btn-s3-pause',
                 btnStop: '#aisc-btn-s3-stop',
                 timerEl: '#aisc-s3-elapsed',
+                extraData: {
+                    deep_analysis: $('#aisc-s3-deep').is(':checked') ? '1' : '0'
+                },
                 onItem: function (response) {
                     addOrUpdateAudit(response.data);
                     refreshSummaryTab();

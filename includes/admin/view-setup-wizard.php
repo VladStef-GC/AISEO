@@ -175,6 +175,11 @@ defined('ABSPATH') || exit;
         <?php if ($audited_count > 0 && ! $step3_all_done) : ?>
             <p style="font-size:13px;color:#50575e;">&#128204; <?php echo (int) $audited_count; ?> of <?php echo (int) $total_pages; ?> pages already audited. Previously audited pages load from cache instantly.</p>
         <?php endif; ?>
+        <label class="aisc-toggle" style="display:flex;margin:0 0 12px;">
+            <input id="aisc-s3-deep" type="checkbox" value="1" />
+            <span class="aisc-toggle__track"></span>
+            <span class="aisc-toggle__label"><?php esc_html_e('Deep analysis — AI will also read body content from topically related pages across the site (uses more tokens).', 'ai-seo-captain'); ?></span>
+        </label>
         <div class="aisc-controls">
             <button id="aisc-btn-audit" class="button button-primary button-hero" type="button" <?php disabled(! $has_index || ! $has_metadata); ?>>
                 <?php

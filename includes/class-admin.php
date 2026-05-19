@@ -1531,6 +1531,7 @@ jQuery(function ($) {
                         html += '<button type="button" class="button ai-seo-captain-discard-changes">Disregard</button>';
                         html += '<span class="ai-seo-captain-apply-status" style="font-size:13px;"></span>';
                         html += '</div>';
+                        html += '<p style="font-size:12px;color:#787c82;margin:4px 0 0;">Approved changes will be staged — click <strong>Update</strong> to publish them.</p>';
                         html += '</div>';
 
                         $review.html(html);
@@ -1637,6 +1638,10 @@ jQuery(function ($) {
                 $btn.text('✓ Approved').prop('disabled', true);
                 $review.find('.ai-seo-captain-discard-changes, .ai-seo-captain-toggle-all-changes').hide();
                 $review.find('.ai-seo-captain-diff-accept').prop('disabled', true);
+                // Refresh the History tab so the new plan shows immediately.
+                if (d.historyHtml) {
+                    $panel.find('.ai-seo-captain-history-shell').html(d.historyHtml);
+                }
                 // Show pending notice at the top of the panel.
                 var $panel = $btn.closest('.ai-seo-captain-editor-panel');
                 if (! $panel.find('.ai-seo-captain-pending-notice').length) {

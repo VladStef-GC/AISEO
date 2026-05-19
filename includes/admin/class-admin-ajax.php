@@ -545,7 +545,8 @@ class Admin_Ajax
         }
 
         try {
-            $audit = $this->ai_generator->generate_page_audit($post_id);
+            $deep_analysis = ! empty($_POST['deep_analysis']) && '1' === $_POST['deep_analysis'];
+            $audit = $this->ai_generator->generate_page_audit($post_id, $deep_analysis);
         } catch (\Throwable $throwable) {
             wp_send_json_error(array(
                 'message' => $throwable->getMessage(),
@@ -709,11 +710,16 @@ class Admin_Ajax
             )
         );
 
+        $recent_suggestions = $this->history_store->get_recent_suggestions($post_id, 'post', 10);
+        $recent_edits       = $this->history_store->get_recent_content_edits($post_id, 10);
+        $history_html       = $this->admin->render_history_markup($recent_suggestions, $recent_edits);
+
         wp_send_json_success(array(
-            'applied' => count($changes),
-            'failed'  => 0,
-            'details' => array(),
-            'message' => sprintf(
+            'applied'     => count($changes),
+            'failed'      => 0,
+            'details'     => array(),
+            'historyHtml' => $history_html,
+            'message'     => sprintf(
                 '%d change(s) approved. Preview the page, then click Update to publish them.',
                 count($changes)
             ),
@@ -884,6 +890,9 @@ class Admin_Ajax
         }
 
         $this->history_store->delete_content_edit_plan($edit_id);
+
+        // Also clear any staged pending changes so they don't silently apply on next Update.
+        delete_post_meta($post_id, '_ai_seo_captain_pending_content_changes');
 
         wp_send_json_success(array('message' => __('Plan removed from history.', 'ai-seo-captain')));
     }

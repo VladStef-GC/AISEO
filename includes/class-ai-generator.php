@@ -697,6 +697,8 @@ class AI_Generator
             $branding_note = 'Title branding: "' . $branding_suffix . '" (' . $suffix_len . ' chars) is auto-appended. suggested_title must be ONLY the page-specific part — max ' . $page_title_budget . ' chars.';
         }
 
+        $site_context = trim((string) ($this->settings->get()['site_chat_context'] ?? ''));
+
         $prompt_parts = array(
             'Task: Answer the editor user as an SEO copilot for the current WordPress page.',
             'Output format: {"reply":"...","suggested_title":"...","suggested_description":"...","wants_edits":true/false,"notes":"..."}',
@@ -712,6 +714,10 @@ class AI_Generator
             "Recent conversation:\n" . implode("\n", $conversation_lines),
             'User question: ' . $message,
         );
+
+        if ('' !== $site_context) {
+            $prompt_parts[] = "Site owner's description of the business and goals:\n" . $site_context;
+        }
 
         if ('' !== $branding_note) {
             $prompt_parts[] = $branding_note;
@@ -981,7 +987,7 @@ class AI_Generator
         return $items;
     }
 
-    public function generate_page_audit(int $post_id): array
+    public function generate_page_audit(int $post_id, bool $deep_analysis = false): array
     {
         $post = get_post($post_id);
 
@@ -999,7 +1005,7 @@ class AI_Generator
         $model = trim((string) $options['model']);
         $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_page_audit_system_prompt((string) $options['system_prompt']);
-        $user_prompt = $this->build_page_audit_user_prompt($post);
+        $user_prompt = $this->build_page_audit_user_prompt($post, $deep_analysis);
 
         if ('openai' === $provider) {
             $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
@@ -1169,8 +1175,11 @@ class AI_Generator
         );
     }
 
-    private function build_page_audit_user_prompt(\WP_Post $post): string
+    private function build_page_audit_user_prompt(\WP_Post $post, bool $deep_analysis = false): string
     {
+        $ctx = $this->get_seo_context($post, $deep_analysis ? array('deep_analysis' => true) : array());
+        $site_context = trim((string) ($this->settings->get()['site_chat_context'] ?? ''));
+
         $page_content_raw = Content_Helper::get_content($post);
         // Send FULL content to AI for audit — no truncation.
         $page_content = $this->normalize_text($page_content_raw);
@@ -1202,11 +1211,10 @@ class AI_Generator
         // Count linked documents.
         $doc_count = preg_match_all('/href=["\'][^"\']*\.(?:pdf|docx?|xlsx?|pptx?|odt|ods|odp|csv|rtf)["\s>]/i', $page_content_raw);
 
-        return implode(
-            "\n\n",
-            array(
+        $prompt_parts = array(
                 'Task: Perform a comprehensive SEO audit of this WordPress page and provide specific, actionable findings.',
                 'Output format: {"score":...,"issues":[...],"suggestions":[...],"missing_alt_tags":...,"word_count":...,"heading_structure":"...","summary":"..."}',
+                'Requirements: You receive the COMPLETE page content, ALL metadata fields, full audit results, the page hierarchy (parent, siblings, children with their SEO data), keyphrase conflict warnings, and the site structure tree. Use ALL of it. Detect cannibalization risks. Flag pages that overlap with this page. Ground your audit in the actual data below.',
                 'Site: ' . get_bloginfo('name'),
                 'Page type: ' . $post->post_type,
                 'Page title: ' . (string) $post->post_title,
@@ -1217,9 +1225,15 @@ class AI_Generator
                 'Documents linked: ' . $doc_count,
                 'Heading structure found: ' . ('' !== $heading_summary ? $heading_summary : 'No headings found'),
                 'Internal links: ' . $internal_links . ', External links: ' . $external_links,
+                $this->format_seo_context_lines($ctx),
                 'Main page content: ' . ('' !== $page_content ? $page_content : 'No body content is available.'),
-            )
         );
+
+        if ('' !== $site_context) {
+            $prompt_parts[] = "Site owner's description of the business and goals:\n" . $site_context;
+        }
+
+        return implode("\n\n", $prompt_parts);
     }
 
     private function format_duplicate_prompt_lines(array $groups): string
