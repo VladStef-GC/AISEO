@@ -29,15 +29,67 @@ jQuery(function ($) {
         var runs = conf.runs || [];
         var $grid = $('#aisc-lists-grid');
         if (!$grid.length) return;
-        if (runs.length === 0) return;
 
         var html = '';
+
+        // "Full Site" card — shown when all pages were processed via "Process All Pages".
+        var s2All = !!conf.step2AllDone;
+        var s3All = !!conf.step3AllDone;
+        if (s2All || s3All) {
+            var fsBoth = s2All && s3All;
+            var fsClass = fsBoth ? 'is-complete' : 'is-partial';
+            var fsIcon  = fsBoth ? '✓' : '◐';
+            var fsText;
+            if (fsBoth) {
+                fsText = 'Ready — Both steps complete';
+            } else {
+                var fsMissing = [];
+                if (!s2All) fsMissing.push('Metadata');
+                if (!s3All) fsMissing.push('Audit');
+                fsText = 'Incomplete — Missing: ' + fsMissing.join(', ');
+            }
+            var fsAnalysis = conf.fullSiteAnalysisType || '';
+            var fsAnalysisBadge = '';
+            if (fsAnalysis) {
+                var fsBadgeColor = fsAnalysis === 'deep' ? '#2271b1' : '#787c82';
+                var fsBadgeLabel = fsAnalysis === 'deep' ? 'Deep Analysis' : 'Standard Analysis';
+                fsAnalysisBadge = '<span class="aisc-list-card__analysis" style="display:inline-block;font-size:11px;background:' + fsBadgeColor + ';color:#fff;padding:1px 6px;border-radius:3px;margin-left:6px;">' + fsBadgeLabel + '</span>';
+            }
+            html += '<div class="aisc-list-card ' + fsClass + ' aisc-list-card--full-site" data-run-id="0">' +
+                '<div class="aisc-list-card__header">' +
+                '<span class="aisc-list-card__status">' + fsIcon + '</span>' +
+                '<strong class="aisc-list-card__name">Full Site</strong>' + fsAnalysisBadge +
+                '</div>' +
+                '<div class="aisc-list-card__stats">' +
+                '<span>' + pageCount + ' pages</span>' +
+                '<span class="aisc-list-card__sep">&middot;</span>' +
+                '<span class="' + (s2All ? 'aisc-stat-done' : 'aisc-stat-missing') + '">Metadata: ' + (s2All ? 'Done ✓' : 'Pending') + '</span>' +
+                '<span class="aisc-list-card__sep">&middot;</span>' +
+                '<span class="' + (s3All ? 'aisc-stat-done' : 'aisc-stat-missing') + '">Audit: ' + (s3All ? 'Done ✓' : 'Pending') + '</span>' +
+                '</div>' +
+                '<div class="aisc-list-card__status-text">' + fsText + '</div>' +
+                '</div>';
+        }
+
+        if (runs.length === 0 && !html) return;
+
         for (var i = 0; i < runs.length; i++) {
             var r = runs[i];
             var pc = parseInt(r.page_count, 10) || 0;
             var steps = (r.completed_steps || '').split(',');
             var metaDone = steps.indexOf('metadata') !== -1;
-            var auditDone = steps.indexOf('audit') !== -1;
+            // Audit step may be stored as 'audit', 'audit:deep', or 'audit:standard'.
+            var auditDone = false;
+            var analysisType = r.analysis_type || '';
+            for (var j = 0; j < steps.length; j++) {
+                if (steps[j].split(':')[0] === 'audit') {
+                    auditDone = true;
+                    if (!analysisType && steps[j].indexOf(':') !== -1) {
+                        analysisType = steps[j].split(':')[1];
+                    }
+                    break;
+                }
+            }
             var bothDone = metaDone && auditDone;
 
             // Status reflects BOTH steps completion.
@@ -55,10 +107,18 @@ jQuery(function ($) {
                 statusText = 'Incomplete — Missing: ' + missing.join(', ');
             }
 
+            // Analysis type badge.
+            var analysisBadge = '';
+            if (analysisType) {
+                var badgeColor = analysisType === 'deep' ? '#2271b1' : '#787c82';
+                var badgeLabel = analysisType === 'deep' ? 'Deep Analysis' : 'Standard Analysis';
+                analysisBadge = '<span class="aisc-list-card__analysis" style="display:inline-block;font-size:11px;background:' + badgeColor + ';color:#fff;padding:1px 6px;border-radius:3px;margin-left:6px;">' + badgeLabel + '</span>';
+            }
+
             html += '<div class="aisc-list-card ' + statusClass + '" data-run-id="' + parseInt(r.id, 10) + '">' +
                 '<div class="aisc-list-card__header">' +
                 '<span class="aisc-list-card__status">' + statusIcon + '</span>' +
-                '<strong class="aisc-list-card__name">' + $('<span>').text(r.name).html() + '</strong>' +
+                '<strong class="aisc-list-card__name">' + $('<span>').text(r.name).html() + '</strong>' + analysisBadge +
                 '</div>' +
                 '<div class="aisc-list-card__stats">' +
                 '<span>' + pc + ' pages</span>' +

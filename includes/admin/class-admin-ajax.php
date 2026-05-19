@@ -564,6 +564,7 @@ class Admin_Ajax
             'word_count'        => $audit['word_count'],
             'heading_structure' => $audit['heading_structure'],
             'summary'           => $audit['summary'],
+            'deep_analysis'     => $deep_analysis,
             'audited_at'        => current_time('mysql', true),
         ));
 
@@ -1161,14 +1162,28 @@ class Admin_Ajax
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
         }
 
-        $run_id = isset($_POST['run_id']) ? (int) $_POST['run_id'] : 0;
-        $step   = isset($_POST['step']) ? sanitize_text_field(wp_unslash($_POST['step'])) : '';
+        $run_id    = isset($_POST['run_id']) ? (int) $_POST['run_id'] : 0;
+        $step      = isset($_POST['step']) ? sanitize_text_field(wp_unslash($_POST['step'])) : '';
+        $qualifier = isset($_POST['qualifier']) ? sanitize_text_field(wp_unslash($_POST['qualifier'])) : '';
 
-        if (! $run_id || ! in_array($step, array('metadata', 'audit'), true)) {
+        if (! in_array($step, array('metadata', 'audit'), true)) {
             wp_send_json_error(array('message' => __('Invalid parameters.', 'ai-seo-captain')), 400);
         }
 
-        $this->run_manager->mark_step_complete($run_id, $step);
+        // run_id = 0 means "Full Site" — persist global flag instead of marking a list.
+        if (0 === $run_id) {
+            $option_key = 'metadata' === $step
+                ? 'ai_seo_captain_step2_all_done'
+                : 'ai_seo_captain_step3_all_done';
+            update_option($option_key, true);
+            if ('audit' === $step && $qualifier) {
+                update_option('ai_seo_captain_full_site_analysis_type', $qualifier);
+            }
+            wp_send_json_success(array('message' => 'Full site step marked complete.'));
+            return;
+        }
+
+        $this->run_manager->mark_step_complete($run_id, $step, $qualifier);
 
         wp_send_json_success(array('message' => 'Step marked complete.'));
     }

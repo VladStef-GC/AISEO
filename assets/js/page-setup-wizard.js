@@ -709,13 +709,13 @@
                     unlockStep(3);
                     if (s2RunId) {
                         markRunBadgeDone('aisc-s2', s2RunId);
-                        $.post(ajaxUrl, {
-                            action: 'ai_seo_captain_mark_run_step',
-                            nonce: nonce,
-                            run_id: s2RunId,
-                            step: 'metadata'
-                        });
                     }
+                    $.post(ajaxUrl, {
+                        action: 'ai_seo_captain_mark_run_step',
+                        nonce: nonce,
+                        run_id: s2RunId || 0,
+                        step: 'metadata'
+                    });
                 },
                 onError: function (postId, title, msg) {
                     $('#aisc-s2-log').prepend('<div class="aisc-log-entry" style="color:#d63638;">\u2717 <strong>' + esc(title) + '</strong> \u2014 ' + esc(msg) + '</div>');
@@ -1023,13 +1023,14 @@
                 markStepDone(3);
                 if (s3RunId) {
                     markRunBadgeDone('aisc-s3', s3RunId);
-                    $.post(ajaxUrl, {
-                        action: 'ai_seo_captain_mark_run_step',
-                        nonce: nonce,
-                        run_id: s3RunId,
-                        step: 'audit'
-                    });
                 }
+                $.post(ajaxUrl, {
+                    action: 'ai_seo_captain_mark_run_step',
+                    nonce: nonce,
+                    run_id: s3RunId || 0,
+                    step: 'audit',
+                    qualifier: $('#aisc-s3-deep').is(':checked') ? 'deep' : 'standard'
+                });
                 return;
             }
 
@@ -1062,13 +1063,14 @@
                     refreshDetailsTab();
                     if (s3RunId) {
                         markRunBadgeDone('aisc-s3', s3RunId);
-                        $.post(ajaxUrl, {
-                            action: 'ai_seo_captain_mark_run_step',
-                            nonce: nonce,
-                            run_id: s3RunId,
-                            step: 'audit'
-                        });
                     }
+                    $.post(ajaxUrl, {
+                        action: 'ai_seo_captain_mark_run_step',
+                        nonce: nonce,
+                        run_id: s3RunId || 0,
+                        step: 'audit',
+                        qualifier: $('#aisc-s3-deep').is(':checked') ? 'deep' : 'standard'
+                    });
                 },
                 onError: function (postId, title, msg) {
                     $('#aisc-s3-results').prepend(

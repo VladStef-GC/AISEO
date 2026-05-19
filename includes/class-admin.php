@@ -2598,97 +2598,39 @@ JS;
         $runs           = $this->run_manager->get_runs_with_status();
         $active_run_ids = $this->run_manager->get_active_run_ids();
 
-        // Build Focus Pages list — only pages from lists with BOTH steps completed.
+        // Build Focus Pages list — any page with audit data is eligible.
         $audited_pages = array();
         if ($readiness['has_index']) {
             global $wpdb;
 
-            // Collect page IDs from fully-complete lists (both metadata + audit steps).
-            $eligible_page_ids = array();
-            $page_to_lists     = array();
+            // Map page IDs → list names for display.
+            $page_to_lists = array();
             foreach ($runs as $run) {
-                $fully_done = Run_Manager::is_fully_complete($run);
                 if (! empty($run['page_ids'])) {
                     foreach ($run['page_ids'] as $pid) {
-                        $page_to_lists[(int) $pid][] = array(
-                            'name' => $run['name'],
-                            'done' => $fully_done,
-                        );
-                        if ($fully_done) {
-                            $eligible_page_ids[] = (int) $pid;
-                        }
+                        $page_to_lists[(int) $pid][] = $run['name'];
                     }
                 }
             }
 
-            // Also include "Full Site" pages (not in any list) that have both postmeta keys.
-            $step2_all_done = (bool) get_option('ai_seo_captain_step2_all_done', false);
-            $step3_all_done = (bool) get_option('ai_seo_captain_step3_all_done', false);
+            // Find ALL pages that have audit data, regardless of list membership.
+            $audit_rows = $wpdb->get_results(
+                "SELECT pm.post_id, p.post_title
+                 FROM {$wpdb->postmeta} pm
+                 INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id AND p.post_status IN ('publish','draft','pending','private')
+                 WHERE pm.meta_key = '_ai_seo_captain_page_audit'
+                 ORDER BY p.post_title ASC",
+                ARRAY_A
+            );
 
-            if ($step2_all_done && $step3_all_done) {
-                // Full site processing completed both steps — include all pages with both postmeta.
-                $full_site_rows = $wpdb->get_results(
-                    "SELECT audit.post_id, p.post_title
-                     FROM {$wpdb->postmeta} audit
-                     INNER JOIN {$wpdb->posts} p ON p.ID = audit.post_id
-                     INNER JOIN {$wpdb->postmeta} meta ON meta.post_id = audit.post_id
-                        AND meta.meta_key = '_ai_seo_captain_meta_title'
-                        AND meta.meta_value != ''
-                     WHERE audit.meta_key = '_ai_seo_captain_page_audit'
-                     ORDER BY p.post_title ASC",
-                    ARRAY_A
+            foreach ($audit_rows as $row) {
+                $pid = (int) $row['post_id'];
+                $list_names = isset($page_to_lists[$pid]) ? $page_to_lists[$pid] : array('Full Site');
+                $audited_pages[] = array(
+                    'id'    => $pid,
+                    'title' => $row['post_title'],
+                    'lists' => $list_names,
                 );
-                foreach ($full_site_rows as $row) {
-                    $pid = (int) $row['post_id'];
-                    $list_names = array();
-                    if (isset($page_to_lists[$pid])) {
-                        foreach ($page_to_lists[$pid] as $entry) {
-                            if ($entry['done']) {
-                                $list_names[] = $entry['name'];
-                            }
-                        }
-                    }
-                    if (empty($list_names)) {
-                        $list_names[] = 'Full Site';
-                    }
-                    $audited_pages[] = array(
-                        'id'    => $pid,
-                        'title' => $row['post_title'],
-                        'lists' => $list_names,
-                    );
-                }
-            } elseif (! empty($eligible_page_ids)) {
-                // Only include pages from fully-complete lists.
-                $eligible_page_ids = array_values(array_unique($eligible_page_ids));
-                $placeholders      = implode(',', array_fill(0, count($eligible_page_ids), '%d'));
-
-                $rows = $wpdb->get_results(
-                    $wpdb->prepare(
-                        "SELECT p.ID AS post_id, p.post_title
-                         FROM {$wpdb->posts} p
-                         WHERE p.ID IN ($placeholders)
-                         ORDER BY p.post_title ASC",
-                        ...$eligible_page_ids
-                    ),
-                    ARRAY_A
-                );
-
-                foreach ($rows as $row) {
-                    $pid = (int) $row['post_id'];
-                    $list_names = array();
-                    if (isset($page_to_lists[$pid])) {
-                        foreach ($page_to_lists[$pid] as $entry) {
-                            if ($entry['done']) {
-                                $list_names[] = $entry['name'];
-                            }
-                        }
-                    }
-                    $audited_pages[] = array(
-                        'id'    => $pid,
-                        'title' => $row['post_title'],
-                        'lists' => $list_names,
-                    );
-                }
             }
         }
 
@@ -2699,6 +2641,17 @@ JS;
         $max_pages     = Settings::get_max_pages_for_model($active_model);
         $context_window = Settings::get_context_window($active_model);
         $needs_focus   = $page_count > $max_pages;
+
+        // Compute full-site completion status for the "Full Site" card.
+        $step2_all_done = (bool) get_option('ai_seo_captain_step2_all_done', false);
+        $step3_all_done = (bool) get_option('ai_seo_captain_step3_all_done', false);
+        $full_site_analysis = get_option('ai_seo_captain_full_site_analysis_type', '');
+
+        // Enrich runs with analysis_type for card display.
+        foreach ($runs as &$run_ref) {
+            $run_ref['analysis_type'] = Run_Manager::get_analysis_type($run_ref);
+        }
+        unset($run_ref);
 
         // Localize the JS with AJAX data.
         wp_localize_script('ai-seo-page-site-chat', 'aiSeoSiteChat', array(
@@ -2715,6 +2668,9 @@ JS;
             'runs'          => $runs,
             'activeRunIds'  => $active_run_ids,
             'auditedPages'  => $audited_pages,
+            'step2AllDone'          => $step2_all_done,
+            'step3AllDone'          => $step3_all_done,
+            'fullSiteAnalysisType'  => $full_site_analysis,
         ));
 
         require __DIR__ . '/admin/view-site-chat.php';

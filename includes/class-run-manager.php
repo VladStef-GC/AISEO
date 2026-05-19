@@ -169,8 +169,9 @@ class Run_Manager
      *
      * @param int    $run_id Run ID.
      * @param string $step   'metadata' or 'audit'.
+     * @param string $qualifier Optional qualifier appended as step:qualifier (e.g. 'deep').
      */
-    public function mark_step_complete(int $run_id, string $step): void
+    public function mark_step_complete(int $run_id, string $step, string $qualifier = ''): void
     {
         global $wpdb;
 
@@ -184,9 +185,14 @@ class Run_Manager
         }
 
         $current = array_filter(explode(',', (string) $row['completed_steps']));
-        if (! in_array($step, $current, true)) {
-            $current[] = $step;
-        }
+
+        // Remove any existing entry for this step (e.g. 'audit' or 'audit:deep').
+        $current = array_filter($current, function ($s) use ($step) {
+            return explode(':', $s)[0] !== $step;
+        });
+
+        $entry = $qualifier ? $step . ':' . $qualifier : $step;
+        $current[] = $entry;
 
         $wpdb->update(
             $this->table,
@@ -209,7 +215,29 @@ class Run_Manager
     public static function has_completed_step(array $run, string $step): bool
     {
         $steps = isset($run['completed_steps']) ? (string) $run['completed_steps'] : '';
-        return in_array($step, explode(',', $steps), true);
+        foreach (explode(',', $steps) as $s) {
+            if (explode(':', $s)[0] === $step) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Get the analysis type for a run's audit step.
+     *
+     * @return string 'deep', 'standard', or '' if audit not completed.
+     */
+    public static function get_analysis_type(array $run): string
+    {
+        $steps = isset($run['completed_steps']) ? (string) $run['completed_steps'] : '';
+        foreach (explode(',', $steps) as $s) {
+            $parts = explode(':', $s);
+            if ('audit' === $parts[0] && isset($parts[1])) {
+                return $parts[1];
+            }
+        }
+        return '';
     }
 
     /**
