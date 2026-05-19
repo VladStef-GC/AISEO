@@ -94,7 +94,15 @@ defined('ABSPATH') || exit;
             <span id="aisc-s2-elapsed" class="aisc-elapsed"></span>
         </div>
         <p><?php esc_html_e('AI reads each page and generates: SEO title, meta description, focus keyphrase, keywords, social title, and social description.', 'ai-seo-captain'); ?></p>
-        <p style="margin:8px 0 12px;padding:12px 16px;background:var(--aisc-bg-muted,#f6f7f7);border-left:3px solid #d63638;border-radius:0 4px 4px 0;font-size:13px;line-height:1.55;color:#d63638;"><?php esc_html_e('⚠ Generated data is saved and goes live immediately — no manual publish or approval step is required. Make sure your Frontend Output setting is configured before running this.', 'ai-seo-captain'); ?></p>
+        <p style="margin:8px 0 12px;padding:12px 16px;background:var(--aisc-bg-muted,#f6f7f7);border-left:3px solid #d63638;border-radius:0 4px 4px 0;font-size:13px;line-height:1.55;color:#d63638;">
+            <?php
+            printf(
+                /* translators: %s: link to Frontend Output setting */
+                esc_html__( '⚠ Generated data is saved and goes live immediately — no manual publish or approval step is required. Make sure your %s setting is configured before running this.', 'ai-seo-captain' ),
+                '<a href="' . esc_url( admin_url( 'admin.php?page=ai-seo-captain-settings#ai-seo-frontend-output' ) ) . '" target="_blank" style="color:#d63638;font-weight:600;">' . esc_html__( 'Frontend Output', 'ai-seo-captain' ) . '</a>'
+            );
+            ?>
+        </p>
         <label class="aisc-toggle" style="display:flex;margin:0 0 8px;">
             <input id="aisc-s2-override" type="checkbox" value="1" />
             <span class="aisc-toggle__track"></span>
