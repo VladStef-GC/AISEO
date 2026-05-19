@@ -434,10 +434,12 @@ class Admin
                 esc_html__('Site Indexed — %d Pages', 'ai-seo-captain'),
                 $readiness['page_count']
             );
+            $chat_url = esc_url(admin_url('admin.php?page=ai-seo-captain-site-chat'));
             $text = sprintf(
-                /* translators: %s: link to Setup Wizard */
-                esc_html__('No audit data found. Please %s to unlock AI-powered features like the AI Captain.', 'ai-seo-captain'),
-                '<a href="' . $setup_url . '">' . esc_html__('run a full audit or audit specific pages', 'ai-seo-captain') . '</a>'
+                /* translators: %1$s: link to Setup Wizard, %2$s: link to AI Captain (Chat) */
+                esc_html__('No audit data found. Please %1$s to unlock AI-powered features like the %2$s.', 'ai-seo-captain'),
+                '<a href="' . $setup_url . '">' . esc_html__('run a full audit or audit specific pages', 'ai-seo-captain') . '</a>',
+                '<a href="' . $chat_url . '">' . esc_html__('AI Captain (Chat)', 'ai-seo-captain') . '</a>'
             );
         }
 
