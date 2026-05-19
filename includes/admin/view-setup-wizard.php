@@ -94,11 +94,11 @@ defined('ABSPATH') || exit;
             <span id="aisc-s2-elapsed" class="aisc-elapsed"></span>
         </div>
         <p><?php esc_html_e('AI reads each page and generates: SEO title, meta description, focus keyphrase, keywords, social title, and social description. Every page is processed — AI fills only the fields that are empty, leaving existing data untouched.', 'ai-seo-captain'); ?></p>
-        <p style="font-size:13px;color:#d63638;"><strong><?php esc_html_e('⚠ Generated data is saved and goes live immediately — no manual publish or approval step is required. Make sure your Frontend Output setting is configured before running this.', 'ai-seo-captain'); ?></strong></p>
-        <label style="display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:13px;">
+        <p style="margin:8px 0 12px;padding:12px 16px;background:var(--aisc-bg-muted,#f6f7f7);border-left:3px solid #d63638;border-radius:0 4px 4px 0;font-size:13px;line-height:1.55;color:var(--aisc-text-secondary,#50575e);"><?php esc_html_e('⚠ Generated data is saved and goes live immediately — no manual publish or approval step is required. Make sure your Frontend Output setting is configured before running this.', 'ai-seo-captain'); ?></p>
+        <label class="aisc-toggle" style="display:flex;margin:0 0 12px;">
             <input id="aisc-s2-override" type="checkbox" value="1" />
-            <strong><?php esc_html_e('Override all Metadata', 'ai-seo-captain'); ?></strong>
-            <span style="color:#50575e;"><?php esc_html_e('— AI will regenerate ALL fields for every page, even if data already exists.', 'ai-seo-captain'); ?></span>
+            <span class="aisc-toggle__track"></span>
+            <span class="aisc-toggle__label"><?php esc_html_e('Override all Metadata — AI will regenerate ALL fields for every page, even if data already exists.', 'ai-seo-captain'); ?></span>
         </label>
         <div class="aisc-controls">
             <button id="aisc-btn-generate" class="button button-primary button-hero" type="button" <?php disabled(! $has_index); ?>>
