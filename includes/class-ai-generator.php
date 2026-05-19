@@ -1212,21 +1212,21 @@ class AI_Generator
         $doc_count = preg_match_all('/href=["\'][^"\']*\.(?:pdf|docx?|xlsx?|pptx?|odt|ods|odp|csv|rtf)["\s>]/i', $page_content_raw);
 
         $prompt_parts = array(
-                'Task: Perform a comprehensive SEO audit of this WordPress page and provide specific, actionable findings.',
-                'Output format: {"score":...,"issues":[...],"suggestions":[...],"missing_alt_tags":...,"word_count":...,"heading_structure":"...","summary":"..."}',
-                'Requirements: You receive the COMPLETE page content, ALL metadata fields, full audit results, the page hierarchy (parent, siblings, children with their SEO data), keyphrase conflict warnings, and the site structure tree. Use ALL of it. Detect cannibalization risks. Flag pages that overlap with this page. Ground your audit in the actual data below.',
-                'Site: ' . get_bloginfo('name'),
-                'Page type: ' . $post->post_type,
-                'Page title: ' . (string) $post->post_title,
-                'Page URL: ' . (string) get_permalink($post),
-                'Word count: ' . $word_count,
-                'Images total: ' . $img_count . ', Images missing alt text: ' . $img_no_alt,
-                'Videos embedded: ' . $video_count,
-                'Documents linked: ' . $doc_count,
-                'Heading structure found: ' . ('' !== $heading_summary ? $heading_summary : 'No headings found'),
-                'Internal links: ' . $internal_links . ', External links: ' . $external_links,
-                $this->format_seo_context_lines($ctx),
-                'Main page content: ' . ('' !== $page_content ? $page_content : 'No body content is available.'),
+            'Task: Perform a comprehensive SEO audit of this WordPress page and provide specific, actionable findings.',
+            'Output format: {"score":...,"issues":[...],"suggestions":[...],"missing_alt_tags":...,"word_count":...,"heading_structure":"...","summary":"..."}',
+            'Requirements: You receive the COMPLETE page content, ALL metadata fields, full audit results, the page hierarchy (parent, siblings, children with their SEO data), keyphrase conflict warnings, and the site structure tree. Use ALL of it. Detect cannibalization risks. Flag pages that overlap with this page. Ground your audit in the actual data below.',
+            'Site: ' . get_bloginfo('name'),
+            'Page type: ' . $post->post_type,
+            'Page title: ' . (string) $post->post_title,
+            'Page URL: ' . (string) get_permalink($post),
+            'Word count: ' . $word_count,
+            'Images total: ' . $img_count . ', Images missing alt text: ' . $img_no_alt,
+            'Videos embedded: ' . $video_count,
+            'Documents linked: ' . $doc_count,
+            'Heading structure found: ' . ('' !== $heading_summary ? $heading_summary : 'No headings found'),
+            'Internal links: ' . $internal_links . ', External links: ' . $external_links,
+            $this->format_seo_context_lines($ctx),
+            'Main page content: ' . ('' !== $page_content ? $page_content : 'No body content is available.'),
         );
 
         if ('' !== $site_context) {

@@ -1638,12 +1638,12 @@ jQuery(function ($) {
                 $btn.text('✓ Approved').prop('disabled', true);
                 $review.find('.ai-seo-captain-discard-changes, .ai-seo-captain-toggle-all-changes').hide();
                 $review.find('.ai-seo-captain-diff-accept').prop('disabled', true);
+                // Show pending notice at the top of the panel.
+                var $panel = $btn.closest('.ai-seo-captain-editor-panel');
                 // Refresh the History tab so the new plan shows immediately.
                 if (d.historyHtml) {
                     $panel.find('.ai-seo-captain-history-shell').html(d.historyHtml);
                 }
-                // Show pending notice at the top of the panel.
-                var $panel = $btn.closest('.ai-seo-captain-editor-panel');
                 if (! $panel.find('.ai-seo-captain-pending-notice').length) {
                     $panel.find('.ai-seo-captain-toolbar').after(
                         '<div class="ai-seo-captain-pending-notice" style="background:#fff8e1;border-left:4px solid #ffb300;padding:8px 12px;margin:8px 0;font-size:13px;">' +
