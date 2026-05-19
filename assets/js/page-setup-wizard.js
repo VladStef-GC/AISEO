@@ -686,11 +686,16 @@
                 btnPause: '#aisc-btn-s2-pause',
                 btnStop: '#aisc-btn-s2-stop',
                 timerEl: '#aisc-s2-elapsed',
-                extraData: { override_all: $('#aisc-s2-override').is(':checked') ? 1 : 0 },
+                extraData: {
+                    override_all: $('#aisc-s2-override').is(':checked') ? 1 : 0,
+                    draft_mode: $('#aisc-s2-draft').is(':checked') ? 1 : 0
+                },
                 onItem: function (response) {
                     var d = response.data;
                     if (d.skipped) {
                         $('#aisc-s2-log').prepend('<div class="aisc-log-entry" style="color:#50575e;">\u23ED <strong>' + esc(d.title) + '</strong> \u2014 skipped (all fields populated)</div>');
+                    } else if (d.draft) {
+                        $('#aisc-s2-log').prepend('<div class="aisc-log-entry" style="color:#2271b1;">\u270E <strong>' + esc(d.title) + '</strong> \u2014 saved as draft \u2014 ' + esc(d.seo_title) + '</div>');
                     } else {
                         $('#aisc-s2-log').prepend('<div class="aisc-log-entry" style="color:#00a32a;">\u2713 <strong>' + esc(d.title) + '</strong> \u2014 ' + esc(d.seo_title) + '</div>');
                     }

@@ -449,6 +449,12 @@ class Admin_Ajax
             update_post_meta($post_id, AdminBase::SOCIAL_DESCRIPTION_META_KEY, $suggestion['social_description']);
         }
 
+        // Draft mode: skip setting the frontend-enabled flag so data stays unpublished.
+        $draft_mode = ! empty($_POST['draft_mode']);
+        if (! $draft_mode) {
+            update_post_meta($post_id, AdminBase::FRONTEND_ENABLE_META_KEY, '1');
+        }
+
         try {
             $this->history_store->log_generation(
                 $post_id,
@@ -475,6 +481,7 @@ class Admin_Ajax
         wp_send_json_success(array(
             'message'            => 'Generated metadata for: ' . $post->post_title,
             'skipped'            => false,
+            'draft'              => $draft_mode,
             'post_id'            => $post_id,
             'title'              => $post->post_title,
             'seo_title'          => $suggestion['seo_title'],
