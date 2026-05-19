@@ -1170,7 +1170,7 @@ class Admin_Ajax
             wp_send_json_error(array('message' => __('Invalid parameters.', 'ai-seo-captain')), 400);
         }
 
-        // run_id = 0 means "Full Site" — persist global flag instead of marking a list.
+        // run_id = 0 means "Full Site" — persist global flag AND mark all existing lists.
         if (0 === $run_id) {
             $option_key = 'metadata' === $step
                 ? 'ai_seo_captain_step2_all_done'
@@ -1179,6 +1179,13 @@ class Admin_Ajax
             if ('audit' === $step && $qualifier) {
                 update_option('ai_seo_captain_full_site_analysis_type', $qualifier);
             }
+
+            // Also mark the step on every active list so their cards update too.
+            $all_runs = $this->run_manager->get_all_runs();
+            foreach ($all_runs as $run) {
+                $this->run_manager->mark_step_complete((int) $run['id'], $step, $qualifier);
+            }
+
             wp_send_json_success(array('message' => 'Full site step marked complete.'));
             return;
         }

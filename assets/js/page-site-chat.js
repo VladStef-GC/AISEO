@@ -38,7 +38,7 @@ jQuery(function ($) {
         if (s2All || s3All) {
             var fsBoth = s2All && s3All;
             var fsClass = fsBoth ? 'is-complete' : 'is-partial';
-            var fsIcon  = fsBoth ? '✓' : '◐';
+            var fsIcon = fsBoth ? '✓' : '◐';
             var fsText;
             if (fsBoth) {
                 fsText = 'Ready — Both steps complete';
