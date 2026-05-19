@@ -318,6 +318,13 @@ jQuery(function ($) {
             return;
         }
 
+        // Check if too many focus pages are selected for the model.
+        if (focusIds.length > maxPages && maxPages > 0) {
+            setStatus('You selected ' + focusIds.length + ' pages but the model can handle up to ' + formatNumber(maxPages) + '. Please reduce your selection.', true);
+            $focusToggle.attr('open', '');
+            return;
+        }
+
         busy = true;
         $send.prop('disabled', true);
         setStatus('AI is thinking…', false);

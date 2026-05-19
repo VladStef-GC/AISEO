@@ -154,19 +154,28 @@ class Site_Chat
         $api_key     = (string) $options['api_key'];
         $temperature = isset($options['ai_temperature']) ? (float) $options['ai_temperature'] : 0.3;
 
-        // --- Page count gate: warn if site exceeds model capacity (skip in focus mode) ---
-        if (empty($focus_ids)) {
-            $page_count = $this->content_indexer->get_published_page_count();
-            $max_pages  = Settings::get_max_pages_for_model($model);
+        // --- Page count gate: warn if selection exceeds model capacity ---
+        $max_pages  = Settings::get_max_pages_for_model($model);
+        $effective_count = ! empty($focus_ids) ? count($focus_ids) : $this->content_indexer->get_published_page_count();
 
-            if ($page_count > $max_pages) {
-                $context_window = Settings::get_context_window($model);
+        if ($effective_count > $max_pages) {
+            $context_window = Settings::get_context_window($model);
+            if (! empty($focus_ids)) {
+                throw new \RuntimeException(sprintf(
+                    'You selected %s focus pages but the model (%s, %s-token context) can analyze up to %s pages at once. ' .
+                        'Please reduce your selection or switch to a model with a larger context window.',
+                    number_format_i18n($effective_count),
+                    esc_html($model),
+                    number_format_i18n($context_window),
+                    number_format_i18n($max_pages)
+                ));
+            } else {
                 throw new \RuntimeException(sprintf(
                     'Your site has %s pages but the selected model (%s, %s-token context) can safely analyze up to %s pages at once. ' .
                         'Options: 1) Use Skip Patterns in Settings to exclude template/utility pages. ' .
                         '2) Use Focus Pages mode to analyze a specific set of pages. ' .
                         '3) Switch to a model with a larger context window.',
-                    number_format_i18n($page_count),
+                    number_format_i18n($effective_count),
                     esc_html($model),
                     number_format_i18n($context_window),
                     number_format_i18n($max_pages)
