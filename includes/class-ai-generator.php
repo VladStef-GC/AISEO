@@ -573,6 +573,8 @@ class AI_Generator
                 . 'Only rewrite them if there is a concrete problem: wrong length, missing keyphrase, factual inaccuracy, poor differentiation from related pages, or low relevance to the page content.';
         }
 
+        $site_context = trim((string) ($this->settings->get()['site_chat_context'] ?? ''));
+
         $prompt_parts = array(
             'Task: Generate or refine the SEO title and meta description for the current WordPress page.',
             'Output format: {"seo_title":"...","meta_description":"...","focus_keyphrase":"...","keywords":"...","social_title":"...","social_description":"...","notes":"..."}',
@@ -586,6 +588,10 @@ class AI_Generator
             'Main page content: ' . ('' !== $page_content ? $page_content : 'No body content is available.'),
             "Related pages to avoid overlapping with:\n" . implode("\n", $related_lines),
         );
+
+        if ('' !== $site_context) {
+            $prompt_parts[] = "Site owner's description of the business and goals:\n" . $site_context;
+        }
 
         if ('' !== $preserve_instruction) {
             $prompt_parts[] = $preserve_instruction;
