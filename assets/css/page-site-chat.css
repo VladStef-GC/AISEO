@@ -217,14 +217,18 @@
 
 /* List cards grid */
 .aisc-captain-lists__grid {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
 }
 
+@media (max-width: 782px) {
+    .aisc-captain-lists__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .aisc-list-card {
-    flex: 0 0 calc(50% - 6px);
-    min-width: 260px;
     padding: 14px 16px;
     border-radius: 6px;
     border: 1px solid #dcdcde;

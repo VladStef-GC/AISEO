@@ -325,6 +325,14 @@
     flex-shrink: 0;
 }
 
+.aisc-modal__redo-check .aisc-modal__redo-cb {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+}
+
 .aisc-modal__redo-info {
     flex: 1;
     display: flex;

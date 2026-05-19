@@ -163,11 +163,15 @@
                 for (var r = 0; r < runsData.length; r++) {
                     var run = runsData[r];
                     var steps = (run.completed_steps || '').split(',');
-                    var stepDone = steps.indexOf(stepType) !== -1;
+                    var stepDone = false;
+                    for (var si = 0; si < steps.length; si++) {
+                        if (steps[si].split(':')[0] === stepType) { stepDone = true; break; }
+                    }
                     var statusClass = stepDone ? 'is-complete' : 'is-pending';
                     var statusLabel = stepDone ? '&#10003; Done' : 'Pending';
-                    redoHtml += '<button type="button" class="aisc-modal__redo-item" data-action="redo-run" data-run-id="' + parseInt(run.id, 10) + '">' + '<span class="dashicons dashicons-list-view"></span>' + '<span class="aisc-modal__redo-info">' + '<strong>' + esc(run.name) + '</strong>' + '<small>' + parseInt(run.page_count, 10) + ' pages &middot; Re-run ' + esc(operationName) + '</small>' + '</span>' + '<span class="aisc-modal__redo-badge ' + statusClass + '">' + statusLabel + '</span>' + '</button>';
+                    redoHtml += '<label class="aisc-modal__redo-item aisc-modal__redo-check" data-run-id="' + parseInt(run.id, 10) + '">' + '<input type="checkbox" class="aisc-modal__redo-cb" value="' + parseInt(run.id, 10) + '" /> ' + '<span class="dashicons dashicons-list-view"></span>' + '<span class="aisc-modal__redo-info">' + '<strong>' + esc(run.name) + '</strong>' + '<small>' + parseInt(run.page_count, 10) + ' pages &middot; Re-run ' + esc(operationName) + '</small>' + '</span>' + '<span class="aisc-modal__redo-badge ' + statusClass + '">' + statusLabel + '</span>' + '</label>';
                 }
+                redoHtml += '<button type="button" class="button button-primary aisc-modal__redo-go" disabled style="margin-top:8px;">Process Selected Lists</button>';
             }
             redoHtml += '</div>';
         }
@@ -257,23 +261,41 @@
             });
         });
 
-        // ── Redo: Existing list ──
-        $modal.on('click', '[data-action="redo-run"]', function () {
-            var redoRunId = parseInt($(this).data('run-id'), 10);
-            for (var i = 0; i < runsData.length; i++) {
-                if (parseInt(runsData[i].id, 10) === redoRunId) {
-                    var pageIds = runsData[i].page_ids;
-                    if (typeof pageIds === 'string') {
-                        pageIds = JSON.parse(pageIds);
+        // ── Redo: Existing list(s) — multi-select ──
+        $modal.on('change', '.aisc-modal__redo-cb', function () {
+            var checked = $modal.find('.aisc-modal__redo-cb:checked').length;
+            $modal.find('.aisc-modal__redo-go').prop('disabled', checked === 0)
+                .text(checked > 1 ? 'Process ' + checked + ' Selected Lists' : 'Process Selected List');
+        });
+
+        $modal.on('click', '.aisc-modal__redo-go', function () {
+            var mergedIds = [];
+            var mergedRunIds = [];
+            $modal.find('.aisc-modal__redo-cb:checked').each(function () {
+                var redoRunId = parseInt($(this).val(), 10);
+                mergedRunIds.push(redoRunId);
+                for (var i = 0; i < runsData.length; i++) {
+                    if (parseInt(runsData[i].id, 10) === redoRunId) {
+                        var pageIds = runsData[i].page_ids;
+                        if (typeof pageIds === 'string') {
+                            pageIds = JSON.parse(pageIds);
+                        }
+                        for (var p = 0; p < pageIds.length; p++) {
+                            if (mergedIds.indexOf(pageIds[p]) === -1) {
+                                mergedIds.push(pageIds[p]);
+                            }
+                        }
+                        break;
                     }
-                    closeModal();
-                    onConfirm({
-                        ids: pageIds,
-                        runId: redoRunId
-                    });
-                    return;
                 }
-            }
+            });
+            if (mergedIds.length === 0) return;
+            closeModal();
+            onConfirm({
+                ids: mergedIds,
+                runId: mergedRunIds.length === 1 ? mergedRunIds[0] : null,
+                runIds: mergedRunIds
+            });
         });
 
         // ── New: Process All ──
@@ -673,6 +695,7 @@
         confirmLargeOperation('SEO Metadata Generation', publishedIds.length, 3, 'metadata', function (result) {
             var idsToUse = result.ids;
             var s2RunId = result.runId;
+            var s2RunIds = result.runIds || (s2RunId ? [s2RunId] : []);
             $('#aisc-s2-log').show();
             $('#aisc-s2-done').hide();
             $('#aisc-s2-stopped').hide();
@@ -710,12 +733,25 @@
                     if (s2RunId) {
                         markRunBadgeDone('aisc-s2', s2RunId);
                     }
-                    $.post(ajaxUrl, {
-                        action: 'ai_seo_captain_mark_run_step',
-                        nonce: nonce,
-                        run_id: s2RunId || 0,
-                        step: 'metadata'
-                    });
+                    // Mark step on each selected run (or run_id=0 for full site).
+                    if (s2RunIds.length > 0) {
+                        for (var ri = 0; ri < s2RunIds.length; ri++) {
+                            markRunBadgeDone('aisc-s2', s2RunIds[ri]);
+                            $.post(ajaxUrl, {
+                                action: 'ai_seo_captain_mark_run_step',
+                                nonce: nonce,
+                                run_id: s2RunIds[ri],
+                                step: 'metadata'
+                            });
+                        }
+                    } else {
+                        $.post(ajaxUrl, {
+                            action: 'ai_seo_captain_mark_run_step',
+                            nonce: nonce,
+                            run_id: 0,
+                            step: 'metadata'
+                        });
+                    }
                 },
                 onError: function (postId, title, msg) {
                     $('#aisc-s2-log').prepend('<div class="aisc-log-entry" style="color:#d63638;">\u2717 <strong>' + esc(title) + '</strong> \u2014 ' + esc(msg) + '</div>');
@@ -994,6 +1030,7 @@
         confirmLargeOperation('Full SEO Audit', idsForCount.length, 5, 'audit', function (result) {
             var idsFromModal = result.ids;
             var s3RunId = result.runId;
+            var s3RunIds = result.runIds || (s3RunId ? [s3RunId] : []);
             $('#aisc-s3-done').hide();
             $('#aisc-s3-stopped').hide();
             $('#aisc-s3-paused').hide();
@@ -1021,16 +1058,27 @@
                 $('#aisc-s3-result').text('All ' + publishedIds.length + ' pages already audited. Click "Re-Run Audits" to refresh all scores.');
                 btn.prop('disabled', false).text('Re-Run Audits');
                 markStepDone(3);
-                if (s3RunId) {
-                    markRunBadgeDone('aisc-s3', s3RunId);
+                var deepQ = $('#aisc-s3-deep').is(':checked') ? 'deep' : 'standard';
+                if (s3RunIds.length > 0) {
+                    for (var ri = 0; ri < s3RunIds.length; ri++) {
+                        markRunBadgeDone('aisc-s3', s3RunIds[ri]);
+                        $.post(ajaxUrl, {
+                            action: 'ai_seo_captain_mark_run_step',
+                            nonce: nonce,
+                            run_id: s3RunIds[ri],
+                            step: 'audit',
+                            qualifier: deepQ
+                        });
+                    }
+                } else {
+                    $.post(ajaxUrl, {
+                        action: 'ai_seo_captain_mark_run_step',
+                        nonce: nonce,
+                        run_id: 0,
+                        step: 'audit',
+                        qualifier: deepQ
+                    });
                 }
-                $.post(ajaxUrl, {
-                    action: 'ai_seo_captain_mark_run_step',
-                    nonce: nonce,
-                    run_id: s3RunId || 0,
-                    step: 'audit',
-                    qualifier: $('#aisc-s3-deep').is(':checked') ? 'deep' : 'standard'
-                });
                 return;
             }
 
@@ -1061,16 +1109,27 @@
                     markStepDone(3);
                     refreshSummaryTab();
                     refreshDetailsTab();
-                    if (s3RunId) {
-                        markRunBadgeDone('aisc-s3', s3RunId);
+                    var deepQ = $('#aisc-s3-deep').is(':checked') ? 'deep' : 'standard';
+                    if (s3RunIds.length > 0) {
+                        for (var ri = 0; ri < s3RunIds.length; ri++) {
+                            markRunBadgeDone('aisc-s3', s3RunIds[ri]);
+                            $.post(ajaxUrl, {
+                                action: 'ai_seo_captain_mark_run_step',
+                                nonce: nonce,
+                                run_id: s3RunIds[ri],
+                                step: 'audit',
+                                qualifier: deepQ
+                            });
+                        }
+                    } else {
+                        $.post(ajaxUrl, {
+                            action: 'ai_seo_captain_mark_run_step',
+                            nonce: nonce,
+                            run_id: 0,
+                            step: 'audit',
+                            qualifier: deepQ
+                        });
                     }
-                    $.post(ajaxUrl, {
-                        action: 'ai_seo_captain_mark_run_step',
-                        nonce: nonce,
-                        run_id: s3RunId || 0,
-                        step: 'audit',
-                        qualifier: $('#aisc-s3-deep').is(':checked') ? 'deep' : 'standard'
-                    });
                 },
                 onError: function (postId, title, msg) {
                     $('#aisc-s3-results').prepend(
