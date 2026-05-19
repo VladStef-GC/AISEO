@@ -103,7 +103,7 @@ defined('ABSPATH') || exit;
         <label class="aisc-toggle" style="display:flex;margin:0 0 12px;">
             <input id="aisc-s2-draft" type="checkbox" value="1" />
             <span class="aisc-toggle__track"></span>
-            <span class="aisc-toggle__label"><?php esc_html_e('Save as draft (review before going live) — AI-generated data will be saved but won\u2019t appear on your site until you publish each page from the editor.', 'ai-seo-captain'); ?></span>
+            <span class="aisc-toggle__label"><?php esc_html_e('Save as draft (review before going live) — AI-generated data will be saved but will not appear on your site until you publish each page from the editor.', 'ai-seo-captain'); ?></span>
         </label>
         <div class="aisc-controls">
             <button id="aisc-btn-generate" class="button button-primary button-hero" type="button" <?php disabled(! $has_index); ?>>
