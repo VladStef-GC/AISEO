@@ -132,7 +132,56 @@ jQuery(function ($) {
                 '</div>';
         }
         $grid.html(html);
+
+        // Build map: runId → page IDs for card click → focus selection.
+        var runPageMap = {};
+        for (var ri = 0; ri < runs.length; ri++) {
+            var rr = runs[ri];
+            var pids = rr.page_ids;
+            if (typeof pids === 'string') { try { pids = JSON.parse(pids); } catch (e) { pids = []; } }
+            runPageMap[parseInt(rr.id, 10)] = pids || [];
+        }
+        // "Full Site" card (run_id=0) → all audited page IDs.
+        var allAuditedIds = [];
+        var ap = conf.auditedPages || [];
+        for (var ai = 0; ai < ap.length; ai++) { allAuditedIds.push(parseInt(ap[ai].id, 10)); }
+        runPageMap[0] = allAuditedIds;
+
+        // Card click → select that card (radio) and check its pages in Focus picker.
+        $grid.on('click', '.aisc-list-card', function () {
+            var $card = $(this);
+            var wasActive = $card.hasClass('is-active');
+            $grid.find('.aisc-list-card').removeClass('is-active');
+            if (wasActive) {
+                // Deselect: uncheck all focus pages.
+                $('#ai-seo-focus-list input[type="checkbox"]').prop('checked', false).first().trigger('change');
+                return;
+            }
+            $card.addClass('is-active');
+            var runId = parseInt($card.data('run-id'), 10);
+            var ids = runPageMap[runId] || [];
+            selectFocusPages(ids);
+        });
+
+        // Auto-select first card on load.
+        var $firstCard = $grid.find('.aisc-list-card').first();
+        if ($firstCard.length) {
+            $firstCard.addClass('is-active');
+            // Defer focus page selection until picker is rendered (below).
+            window._aisc_autoSelectRunId = parseInt($firstCard.data('run-id'), 10);
+        }
     })();
+
+    // Helper: check specific page IDs in the Focus picker (uncheck rest).
+    function selectFocusPages(ids) {
+        var idSet = {};
+        for (var i = 0; i < ids.length; i++) { idSet[ids[i]] = true; }
+        $('#ai-seo-focus-list input[type="checkbox"]').each(function () {
+            $(this).prop('checked', !!idSet[parseInt($(this).val(), 10)]);
+        });
+        var count = $('#ai-seo-focus-list input:checked').length;
+        $focusCount.text(count + (count === 1 ? ' page selected' : ' pages selected'));
+    }
 
     // --- Block all interaction when plugin prerequisites are not met ---
     if (!isReady) {
@@ -196,6 +245,30 @@ jQuery(function ($) {
         }
         $list.html(html);
     })();
+
+    // Auto-select pages from the first card (deferred until picker is rendered).
+    if (typeof window._aisc_autoSelectRunId !== 'undefined') {
+        var autoRunId = window._aisc_autoSelectRunId;
+        delete window._aisc_autoSelectRunId;
+        // Build the map again here since runPageMap is scoped inside renderListsGrid.
+        var autoIds = [];
+        var autoRuns = conf.runs || [];
+        if (autoRunId === 0) {
+            for (var ai2 = 0; ai2 < auditedPages.length; ai2++) { autoIds.push(parseInt(auditedPages[ai2].id, 10)); }
+        } else {
+            for (var ari = 0; ari < autoRuns.length; ari++) {
+                if (parseInt(autoRuns[ari].id, 10) === autoRunId) {
+                    var pids = autoRuns[ari].page_ids;
+                    if (typeof pids === 'string') { try { pids = JSON.parse(pids); } catch (e) { pids = []; } }
+                    autoIds = pids || [];
+                    break;
+                }
+            }
+        }
+        if (autoIds.length > 0) {
+            selectFocusPages(autoIds);
+        }
+    }
 
     // Search filter for focus pages
     $('#ai-seo-focus-search').on('input', function () {

@@ -233,12 +233,30 @@
     border-radius: 6px;
     border: 1px solid #dcdcde;
     background: #f6f7f7;
+    cursor: pointer;
     transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .aisc-list-card:hover {
     border-color: #a7aaad;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.aisc-list-card.is-active {
+    border-color: #643d87;
+    box-shadow: 0 0 0 2px rgba(100, 61, 135, 0.25);
+    background: #faf5ff;
+}
+
+.aisc-list-card.is-active::before {
+    content: '▶ Active';
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    color: #643d87;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
 }
 
 .aisc-list-card.is-complete {
