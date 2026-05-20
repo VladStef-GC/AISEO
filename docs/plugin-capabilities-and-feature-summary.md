@@ -12,6 +12,7 @@
 | SEO Title (max 60 chars) | ✅ | ✅ |
 | Meta Description (max 155 chars) | ✅ | ✅ |
 | Focus Keyphrase | ✅ | ✅ |
+| Keywords (5–8 SEO terms) | ✅ | ✅ |
 | Social Title (OG/Twitter) | ✅ | ✅ |
 | Social Description | ✅ | ✅ |
 | Social Image (Media Library) | ❌ | ✅ |
@@ -60,7 +61,7 @@ Plus site-wide: **orphaned content**, **duplicate titles**, **keyword cannibaliz
 
 | Feature | Scope | What AI Does |
 |---------|-------|--------------|
-| **Generate SEO Metadata** | Per-page | Reads content → produces title + description + keyphrase + social title + social description |
+| **Generate SEO Metadata** | Per-page | Reads content → produces title + description + keyphrase + keywords + social title + social description |
 | **Bulk Generate (Wizard)** | Site-wide | Batch AI generation with pause/resume, tracked via Runs |
 | **Page Chat** | Per-page | AI assistant in editor sidebar — answers SEO questions, suggests improvements |
 | **AI Content Edits** | Per-page | AI proposes text rewrites (headings, alt text, thin content) with approval workflow |
@@ -190,7 +191,7 @@ Plus site-wide: **orphaned content**, **duplicate titles**, **keyword cannibaliz
 | `wp_ai_seo_captain_redirects` | Redirects + 404 log + broken link/media entries |
 | `wp_ai_seo_captain_runs` | Named batch operation tracking |
 
-**Post Meta Keys:** 17 (`_ai_seo_captain_*`)  
+**Post Meta Keys:** 20 (`_ai_seo_captain_*`) + dynamic video meta keys  
 **Term Meta Keys:** 4 (`_ai_seo_captain_*`)  
 **Settings:** 70+ options in single `ai_seo_captain_settings` row
 
@@ -198,7 +199,7 @@ Plus site-wide: **orphaned content**, **duplicate titles**, **keyword cannibaliz
 
 ## Totals
 
-- **17** post meta fields
+- **20** post meta fields (+ dynamic video meta keys)
 - **4** term meta fields
 - **17** deterministic SEO checks
 - **9** AI-powered features

@@ -105,7 +105,7 @@ Each step includes real-time progress bars, pause/resume/stop controls, and a de
 ### 🤖 AI SEO Generation
 
 - **Supported Providers:** OpenAI (GPT-4.1-mini default) and Google Gemini
-- **What it generates:** SEO title, meta description, focus keyphrase, and notes
+- **What it generates:** SEO title, meta description, focus keyphrase, keywords (5-8 terms), social title (OG/Twitter), social description, and notes
 - **Custom System Prompt:** Tailor the AI's behavior to your brand voice and industry
 - **Draft-first approach:** AI suggestions are stored as drafts — they never go live until you explicitly approve them
 

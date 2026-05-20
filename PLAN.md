@@ -15,8 +15,11 @@ The working model is hybrid by design:
 
 - `PLAN.md`: strategic direction, current shipped scope, and next priorities.
 - `PROJECT-HANDOFF.md`: current-state snapshot, architecture graph, runtime flow, data model, and new-chat briefing.
+- `docs/AI-DATA-FLOW.md`: comprehensive reference for what data the AI sees in every mode (Step 2, Step 3, Site Chat, Editor Chat, Page Audit, Content Editor, Site Audit).
+- `docs/CODE-MAP.md`: complete codebase file tree, module dependencies, AJAX handler tables, admin page mapping.
+- `docs/plugin-capabilities-and-feature-summary.md`: full feature and capability reference.
 
-## Current status as of 2026-05-14
+## Current status as of 2026-05-20
 
 - Plugin version: **1.3.1** with modular admin architecture and PSR-4 autoloader.
 - The plugin is a complete standalone SEO layer for both singular and non-singular content.
@@ -26,7 +29,7 @@ The working model is hybrid by design:
 - **Setup Wizard**: 3-step guided flow with cost/time warning modal (always shown), pause/resume/stop, WooCommerce Products filter, skip rules, runs system.
 - **Bulk Editor**: row counter, real-time search, WooCommerce-aware post type filter, site structure tree.
 - **AI SEO Strategist**: dedicated site-wide AI chat page with focus-page scoping and run context.
-- **Data Management**: scope-based clearing (metadata, audits, everything) deleting 17 post meta + 4 term meta + conversations + messages + IndexNow log + runs + active_runs user meta.
+- **Data Management**: scope-based clearing (metadata, audits, everything) deleting 20 post meta keys + dynamic video meta keys + 4 term meta + conversations + messages + IndexNow log + runs + active_runs user meta.
 - **Gutenberg sidebar panel** with dedicated JS/CSS assets.
 - The editor workflow, AI drafting, saved manual metadata, history/approval, schema, breadcrumbs, discovery documents, audits, and IndexNow are all in place.
 - Manual or imported metadata can render on the frontend without requiring an approved AI suggestion.

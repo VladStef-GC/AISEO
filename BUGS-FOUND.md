@@ -1,0 +1,49 @@
+# Bugs Found During Documentation Review — May 20, 2026
+
+> **Method:** Full code review during documentation update session.  
+> **Rule:** NO CODE FIXES — documentation only. Track bugs here for future resolution.
+
+---
+
+## Still Open from AUDIT-REPORT.md
+
+| # | Bug | Severity | Notes |
+|---|-----|----------|-------|
+| 1 | **Version mismatch**: Code declares `1.0.0` (`ai-seo-captain.php` L6, L17), all documentation says `1.3.1` | Medium | Constant prefix fixed (`AI_SEO_CAPTAIN_*`), but version number never bumped |
+| 8 | **Term meta key naming in docs**: Some docs reference `_ai_seo_captain_term_title` but code uses `_ai_seo_captain_seo_title` | Low | Verify all MD files and update to match code |
+| 10 | **`schedule_all()` on every page load**: `class-plugin.php` L63 calls `$this->cron_manager->schedule_all()` on every `plugins_loaded`. WordPress's `wp_schedule_event()` checks if already scheduled (safe), but it still triggers unnecessary DB reads per request. | Low | Guard with a static flag or `wp_next_scheduled()` pre-check |
+
+---
+
+## New Findings (This Session)
+
+| # | Finding | Location | Severity | Details |
+|---|---------|----------|----------|---------|
+| N1 | **No new functional bugs found** | — | — | All 5 AI data flow paths (Step 2, Step 3, Site Chat, Editor Chat, Page Audit) are consistent and correct. The recent sibling metadata additions (keywords, social_title, social_description) are properly wired through SQL JOINs, context builder, and formatter. |
+
+---
+
+## Resolved Since AUDIT-REPORT.md (Verified May 20, 2026)
+
+| Original # | Fix |
+|---|---|
+| 2 | Constants renamed from `AI_SEO_KEEPER_*` to `AI_SEO_CAPTAIN_*` |
+| 3 | Index button now re-enabled on success (`btn.prop('disabled', false).text('Re-Index Site')`) |
+| 4 | Google sitemap ping removed; only Bing is pinged now |
+| 5 | `uninstall.php` now includes `_ai_seo_captain_keywords` and `_ai_seo_captain_exclude_sitemap` |
+| 6 | Dynamic video meta keys cleaned via `LIKE '_ai_seo_captain_video_title_%'` queries in `uninstall.php` |
+| 7 | `Meta_Keys::all_post_meta_keys()` now lists all 20 post meta keys |
+
+---
+
+## Documentation Gaps Fixed (This Session)
+
+| File | What Changed |
+|---|---|
+| `docs/AI-DATA-FLOW.md` | **Created** — comprehensive reference for all 7 AI modes |
+| `docs/plugin-capabilities-and-feature-summary.md` | Added Keywords field, updated post meta count (17→20), updated AI feature descriptions |
+| `docs/CODE-MAP.md` | Added `AI-DATA-FLOW.md`, `CACHE-SYSTEM.md`, `PLAN-CACHE-MODULE.md`, `plugin-capabilities-and-feature-summary.md` to file tree |
+| `PLAN.md` | Added doc anchors for `AI-DATA-FLOW.md`, `CODE-MAP.md`, `plugin-capabilities-and-feature-summary.md`; updated post meta count; updated date |
+| `PROJECT-HANDOFF.md` | Updated snapshot date, added `AI-DATA-FLOW.md` reference, updated post meta count (19→20 + dynamic video) |
+| `README.md` | Updated AI generation description to include all 6 generated fields |
+| `AUDIT-REPORT.md` | Added resolution status section with per-bug verified status |

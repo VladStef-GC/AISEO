@@ -86,9 +86,13 @@ ai-seo-captain/
 │
 └── docs/
     ├── CODE-MAP.md                ← This file
+    ├── AI-DATA-FLOW.md            ← AI data flow reference: what AI sees in every mode
+    ├── CACHE-SYSTEM.md            ← Cache system technical reference
     ├── UPDATE-PLAN-v1.3.md        ← v1.3 refactoring plan (completed)
     ├── PRIORITY-PLAN-SCALE-AWARE.md ← Scale-aware architecture plan (completed)
-    └── plan-ai-content-editor.md  ← AI Content Editor feature plan (completed)
+    ├── plan-ai-content-editor.md  ← AI Content Editor feature plan (completed)
+    ├── PLAN-CACHE-MODULE.md       ← Cache module build plan (archived, see CACHE-SYSTEM.md)
+    └── plugin-capabilities-and-feature-summary.md ← Full feature & capability reference
 ```
 
 ---

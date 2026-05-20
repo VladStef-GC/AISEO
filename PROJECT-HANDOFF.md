@@ -1,12 +1,12 @@
 # SEO Captain Project Handoff
 
-Snapshot date: 2026-05-14
+Snapshot date: 2026-05-20
 
 Plugin root: `wp-content/plugins/ai-seo-captain`
 
 Plugin version header: `1.3.1`
 
-Purpose: this is the fast-start handoff document for any new chat session. Read this together with `PLAN.md` before making new changes.
+Purpose: this is the fast-start handoff document for any new chat session. Read this together with `PLAN.md` and `docs/AI-DATA-FLOW.md` before making new changes.
 
 ## One-paragraph brief
 
@@ -49,7 +49,7 @@ SEO Captain is a hybrid AI plus deterministic SEO plugin for WordPress. It is th
 - AI Content Editor with changeset-based editing, preview, apply/discard, backup/restore, and multi-builder support.- AI audit context includes per-page video embed counts and linked document counts for comprehensive media awareness.- **Redirects & 404 Monitor** with 301/302/307 redirect management, 404 error logging, hit counters, and AJAX-based add/delete.
 - **Scale-aware Runs system**: saved named page lists, `completed_steps` tracking per run, create/delete runs via AJAX.
 - **Skip Rules**: URL pattern matching to exclude pages from both metadata generation and full audits; server-side enforced in `handle_bulk_generate()`.
-- **Data Management**: scope-based clearing (metadata, audits, everything) with confirmation modals; deletes 19 post meta keys + 4 term meta keys + conversations + messages + IndexNow log + runs + active_runs user meta.
+- **Data Management**: scope-based clearing (metadata, audits, everything) with confirmation modals; deletes 20 post meta keys + dynamic video meta keys + 4 term meta keys + conversations + messages + IndexNow log + runs + active_runs user meta.
 - **WooCommerce integration**: automatic detection, product-aware filtering in wizard modal, bulk editor, and site structure tree.
 - **Incremental Content Index**: real-time index updates via `save_post`, `delete_post`, `trashed_post`, `untrashed_post` hooks — no manual re-index needed for day-to-day changes. Full re-index still available.
 - **IndexNow deletion awareness**: notifies search engines via `before_delete_post` and `trashed_post` hooks when published content is removed.
