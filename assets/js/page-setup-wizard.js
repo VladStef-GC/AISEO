@@ -464,8 +464,11 @@
         this.onError = config.onError;
         this.extraData = config.extraData || {};
         this.timer = createTimer(config.timerEl);
+        this.concurrency = Math.max(1, Math.min(10, parseInt(config.concurrency, 10) || 1));
 
-        this.current = 0;
+        this.current = 0;      // next index to dispatch
+        this.completed = 0;    // total items finished (success + skip + error)
+        this.inFlight = 0;     // currently active AJAX calls
         this.stats = {
             processed: 0,
             skipped: 0,
@@ -474,6 +477,7 @@
         };
         this.state = 'idle';
         this.consecutiveErrors = 0;
+        this.retryTimers = [];
     }
 
     BatchProcessor.prototype.start = function () {
@@ -499,23 +503,24 @@
                     self.stats.errors + ' errors so far.'
                 );
                 $(self.prefix + '-paused').show();
-                $(self.prefix + '-status').text('Paused at ' + self.current + ' of ' + self.ids.length);
+                $(self.prefix + '-status').text('Paused — ' + self.completed + ' of ' + self.ids.length + ' done');
             } else if (self.state === 'paused') {
                 self.state = 'running';
                 self.timer.resume();
                 $(self.btnPause).html('&#10074;&#10074; Pause');
                 $(self.prefix + '-paused').hide();
-                self.processNext();
+                self.fillPool();
             }
         });
 
         $(this.btnStop).off('click').on('click', function () {
             self.state = 'stopped';
             self.timer.stop();
+            self.clearRetryTimers();
             $(self.btnPause).hide();
             $(self.btnStop).hide();
             $(self.prefix + '-stopped-info').text(
-                self.current + ' of ' + self.ids.length + ' pages processed. ' +
+                self.completed + ' of ' + self.ids.length + ' pages processed. ' +
                 self.stats.processed + ' new, ' + self.stats.skipped + ' skipped, ' +
                 self.stats.errors + ' errors.'
             );
@@ -523,23 +528,38 @@
             $(self.btnStart).prop('disabled', false).text('Continue');
         });
 
-        this.processNext();
+        this.fillPool();
     };
 
-    BatchProcessor.prototype.processNext = function () {
+    BatchProcessor.prototype.clearRetryTimers = function () {
+        for (var i = 0; i < this.retryTimers.length; i++) {
+            clearTimeout(this.retryTimers[i]);
+        }
+        this.retryTimers = [];
+    };
+
+    BatchProcessor.prototype.updateProgress = function () {
+        var pct = Math.round((this.completed / this.ids.length) * 100);
+        $(this.prefix + '-bar').css('width', pct + '%');
+        var conc = this.concurrency > 1 ? ' (' + this.inFlight + ' parallel)' : '';
+        $(this.prefix + '-status').text(this.completed + ' of ' + this.ids.length + ' done' + conc + '...');
+        $(this.prefix + '-counts').text(
+            '\u2713 ' + this.stats.processed + ' \u23ED ' + this.stats.skipped +
+            (this.stats.cached > 0 ? ' \uD83D\uDCCB ' + this.stats.cached : '') +
+            ' \u2717 ' + this.stats.errors
+        );
+    };
+
+    BatchProcessor.prototype.fillPool = function () {
         if (this.state === 'paused' || this.state === 'stopped') return;
 
-        if (this.current >= this.ids.length) {
-            this.finish();
-            return;
-        }
-
         if (this.consecutiveErrors >= 5) {
+            if (this.inFlight > 0) return; // wait for in-flight to finish
             this.timer.stop();
             $(this.btnPause).hide();
             $(this.btnStop).hide();
             showError(this.prefix,
-                '5 consecutive API errors. Processing stopped. Last ' +
+                '5 consecutive API errors. Processing stopped. ' +
                 this.stats.errors + ' pages failed. Please check your API key and provider status.'
             );
             $(this.btnStart).prop('disabled', false).text('Retry');
@@ -547,22 +567,29 @@
             return;
         }
 
+        while (this.inFlight < this.concurrency && this.current < this.ids.length) {
+            this.dispatchOne(this.ids[this.current], 0);
+            this.current++;
+        }
+
+        if (this.inFlight === 0 && this.current >= this.ids.length) {
+            this.finish();
+        }
+    };
+
+    BatchProcessor.prototype.dispatchOne = function (postId, retryCount) {
+        if (this.state === 'paused' || this.state === 'stopped') return;
+
         var self = this;
-        var postId = this.ids[this.current];
-        var pct = Math.round(((this.current + 1) / this.ids.length) * 100);
-        $(this.prefix + '-bar').css('width', pct + '%');
-        $(this.prefix + '-status').text('Processing ' + (this.current + 1) + ' of ' + this.ids.length + '...');
-        $(this.prefix + '-counts').text(
-            '\u2713 ' + this.stats.processed + ' \u23ED ' + this.stats.skipped +
-            (this.stats.cached > 0 ? ' \uD83D\uDCCB ' + this.stats.cached : '') +
-            ' \u2717 ' + this.stats.errors
-        );
+        this.inFlight++;
+        this.updateProgress();
 
         $.post(ajaxUrl, $.extend({
             action: this.ajaxAction,
             nonce: nonce,
             post_id: postId
         }, this.extraData), function (response) {
+            self.inFlight--;
             self.consecutiveErrors = 0;
             if (response.success) {
                 if (response.data.skipped) {
@@ -580,15 +607,35 @@
                 var title = response.data && response.data.title ? response.data.title : 'Post #' + postId;
                 self.onError(postId, title, msg);
             }
-            self.current++;
-            self.processNext();
+            self.completed++;
+            self.updateProgress();
+            self.fillPool();
         }).fail(function (jqXHR, textStatus) {
+            self.inFlight--;
+
+            // Handle 429 rate limit — retry with exponential backoff.
+            if (jqXHR.status === 429) {
+                var parsed = null;
+                try { parsed = JSON.parse(jqXHR.responseText); } catch (e) {}
+                var retryAfter = (parsed && parsed.data && parsed.data.retry_after) ? parsed.data.retry_after : 5;
+                var backoff = Math.min(retryAfter * Math.pow(2, retryCount), 60);
+                var title429 = (parsed && parsed.data && parsed.data.title) ? parsed.data.title : 'Post #' + postId;
+                self.onError(postId, title429, 'Rate limited — retrying in ' + backoff + 's...');
+                var timerId = setTimeout(function () {
+                    self.dispatchOne(postId, retryCount + 1);
+                }, backoff * 1000);
+                self.retryTimers.push(timerId);
+                self.updateProgress();
+                return;
+            }
+
             self.stats.errors++;
             self.consecutiveErrors++;
             var detail = textStatus === 'timeout' ? 'Request timed out' : 'Network error (' + textStatus + ')';
             self.onError(postId, 'Post #' + postId, detail);
-            self.current++;
-            self.processNext();
+            self.completed++;
+            self.updateProgress();
+            self.fillPool();
         });
     };
 
@@ -709,6 +756,7 @@
                 btnPause: '#aisc-btn-s2-pause',
                 btnStop: '#aisc-btn-s2-stop',
                 timerEl: '#aisc-s2-elapsed',
+                concurrency: $('#aisc-concurrency').val() || 1,
                 extraData: {
                     override_all: $('#aisc-s2-override').is(':checked') ? 1 : 0,
                     draft_mode: $('#aisc-s2-draft').is(':checked') ? 1 : 0
@@ -1090,6 +1138,7 @@
                 btnPause: '#aisc-btn-s3-pause',
                 btnStop: '#aisc-btn-s3-stop',
                 timerEl: '#aisc-s3-elapsed',
+                concurrency: $('#aisc-concurrency').val() || 1,
                 extraData: {
                     deep_analysis: $('#aisc-s3-deep').is(':checked') ? '1' : '0'
                 },

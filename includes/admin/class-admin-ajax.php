@@ -412,6 +412,14 @@ class Admin_Ajax
 
         try {
             $suggestion = $this->ai_generator->generate_for_post($post_id);
+        } catch (\AI_SEO_Captain\RateLimitException $rate_error) {
+            wp_send_json_error(array(
+                'message'     => $rate_error->getMessage(),
+                'retry_after' => $rate_error->get_retry_after(),
+                'post_id'     => $post_id,
+                'title'       => $post->post_title,
+            ), 429);
+            return;
         } catch (\Throwable $throwable) {
             wp_send_json_error(array(
                 'message' => $throwable->getMessage(),
@@ -548,6 +556,14 @@ class Admin_Ajax
         try {
             $deep_analysis = ! empty($_POST['deep_analysis']) && '1' === $_POST['deep_analysis'];
             $audit = $this->ai_generator->generate_page_audit($post_id, $deep_analysis);
+        } catch (\AI_SEO_Captain\RateLimitException $rate_error) {
+            wp_send_json_error(array(
+                'message'     => $rate_error->getMessage(),
+                'retry_after' => $rate_error->get_retry_after(),
+                'post_id'     => $post_id,
+                'title'       => $post->post_title,
+            ), 429);
+            return;
         } catch (\Throwable $throwable) {
             wp_send_json_error(array(
                 'message' => $throwable->getMessage(),

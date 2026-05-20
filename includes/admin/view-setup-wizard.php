@@ -86,6 +86,21 @@ defined('ABSPATH') || exit;
         <div id="aisc-s1-error" class="aisc-error-banner"></div>
     </div>
 
+    <!-- SHARED SETTINGS: Parallel Requests -->
+    <div class="aisc-step" style="padding:10px 20px;background:#f9f9f9;border-left:3px solid #2271b1;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;">
+            <strong><?php esc_html_e('Parallel requests:', 'ai-seo-captain'); ?></strong>
+            <select id="aisc-concurrency" style="width:auto;min-width:60px;">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="5">5</option>
+                <option value="10">10</option>
+            </select>
+            <span style="color:#50575e;"><?php esc_html_e('Higher = faster but uses more server resources. Start with 3. Lower to 1 if you see rate-limit errors.', 'ai-seo-captain'); ?></span>
+        </label>
+    </div>
+
     <!-- STEP 2: BULK GENERATE -->
     <div id="aisc-step-2" class="aisc-step<?php echo ! $has_index ? ' locked' : ''; ?>">
         <div class="aisc-step-header">

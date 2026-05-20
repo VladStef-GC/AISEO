@@ -911,6 +911,17 @@ class AI_Generator
         $body = (string) wp_remote_retrieve_body($response);
         $decoded = json_decode($body, true);
 
+        if (429 === $status_code) {
+            $retry_after = (int) wp_remote_retrieve_header($response, 'retry-after');
+            if ($retry_after <= 0) {
+                $retry_after = 5;
+            }
+            throw new RateLimitException(
+                sprintf('The %s API rate limit was reached. Retry after %d seconds.', ucfirst($provider), $retry_after),
+                $retry_after
+            );
+        }
+
         if ($status_code < 200 || $status_code >= 300) {
             $message = $this->extract_error_message($decoded);
             throw new \RuntimeException($message ?: sprintf('The %s API returned HTTP %d.', ucfirst($provider), $status_code));
