@@ -740,117 +740,107 @@ class Content_Indexer
      * @param int   $limit       Maximum pages to return.
      * @return array List of topically related pages with metadata (and optionally content excerpt).
      */
-    public function get_topically_related_pages(int $post_id, array $exclude_ids = array(), bool $deep = false, int $limit = 10): array
+    public function get_topically_related_pages(int $post_id, array $exclude_ids = array(), bool $deep = false, int $limit = 20): array
     {
         global $wpdb;
 
         $table_name = $wpdb->prefix . 'ai_seo_captain_content_index';
         $postmeta   = $wpdb->postmeta;
 
-        // Collect keyword sources: page title, focus keyphrase, meta description.
-        $post_title       = (string) get_the_title($post_id);
+        // ------------------------------------------------------------------
+        //  KEYWORD EXTRACTION — priority-ordered, capped at 6
+        //  1. Focus keyphrase (whole phrase, highest priority)
+        //  2. Words from page title
+        //  3. Top-frequency words from body text (fallback when metadata sparse)
+        // ------------------------------------------------------------------
+
         $focus_keyphrase  = trim((string) get_post_meta($post_id, '_ai_seo_captain_focus_keyphrase', true));
+        $post_title       = (string) get_the_title($post_id);
         $meta_description = trim((string) get_post_meta($post_id, self::META_DESCRIPTION_KEY, true));
 
-        // Extract keywords: split all sources into words, filter short/stop words.
-        $raw_text = $post_title . ' ' . $focus_keyphrase . ' ' . $meta_description;
-        $words    = preg_split('/[\s\-_\/\|,;:\.!?\(\)\[\]]+/', strtolower($raw_text), -1, PREG_SPLIT_NO_EMPTY);
-        $words    = array_unique($words);
-
-        // Remove common stop words and very short words.
         $stop_words = array(
-            'the',
-            'a',
-            'an',
-            'and',
-            'or',
-            'but',
-            'is',
-            'in',
-            'on',
-            'at',
-            'to',
-            'for',
-            'of',
-            'with',
-            'by',
-            'from',
-            'as',
-            'into',
-            'that',
-            'this',
-            'it',
-            'are',
-            'was',
-            'were',
-            'be',
-            'been',
-            'has',
-            'have',
-            'had',
-            'do',
-            'does',
-            'did',
-            'will',
-            'would',
-            'could',
-            'should',
-            'may',
-            'might',
-            'can',
-            'not',
-            'no',
-            'so',
-            'if',
-            'then',
-            'than',
-            'too',
-            'very',
-            'just',
-            'about',
-            'up',
-            'out',
-            'our',
-            'your',
-            'my',
-            'we',
-            'you',
-            'he',
-            'she',
-            'they',
-            'its',
-            'his',
-            'her',
-            'their',
-            'all',
-            'each',
-            'how',
-            'what',
-            'which',
-            'who',
-            'when',
-            'where',
-            'why',
-            'any',
-            'some',
-            'more',
+            'the', 'a', 'an', 'and', 'or', 'but', 'is', 'in', 'on', 'at', 'to', 'for', 'of', 'with',
+            'by', 'from', 'as', 'into', 'that', 'this', 'it', 'are', 'was', 'were', 'be', 'been',
+            'has', 'have', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may',
+            'might', 'can', 'not', 'no', 'so', 'if', 'then', 'than', 'too', 'very', 'just', 'about',
+            'up', 'out', 'our', 'your', 'my', 'we', 'you', 'he', 'she', 'they', 'its', 'his', 'her',
+            'their', 'all', 'each', 'how', 'what', 'which', 'who', 'when', 'where', 'why', 'any',
+            'some', 'more', 'also', 'been', 'being', 'both', 'don', 'get', 'got', 'here', 'there',
+            'like', 'make', 'made', 'much', 'many', 'most', 'need', 'new', 'now', 'only', 'other',
+            'own', 'same', 'such', 'way', 'well', 'back', 'even', 'give', 'good', 'great', 'help',
+            'keep', 'know', 'last', 'let', 'long', 'look', 'man', 'may', 'men', 'must', 'next',
+            'old', 'over', 'say', 'see', 'set', 'take', 'tell', 'use', 'want', 'work', 'year',
+            'come', 'day', 'end', 'find', 'first', 'part', 'place', 'thing', 'think', 'time', 'turn',
+            'page', 'post', 'read', 'site', 'click', 'home', 'learn', 'start', 'free', 'best',
+            'contact', 'services', 'service', 'company', 'business', 'wordpress', 'website',
         );
 
-        $keywords = array();
-        foreach ($words as $word) {
-            if (strlen($word) >= 3 && ! in_array($word, $stop_words, true)) {
-                $keywords[] = $word;
+        $max_keywords = 6;
+        $keywords     = array(); // Final prioritized list (max 6).
+        $phrases      = array(); // Whole keyphrase for exact matching.
+
+        // Priority 1: Focus keyphrase as a whole phrase + its individual words.
+        if ('' !== $focus_keyphrase) {
+            $phrases[]  = strtolower($focus_keyphrase);
+            $kp_words   = preg_split('/[\s\-_\/\|,;:\.!?\(\)\[\]]+/', strtolower($focus_keyphrase), -1, PREG_SPLIT_NO_EMPTY);
+            foreach ($kp_words as $w) {
+                if (strlen($w) >= 3 && ! in_array($w, $stop_words, true) && count($keywords) < $max_keywords) {
+                    $keywords[$w] = true;
+                }
             }
         }
 
-        if (empty($keywords)) {
-            return array();
+        // Priority 2: Words from page title.
+        $title_words = preg_split('/[\s\-_\/\|,;:\.!?\(\)\[\]]+/', strtolower($post_title), -1, PREG_SPLIT_NO_EMPTY);
+        foreach ($title_words as $w) {
+            if (strlen($w) >= 3 && ! in_array($w, $stop_words, true) && ! isset($keywords[$w]) && count($keywords) < $max_keywords) {
+                $keywords[$w] = true;
+            }
         }
 
-        // Keep the keyphrase as a whole phrase for matching too.
-        $phrases = array();
-        if ('' !== $focus_keyphrase) {
-            $phrases[] = strtolower($focus_keyphrase);
+        // Priority 3: Words from meta description.
+        if ('' !== $meta_description && count($keywords) < $max_keywords) {
+            $desc_words = preg_split('/[\s\-_\/\|,;:\.!?\(\)\[\]]+/', strtolower($meta_description), -1, PREG_SPLIT_NO_EMPTY);
+            foreach ($desc_words as $w) {
+                if (strlen($w) >= 3 && ! in_array($w, $stop_words, true) && ! isset($keywords[$w]) && count($keywords) < $max_keywords) {
+                    $keywords[$w] = true;
+                }
+            }
+        }
+
+        // Priority 4: Top-frequency words from body text (fills remaining slots).
+        if (count($keywords) < $max_keywords) {
+            $post_obj = get_post($post_id);
+            if ($post_obj instanceof \WP_Post) {
+                $body_text  = wp_strip_all_tags(Content_Helper::get_content($post_obj));
+                $body_words = preg_split('/[\s\-_\/\|,;:\.!?\(\)\[\]"\']+/', strtolower($body_text), -1, PREG_SPLIT_NO_EMPTY);
+
+                // Count frequency of meaningful words.
+                $freq = array();
+                foreach ($body_words as $w) {
+                    if (strlen($w) >= 4 && ! in_array($w, $stop_words, true) && ! isset($keywords[$w]) && ! is_numeric($w)) {
+                        $freq[$w] = ($freq[$w] ?? 0) + 1;
+                    }
+                }
+                arsort($freq);
+
+                // Take top-frequency words that appear at least twice.
+                foreach ($freq as $w => $count) {
+                    if ($count < 2) {
+                        break;
+                    }
+                    if (count($keywords) >= $max_keywords) {
+                        break;
+                    }
+                    $keywords[$w] = true;
+                }
+            }
+        }
+
+        $keywords = array_keys($keywords);
+
+        if (empty($keywords)) {
+            return array();
         }
 
         // Build exclusion list.
@@ -858,13 +848,17 @@ class Content_Indexer
         $exclude_ids   = array_unique(array_filter(array_map('intval', $exclude_ids)));
         $exclude_in    = implode(',', $exclude_ids);
 
-        // Build LIKE conditions: match any keyword in title, keyphrase, or SEO description.
+        // ------------------------------------------------------------------
+        //  SEARCH — match keywords in title, focus keyphrase, and description.
+        //  SCORING — keyphrase match = 3pts, title = 2pts, description = 1pt.
+        //  Full keyphrase phrase match gets a 5pt bonus.
+        // ------------------------------------------------------------------
+
+        $search_terms = array_merge($phrases, $keywords);
+        $search_terms = array_unique($search_terms);
+
         $like_conditions = array();
         $like_params     = array();
-
-        // Prioritize full keyphrase matching, then individual keywords (take top keywords only).
-        $search_terms = array_merge($phrases, array_slice($keywords, 0, 8));
-        $search_terms = array_unique($search_terms);
 
         foreach ($search_terms as $term) {
             $escaped = '%' . $wpdb->esc_like($term) . '%';
@@ -882,16 +876,23 @@ class Content_Indexer
 
         $where_likes = '(' . implode(' OR ', $like_conditions) . ')';
 
-        // Build a relevance score: count how many search terms match.
+        // Build relevance score: weighted per field, bonus for exact keyphrase match.
         $score_parts  = array();
         $score_params = array();
         foreach ($search_terms as $term) {
             $escaped = '%' . $wpdb->esc_like($term) . '%';
-            $score_parts[]  = 'CASE WHEN LOWER(idx.title) LIKE %s THEN 2 ELSE 0 END';
+
+            // Is this the full keyphrase phrase? Give bonus weight.
+            $is_phrase   = in_array($term, $phrases, true);
+            $title_weight = $is_phrase ? 5 : 2;
+            $kp_weight    = $is_phrase ? 8 : 3;
+            $desc_weight  = $is_phrase ? 3 : 1;
+
+            $score_parts[]  = 'CASE WHEN LOWER(idx.title) LIKE %s THEN ' . $title_weight . ' ELSE 0 END';
             $score_params[] = $escaped;
-            $score_parts[]  = 'CASE WHEN LOWER(COALESCE(pm_kp.meta_value, \'\')) LIKE %s THEN 3 ELSE 0 END';
+            $score_parts[]  = 'CASE WHEN LOWER(COALESCE(pm_kp.meta_value, \'\')) LIKE %s THEN ' . $kp_weight . ' ELSE 0 END';
             $score_params[] = $escaped;
-            $score_parts[]  = 'CASE WHEN LOWER(COALESCE(pm_desc.meta_value, \'\')) LIKE %s THEN 1 ELSE 0 END';
+            $score_parts[]  = 'CASE WHEN LOWER(COALESCE(pm_desc.meta_value, \'\')) LIKE %s THEN ' . $desc_weight . ' ELSE 0 END';
             $score_params[] = $escaped;
         }
 

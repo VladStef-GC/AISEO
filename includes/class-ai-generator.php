@@ -343,7 +343,7 @@ class AI_Generator
         if (is_array($hierarchy['parent'] ?? null)) {
             $exclude_ids[] = (int) $hierarchy['parent']['object_id'];
         }
-        $topical_pages = $this->content_indexer->get_topically_related_pages((int) $post->ID, $exclude_ids, $deep_analysis, 10);
+        $topical_pages = $this->content_indexer->get_topically_related_pages((int) $post->ID, $exclude_ids, $deep_analysis, 20);
 
         return array(
             'focus_keyphrase' => $focus_keyphrase,
