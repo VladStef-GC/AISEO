@@ -538,21 +538,6 @@ class AI_Generator
         $ctx = $this->get_seo_context($post, $field_overrides);
         $page_content = $this->normalize_text(Content_Helper::get_content($post));
         $page_excerpt = $this->normalize_text((string) $post->post_excerpt);
-        $related_pages = $this->content_indexer->get_related_entries((int) $post->ID, (string) $post->post_type, (int) $post->post_parent, 5);
-        $related_lines = array();
-
-        foreach ($related_pages as $related_page) {
-            $related_lines[] = sprintf(
-                '- %s | /%s/ | %s',
-                trim((string) $related_page['title']) !== '' ? (string) $related_page['title'] : '(untitled)',
-                ltrim((string) $related_page['slug'], '/'),
-                $this->truncate_text($this->normalize_text((string) $related_page['excerpt']), 220)
-            );
-        }
-
-        if (empty($related_lines)) {
-            $related_lines[] = '- No related indexed pages were found.';
-        }
 
         $branding_suffix = $this->settings->get_branding_suffix();
         $branding_note = '';
@@ -578,7 +563,7 @@ class AI_Generator
         $prompt_parts = array(
             'Task: Generate or refine the SEO title and meta description for the current WordPress page.',
             'Output format: {"seo_title":"...","meta_description":"...","focus_keyphrase":"...","keywords":"...","social_title":"...","social_description":"...","notes":"..."}',
-            'Requirements: Make the draft clearly differentiated from the related pages. Keep seo_title at or under ' . ('' !== $branding_suffix ? (string) $page_title_budget : '60') . ' characters and meta_description at or under 155 characters. social_title is the Open Graph / Twitter sharing title — it can be more engaging and attention-grabbing than seo_title, up to 70 characters. social_description is the social sharing description — a compelling hook for clicks, up to 200 characters. keywords is a comma-separated list of 5-8 relevant SEO keywords/phrases for the page. Do not invent services, guarantees, or facts not present on the page. The focus_keyphrase should be the single most important 2-4 word phrase this page should rank for. When a focus keyphrase is already provided, keep it in your output AND ensure it appears naturally in both seo_title and meta_description. Notes should be one or two short sentences explaining the positioning choice or why the existing draft was kept.',
+            'Requirements: Make the draft clearly differentiated from the topically related pages and hierarchy siblings shown in the SEO context below. Keep seo_title at or under ' . ('' !== $branding_suffix ? (string) $page_title_budget : '60') . ' characters and meta_description at or under 155 characters. social_title is the Open Graph / Twitter sharing title — it can be more engaging and attention-grabbing than seo_title, up to 70 characters. social_description is the social sharing description — a compelling hook for clicks, up to 200 characters. keywords is a comma-separated list of 5-8 relevant SEO keywords/phrases for the page. Do not invent services, guarantees, or facts not present on the page. The focus_keyphrase should be the single most important 2-4 word phrase this page should rank for. When a focus keyphrase is already provided, keep it in your output AND ensure it appears naturally in both seo_title and meta_description. Notes should be one or two short sentences explaining the positioning choice or why the existing draft was kept.',
             'Site: ' . get_bloginfo('name'),
             'Page type: ' . $post->post_type,
             'Current page title: ' . (string) $post->post_title,
@@ -586,7 +571,6 @@ class AI_Generator
             'Existing excerpt: ' . ('' !== $page_excerpt ? $page_excerpt : 'None'),
             $this->format_seo_context_lines($ctx),
             'Main page content: ' . ('' !== $page_content ? $page_content : 'No body content is available.'),
-            "Related pages to avoid overlapping with:\n" . implode("\n", $related_lines),
         );
 
         if ('' !== $site_context) {
