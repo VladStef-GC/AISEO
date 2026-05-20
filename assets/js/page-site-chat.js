@@ -19,6 +19,7 @@ jQuery(function ($) {
     var conf = window.aiSeoSiteChat || {};
     var pageCount = parseInt(conf.pageCount, 10) || 0;
     var maxPages = parseInt(conf.maxPages, 10) || 0;
+    var maxFocusPages = parseInt(conf.maxFocusPages, 10) || 0;
     var activeModel = conf.activeModel || '';
     var contextWindow = parseInt(conf.contextWindow, 10) || 0;
     var needsFocus = !!conf.needsFocus;
@@ -180,7 +181,12 @@ jQuery(function ($) {
             $(this).prop('checked', !!idSet[parseInt($(this).val(), 10)]);
         });
         var count = $('#ai-seo-focus-list input:checked').length;
-        $focusCount.text(count + (count === 1 ? ' page selected' : ' pages selected'));
+        var label = count + ' of ' + formatNumber(maxFocusPages) + (count === 1 ? ' page selected' : ' pages selected');
+        if (count > maxFocusPages) {
+            $focusCount.html('<span style="color:#b32d2e;font-weight:600;">' + label + ' — over limit!</span>');
+        } else {
+            $focusCount.text(label);
+        }
     }
 
     // --- Block all interaction when plugin prerequisites are not met ---
@@ -207,16 +213,18 @@ jQuery(function ($) {
                 '<strong style="color:#b32d2e;">⚠ Your site has ' + formatNumber(pageCount) +
                 ' pages but <code>' + activeModel + '</code> (' + ctxLabel +
                 ' tokens) can analyze up to <strong>' + formatNumber(maxPages) +
-                '</strong> pages at once.</strong><br>' +
-                'Paste specific page URLs below to use Focus Mode, or switch to a model with a larger context window in Settings.'
+                '</strong> pages in site-wide mode.</strong><br>' +
+                'Select focus pages below (up to <strong>' + formatNumber(maxFocusPages) +
+                '</strong> with full content), or switch to a larger model.'
             ).css({ background: '#fef7f1', border: '1px solid #f0b849' });
             $capacityBadge.html(' <span style="color:#b32d2e;font-weight:normal;font-size:12px;">⚠ required</span>');
             $focusToggle.attr('open', '');
         } else {
             $capacityInfo.html(
-                'Model: <code>' + activeModel + '</code> (' + ctxLabel + ' tokens) — can analyze up to <strong>' +
-                formatNumber(maxPages) + '</strong> pages. Your site has <strong>' +
-                formatNumber(pageCount) + '</strong> pages. ✓ Full site mode available.'
+                'Model: <code>' + activeModel + '</code> (' + ctxLabel + ' tokens)<br>' +
+                '• Site-wide mode: up to <strong>' + formatNumber(maxPages) + '</strong> pages (tree view). ' +
+                'Your site has <strong>' + formatNumber(pageCount) + '</strong> pages. ✓<br>' +
+                '• Focus mode: up to <strong>' + formatNumber(maxFocusPages) + '</strong> pages with full content.'
             ).css({ background: '#f0f6fc', border: '1px solid #c3c4c7' });
             $capacityBadge.text('');
         }
@@ -278,10 +286,15 @@ jQuery(function ($) {
         });
     });
 
-    // Count selected focus pages
+    // Count selected focus pages and warn if over limit
     $('#ai-seo-focus-list').on('change', 'input[type="checkbox"]', function () {
         var count = $('#ai-seo-focus-list input:checked').length;
-        $focusCount.text(count + (count === 1 ? ' page selected' : ' pages selected'));
+        var label = count + ' of ' + formatNumber(maxFocusPages) + (count === 1 ? ' page selected' : ' pages selected');
+        if (count > maxFocusPages) {
+            $focusCount.html('<span style="color:#b32d2e;font-weight:600;">' + label + ' — over limit!</span>');
+        } else {
+            $focusCount.text(label);
+        }
     });
 
     function getSelectedFocusIds() {
@@ -319,8 +332,8 @@ jQuery(function ($) {
         }
 
         // Check if too many focus pages are selected for the model.
-        if (focusIds.length > maxPages && maxPages > 0) {
-            setStatus('You selected ' + focusIds.length + ' pages but the model can handle up to ' + formatNumber(maxPages) + '. Please reduce your selection.', true);
+        if (focusIds.length > maxFocusPages && maxFocusPages > 0) {
+            setStatus('You selected ' + focusIds.length + ' pages but the model can analyze up to ' + formatNumber(maxFocusPages) + ' pages with full content. Please reduce your selection.', true);
             $focusToggle.attr('open', '');
             return;
         }

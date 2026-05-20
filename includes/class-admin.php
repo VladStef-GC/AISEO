@@ -2635,12 +2635,13 @@ JS;
         }
 
         // Calculate model capacity data for the UI.
-        $options       = $this->settings->get();
-        $active_model  = trim((string) ($options['model'] ?? ''));
-        $page_count    = $this->site_chat->get_published_page_count_via_indexer();
-        $max_pages     = Settings::get_max_pages_for_model($active_model);
-        $context_window = Settings::get_context_window($active_model);
-        $needs_focus   = $page_count > $max_pages;
+        $options         = $this->settings->get();
+        $active_model    = trim((string) ($options['model'] ?? ''));
+        $page_count      = $this->site_chat->get_published_page_count_via_indexer();
+        $max_pages       = Settings::get_max_pages_for_model($active_model);
+        $max_focus_pages = Settings::get_max_focus_pages_for_model($active_model);
+        $context_window  = Settings::get_context_window($active_model);
+        $needs_focus     = $page_count > $max_pages;
 
         // Compute full-site completion status for the "Full Site" card.
         $step2_all_done = (bool) get_option('ai_seo_captain_step2_all_done', false);
@@ -2663,6 +2664,7 @@ JS;
             'contextWindow' => $context_window,
             'pageCount'     => $page_count,
             'maxPages'      => $max_pages,
+            'maxFocusPages' => $max_focus_pages,
             'needsFocus'    => $needs_focus,
             'isReady'       => $readiness['is_ready'],
             'runs'          => $runs,

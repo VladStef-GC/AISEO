@@ -265,7 +265,26 @@ class Settings
     }
 
     /**
-     * Calculate the maximum number of pages the given model can handle in Site Chat.
+     * Calculate the maximum number of pages the given model can handle in Site Chat
+     * when showing FULL body content + all SEO metadata per page (Focus Pages mode).
+     *
+     * Uses 60% of context window as safe input budget, with ~3000 tokens per page
+     * (average body content ~2000 tokens + SEO/meta/structure ~1000 tokens).
+     * Reserves 5000 tokens for system prompt, conversation history, and overhead.
+     */
+    public static function get_max_focus_pages_for_model(string $model_id): int
+    {
+        $context_window  = self::get_context_window($model_id);
+        $input_budget    = (int) ($context_window * 0.6);
+        $overhead        = 5000;
+        $tokens_per_page = 3000;
+
+        return max(1, (int) floor(($input_budget - $overhead) / $tokens_per_page));
+    }
+
+    /**
+     * Calculate the maximum number of pages the given model can handle in Site Chat
+     * tree-only mode (no body content — just title/slug/keyphrase per page).
      *
      * Uses 60% of context window as safe input budget, with ~175 tokens per page.
      */

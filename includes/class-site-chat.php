@@ -154,22 +154,29 @@ class Site_Chat
         $api_key     = (string) $options['api_key'];
         $temperature = isset($options['ai_temperature']) ? (float) $options['ai_temperature'] : 0.3;
 
-        // --- Page count gate: warn if selection exceeds model capacity ---
-        $max_pages  = Settings::get_max_pages_for_model($model);
-        $effective_count = ! empty($focus_ids) ? count($focus_ids) : $this->content_indexer->get_published_page_count();
+        $is_focus_mode = ! empty($focus_ids);
 
-        if ($effective_count > $max_pages) {
-            $context_window = Settings::get_context_window($model);
-            if (! empty($focus_ids)) {
+        // --- Page count gate: warn if selection exceeds model capacity ---
+        if ($is_focus_mode) {
+            // Focus mode: full body content per page — use stricter limit.
+            $max_focus = Settings::get_max_focus_pages_for_model($model);
+            if (count($focus_ids) > $max_focus) {
+                $context_window = Settings::get_context_window($model);
                 throw new \RuntimeException(sprintf(
-                    'You selected %s focus pages but the model (%s, %s-token context) can analyze up to %s pages at once. ' .
+                    'You selected %s focus pages but the model (%s, %s-token context) can analyze up to %s pages with full content. ' .
                         'Please reduce your selection or switch to a model with a larger context window.',
-                    number_format_i18n($effective_count),
+                    number_format_i18n(count($focus_ids)),
                     esc_html($model),
                     number_format_i18n($context_window),
-                    number_format_i18n($max_pages)
+                    number_format_i18n($max_focus)
                 ));
-            } else {
+            }
+        } else {
+            // Site-wide mode: lightweight tree view — use tree limit.
+            $max_pages      = Settings::get_max_pages_for_model($model);
+            $effective_count = $this->content_indexer->get_published_page_count();
+            if ($effective_count > $max_pages) {
+                $context_window = Settings::get_context_window($model);
                 throw new \RuntimeException(sprintf(
                     'Your site has %s pages but the selected model (%s, %s-token context) can safely analyze up to %s pages at once. ' .
                         'Options: 1) Use Skip Patterns in Settings to exclude template/utility pages. ' .
@@ -183,7 +190,7 @@ class Site_Chat
             }
         }
 
-        $system_prompt = $this->build_system_prompt();
+        $system_prompt = $this->build_system_prompt($is_focus_mode);
         $user_prompt   = $this->build_user_prompt($message, $recent_messages, $focus_ids);
 
         if ('openai' === $provider) {
@@ -220,15 +227,31 @@ class Site_Chat
     //  Prompt builders
     // ------------------------------------------------------------------
 
-    private function build_system_prompt(): string
+    private function build_system_prompt(bool $focus_mode = false): string
     {
-        return trim(
-            'IDENTITY: You are the AI inside the "SEO Captain" WordPress plugin. ' .
-                'You are in SITE-WIDE CHAT mode — the user is asking about overall site SEO, not a specific page. ' .
-                'Never mention Yoast, RankMath, or any other SEO plugin.' . "\n\n" .
-                'Return only valid JSON with exactly these keys: reply, notes.' . "\n" .
-                'reply should be a clear, actionable, and comprehensive answer using Markdown formatting (headings, lists, bold).' . "\n" .
-                'notes should be a one-sentence internal note about the analysis approach.' . "\n\n" .
+        $base = 'IDENTITY: You are the AI inside the "SEO Captain" WordPress plugin. ' .
+            'Never mention Yoast, RankMath, or any other SEO plugin.' . "\n\n" .
+            'Return only valid JSON with exactly these keys: reply, notes.' . "\n" .
+            'reply should be a clear, actionable, and comprehensive answer using Markdown formatting (headings, lists, bold).' . "\n" .
+            'notes should be a one-sentence internal note about the analysis approach.' . "\n\n";
+
+        if ($focus_mode) {
+            $base .= 'MODE: FOCUS PAGES — You are comparing specific pages selected by the user. ' .
+                'You see the FULL body content, ALL SEO metadata, content analysis, and SEO score for each page. ' .
+                'The data is real-time (fetched from the live site right now). ' .
+                'Use this to compare pages side by side, find content gaps, detect keyphrase conflicts, ' .
+                'suggest internal linking between these specific pages, and provide detailed improvement recommendations.' . "\n\n" .
+                'RESPONSE RULES:' . "\n" .
+                '1. Always reference specific pages by title and URL when discussing issues.' . "\n" .
+                '2. Compare pages side by side — identify which page does something well and which needs improvement.' . "\n" .
+                '3. Flag keyphrase cannibalization — pages competing for the same keyphrase.' . "\n" .
+                '4. Suggest internal linking opportunities between the selected pages.' . "\n" .
+                '5. When asked to improve, provide a numbered priority list of specific fixes per page.' . "\n" .
+                '6. You see the full body content — use it to assess content quality, keyword usage, and topical coverage.' . "\n" .
+                '7. Do not invent data that is not in the context below.' . "\n" .
+                '8. "SEO Score" is the AI audit score (0-100) from the last audit run. If "Not audited yet", recommend running an audit.';
+        } else {
+            $base .= 'MODE: SITE-WIDE — the user is asking about overall site SEO, not specific pages. ' .
                 'YOU HAVE FULL KNOWLEDGE of: the complete site tree with every page and its focus keyphrase, ' .
                 'audit summary scores, duplicate title issues, orphaned content, thin content pages, ' .
                 'keyphrase cannibalization, sitemap configuration, redirect/404 stats, and image usage. ' .
@@ -242,14 +265,16 @@ class Site_Chat
                 '6. When asked to improve the site, provide a numbered priority list of specific fixes.' . "\n" .
                 '7. Do not invent pages, URLs, or data that are not in the context below.' . "\n" .
                 '8. When explaining scores or formulas, use ONLY the exact numbers, weights, and ranges provided in the data — never guess or approximate them.' . "\n" .
-                '9. Pages marked [template] are UI fragments (headers, footers, popups) — do NOT recommend adding SEO content to them or creating internal links TO them. They are not visitor-facing landing pages.' . "\n\n" .
+                '9. Pages marked [template] are UI fragments (headers, footers, popups) — do NOT recommend adding SEO content to them.' . "\n\n" .
                 'GLOSSARY:' . "\n" .
                 '- "approved" = the site owner has manually reviewed and accepted the AI-generated SEO title/description.' . "\n" .
                 '- "frontend" = the SEO metadata is actively served on the live site (visible to search engines).' . "\n" .
                 '- "draft coverage" = percentage of pages that have an AI-generated title + description draft.' . "\n" .
                 '- "approval coverage" = percentage of pages whose drafts have been approved by the owner.' . "\n" .
-                '- "frontend coverage" = percentage of pages whose approved SEO data is live on the frontend.'
-        );
+                '- "frontend coverage" = percentage of pages whose approved SEO data is live on the frontend.';
+        }
+
+        return trim($base);
     }
 
     private function build_user_prompt(string $message, array $recent_messages, array $focus_ids = array()): string
@@ -261,171 +286,291 @@ class Site_Chat
         $parts[] = 'Site: ' . get_bloginfo('name') . ' (' . home_url('/') . ')';
         $parts[] = 'Data collected: ' . wp_date('Y-m-d H:i') . ' (server time)';
 
-        if (! empty($focus_ids)) {
-            $parts[] = 'MODE: Focus Pages — analysis is limited to ' . count($focus_ids) . ' selected pages (IDs: ' . implode(', ', $focus_ids) . '). All data below is filtered to these pages only.';
-        }
-
-        $focus_set = ! empty($focus_ids) ? array_flip($focus_ids) : array();
-
         // --- Owner-provided site context ---
         $site_context = trim((string) ($this->settings->get()['site_chat_context'] ?? ''));
         if ('' !== $site_context) {
             $parts[] = "Site owner's description of the business and goals:\n" . $site_context;
         }
 
-        // --- Audit summary ---
-        $summary = $this->content_indexer->get_audit_summary();
-        $parts[] = 'Audit summary: ' . wp_json_encode($summary);
+        // =====================================================================
+        //  FOCUS PAGES MODE — full body content + all SEO data per page
+        // =====================================================================
+        if (! empty($focus_ids)) {
+            $parts[] = 'MODE: Focus Pages — You are analyzing ' . count($focus_ids) . ' selected pages with their FULL content and ALL SEO metadata. Compare them side by side.';
 
-        // --- Readiness / scores ---
-        $report = $this->audit_engine->get_report(500);
-        if (! empty($report['readiness'])) {
-            $parts[] = 'Readiness score: ' . (int) $report['readiness']['score'] . '/100 (' . $report['readiness']['label'] . ')' .
-                ' | Formula: (draft_coverage × 50%) + (approval_coverage × 30%) + (frontend_coverage × 20%)' .
-                ' | Label ranges: Starting 0-29, Early 30-54, Building 55-79, Strong 80-100' .
-                ' | Draft coverage: ' . (int) $report['readiness']['draft_coverage'] . '% (weight 50%)' .
-                ' | Approval coverage: ' . (int) $report['readiness']['approval_coverage'] . '% (weight 30%)' .
-                ' | Frontend coverage: ' . (int) $report['readiness']['frontend_coverage'] . '% (weight 20%)';
-        }
+            $focus_pages_data = $this->get_focus_pages_full_data($focus_ids);
 
-        // --- Priority rows (pages needing attention) ---
-        if (! empty($report['priority_rows'])) {
-            $priority_lines = array();
-            foreach ($report['priority_rows'] as $row) {
-                if (! empty($focus_set) && ! isset($focus_set[(int) ($row['object_id'] ?? 0)])) {
-                    continue;
+            foreach ($focus_pages_data as $i => $page) {
+                $page_block = array();
+                $page_block[] = '========== PAGE ' . ($i + 1) . ' of ' . count($focus_pages_data) . ' ==========';
+                $page_block[] = 'Title: ' . $page['title'];
+                $page_block[] = 'URL: ' . $page['permalink'];
+                $page_block[] = 'Post type: ' . $page['post_type'];
+                $page_block[] = 'Status: ' . $page['status'];
+
+                // Site tree position.
+                if ('' !== $page['hierarchy_position']) {
+                    $page_block[] = 'Site tree position: ' . $page['hierarchy_position'];
                 }
-                $permalink = (string) ($row['permalink'] ?? '');
-                $tag       = $this->is_template_page($permalink) ? ' [template]' : '';
-                $priority_lines[] = sprintf(
-                    '- "%s"%s (%s) | title draft: %s | desc draft: %s | approved: %s | frontend: %s',
-                    $row['title'] ?? '(untitled)',
-                    $tag,
-                    $permalink,
-                    ! empty($row['has_title_draft']) ? 'yes' : 'NO',
-                    ! empty($row['has_description_draft']) ? 'yes' : 'NO',
-                    ! empty($row['has_approved_suggestion']) ? 'yes' : 'no',
-                    ! empty($row['frontend_ready']) ? 'yes' : 'no'
-                );
-            }
-            $parts[] = "Priority pages needing SEO work:\n" . implode("\n", $priority_lines);
-        }
-
-        // --- Duplicate titles ---
-        if (! empty($report['duplicate_post_titles'])) {
-            $dup_lines = array();
-            foreach ($report['duplicate_post_titles'] as $group) {
-                $entries_list = array_map(function ($e) {
-                    return '"' . $e['title'] . '" (' . $e['permalink'] . ')';
-                }, $group['entries'] ?? array());
-                $dup_lines[] = '- ' . implode(' vs ', $entries_list);
-            }
-            $parts[] = "Duplicate page titles (SEO conflict):\n" . implode("\n", $dup_lines);
-        }
-
-        // --- Thin content ---
-        if (! empty($report['thin_content_rows'])) {
-            $thin_lines = array();
-            foreach ($report['thin_content_rows'] as $row) {
-                if (! empty($focus_set) && ! isset($focus_set[(int) ($row['object_id'] ?? 0)])) {
-                    continue;
+                if ('' !== $page['parent_title']) {
+                    $page_block[] = 'Parent page: "' . $page['parent_title'] . '" (' . $page['parent_url'] . ')';
                 }
-                $permalink = (string) ($row['permalink'] ?? '');
-                $tag       = $this->is_template_page($permalink) ? ' [template]' : '';
-                $thin_lines[] = sprintf('- "%s"%s (%s) — %d words', $row['title'] ?? '', $tag, $permalink, $row['word_count'] ?? 0);
-            }
-            $parts[] = "Thin content pages (< 120 words):\n" . implode("\n", $thin_lines);
-        }
 
-        // --- Orphaned content (full list, not truncated) ---
-        $orphan_data = $this->audit_engine->get_orphaned_content(200);
-        if (! empty($orphan_data['orphans'])) {
-            $orphan_lines = array();
-            foreach ($orphan_data['orphans'] as $orphan) {
-                if (! empty($focus_set) && ! isset($focus_set[(int) ($orphan['object_id'] ?? 0)])) {
-                    continue;
+                // Dates and meta.
+                $page_block[] = 'Published: ' . $page['publish_date'];
+                if ($page['modified_date'] !== $page['publish_date']) {
+                    $page_block[] = 'Last modified: ' . $page['modified_date'];
                 }
-                $permalink = (string) ($orphan['permalink'] ?? '');
-                $tag       = $this->is_template_page($permalink) ? ' [template]' : '';
-                $orphan_lines[] = sprintf('- "%s"%s (%s)', $orphan['title'] ?? '', $tag, $permalink);
-            }
-            $parts[] = 'Orphaned pages (no internal links pointing to them): ' . ($orphan_data['total_orphans'] ?? 0) . " total\n" . implode("\n", $orphan_lines);
-        }
+                $page_block[] = 'Featured image: ' . ($page['has_featured_image'] ? 'Yes' : 'None');
 
-        // --- Site tree with keyphrases (skip full tree in focus mode) ---
-        if (empty($focus_set)) {
+                // Taxonomy terms.
+                if (! empty($page['taxonomy_terms'])) {
+                    foreach ($page['taxonomy_terms'] as $tax_label => $term_list) {
+                        $page_block[] = $tax_label . ': ' . $term_list;
+                    }
+                }
+
+                // SEO metadata.
+                $page_block[] = '--- SEO Metadata ---';
+                $page_block[] = 'Focus keyphrase: ' . ('' !== $page['focus_keyphrase'] ? $page['focus_keyphrase'] : 'None specified');
+                $page_block[] = 'SEO title draft: ' . ('' !== $page['seo_title'] ? $page['seo_title'] . ' (' . $page['title_length'] . ' chars)' : 'Empty — not yet written');
+                $page_block[] = 'Meta description draft: ' . ('' !== $page['meta_description'] ? $page['meta_description'] . ' (' . $page['desc_length'] . ' chars)' : 'Empty — not yet written');
+                $page_block[] = 'Keyphrase in title: ' . ($page['keyphrase_in_title'] ? 'Found' : 'Missing');
+                $page_block[] = 'Keyphrase in description: ' . ($page['keyphrase_in_desc'] ? 'Found' : 'Missing');
+
+                if ('' !== $page['social_title']) {
+                    $page_block[] = 'Social title: ' . $page['social_title'];
+                }
+                if ('' !== $page['social_description']) {
+                    $page_block[] = 'Social description: ' . $page['social_description'];
+                }
+                if ('' !== $page['schema_type']) {
+                    $page_block[] = 'Schema type: ' . $page['schema_type'];
+                }
+                if ('' !== $page['canonical_url']) {
+                    $page_block[] = 'Canonical URL: ' . $page['canonical_url'];
+                }
+                if ('' !== $page['robots_directives']) {
+                    $page_block[] = 'Robots directives: ' . $page['robots_directives'];
+                }
+                if ($page['is_cornerstone']) {
+                    $page_block[] = 'Cornerstone content: Yes';
+                }
+
+                // SEO audit score.
+                if (null !== $page['audit_score']) {
+                    $page_block[] = 'SEO Score: ' . $page['audit_score'] . '/100';
+                } else {
+                    $page_block[] = 'SEO Score: Not audited yet';
+                }
+
+                // WooCommerce data.
+                if (! empty($page['wc_data'])) {
+                    $wc = $page['wc_data'];
+                    $page_block[] = '--- WooCommerce Product ---';
+                    foreach (array('wc_price' => 'Price', 'wc_sku' => 'SKU', 'wc_availability' => 'Availability', 'wc_type' => 'Type', 'wc_rating' => 'Rating') as $k => $l) {
+                        if (! empty($wc[$k])) {
+                            $page_block[] = $l . ': ' . $wc[$k];
+                        }
+                    }
+                }
+
+                // Content stats.
+                $page_block[] = '--- Content Analysis ---';
+                $page_block[] = 'Word count: ' . $page['word_count'];
+                $page_block[] = 'Images: ' . $page['images_total'] . ' total, ' . $page['images_missing_alt'] . ' missing alt text';
+                $page_block[] = 'Videos embedded: ' . $page['video_count'];
+                $page_block[] = 'Documents linked: ' . $page['doc_count'];
+                $page_block[] = 'Heading structure: ' . ('' !== $page['heading_structure'] ? $page['heading_structure'] : 'No headings found');
+                $page_block[] = 'Internal links: ' . $page['internal_links'] . ', External links: ' . $page['external_links'];
+
+                // Links detail (URLs).
+                if (! empty($page['internal_link_urls'])) {
+                    $page_block[] = 'Internal link URLs:';
+                    foreach ($page['internal_link_urls'] as $url) {
+                        $page_block[] = '  → ' . $url;
+                    }
+                }
+                if (! empty($page['external_link_urls'])) {
+                    $page_block[] = 'External link URLs:';
+                    foreach ($page['external_link_urls'] as $url) {
+                        $page_block[] = '  → ' . $url;
+                    }
+                }
+
+                // Images detail (src + alt).
+                if (! empty($page['image_details'])) {
+                    $page_block[] = 'Image details:';
+                    foreach ($page['image_details'] as $img) {
+                        $page_block[] = '  - src: ' . $img['src'] . ' | alt: ' . ('' !== $img['alt'] ? '"' . $img['alt'] . '"' : 'MISSING');
+                    }
+                }
+
+                // Full body content.
+                $page_block[] = '--- Full Page Content ---';
+                $page_block[] = ('' !== $page['body_content'] ? $page['body_content'] : 'No body content available.');
+
+                $parts[] = implode("\n", $page_block);
+            }
+
+            // Cross-page keyphrase conflicts among selected pages.
+            $kp_map = array();
+            foreach ($focus_pages_data as $page) {
+                $kp = strtolower(trim($page['focus_keyphrase']));
+                if ('' !== $kp) {
+                    $kp_map[$kp][] = '"' . $page['title'] . '"';
+                }
+            }
+            $conflicts = array();
+            foreach ($kp_map as $kp => $titles) {
+                if (count($titles) > 1) {
+                    $conflicts[] = '- "' . $kp . '" → CONFLICT: ' . implode(', ', $titles);
+                }
+            }
+            if (! empty($conflicts)) {
+                $parts[] = "KEYPHRASE CANNIBALIZATION among selected pages:\n" . implode("\n", $conflicts);
+            }
+
+        } else {
+            // ==============================================================
+            //  FULL SITE MODE — lightweight tree + aggregates (no body content)
+            // ==============================================================
+
+            // Audit summary.
+            $summary = $this->content_indexer->get_audit_summary();
+            $parts[] = 'Audit summary: ' . wp_json_encode($summary);
+
+            // Readiness / scores.
+            $report = $this->audit_engine->get_report(500);
+            if (! empty($report['readiness'])) {
+                $parts[] = 'Readiness score: ' . (int) $report['readiness']['score'] . '/100 (' . $report['readiness']['label'] . ')'
+                    . ' | Formula: (draft_coverage × 50%) + (approval_coverage × 30%) + (frontend_coverage × 20%)'
+                    . ' | Label ranges: Starting 0-29, Early 30-54, Building 55-79, Strong 80-100'
+                    . ' | Draft coverage: ' . (int) $report['readiness']['draft_coverage'] . '% (weight 50%)'
+                    . ' | Approval coverage: ' . (int) $report['readiness']['approval_coverage'] . '% (weight 30%)'
+                    . ' | Frontend coverage: ' . (int) $report['readiness']['frontend_coverage'] . '% (weight 20%)';
+            }
+
+            // Priority rows.
+            if (! empty($report['priority_rows'])) {
+                $priority_lines = array();
+                foreach ($report['priority_rows'] as $row) {
+                    $permalink = (string) ($row['permalink'] ?? '');
+                    $tag       = $this->is_template_page($permalink) ? ' [template]' : '';
+                    $priority_lines[] = sprintf(
+                        '- "%s"%s (%s) | title draft: %s | desc draft: %s | approved: %s | frontend: %s',
+                        $row['title'] ?? '(untitled)',
+                        $tag,
+                        $permalink,
+                        ! empty($row['has_title_draft']) ? 'yes' : 'NO',
+                        ! empty($row['has_description_draft']) ? 'yes' : 'NO',
+                        ! empty($row['has_approved_suggestion']) ? 'yes' : 'no',
+                        ! empty($row['frontend_ready']) ? 'yes' : 'no'
+                    );
+                }
+                $parts[] = "Priority pages needing SEO work:\n" . implode("\n", $priority_lines);
+            }
+
+            // Duplicate titles.
+            if (! empty($report['duplicate_post_titles'])) {
+                $dup_lines = array();
+                foreach ($report['duplicate_post_titles'] as $group) {
+                    $entries_list = array_map(function ($e) {
+                        return '"' . $e['title'] . '" (' . $e['permalink'] . ')';
+                    }, $group['entries'] ?? array());
+                    $dup_lines[] = '- ' . implode(' vs ', $entries_list);
+                }
+                $parts[] = "Duplicate page titles (SEO conflict):\n" . implode("\n", $dup_lines);
+            }
+
+            // Thin content.
+            if (! empty($report['thin_content_rows'])) {
+                $thin_lines = array();
+                foreach ($report['thin_content_rows'] as $row) {
+                    $permalink = (string) ($row['permalink'] ?? '');
+                    $tag       = $this->is_template_page($permalink) ? ' [template]' : '';
+                    $thin_lines[] = sprintf('- "%s"%s (%s) — %d words', $row['title'] ?? '', $tag, $permalink, $row['word_count'] ?? 0);
+                }
+                $parts[] = "Thin content pages (< 120 words):\n" . implode("\n", $thin_lines);
+            }
+
+            // Orphaned content.
+            $orphan_data = $this->audit_engine->get_orphaned_content(200);
+            if (! empty($orphan_data['orphans'])) {
+                $orphan_lines = array();
+                foreach ($orphan_data['orphans'] as $orphan) {
+                    $permalink = (string) ($orphan['permalink'] ?? '');
+                    $tag       = $this->is_template_page($permalink) ? ' [template]' : '';
+                    $orphan_lines[] = sprintf('- "%s"%s (%s)', $orphan['title'] ?? '', $tag, $permalink);
+                }
+                $parts[] = 'Orphaned pages (no internal links pointing to them): ' . ($orphan_data['total_orphans'] ?? 0) . " total\n" . implode("\n", $orphan_lines);
+            }
+
+            // Site tree with keyphrases.
             $site_tree = $this->content_indexer->get_compact_site_tree(0);
             if ('' !== $site_tree && 'No published pages found.' !== $site_tree) {
                 $parts[] = "Complete site structure (slug, title, focus keyphrase):\n" . $site_tree;
             }
-        }
 
-        // --- Per-page audit scores ---
-        $page_scores = $this->get_all_page_audit_scores();
-        if (! empty($page_scores)) {
-            $score_lines = array();
-            foreach ($page_scores as $ps) {
-                if (! empty($focus_set) && ! isset($focus_set[(int) ($ps['object_id'] ?? 0)])) {
-                    continue;
+            // Per-page audit scores.
+            $page_scores = $this->get_all_page_audit_scores();
+            if (! empty($page_scores)) {
+                $score_lines = array();
+                foreach ($page_scores as $ps) {
+                    $tag = $this->is_template_page($ps['permalink']) ? ' [template]' : '';
+                    $score_lines[] = sprintf(
+                        '- "%s"%s (%s) — score: %d/100 | issues: %d',
+                        $ps['title'],
+                        $tag,
+                        $ps['permalink'],
+                        $ps['score'],
+                        $ps['issue_count']
+                    );
                 }
-                $tag = $this->is_template_page($ps['permalink']) ? ' [template]' : '';
-                $score_lines[] = sprintf(
-                    '- "%s"%s (%s) — score: %d/100 | issues: %d',
-                    $ps['title'],
-                    $tag,
-                    $ps['permalink'],
-                    $ps['score'],
-                    $ps['issue_count']
+                $parts[] = "Page audit scores (all audited pages):\n" . implode("\n", $score_lines);
+            }
+
+            // Keyphrase cannibalization.
+            $keyphrase_map = $this->get_keyphrase_distribution();
+            if (! empty($keyphrase_map)) {
+                $kp_lines = array();
+                foreach ($keyphrase_map as $kp => $pages) {
+                    if (count($pages) > 1) {
+                        $kp_lines[] = '- "' . $kp . '" → CONFLICT: ' . implode(', ', array_map(function ($p) {
+                            return '"' . $p['title'] . '"';
+                        }, $pages));
+                    }
+                }
+                if (! empty($kp_lines)) {
+                    $parts[] = "Keyphrase cannibalization (multiple pages targeting same keyphrase):\n" . implode("\n", $kp_lines);
+                }
+            }
+
+            // Image stats.
+            $image_stats = $this->get_image_stats();
+            if (! empty($image_stats)) {
+                $parts[] = sprintf(
+                    'Image usage: %d total images | %d missing alt text (%d%%)',
+                    $image_stats['total'],
+                    $image_stats['missing_alt'],
+                    $image_stats['total'] > 0 ? (int) round($image_stats['missing_alt'] / $image_stats['total'] * 100) : 0
                 );
             }
-            $parts[] = "Page audit scores (all audited pages):\n" . implode("\n", $score_lines);
-        }
 
-        // --- Keyphrase distribution / conflicts ---
-        $keyphrase_map = $this->get_keyphrase_distribution();
-        if (! empty($keyphrase_map)) {
-            $kp_lines = array();
-            foreach ($keyphrase_map as $kp => $pages) {
-                if (! empty($focus_set)) {
-                    $pages = array_filter($pages, function ($p) use ($focus_set) {
-                        return isset($focus_set[(int) ($p['object_id'] ?? 0)]);
-                    });
-                }
-                if (count($pages) > 1) {
-                    $kp_lines[] = '- "' . $kp . '" → CONFLICT: ' . implode(', ', array_map(function ($p) {
-                        return '"' . $p['title'] . '"';
-                    }, $pages));
-                }
+            // Sitemap status.
+            $sitemap_info = $this->get_sitemap_summary();
+            $parts[] = 'Sitemap: ' . $sitemap_info;
+
+            // Redirect/404 stats.
+            $redirect_stats = $this->get_redirect_stats();
+            if (! empty($redirect_stats)) {
+                $parts[] = sprintf(
+                    'Redirects & 404s: %d active redirects | %d monitored 404s | top 404: %s',
+                    $redirect_stats['redirects'],
+                    $redirect_stats['errors_404'],
+                    $redirect_stats['top_404']
+                );
             }
-            if (! empty($kp_lines)) {
-                $parts[] = "Keyphrase cannibalization (multiple pages targeting same keyphrase):\n" . implode("\n", $kp_lines);
-            }
-        }
-
-        // --- Image stats ---
-        $image_stats = $this->get_image_stats();
-        if (! empty($image_stats)) {
-            $parts[] = sprintf(
-                'Image usage: %d total images found in page content | %d missing alt text (%d%%) — NOTE: this counts only inline <img> tags in post content; images from page builders, featured images, and media library are not included in this count',
-                $image_stats['total'],
-                $image_stats['missing_alt'],
-                $image_stats['total'] > 0 ? (int) round($image_stats['missing_alt'] / $image_stats['total'] * 100) : 0
-            );
-        }
-
-        // --- Sitemap status ---
-        $sitemap_info = $this->get_sitemap_summary();
-        $parts[] = 'Sitemap: ' . $sitemap_info;
-
-        // --- Redirect/404 stats ---
-        $redirect_stats = $this->get_redirect_stats();
-        if (! empty($redirect_stats)) {
-            $parts[] = sprintf(
-                'Redirects & 404s: %d active redirects | %d monitored 404s | top 404: %s',
-                $redirect_stats['redirects'],
-                $redirect_stats['errors_404'],
-                $redirect_stats['top_404']
-            );
         }
 
         // --- Conversation history ---
@@ -456,6 +601,230 @@ class Site_Chat
     // ------------------------------------------------------------------
     //  Data aggregation helpers
     // ------------------------------------------------------------------
+
+    /**
+     * Gather FULL data for each focus page: body content, all SEO metadata,
+     * content analysis (links, images, headings), hierarchy position, and audit score.
+     *
+     * This is the core data provider for Focus Pages chat mode.
+     *
+     * @param int[] $focus_ids Post IDs to gather data for.
+     * @return array[] One entry per page with all fields populated.
+     */
+    private function get_focus_pages_full_data(array $focus_ids): array
+    {
+        $pages = array();
+        $home_url = home_url();
+
+        foreach ($focus_ids as $post_id) {
+            $post = get_post($post_id);
+            if (! $post instanceof \WP_Post) {
+                continue;
+            }
+
+            // --- Body content (raw HTML for analysis, plain text for AI) ---
+            $raw_html     = Content_Helper::get_content($post);
+            $body_content = $this->normalize_text($raw_html);
+
+            // --- Content stats from raw HTML ---
+            $word_count     = str_word_count($body_content);
+            $img_count      = preg_match_all('/<img\b/i', $raw_html);
+            $img_no_alt     = preg_match_all('/<img(?![^>]*\balt\s*=\s*"[^"]+")[^>]*>/i', $raw_html);
+            $internal_links = preg_match_all('/href=["\']' . preg_quote($home_url, '/') . '/i', $raw_html);
+            $ext_total      = preg_match_all('/href=["\'](https?:\/\/)/i', $raw_html);
+            $external_links = max(0, $ext_total - $internal_links);
+            $video_count    = preg_match_all('/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/|vimeo\.com\/(?:video\/)?\d)/i', $raw_html);
+            $video_count   += preg_match_all('/<video\b/i', $raw_html);
+            $doc_count      = preg_match_all('/href=["\'][^"\']*\.(?:pdf|docx?|xlsx?|pptx?|odt|ods|odp|csv|rtf)["\s>]/i', $raw_html);
+
+            // Heading structure.
+            $heading_matches = array();
+            preg_match_all('/<h([1-6])\b/i', $raw_html, $heading_matches);
+            $heading_summary = '';
+            if (! empty($heading_matches[1])) {
+                $counts = array_count_values($heading_matches[1]);
+                ksort($counts);
+                $parts_h = array();
+                foreach ($counts as $level => $count) {
+                    $parts_h[] = 'H' . $level . ': ' . $count;
+                }
+                $heading_summary = implode(', ', $parts_h);
+            }
+
+            // Internal link URLs (deduplicated, max 50).
+            $internal_link_urls = array();
+            if (preg_match_all('/href=["\'](' . preg_quote($home_url, '/') . '[^"\']*)/i', $raw_html, $int_m)) {
+                $internal_link_urls = array_unique(array_slice($int_m[1], 0, 50));
+            }
+
+            // External link URLs (deduplicated, max 30).
+            $external_link_urls = array();
+            if (preg_match_all('/href=["\'](https?:\/\/[^"\']+)/i', $raw_html, $ext_m)) {
+                $all_urls = array_unique($ext_m[1]);
+                foreach ($all_urls as $url) {
+                    if (0 !== strpos($url, $home_url)) {
+                        $external_link_urls[] = $url;
+                        if (count($external_link_urls) >= 30) {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Image details (src + alt, max 30).
+            $image_details = array();
+            if (preg_match_all('/<img\b([^>]*)>/i', $raw_html, $img_m)) {
+                foreach (array_slice($img_m[1], 0, 30) as $attrs) {
+                    $src = '';
+                    $alt = '';
+                    if (preg_match('/\bsrc\s*=\s*["\']([^"\']+)/i', $attrs, $sm)) {
+                        $src = $sm[1];
+                    }
+                    if (preg_match('/\balt\s*=\s*["\']([^"\']*)/i', $attrs, $am)) {
+                        $alt = $am[1];
+                    }
+                    $image_details[] = array('src' => $src, 'alt' => $alt);
+                }
+            }
+
+            // --- SEO metadata from postmeta ---
+            $seo_title        = trim((string) get_post_meta($post_id, '_ai_seo_captain_meta_title', true));
+            $meta_description = trim((string) get_post_meta($post_id, '_ai_seo_captain_meta_description', true));
+            $focus_keyphrase  = trim((string) get_post_meta($post_id, '_ai_seo_captain_focus_keyphrase', true));
+            $social_title     = trim((string) get_post_meta($post_id, '_ai_seo_captain_social_title', true));
+            $social_desc      = trim((string) get_post_meta($post_id, '_ai_seo_captain_social_description', true));
+            $schema_type      = trim((string) get_post_meta($post_id, '_ai_seo_captain_schema_type', true));
+            $canonical_url    = trim((string) get_post_meta($post_id, '_ai_seo_captain_canonical_url', true));
+            $robots           = trim((string) get_post_meta($post_id, '_ai_seo_captain_robots_directives', true));
+            $is_cornerstone   = (bool) get_post_meta($post_id, '_ai_seo_captain_cornerstone', true);
+
+            $title_length = function_exists('mb_strlen') ? mb_strlen($seo_title) : strlen($seo_title);
+            $desc_length  = function_exists('mb_strlen') ? mb_strlen($meta_description) : strlen($meta_description);
+
+            $kp_lower = strtolower($focus_keyphrase);
+            $kp_in_title = '' !== $kp_lower && false !== strpos(strtolower($seo_title), $kp_lower);
+            $kp_in_desc  = '' !== $kp_lower && false !== strpos(strtolower($meta_description), $kp_lower);
+
+            // --- Audit score (just the number) ---
+            $audit_data  = get_post_meta($post_id, '_ai_seo_captain_page_audit', true);
+            $audit_score = null;
+            if (is_array($audit_data) && isset($audit_data['score'])) {
+                $audit_score = (int) $audit_data['score'];
+            } elseif (is_string($audit_data)) {
+                $decoded = maybe_unserialize($audit_data);
+                if (is_array($decoded) && isset($decoded['score'])) {
+                    $audit_score = (int) $decoded['score'];
+                }
+            }
+
+            // --- Hierarchy position (parent chain, no siblings) ---
+            $hierarchy_position = '';
+            $parent_title       = '';
+            $parent_url         = '';
+            if ($post->post_parent > 0) {
+                $parent = get_post($post->post_parent);
+                if ($parent) {
+                    $parent_title = (string) $parent->post_title;
+                    $parent_url   = (string) get_permalink($parent);
+
+                    // Build breadcrumb chain.
+                    $chain   = array($parent_title);
+                    $current = $parent;
+                    while ($current->post_parent > 0) {
+                        $current = get_post($current->post_parent);
+                        if ($current) {
+                            array_unshift($chain, (string) $current->post_title);
+                        } else {
+                            break;
+                        }
+                    }
+                    $hierarchy_position = implode(' → ', $chain) . ' → ' . $post->post_title;
+                }
+            }
+
+            // --- Taxonomy terms ---
+            $taxonomy_terms = array();
+            $taxonomies     = get_object_taxonomies($post->post_type, 'objects');
+            foreach ($taxonomies as $tax) {
+                if (! $tax->public) {
+                    continue;
+                }
+                $terms = get_the_terms($post, $tax->name);
+                if (! empty($terms) && ! is_wp_error($terms)) {
+                    $taxonomy_terms[ucfirst($tax->label)] = implode(', ', wp_list_pluck($terms, 'name'));
+                }
+            }
+
+            // --- WooCommerce data ---
+            $wc_data = array();
+            if ('product' === $post->post_type && function_exists('wc_get_product')) {
+                $wc_data = (array) apply_filters('ai_seo_captain_product_context', array(), $post);
+            }
+
+            // --- Dates ---
+            $publish_date  = (string) $post->post_date;
+            $modified_date = (string) $post->post_modified;
+
+            // --- Featured image ---
+            $has_featured_image = has_post_thumbnail($post_id);
+
+            $pages[] = array(
+                'post_id'             => $post_id,
+                'title'               => (string) $post->post_title,
+                'permalink'           => (string) get_permalink($post),
+                'post_type'           => (string) $post->post_type,
+                'status'              => (string) $post->post_status,
+                'body_content'        => $body_content,
+                'word_count'          => $word_count,
+                'images_total'        => $img_count,
+                'images_missing_alt'  => $img_no_alt,
+                'internal_links'      => $internal_links,
+                'external_links'      => $external_links,
+                'video_count'         => $video_count,
+                'doc_count'           => $doc_count,
+                'heading_structure'   => $heading_summary,
+                'internal_link_urls'  => $internal_link_urls,
+                'external_link_urls'  => $external_link_urls,
+                'image_details'       => $image_details,
+                'seo_title'           => $seo_title,
+                'meta_description'    => $meta_description,
+                'focus_keyphrase'     => $focus_keyphrase,
+                'title_length'        => $title_length,
+                'desc_length'         => $desc_length,
+                'keyphrase_in_title'  => $kp_in_title,
+                'keyphrase_in_desc'   => $kp_in_desc,
+                'social_title'        => $social_title,
+                'social_description'  => $social_desc,
+                'schema_type'         => $schema_type,
+                'canonical_url'       => $canonical_url,
+                'robots_directives'   => $robots,
+                'is_cornerstone'      => $is_cornerstone,
+                'audit_score'         => $audit_score,
+                'hierarchy_position'  => $hierarchy_position,
+                'parent_title'        => $parent_title,
+                'parent_url'          => $parent_url,
+                'taxonomy_terms'      => $taxonomy_terms,
+                'wc_data'             => $wc_data,
+                'publish_date'        => $publish_date,
+                'modified_date'       => $modified_date,
+                'has_featured_image'  => $has_featured_image,
+            );
+        }
+
+        return $pages;
+    }
+
+    /**
+     * Strip shortcodes and HTML tags, collapse whitespace (same as AI_Generator::normalize_text).
+     */
+    private function normalize_text(string $text): string
+    {
+        $text = strip_shortcodes($text);
+        $text = wp_strip_all_tags($text);
+        $text = preg_replace('/\s+/', ' ', $text) ?: $text;
+
+        return trim($text);
+    }
 
     /**
      * Detect if a page is a template/UI fragment (not a real landing page).
