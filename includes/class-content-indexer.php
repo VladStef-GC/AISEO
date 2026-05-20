@@ -579,11 +579,17 @@ class Content_Indexer
                 "SELECT idx.object_id, idx.title, idx.slug, idx.permalink, idx.status, idx.parent_id,
                         COALESCE(pm_kp.meta_value, '')    AS focus_keyphrase,
                         COALESCE(pm_title.meta_value, '') AS seo_title,
-                        COALESCE(pm_desc.meta_value, '')  AS meta_description
+                        COALESCE(pm_desc.meta_value, '')  AS meta_description,
+                        COALESCE(pm_kw.meta_value, '')    AS keywords,
+                        COALESCE(pm_st.meta_value, '')    AS social_title,
+                        COALESCE(pm_sd.meta_value, '')    AS social_description
                  FROM {$table_name} idx
                  LEFT JOIN {$postmeta} pm_kp    ON pm_kp.post_id    = idx.object_id AND pm_kp.meta_key    = '_ai_seo_captain_focus_keyphrase'
                  LEFT JOIN {$postmeta} pm_title ON pm_title.post_id = idx.object_id AND pm_title.meta_key = %s
                  LEFT JOIN {$postmeta} pm_desc  ON pm_desc.post_id  = idx.object_id AND pm_desc.meta_key  = %s
+                 LEFT JOIN {$postmeta} pm_kw    ON pm_kw.post_id    = idx.object_id AND pm_kw.meta_key    = '_ai_seo_captain_keywords'
+                 LEFT JOIN {$postmeta} pm_st    ON pm_st.post_id    = idx.object_id AND pm_st.meta_key    = '_ai_seo_captain_social_title'
+                 LEFT JOIN {$postmeta} pm_sd    ON pm_sd.post_id    = idx.object_id AND pm_sd.meta_key    = '_ai_seo_captain_social_description'
                  WHERE idx.object_type = %s
                    AND idx.post_type   = %s
                    AND idx.parent_id   = %d
@@ -608,11 +614,17 @@ class Content_Indexer
                 "SELECT idx.object_id, idx.title, idx.slug, idx.permalink, idx.status, idx.parent_id,
                         COALESCE(pm_kp.meta_value, '')    AS focus_keyphrase,
                         COALESCE(pm_title.meta_value, '') AS seo_title,
-                        COALESCE(pm_desc.meta_value, '')  AS meta_description
+                        COALESCE(pm_desc.meta_value, '')  AS meta_description,
+                        COALESCE(pm_kw.meta_value, '')    AS keywords,
+                        COALESCE(pm_st.meta_value, '')    AS social_title,
+                        COALESCE(pm_sd.meta_value, '')    AS social_description
                  FROM {$table_name} idx
                  LEFT JOIN {$postmeta} pm_kp    ON pm_kp.post_id    = idx.object_id AND pm_kp.meta_key    = '_ai_seo_captain_focus_keyphrase'
                  LEFT JOIN {$postmeta} pm_title ON pm_title.post_id = idx.object_id AND pm_title.meta_key = %s
                  LEFT JOIN {$postmeta} pm_desc  ON pm_desc.post_id  = idx.object_id AND pm_desc.meta_key  = %s
+                 LEFT JOIN {$postmeta} pm_kw    ON pm_kw.post_id    = idx.object_id AND pm_kw.meta_key    = '_ai_seo_captain_keywords'
+                 LEFT JOIN {$postmeta} pm_st    ON pm_st.post_id    = idx.object_id AND pm_st.meta_key    = '_ai_seo_captain_social_title'
+                 LEFT JOIN {$postmeta} pm_sd    ON pm_sd.post_id    = idx.object_id AND pm_sd.meta_key    = '_ai_seo_captain_social_description'
                  WHERE idx.object_type = %s
                    AND idx.post_type   = %s
                    AND idx.parent_id   = %d
@@ -707,11 +719,17 @@ class Content_Indexer
                 "SELECT idx.object_id, idx.title, idx.slug, idx.permalink, idx.post_type, idx.status,
                         pm_kp.meta_value AS focus_keyphrase,
                         COALESCE(pm_title.meta_value, '') AS seo_title,
-                        COALESCE(pm_desc.meta_value, '')  AS meta_description
+                        COALESCE(pm_desc.meta_value, '')  AS meta_description,
+                        COALESCE(pm_kw.meta_value, '')    AS keywords,
+                        COALESCE(pm_st.meta_value, '')    AS social_title,
+                        COALESCE(pm_sd.meta_value, '')    AS social_description
                  FROM {$postmeta} pm_kp
                  INNER JOIN {$table_name} idx ON idx.object_id = pm_kp.post_id AND idx.object_type = %s
                  LEFT JOIN {$postmeta} pm_title ON pm_title.post_id = idx.object_id AND pm_title.meta_key = %s
                  LEFT JOIN {$postmeta} pm_desc  ON pm_desc.post_id  = idx.object_id AND pm_desc.meta_key  = %s
+                 LEFT JOIN {$postmeta} pm_kw    ON pm_kw.post_id    = idx.object_id AND pm_kw.meta_key    = '_ai_seo_captain_keywords'
+                 LEFT JOIN {$postmeta} pm_st    ON pm_st.post_id    = idx.object_id AND pm_st.meta_key    = '_ai_seo_captain_social_title'
+                 LEFT JOIN {$postmeta} pm_sd    ON pm_sd.post_id    = idx.object_id AND pm_sd.meta_key    = '_ai_seo_captain_social_description'
                  WHERE pm_kp.meta_key = '_ai_seo_captain_focus_keyphrase'
                    AND LOWER(TRIM(pm_kp.meta_value)) = LOWER(%s)
                    AND idx.object_id != %d
@@ -1044,11 +1062,17 @@ class Content_Indexer
                        COALESCE(pm_kp.meta_value, '')    AS focus_keyphrase,
                        COALESCE(pm_title.meta_value, '') AS seo_title,
                        COALESCE(pm_desc.meta_value, '')  AS meta_description,
+                       COALESCE(pm_kw.meta_value, '')    AS keywords,
+                       COALESCE(pm_st.meta_value, '')    AS social_title,
+                       COALESCE(pm_sd.meta_value, '')    AS social_description,
                        {$score_expr} AS relevance_score
                 FROM {$table_name} idx
                 LEFT JOIN {$postmeta} pm_kp    ON pm_kp.post_id    = idx.object_id AND pm_kp.meta_key = '_ai_seo_captain_focus_keyphrase'
                 LEFT JOIN {$postmeta} pm_title ON pm_title.post_id = idx.object_id AND pm_title.meta_key = %s
                 LEFT JOIN {$postmeta} pm_desc  ON pm_desc.post_id  = idx.object_id AND pm_desc.meta_key  = %s
+                LEFT JOIN {$postmeta} pm_kw    ON pm_kw.post_id    = idx.object_id AND pm_kw.meta_key    = '_ai_seo_captain_keywords'
+                LEFT JOIN {$postmeta} pm_st    ON pm_st.post_id    = idx.object_id AND pm_st.meta_key    = '_ai_seo_captain_social_title'
+                LEFT JOIN {$postmeta} pm_sd    ON pm_sd.post_id    = idx.object_id AND pm_sd.meta_key    = '_ai_seo_captain_social_description'
                 WHERE idx.object_type = %s
                   AND idx.status      = %s
                   AND idx.object_id NOT IN ({$exclude_in})
@@ -1187,11 +1211,17 @@ class Content_Indexer
                 "SELECT idx.object_id, idx.title, idx.slug, idx.permalink, idx.status, idx.parent_id, idx.post_type,
                         COALESCE(pm_kp.meta_value, '')    AS focus_keyphrase,
                         COALESCE(pm_title.meta_value, '') AS seo_title,
-                        COALESCE(pm_desc.meta_value, '')  AS meta_description
+                        COALESCE(pm_desc.meta_value, '')  AS meta_description,
+                        COALESCE(pm_kw.meta_value, '')    AS keywords,
+                        COALESCE(pm_st.meta_value, '')    AS social_title,
+                        COALESCE(pm_sd.meta_value, '')    AS social_description
                  FROM {$table_name} idx
                  LEFT JOIN {$postmeta_table} pm_kp    ON pm_kp.post_id    = idx.object_id AND pm_kp.meta_key    = '_ai_seo_captain_focus_keyphrase'
                  LEFT JOIN {$postmeta_table} pm_title ON pm_title.post_id = idx.object_id AND pm_title.meta_key = %s
                  LEFT JOIN {$postmeta_table} pm_desc  ON pm_desc.post_id  = idx.object_id AND pm_desc.meta_key  = %s
+                 LEFT JOIN {$postmeta_table} pm_kw    ON pm_kw.post_id    = idx.object_id AND pm_kw.meta_key    = '_ai_seo_captain_keywords'
+                 LEFT JOIN {$postmeta_table} pm_st    ON pm_st.post_id    = idx.object_id AND pm_st.meta_key    = '_ai_seo_captain_social_title'
+                 LEFT JOIN {$postmeta_table} pm_sd    ON pm_sd.post_id    = idx.object_id AND pm_sd.meta_key    = '_ai_seo_captain_social_description'
                  WHERE idx.object_type = %s AND idx.object_id = %d",
                 self::META_TITLE_KEY,
                 self::META_DESCRIPTION_KEY,

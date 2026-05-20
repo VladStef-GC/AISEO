@@ -380,7 +380,7 @@ class AI_Generator
         $ext_total      = preg_match_all('/href=["\'](https?:\/\/)/i', $raw_html);
         $ext_link_count = max(0, $ext_total - $int_link_count);
         $video_count    = preg_match_all('/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/|vimeo\.com\/(?:video\/)?\d)/i', $raw_html)
-                        + preg_match_all('/<video\b/i', $raw_html);
+            + preg_match_all('/<video\b/i', $raw_html);
         $doc_count      = preg_match_all('/href=["\'][^"\']*\.(?:pdf|docx?|xlsx?|pptx?|odt|ods|odp|csv|rtf)["\s>]/i', $raw_html);
 
         // Heading structure.
@@ -638,14 +638,18 @@ class AI_Generator
 
             if (is_array($h['grandparent'])) {
                 $lines[] = 'Grandparent: "' . $h['grandparent']['title'] . '" /' . ltrim($h['grandparent']['slug'], '/') . '/'
-                    . ('' !== trim((string) $h['grandparent']['focus_keyphrase']) ? ' [kp: "' . $h['grandparent']['focus_keyphrase'] . '"]' : '');
+                    . ('' !== trim((string) $h['grandparent']['focus_keyphrase']) ? ' [kp: "' . $h['grandparent']['focus_keyphrase'] . '"]' : '')
+                    . ('' !== trim((string) ($h['grandparent']['keywords'] ?? '')) ? ' | keywords: "' . $h['grandparent']['keywords'] . '"' : '');
             }
 
             if (is_array($h['parent'])) {
                 $lines[] = 'Parent page: "' . $h['parent']['title'] . '" /' . ltrim($h['parent']['slug'], '/') . '/'
                     . ('' !== trim((string) $h['parent']['seo_title']) ? ' | SEO title: "' . $h['parent']['seo_title'] . '"' : '')
                     . ('' !== trim((string) $h['parent']['focus_keyphrase']) ? ' | kp: "' . $h['parent']['focus_keyphrase'] . '"' : '')
-                    . ('' !== trim((string) $h['parent']['meta_description']) ? ' | desc: "' . $h['parent']['meta_description'] . '"' : '');
+                    . ('' !== trim((string) $h['parent']['meta_description']) ? ' | desc: "' . $h['parent']['meta_description'] . '"' : '')
+                    . ('' !== trim((string) ($h['parent']['keywords'] ?? '')) ? ' | keywords: "' . $h['parent']['keywords'] . '"' : '')
+                    . ('' !== trim((string) ($h['parent']['social_title'] ?? '')) ? ' | social title: "' . $h['parent']['social_title'] . '"' : '')
+                    . ('' !== trim((string) ($h['parent']['social_description'] ?? '')) ? ' | social desc: "' . $h['parent']['social_description'] . '"' : '');
             }
 
             if (! empty($h['siblings'])) {
@@ -655,7 +659,10 @@ class AI_Generator
                     $lines[] = '  - "' . $sib['title'] . '" /' . ltrim($sib['slug'], '/') . '/'
                         . ('' !== trim((string) $sib['focus_keyphrase']) ? ' [kp: "' . $sib['focus_keyphrase'] . '"]' : '')
                         . ('' !== trim((string) $sib['seo_title']) ? ' | SEO: "' . $sib['seo_title'] . '"' : '')
-                        . ('' !== trim((string) $sib['meta_description']) ? ' | desc: "' . $sib['meta_description'] . '"' : '');
+                        . ('' !== trim((string) $sib['meta_description']) ? ' | desc: "' . $sib['meta_description'] . '"' : '')
+                        . ('' !== trim((string) ($sib['keywords'] ?? '')) ? ' | keywords: "' . $sib['keywords'] . '"' : '')
+                        . ('' !== trim((string) ($sib['social_title'] ?? '')) ? ' | social title: "' . $sib['social_title'] . '"' : '')
+                        . ('' !== trim((string) ($sib['social_description'] ?? '')) ? ' | social desc: "' . $sib['social_description'] . '"' : '');
                     if ($has_sib_content && ! empty($ctx['sibling_content'][(int) $sib['object_id']])) {
                         $lines[] = '    Content preview: ' . $ctx['sibling_content'][(int) $sib['object_id']];
                     }
@@ -668,7 +675,10 @@ class AI_Generator
                     $lines[] = '  - "' . $child['title'] . '" /' . ltrim($child['slug'], '/') . '/'
                         . ('' !== trim((string) $child['focus_keyphrase']) ? ' [kp: "' . $child['focus_keyphrase'] . '"]' : '')
                         . ('' !== trim((string) $child['seo_title']) ? ' | SEO: "' . $child['seo_title'] . '"' : '')
-                        . ('' !== trim((string) $child['meta_description']) ? ' | desc: "' . $child['meta_description'] . '"' : '');
+                        . ('' !== trim((string) $child['meta_description']) ? ' | desc: "' . $child['meta_description'] . '"' : '')
+                        . ('' !== trim((string) ($child['keywords'] ?? '')) ? ' | keywords: "' . $child['keywords'] . '"' : '')
+                        . ('' !== trim((string) ($child['social_title'] ?? '')) ? ' | social title: "' . $child['social_title'] . '"' : '')
+                        . ('' !== trim((string) ($child['social_description'] ?? '')) ? ' | social desc: "' . $child['social_description'] . '"' : '');
                 }
             }
         }
@@ -681,6 +691,10 @@ class AI_Generator
                 $lines[] = '  - "' . $conflict['title'] . '" /' . ltrim($conflict['slug'], '/') . '/'
                     . ' | kp: "' . $conflict['focus_keyphrase'] . '"'
                     . ('' !== trim((string) $conflict['seo_title']) ? ' | SEO: "' . $conflict['seo_title'] . '"' : '')
+                    . ('' !== trim((string) $conflict['meta_description']) ? ' | desc: "' . $conflict['meta_description'] . '"' : '')
+                    . ('' !== trim((string) ($conflict['keywords'] ?? '')) ? ' | keywords: "' . $conflict['keywords'] . '"' : '')
+                    . ('' !== trim((string) ($conflict['social_title'] ?? '')) ? ' | social title: "' . $conflict['social_title'] . '"' : '')
+                    . ('' !== trim((string) ($conflict['social_description'] ?? '')) ? ' | social desc: "' . $conflict['social_description'] . '"' : '')
                     . ' | type: ' . $conflict['post_type'];
             }
             $lines[] = 'ACTION REQUIRED: Recommend unique keyphrases for this page to avoid SEO cannibalization.';
@@ -695,7 +709,10 @@ class AI_Generator
                     . ' | type: ' . $tp['post_type']
                     . ('' !== trim((string) $tp['focus_keyphrase']) ? ' | kp: "' . $tp['focus_keyphrase'] . '"' : '')
                     . ('' !== trim((string) $tp['seo_title']) ? ' | SEO: "' . $tp['seo_title'] . '"' : '')
-                    . ('' !== trim((string) $tp['meta_description']) ? ' | desc: "' . $tp['meta_description'] . '"' : '');
+                    . ('' !== trim((string) $tp['meta_description']) ? ' | desc: "' . $tp['meta_description'] . '"' : '')
+                    . ('' !== trim((string) ($tp['keywords'] ?? '')) ? ' | keywords: "' . $tp['keywords'] . '"' : '')
+                    . ('' !== trim((string) ($tp['social_title'] ?? '')) ? ' | social title: "' . $tp['social_title'] . '"' : '')
+                    . ('' !== trim((string) ($tp['social_description'] ?? '')) ? ' | social desc: "' . $tp['social_description'] . '"' : '');
                 $lines[] = $tp_line;
                 if (! empty($tp['excerpt_content'])) {
                     $lines[] = '    Content preview: ' . $tp['excerpt_content'];

@@ -350,6 +350,9 @@ class Site_Chat
                 $page_block[] = 'Focus keyphrase: ' . ('' !== $page['focus_keyphrase'] ? $page['focus_keyphrase'] : 'None specified');
                 $page_block[] = 'SEO title draft: ' . ('' !== $page['seo_title'] ? $page['seo_title'] . ' (' . $page['title_length'] . ' chars)' : 'Empty — not yet written');
                 $page_block[] = 'Meta description draft: ' . ('' !== $page['meta_description'] ? $page['meta_description'] . ' (' . $page['desc_length'] . ' chars)' : 'Empty — not yet written');
+                if ('' !== ($page['keywords'] ?? '')) {
+                    $page_block[] = 'Keywords: ' . $page['keywords'];
+                }
                 $page_block[] = 'Keyphrase in title: ' . ($page['keyphrase_in_title'] ? 'Found' : 'Missing');
                 $page_block[] = 'Keyphrase in description: ' . ($page['keyphrase_in_desc'] ? 'Found' : 'Missing');
 
@@ -717,6 +720,7 @@ class Site_Chat
             $seo_title        = trim((string) get_post_meta($post_id, '_ai_seo_captain_meta_title', true));
             $meta_description = trim((string) get_post_meta($post_id, '_ai_seo_captain_meta_description', true));
             $focus_keyphrase  = trim((string) get_post_meta($post_id, '_ai_seo_captain_focus_keyphrase', true));
+            $keywords         = trim((string) get_post_meta($post_id, '_ai_seo_captain_keywords', true));
             $social_title     = trim((string) get_post_meta($post_id, '_ai_seo_captain_social_title', true));
             $social_desc      = trim((string) get_post_meta($post_id, '_ai_seo_captain_social_description', true));
             $schema_type      = trim((string) get_post_meta($post_id, '_ai_seo_captain_schema_type', true));
@@ -815,6 +819,7 @@ class Site_Chat
                 'seo_title'           => $seo_title,
                 'meta_description'    => $meta_description,
                 'focus_keyphrase'     => $focus_keyphrase,
+                'keywords'            => $keywords,
                 'title_length'        => $title_length,
                 'desc_length'         => $desc_length,
                 'keyphrase_in_title'  => $kp_in_title,
