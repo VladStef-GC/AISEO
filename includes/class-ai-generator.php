@@ -1224,7 +1224,7 @@ class AI_Generator
 
         $prompt_parts = array(
             'Task: Perform a comprehensive SEO audit of this WordPress page and provide specific, actionable findings.',
-            'Output format: {"score":...,"issues":[...],"suggestions":[...],"missing_alt_tags":...,"word_count":...,"heading_structure":"...","summary":"..."}',
+            'Output format: {"score":...,"issues":[...],"suggestions":[...],"missing_alt_tags":...,"word_count":...,"heading_structure":"...","summary":"...","full_report":"..."}',
             'Requirements: You receive the COMPLETE page content, ALL metadata fields, full audit results, the page hierarchy (parent, siblings, children with their SEO data), keyphrase conflict warnings, and the site structure tree. Use ALL of it. Detect cannibalization risks. Flag pages that overlap with this page. Ground your audit in the actual data below.',
             'Site: ' . get_bloginfo('name'),
             'Page type: ' . $post->post_type,
