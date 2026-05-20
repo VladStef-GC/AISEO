@@ -539,6 +539,7 @@ class Admin_Ajax
                 'word_count'        => $cached['word_count'],
                 'heading_structure' => $cached['heading_structure'],
                 'summary'           => $cached['summary'],
+                'full_report'       => $cached['full_report'] ?? '',
                 'cached'            => true,
             ));
             return;
@@ -564,6 +565,7 @@ class Admin_Ajax
             'word_count'        => $audit['word_count'],
             'heading_structure' => $audit['heading_structure'],
             'summary'           => $audit['summary'],
+            'full_report'       => $audit['full_report'],
             'deep_analysis'     => $deep_analysis,
             'audited_at'        => current_time('mysql', true),
         ));
@@ -579,6 +581,7 @@ class Admin_Ajax
             'word_count'        => $audit['word_count'],
             'heading_structure' => $audit['heading_structure'],
             'summary'           => $audit['summary'],
+            'full_report'       => $audit['full_report'],
             'cached'            => false,
         ));
     }

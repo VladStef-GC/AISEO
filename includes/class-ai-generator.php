@@ -1025,6 +1025,7 @@ class AI_Generator
             'word_count' => isset($payload['word_count']) ? (int) $payload['word_count'] : 0,
             'heading_structure' => isset($payload['heading_structure']) ? sanitize_text_field((string) $payload['heading_structure']) : '',
             'summary' => isset($payload['summary']) ? sanitize_textarea_field((string) $payload['summary']) : '',
+            'full_report' => isset($payload['full_report']) ? wp_kses_post((string) $payload['full_report']) : '',
             'provider' => $provider,
             'model' => $model,
         );
@@ -1163,15 +1164,25 @@ class AI_Generator
         return trim(
             $base_prompt . "\n\n" .
                 'IDENTITY: You are the AI inside the "SEO Captain" WordPress plugin. This plugin handles ALL SEO. The user does NOT use Yoast, RankMath, or any other SEO plugin — never mention them.' . "\n" .
-                'Return only valid JSON with exactly these keys: score, issues, suggestions, missing_alt_tags, word_count, heading_structure, summary. ' .
+                'Return only valid JSON with exactly these keys: score, issues, suggestions, missing_alt_tags, word_count, heading_structure, summary, full_report. ' .
                 'score is 0-100 representing overall SEO health. ' .
-                'issues is an array of short strings describing problems found. ' .
-                'suggestions is an array of short strings with actionable improvements. ' .
+                'issues is an array of short strings describing problems found (max 10). ' .
+                'suggestions is an array of short strings with actionable improvements (max 10). ' .
                 'missing_alt_tags is the count of images without alt text. ' .
                 'word_count is the word count of the main content. ' .
                 'heading_structure is a brief note about heading hierarchy (e.g. "H1: 1, H2: 3, H3: 2 — good structure"). ' .
                 'summary is 1-2 sentences about overall page SEO quality. ' .
-                'Do not use markdown fences. Be specific and factual.'
+                'full_report is the COMPLETE detailed audit report in Markdown format. This is the most important output — it must be comprehensive, specific, and actionable. Include: ' .
+                '(A) Executive summary of the page SEO health; ' .
+                '(B) Every issue found with a clear explanation of WHY it hurts SEO and HOW to fix it; ' .
+                '(C) Content analysis: heading structure assessment, keyword density, readability, thin/duplicate content risks; ' .
+                '(D) Media audit: list every image/video/document with missing alt text or SEO issues — specify which elements need fixing; ' .
+                '(E) Internal/external link analysis: missing opportunities, broken patterns, nofollow recommendations; ' .
+                '(F) Metadata assessment: title length, description quality, keyphrase placement, social tags, schema; ' .
+                '(G) Cannibalization risks: if sibling or related pages overlap in topic/keyphrase, explain the conflict and recommend differentiation; ' .
+                '(H) Prioritized action list: numbered steps the user should take, ordered by impact, each with the specific text/element to change. ' .
+                'Do NOT summarize or abbreviate the full_report — include every finding with full context. ' .
+                'Do not use markdown fences around the JSON. Be specific and factual.'
         );
     }
 
