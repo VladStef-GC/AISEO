@@ -345,6 +345,30 @@ class AI_Generator
         }
         $topical_pages = $this->content_indexer->get_topically_related_pages((int) $post->ID, $exclude_ids, $deep_analysis, 20);
 
+        // WordPress taxonomy terms (categories, tags, custom taxonomies).
+        $taxonomy_terms = array();
+        $taxonomies = get_object_taxonomies($post->post_type, 'objects');
+        foreach ($taxonomies as $tax_slug => $tax_obj) {
+            if (! $tax_obj->public) {
+                continue;
+            }
+            $terms = get_the_terms($post->ID, $tax_slug);
+            if (is_array($terms) && ! empty($terms)) {
+                $term_names = wp_list_pluck($terms, 'name');
+                $taxonomy_terms[$tax_obj->label] = implode(', ', $term_names);
+            }
+        }
+
+        // Publish and last-modified dates.
+        $publish_date  = (string) $post->post_date;
+        $modified_date = (string) $post->post_modified;
+
+        // Featured image.
+        $has_featured_image = has_post_thumbnail($post->ID);
+
+        // Site language.
+        $site_locale = get_locale();
+
         return array(
             'focus_keyphrase' => $focus_keyphrase,
             'seo_title_draft' => $seo_title_draft,
@@ -368,6 +392,11 @@ class AI_Generator
             'keyphrase_conflicts' => $keyphrase_conflicts,
             'site_tree' => $site_tree,
             'topical_pages' => $topical_pages,
+            'taxonomy_terms' => $taxonomy_terms,
+            'publish_date' => $publish_date,
+            'modified_date' => $modified_date,
+            'has_featured_image' => $has_featured_image,
+            'site_locale' => $site_locale,
         );
     }
 
@@ -423,6 +452,29 @@ class AI_Generator
         }
         if (! empty($ctx['is_cornerstone'])) {
             $lines[] = 'Cornerstone content: Yes (high-priority page)';
+        }
+
+        // Site language.
+        if (! empty($ctx['site_locale'])) {
+            $lines[] = 'Site language: ' . $ctx['site_locale'];
+        }
+
+        // Publish and modified dates.
+        if (! empty($ctx['publish_date'])) {
+            $lines[] = 'Published: ' . $ctx['publish_date'];
+        }
+        if (! empty($ctx['modified_date']) && $ctx['modified_date'] !== $ctx['publish_date']) {
+            $lines[] = 'Last modified: ' . $ctx['modified_date'];
+        }
+
+        // Featured image.
+        $lines[] = 'Featured image: ' . (! empty($ctx['has_featured_image']) ? 'Yes' : 'None');
+
+        // WordPress taxonomy terms (categories, tags, etc.).
+        if (! empty($ctx['taxonomy_terms'])) {
+            foreach ($ctx['taxonomy_terms'] as $tax_label => $term_list) {
+                $lines[] = $tax_label . ': ' . $term_list;
+            }
         }
 
         // WooCommerce product data.
