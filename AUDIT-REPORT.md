@@ -11,16 +11,16 @@
 
 | # | Status | Notes |
 |---|--------|-------|
-| 1 | **OPEN** | Version is now `1.0.0` (was `1.0.0-beta`), constant prefix fixed to `AI_SEO_CAPTAIN_*`. Docs still reference `1.3.1`. |
+| 1 | ✅ **FIXED** | Version bumped to `1.3.1` in both plugin header and `AI_SEO_CAPTAIN_VERSION` constant |
 | 2 | ✅ **FIXED** | Constants now use `AI_SEO_CAPTAIN_*` prefix |
 | 3 | ✅ **FIXED** | Button re-enabled on success with `btn.prop('disabled', false).text('Re-Index Site')` |
 | 4 | ✅ **FIXED** | Only Bing is pinged now (Google deprecated ping removed) |
 | 5 | ✅ **FIXED** | Both `_ai_seo_captain_keywords` and `_ai_seo_captain_exclude_sitemap` now in `uninstall.php` |
 | 6 | ✅ **FIXED** | Dynamic video meta keys cleaned via `LIKE` queries in `uninstall.php` |
 | 7 | ✅ **FIXED** | `Meta_Keys::all_post_meta_keys()` now includes `KEYWORDS` and `EXCLUDE_SITEMAP` (20 keys total) |
-| 8 | **OPEN** | Docs still reference `_ai_seo_captain_term_title` in some places; code uses `_ai_seo_captain_seo_title` |
-| 9 | **OPEN** | Version mismatch remains: code = `1.0.0`, docs = `1.3.1` |
-| 10 | **OPEN** | `schedule_all()` still called on every `plugins_loaded` |
+| 8 | ✅ **FIXED** | Docs already use correct key `_ai_seo_captain_seo_title`; no remaining wrong references |
+| 9 | ✅ **FIXED** | Version constant and header now `1.3.1`, matching docs |
+| 10 | ✅ **FIXED** | `schedule_all()` guarded by transient `ai_seo_captain_cron_check` (1-day TTL) |
 
 ---
 

@@ -5,13 +5,13 @@
 
 ---
 
-## Still Open from AUDIT-REPORT.md
+## All Resolved (verified May 20, 2026)
 
-| # | Bug | Severity | Notes |
-|---|-----|----------|-------|
-| 1 | **Version mismatch**: Code declares `1.0.0` (`ai-seo-captain.php` L6, L17), all documentation says `1.3.1` | Medium | Constant prefix fixed (`AI_SEO_CAPTAIN_*`), but version number never bumped |
-| 8 | **Term meta key naming in docs**: Some docs reference `_ai_seo_captain_term_title` but code uses `_ai_seo_captain_seo_title` | Low | Verify all MD files and update to match code |
-| 10 | **`schedule_all()` on every page load**: `class-plugin.php` L63 calls `$this->cron_manager->schedule_all()` on every `plugins_loaded`. WordPress's `wp_schedule_event()` checks if already scheduled (safe), but it still triggers unnecessary DB reads per request. | Low | Guard with a static flag or `wp_next_scheduled()` pre-check |
+| # | Bug | Resolution |
+|---|-----|------------|
+| 1 | **Version mismatch** | ✅ Fixed — bumped to `1.3.1` in plugin header and `AI_SEO_CAPTAIN_VERSION` constant |
+| 8 | **Term meta key naming in docs** | ✅ Already correct — all docs use `_ai_seo_captain_seo_title` |
+| 10 | **`schedule_all()` on every page load** | ✅ Already fixed — guarded by `ai_seo_captain_cron_check` transient (1-day TTL) |
 
 ---
 
