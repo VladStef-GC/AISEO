@@ -2615,7 +2615,7 @@ JS;
 
             // Find ALL pages that have audit data, regardless of list membership.
             $audit_rows = $wpdb->get_results(
-                "SELECT pm.post_id, p.post_title
+                "SELECT pm.post_id, p.post_title, p.post_modified_gmt, p.post_modified, pm.meta_value
                  FROM {$wpdb->postmeta} pm
                  INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id AND p.post_status IN ('publish','draft','pending','private')
                  WHERE pm.meta_key = '_ai_seo_captain_page_audit'
@@ -2626,10 +2626,27 @@ JS;
             foreach ($audit_rows as $row) {
                 $pid = (int) $row['post_id'];
                 $list_names = isset($page_to_lists[$pid]) ? $page_to_lists[$pid] : array('Full Site');
+
+                // Extract audited_at from the serialized audit meta.
+                $audit_data = maybe_unserialize($row['meta_value']);
+                $audited_at  = '';
+                if (is_array($audit_data) && ! empty($audit_data['audited_at'])) {
+                    $audited_at = $audit_data['audited_at'];
+                }
+
+                // audited_at uses current_time('mysql', true) → GMT.
+                // Compare with post_modified_gmt for an apples-to-apples check.
+                $post_modified_gmt = $row['post_modified_gmt'];
+                $is_stale          = ('' !== $audited_at && $post_modified_gmt > $audited_at);
+
+                // Display dates in local time for the user.
                 $audited_pages[] = array(
-                    'id'    => $pid,
-                    'title' => $row['post_title'],
-                    'lists' => $list_names,
+                    'id'           => $pid,
+                    'title'        => $row['post_title'],
+                    'lists'        => $list_names,
+                    'auditedAt'    => $audited_at,
+                    'postModified' => $row['post_modified'],
+                    'isStale'      => $is_stale,
                 );
             }
         }

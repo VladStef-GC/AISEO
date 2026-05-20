@@ -148,14 +148,16 @@ jQuery(function ($) {
         for (var ai = 0; ai < ap.length; ai++) { allAuditedIds.push(parseInt(ap[ai].id, 10)); }
         runPageMap[0] = allAuditedIds;
 
-        // Card click → select that card (radio) and check its pages in Focus picker.
+        // Card click → toggle that card and add/remove its pages in Focus picker.
         $grid.on('click', '.aisc-list-card', function () {
             var $card = $(this);
             var wasActive = $card.hasClass('is-active');
-            $grid.find('.aisc-list-card').removeClass('is-active');
             if (wasActive) {
-                // Deselect: uncheck all focus pages.
-                $('#ai-seo-focus-list input[type="checkbox"]').prop('checked', false).first().trigger('change');
+                // Deselect: remove this card's pages from selection.
+                $card.removeClass('is-active');
+                var runId = parseInt($card.data('run-id'), 10);
+                var removeIds = runPageMap[runId] || [];
+                deselectFocusPages(removeIds);
                 return;
             }
             $card.addClass('is-active');
@@ -173,28 +175,47 @@ jQuery(function ($) {
         }
     })();
 
-    // Helper: check specific page IDs in the Focus picker (cap at limit).
+    // Helper: ADD page IDs to the Focus picker selection (respecting the limit).
     function selectFocusPages(ids) {
+        var effectiveMax = getEffectiveMax();
+        var currentCount = getPageCount();
+        var added = 0;
+
         var idSet = {};
-        // Only select up to maxFocusPages — truncate if list is too large.
-        var capped = ids.slice(0, maxFocusPages);
-        for (var i = 0; i < capped.length; i++) { idSet[capped[i]] = true; }
-        $('#ai-seo-focus-list input[type="checkbox"]').each(function () {
-            $(this).prop('checked', !!idSet[parseInt($(this).val(), 10)]);
+        for (var i = 0; i < ids.length; i++) { idSet[parseInt(ids[i], 10)] = true; }
+
+        $('#ai-seo-focus-list .aisc-focus-cb').each(function () {
+            var $cb = $(this);
+            var pid = parseInt($cb.val(), 10);
+            if (!idSet[pid]) return; // not in this batch
+            if ($cb.is(':checked')) return; // already selected
+            if (currentCount + added >= effectiveMax) return; // at limit
+            $cb.prop('checked', true);
+            $cb.closest('.aisc-focus-selector__row').find('.aisc-audit-cb').prop('disabled', false);
+            added++;
         });
-        var count = $('#ai-seo-focus-list input:checked').length;
-        var label = count + ' / ' + formatNumber(maxFocusPages) + ' pages selected';
-        if (count === maxFocusPages) {
-            $focusCount.html('<span style="color:#b32d2e;font-weight:600;">' + label + ' (limit reached)</span>');
-        } else {
-            $focusCount.text(label);
+        updateFocusCounter();
+        // Show banner if we couldn't add all requested pages
+        if (added < Object.keys(idSet).length - (currentCount - getPageCount() + added)) {
+            // Simplified: just let updateFocusCounter handle it
         }
-        // Show banner if original list was truncated
-        if (ids.length > maxFocusPages) {
-            updateFocusLimitBanner(ids.length);
-        } else {
-            updateFocusLimitBanner(count);
-        }
+    }
+
+    // Helper: REMOVE page IDs from the Focus picker selection.
+    function deselectFocusPages(ids) {
+        var idSet = {};
+        for (var i = 0; i < ids.length; i++) { idSet[parseInt(ids[i], 10)] = true; }
+
+        $('#ai-seo-focus-list .aisc-focus-cb').each(function () {
+            var $cb = $(this);
+            var pid = parseInt($cb.val(), 10);
+            if (!idSet[pid]) return;
+            $cb.prop('checked', false);
+            var $row = $cb.closest('.aisc-focus-selector__row');
+            $row.find('.aisc-audit-cb').prop('checked', false).prop('disabled', true);
+            $row.find('.aisc-focus-selector__col-audit').removeClass('is-active');
+        });
+        updateFocusCounter();
     }
 
     // --- Block all interaction when plugin prerequisites are not met ---
@@ -240,6 +261,58 @@ jQuery(function ($) {
 
     updateCapacityDisplay();
 
+    // --- Focus limit: dynamic calculation accounting for audit slots ---
+    var $limitBanner = $('#ai-seo-focus-limit-banner');
+    var iconUrl = (conf.pluginUrl || '') + 'assets/img/seo-captain-side-d.svg';
+
+    function getAuditCount() {
+        return $('#ai-seo-focus-list .aisc-audit-cb:checked').length;
+    }
+
+    function getEffectiveMax() {
+        return maxFocusPages - getAuditCount();
+    }
+
+    function getPageCount() {
+        return $('#ai-seo-focus-list .aisc-focus-cb:checked').length;
+    }
+
+    function updateFocusCounter() {
+        var pages = getPageCount();
+        var effectiveMax = getEffectiveMax();
+        var audits = getAuditCount();
+        var auditNote = audits > 0 ? ' (incl. ' + audits + ' audit' + (audits > 1 ? 's' : '') + ')' : '';
+        var label = pages + ' / ' + formatNumber(effectiveMax) + ' pages selected' + auditNote;
+
+        if (pages >= effectiveMax) {
+            $focusCount.html('<span style="color:#b32d2e;font-weight:600;">' + label + (pages === effectiveMax ? ' (limit reached)' : '') + '</span>');
+        } else {
+            $focusCount.text(label);
+        }
+        updateFocusLimitBanner(pages > effectiveMax ? pages : 0);
+    }
+
+    function updateFocusLimitBanner(overCount) {
+        if (overCount > 0) {
+            var effectiveMax = getEffectiveMax();
+            $limitBanner.html(
+                '<div class="ai-seo-captain-notice is-error">' +
+                '<img src="' + iconUrl + '" alt="" class="ai-seo-captain-notice__icon" />' +
+                '<div class="ai-seo-captain-notice__body">' +
+                '<strong class="ai-seo-captain-notice__title">Context Window Limit Reached</strong>' +
+                '<span class="ai-seo-captain-notice__text">' +
+                'The current model <code>' + activeModel + '</code> can analyze up to <strong>' +
+                formatNumber(effectiveMax) + '</strong> pages with full content' +
+                (getAuditCount() > 0 ? ' (' + getAuditCount() + ' audit slot' + (getAuditCount() > 1 ? 's' : '') + ' reserved)' : '') + '. ' +
+                'Please select a bigger model in <a href="' + (conf.ajaxUrl || '').replace('admin-ajax.php', 'admin.php?page=ai-seo-captain-settings') +
+                '">SEO Captain Settings</a> or uncheck pages/audits.' +
+                '</span></div></div>'
+            ).show();
+        } else {
+            $limitBanner.hide().empty();
+        }
+    }
+
     // --- Focus Pages: audited page picker (cross-list) ---
     var auditedPages = conf.auditedPages || [];
 
@@ -249,15 +322,44 @@ jQuery(function ($) {
             $list.html('<div class="aisc-focus-selector__empty">No audited pages yet. Run a Full SEO Audit from the Setup Wizard first.</div>');
             return;
         }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            var d = new Date(dateStr.replace(' ', 'T'));
+            if (isNaN(d.getTime())) return dateStr;
+            var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+        }
+
         var html = '';
         for (var i = 0; i < auditedPages.length; i++) {
             var p = auditedPages[i];
             var listLabels = (p.lists && p.lists.length > 0) ? p.lists.join(', ') : 'Full Site';
-            html += '<label class="aisc-focus-selector__row">' +
-                '<input type="checkbox" value="' + parseInt(p.id, 10) + '" />' +
+
+            // Date freshness indicator.
+            var isStale = !!p.isStale;
+            var dotColor = isStale ? '#dc3232' : '#00a32a';
+            var dateLabel = isStale ? formatDate(p.postModified) : formatDate(p.auditedAt);
+            var dateTitle = isStale
+                ? 'Page updated ' + formatDate(p.postModified) + ' — after last audit (' + formatDate(p.auditedAt) + '). Re-audit recommended.'
+                : 'Audit is current — last audited ' + formatDate(p.auditedAt);
+            var dateHtml = '<span class="aisc-focus-selector__freshness" title="' + dateTitle + '">' +
+                '<span style="color:' + dotColor + ';">⬤</span> ' +
+                '<span class="aisc-focus-selector__date">' + dateLabel + '</span>' +
+                '</span>';
+
+            html += '<div class="aisc-focus-selector__row" data-page-id="' + parseInt(p.id, 10) + '">' +
+                '<label class="aisc-focus-selector__col-page">' +
+                '<input type="checkbox" class="aisc-focus-cb" value="' + parseInt(p.id, 10) + '" />' +
                 '<span class="aisc-focus-selector__title">' + $('<span>').text(p.title).html() + '</span>' +
-                '<span class="aisc-focus-selector__list-label">' + $('<span>').text(listLabels).html() + '</span>' +
-                '</label>';
+                '</label>' +
+                '<span class="aisc-focus-selector__col-date">' + dateHtml + '</span>' +
+                '<label class="aisc-focus-selector__col-audit" title="Include the full AI audit report (costs 1 extra page slot)">' +
+                '<input type="checkbox" class="aisc-audit-cb" value="' + parseInt(p.id, 10) + '" disabled />' +
+                '<span class="aisc-audit-icon">📋</span>' +
+                '<span>Audit</span>' +
+                '</label>' +
+                '</div>';
         }
         $list.html(html);
     })();
@@ -294,53 +396,65 @@ jQuery(function ($) {
         });
     });
 
-    // --- Focus limit banner (global-style with SVG icon) ---
-    var $limitBanner = $('#ai-seo-focus-limit-banner');
-    var iconUrl = (conf.pluginUrl || '') + 'assets/img/seo-captain-side-d.svg';
+    // (Limit helpers and $limitBanner are declared above, before the picker renders.)
 
-    function updateFocusLimitBanner(count) {
-        if (count > maxFocusPages) {
-            $limitBanner.html(
-                '<div class="ai-seo-captain-notice is-error">' +
-                '<img src="' + iconUrl + '" alt="" class="ai-seo-captain-notice__icon" />' +
-                '<div class="ai-seo-captain-notice__body">' +
-                '<strong class="ai-seo-captain-notice__title">Context Window Limit Reached</strong>' +
-                '<span class="ai-seo-captain-notice__text">' +
-                'The current model <code>' + activeModel + '</code> can analyze up to <strong>' +
-                formatNumber(maxFocusPages) + '</strong> pages with full content. ' +
-                'You selected <strong>' + formatNumber(count) + '</strong>. ' +
-                'Please select a bigger model in <a href="' + (conf.ajaxUrl || '').replace('admin-ajax.php', 'admin.php?page=ai-seo-captain-settings') +
-                '">SEO Captain Settings</a> or uncheck pages.' +
-                '</span></div></div>'
-            ).show();
-        } else {
-            $limitBanner.hide().empty();
-        }
-    }
-
-    // Block checkbox selection when at limit — prevent checking, allow unchecking
-    $('#ai-seo-focus-list').on('change', 'input[type="checkbox"]', function () {
+    // --- Page checkbox: block at effective limit, enable/disable audit toggle ---
+    $('#ai-seo-focus-list').on('change', '.aisc-focus-cb', function () {
         var $cb = $(this);
-        var count = $('#ai-seo-focus-list input:checked').length;
+        var $row = $cb.closest('.aisc-focus-selector__row');
+        var $auditCb = $row.find('.aisc-audit-cb');
+        var pages = getPageCount();
+        var effectiveMax = getEffectiveMax();
 
-        // If just checked and now over limit → revert it
-        if ($cb.is(':checked') && count > maxFocusPages) {
+        // If just checked and now over limit → revert
+        if ($cb.is(':checked') && pages > effectiveMax) {
             $cb.prop('checked', false);
-            count = maxFocusPages; // it's back at the limit
         }
 
-        var label = count + ' / ' + formatNumber(maxFocusPages) + ' pages selected';
-        if (count === maxFocusPages) {
-            $focusCount.html('<span style="color:#b32d2e;font-weight:600;">' + label + ' (limit reached)</span>');
+        // Enable/disable audit checkbox based on page selection
+        if ($cb.is(':checked')) {
+            $auditCb.prop('disabled', false);
         } else {
-            $focusCount.text(label);
+            $auditCb.prop('checked', false).prop('disabled', true);
+            $row.find('.aisc-focus-selector__col-audit').removeClass('is-active');
         }
-        updateFocusLimitBanner(count);
+
+        updateFocusCounter();
+    });
+
+    // --- Audit checkbox: costs 1 page slot, block if would exceed limit ---
+    $('#ai-seo-focus-list').on('change', '.aisc-audit-cb', function () {
+        var $cb = $(this);
+        var $toggle = $cb.closest('.aisc-focus-selector__col-audit');
+
+        if ($cb.is(':checked')) {
+            // Check if adding this audit slot would push pages over the new effective limit
+            var pages = getPageCount();
+            var newEffectiveMax = maxFocusPages - getAuditCount(); // already includes this one
+            if (pages > newEffectiveMax) {
+                $cb.prop('checked', false);
+                setStatus('Cannot include audit — would exceed model limit. Uncheck a page first.', true);
+                return;
+            }
+            $toggle.addClass('is-active');
+        } else {
+            $toggle.removeClass('is-active');
+        }
+
+        updateFocusCounter();
     });
 
     function getSelectedFocusIds() {
         var ids = [];
-        $('#ai-seo-focus-list input:checked').each(function () {
+        $('#ai-seo-focus-list .aisc-focus-cb:checked').each(function () {
+            ids.push(parseInt($(this).val(), 10));
+        });
+        return ids;
+    }
+
+    function getSelectedAuditIds() {
+        var ids = [];
+        $('#ai-seo-focus-list .aisc-audit-cb:checked').each(function () {
             ids.push(parseInt($(this).val(), 10));
         });
         return ids;
@@ -373,8 +487,10 @@ jQuery(function ($) {
         }
 
         // Check if too many focus pages are selected for the model.
-        if (focusIds.length > maxFocusPages && maxFocusPages > 0) {
-            setStatus('You selected ' + focusIds.length + ' pages but the model can analyze up to ' + formatNumber(maxFocusPages) + ' pages with full content. Please reduce your selection.', true);
+        var effectiveMax = getEffectiveMax();
+        if (focusIds.length > effectiveMax && effectiveMax > 0) {
+            var audits = getAuditCount();
+            setStatus('You selected ' + focusIds.length + ' pages but the model can analyze up to ' + formatNumber(effectiveMax) + ' pages' + (audits > 0 ? ' (' + audits + ' audit slot' + (audits > 1 ? 's' : '') + ' reserved)' : '') + '. Please reduce your selection.', true);
             $focusToggle.attr('open', '');
             return;
         }
@@ -392,6 +508,12 @@ jQuery(function ($) {
         // Send focus page IDs if any are selected.
         if (focusIds.length > 0) {
             ajaxData.focus_page_ids = JSON.stringify(focusIds);
+        }
+
+        // Send audit page IDs if any audits are included.
+        var auditIds = getSelectedAuditIds();
+        if (auditIds.length > 0) {
+            ajaxData.audit_page_ids = JSON.stringify(auditIds);
         }
 
         $.ajax({

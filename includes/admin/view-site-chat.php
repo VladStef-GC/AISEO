@@ -88,23 +88,14 @@ defined('ABSPATH') || exit;
     <!-- Chat panel — disabled when no audit data -->
     <div class="<?php echo ! $readiness['is_ready'] ? 'ai-seo-captain-disabled-section' : ''; ?>">
         <div class="ai-seo-captain-site-chat-panel">
-            <div class="ai-seo-captain-site-chat-intro">
-                <?php esc_html_e('Ask about overall SEO health, site structure, keyphrase strategy, content gaps, or any site-wide concern. AI sees your full site tree, all audit scores, and all SEO data.', 'ai-seo-captain'); ?>
-            </div>
-
-            <textarea id="ai-seo-site-chat-input" class="widefat ai-seo-captain-chat-input" rows="3"
-                placeholder="<?php esc_attr_e('e.g. "What are my biggest SEO issues?" or "Which pages have keyphrase conflicts?"', 'ai-seo-captain'); ?>"></textarea>
 
             <!-- Focus Pages — select audited pages from any list -->
             <details id="ai-seo-focus-pages-toggle" class="ai-seo-captain-focus-pages">
-                <summary style="cursor:pointer;user-select:none;font-weight:600;margin:8px 0 4px;color:#643d87;">
+                <summary style="cursor:pointer;user-select:none;font-weight:600;margin:0 0 4px;color:#643d87;">
                     <?php esc_html_e('Focus Pages (select from any list)', 'ai-seo-captain'); ?>
                     <span id="ai-seo-capacity-badge" class="ai-seo-captain-capacity-badge"></span>
                 </summary>
                 <div style="margin-top:8px;">
-                    <p class="description" style="margin:0 0 6px;">
-                        <?php esc_html_e('Select specific audited pages from any list to discuss with AI. This lets you cross-reference pages across lists.', 'ai-seo-captain'); ?>
-                    </p>
                     <div id="ai-seo-capacity-info" class="ai-seo-captain-capacity-info" style="margin:0 0 8px;padding:8px 12px;border-radius:4px;font-size:13px;"></div>
                     <div id="ai-seo-focus-selector" class="aisc-focus-selector">
                         <div class="aisc-focus-selector__search">
@@ -120,6 +111,13 @@ defined('ABSPATH') || exit;
                     <div id="ai-seo-focus-limit-banner" style="display:none;margin-top:8px;"></div>
                 </div>
             </details>
+
+            <div class="ai-seo-captain-site-chat-intro">
+                <?php esc_html_e('Ask about overall SEO health, site structure, keyphrase strategy, content gaps, or any site-wide concern. AI sees your full site tree, all audit scores, and all SEO data.', 'ai-seo-captain'); ?>
+            </div>
+
+            <textarea id="ai-seo-site-chat-input" class="widefat ai-seo-captain-chat-input" rows="3"
+                placeholder="<?php esc_attr_e('e.g. "What are my biggest SEO issues?" or "Which pages have keyphrase conflicts?"', 'ai-seo-captain'); ?>"></textarea>
 
             <p class="ai-seo-captain-chat-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                 <button type="button" id="ai-seo-site-chat-send" class="button button-primary"><?php esc_html_e('Ask AI', 'ai-seo-captain'); ?></button>

@@ -100,7 +100,18 @@ class Site_Chat
                 $focus_ids = array_unique(array_filter($focus_ids));
             }
 
-            $reply = $this->send_to_ai($message, $recent_messages, $options, $focus_ids);
+            // Audit inclusion — subset of focus IDs that should include their full audit report.
+            $audit_ids = array();
+            if (! empty($_POST['audit_page_ids'])) {
+                $decoded_audit = json_decode(sanitize_text_field(wp_unslash($_POST['audit_page_ids'])), true);
+                if (is_array($decoded_audit)) {
+                    $audit_ids = array_map('absint', $decoded_audit);
+                    // Only allow audit IDs that are in the focus set.
+                    $audit_ids = array_intersect($audit_ids, $focus_ids);
+                }
+            }
+
+            $reply = $this->send_to_ai($message, $recent_messages, $options, $focus_ids, $audit_ids);
 
             $this->history_store->log_generation(
                 self::OBJECT_ID,
@@ -147,7 +158,7 @@ class Site_Chat
     //  AI call
     // ------------------------------------------------------------------
 
-    private function send_to_ai(string $message, array $recent_messages, array $options, array $focus_ids = array()): array
+    private function send_to_ai(string $message, array $recent_messages, array $options, array $focus_ids = array(), array $audit_ids = array()): array
     {
         $provider    = (string) $options['provider'];
         $model       = trim((string) $options['model']);
@@ -158,14 +169,17 @@ class Site_Chat
 
         // --- Page count gate: warn if selection exceeds model capacity ---
         if ($is_focus_mode) {
-            // Focus mode: full body content per page — use stricter limit.
-            $max_focus = Settings::get_max_focus_pages_for_model($model);
-            if (count($focus_ids) > $max_focus) {
+            // Focus mode: each page = 1 slot, each audit = 1 extra slot.
+            $max_focus   = Settings::get_max_focus_pages_for_model($model);
+            $total_slots = count($focus_ids) + count($audit_ids);
+            if ($total_slots > $max_focus) {
                 $context_window = Settings::get_context_window($model);
                 throw new \RuntimeException(sprintf(
-                    'You selected %s focus pages but the model (%s, %s-token context) can analyze up to %s pages with full content. ' .
-                        'Please reduce your selection or switch to a model with a larger context window.',
+                    'You selected %s pages + %s audits (%s total slots) but the model (%s, %s-token context) supports up to %s slots. ' .
+                        'Please reduce your selection, uncheck some audits, or switch to a larger model.',
                     number_format_i18n(count($focus_ids)),
+                    number_format_i18n(count($audit_ids)),
+                    number_format_i18n($total_slots),
                     esc_html($model),
                     number_format_i18n($context_window),
                     number_format_i18n($max_focus)
@@ -191,7 +205,7 @@ class Site_Chat
         }
 
         $system_prompt = $this->build_system_prompt($is_focus_mode);
-        $user_prompt   = $this->build_user_prompt($message, $recent_messages, $focus_ids);
+        $user_prompt   = $this->build_user_prompt($message, $recent_messages, $focus_ids, $audit_ids);
 
         if ('openai' === $provider) {
             $raw = $this->ai_generator->call_provider($provider, $api_key, $model, $system_prompt, $user_prompt, $temperature);
@@ -277,7 +291,7 @@ class Site_Chat
         return trim($base);
     }
 
-    private function build_user_prompt(string $message, array $recent_messages, array $focus_ids = array()): string
+    private function build_user_prompt(string $message, array $recent_messages, array $focus_ids = array(), array $audit_ids = array()): string
     {
         $parts = array();
 
@@ -296,7 +310,8 @@ class Site_Chat
         //  FOCUS PAGES MODE — full body content + all SEO data per page
         // =====================================================================
         if (! empty($focus_ids)) {
-            $parts[] = 'MODE: Focus Pages — You are analyzing ' . count($focus_ids) . ' selected pages with their FULL content and ALL SEO metadata. Compare them side by side.';
+            $audit_label = ! empty($audit_ids) ? ' (' . count($audit_ids) . ' with full audit reports)' : '';
+            $parts[] = 'MODE: Focus Pages — You are analyzing ' . count($focus_ids) . ' selected pages' . $audit_label . ' with their FULL content and ALL SEO metadata. Compare them side by side.';
 
             $focus_pages_data = $this->get_focus_pages_full_data($focus_ids);
 
@@ -409,6 +424,18 @@ class Site_Chat
                 // Full body content.
                 $page_block[] = '--- Full Page Content ---';
                 $page_block[] = ('' !== $page['body_content'] ? $page['body_content'] : 'No body content available.');
+
+                // Full audit report (only for pages the user opted in).
+                if (in_array((int) $page['post_id'], $audit_ids, true)) {
+                    $audit_meta = get_post_meta((int) $page['post_id'], '_ai_seo_captain_page_audit', true);
+                    if (is_array($audit_meta) && ! empty($audit_meta['full_report'])) {
+                        $page_block[] = '--- Full SEO Audit Report ---';
+                        $page_block[] = $audit_meta['full_report'];
+                    } else {
+                        $page_block[] = '--- Full SEO Audit Report ---';
+                        $page_block[] = 'No audit report available for this page. The page has not been audited yet.';
+                    }
+                }
 
                 $parts[] = implode("\n", $page_block);
             }

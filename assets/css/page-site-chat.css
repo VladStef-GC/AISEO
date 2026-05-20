@@ -386,12 +386,12 @@
     padding: 4px 0;
 }
 
+/* --- Focus row: 3-column grid (70% page | 15% date | 15% audit) --- */
 .aisc-focus-selector__row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 70% 15% 15%;
     align-items: center;
-    gap: 8px;
     padding: 6px 12px;
-    cursor: pointer;
     font-size: 13px;
     transition: background 0.1s;
 }
@@ -405,6 +405,16 @@
     margin: 0;
 }
 
+/* Column 1: Page name (70%) */
+.aisc-focus-selector__col-page {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    overflow: hidden;
+    min-width: 0;
+}
+
 .aisc-focus-selector__title {
     flex: 1;
     color: #1d2327;
@@ -414,14 +424,58 @@
     white-space: nowrap;
 }
 
-.aisc-focus-selector__list-label {
+/* Column 2: Date indicator (15%) */
+.aisc-focus-selector__col-date {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+}
+
+.aisc-focus-selector__freshness {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #50575e;
+    white-space: nowrap;
+    cursor: default;
+}
+
+.aisc-focus-selector__freshness span:first-child {
+    font-size: 8px;
+    line-height: 1;
+}
+
+.aisc-focus-selector__date {
+    font-size: 11px;
+}
+
+/* Column 3: Audit toggle (15%) */
+.aisc-focus-selector__col-audit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
     font-size: 11px;
     color: #787c82;
     white-space: nowrap;
-    flex-shrink: 0;
-    background: #f6f7f7;
-    padding: 2px 6px;
-    border-radius: 3px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.aisc-focus-selector__col-audit input[type="checkbox"] {
+    margin: 0;
+}
+
+.aisc-focus-selector__col-audit.is-active {
+    color: #2271b1;
+    font-weight: 600;
+}
+
+.aisc-focus-selector__col-audit .aisc-audit-icon {
+    font-size: 14px;
+    line-height: 1;
 }
 
 .aisc-focus-selector__empty {
