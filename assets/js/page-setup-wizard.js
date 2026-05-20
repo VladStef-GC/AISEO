@@ -613,14 +613,25 @@
         }).fail(function (jqXHR, textStatus) {
             self.inFlight--;
 
-            // Handle 429 rate limit — retry with exponential backoff.
+            // Handle 429 rate limit — retry with exponential backoff (max 5 retries).
             if (jqXHR.status === 429) {
                 var parsed = null;
-                try { parsed = JSON.parse(jqXHR.responseText); } catch (e) {}
+                try { parsed = JSON.parse(jqXHR.responseText); } catch (e) { }
+                var title429 = (parsed && parsed.data && parsed.data.title) ? parsed.data.title : 'Post #' + postId;
+
+                if (retryCount >= 5) {
+                    self.stats.errors++;
+                    self.consecutiveErrors++;
+                    self.onError(postId, title429, 'Rate limited — gave up after 5 retries');
+                    self.completed++;
+                    self.updateProgress();
+                    self.fillPool();
+                    return;
+                }
+
                 var retryAfter = (parsed && parsed.data && parsed.data.retry_after) ? parsed.data.retry_after : 5;
                 var backoff = Math.min(retryAfter * Math.pow(2, retryCount), 60);
-                var title429 = (parsed && parsed.data && parsed.data.title) ? parsed.data.title : 'Post #' + postId;
-                self.onError(postId, title429, 'Rate limited — retrying in ' + backoff + 's...');
+                self.onError(postId, title429, 'Rate limited — retrying in ' + backoff + 's... (attempt ' + (retryCount + 1) + '/5)');
                 var timerId = setTimeout(function () {
                     self.dispatchOne(postId, retryCount + 1);
                 }, backoff * 1000);
