@@ -171,14 +171,14 @@ defined('ABSPATH') || exit;
             <h2 style="margin:0;"><?php esc_html_e('Full SEO Audit', 'ai-seo-captain'); ?></h2>
             <span id="aisc-s3-elapsed" class="aisc-elapsed"></span>
         </div>
-        <p><?php esc_html_e('AI analyzes each page individually and produces a report: SEO score, detected issues, improvement suggestions, missing alt tags, word count, and heading structure. This is a read-only analysis — no SEO fields are modified. Results are cached so previously audited pages load instantly on subsequent runs.', 'ai-seo-captain'); ?></p>
+        <p><?php esc_html_e('AI reads the full content of each page — body text, headings, images, links, media, and all SEO metadata — then produces a comprehensive audit report: SEO score, detected issues with explanations, actionable improvement suggestions, and a prioritized fix list. AI also identifies up to 20 topically related pages (siblings) and checks their SEO metadata to detect cannibalization risks. This is a read-only analysis — no SEO fields are modified. Results are cached so previously audited pages load instantly on subsequent runs.', 'ai-seo-captain'); ?></p>
         <?php if ($audited_count > 0 && ! $step3_all_done) : ?>
             <p style="font-size:13px;color:#50575e;">&#128204; <?php echo (int) $audited_count; ?> of <?php echo (int) $total_pages; ?> pages already audited. Previously audited pages load from cache instantly.</p>
         <?php endif; ?>
         <label class="aisc-toggle" style="display:flex;margin:0 0 12px;">
             <input id="aisc-s3-deep" type="checkbox" value="1" />
             <span class="aisc-toggle__track"></span>
-            <span class="aisc-toggle__label"><?php esc_html_e('Deep analysis — AI will also read body content from topically related pages across the site (uses more tokens).', 'ai-seo-captain'); ?></span>
+            <span class="aisc-toggle__label"><?php esc_html_e('Deep analysis — In addition to sibling SEO metadata, AI will also read the body content (~375 words) from each of the top 20 related pages to better detect content overlap and cannibalization. Uses more tokens per page.', 'ai-seo-captain'); ?></span>
         </label>
         <div class="aisc-controls">
             <button id="aisc-btn-audit" class="button button-primary button-hero" type="button" <?php disabled(! $has_index || ! $has_metadata); ?>>

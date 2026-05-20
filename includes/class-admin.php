@@ -2903,7 +2903,7 @@ JS;
                 <label class="aisc-toggle">
                     <input type="checkbox" id="ai-seo-captain-deep-analysis" value="1" />
                     <span class="aisc-toggle__track"></span>
-                    <span class="aisc-toggle__label"><strong><?php esc_html_e('Deep analysis', 'ai-seo-captain'); ?></strong> &mdash; <?php esc_html_e('AI will read body content from topically related pages across the site (uses more tokens).', 'ai-seo-captain'); ?></span>
+                    <span class="aisc-toggle__label"><strong><?php esc_html_e('Deep analysis', 'ai-seo-captain'); ?></strong> &mdash; <?php esc_html_e('In addition to sibling SEO metadata, AI will also read the body content (~375 words) from each of the top 20 related pages to better detect content overlap and cannibalization. Uses more tokens.', 'ai-seo-captain'); ?></span>
                 </label>
             </div>
 

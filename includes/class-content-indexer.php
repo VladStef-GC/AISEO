@@ -931,7 +931,7 @@ class Content_Indexer
                 $related_post = get_post((int) $row['object_id']);
                 if ($related_post instanceof \WP_Post) {
                     $full_content    = Content_Helper::get_content($related_post);
-                    $row['excerpt_content'] = $this->truncate_text($full_content, 300);
+                    $row['excerpt_content'] = $this->truncate_text($full_content, 1500);
                 } else {
                     $row['excerpt_content'] = '';
                 }
