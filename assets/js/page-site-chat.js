@@ -173,19 +173,27 @@ jQuery(function ($) {
         }
     })();
 
-    // Helper: check specific page IDs in the Focus picker (uncheck rest).
+    // Helper: check specific page IDs in the Focus picker (cap at limit).
     function selectFocusPages(ids) {
         var idSet = {};
-        for (var i = 0; i < ids.length; i++) { idSet[ids[i]] = true; }
+        // Only select up to maxFocusPages — truncate if list is too large.
+        var capped = ids.slice(0, maxFocusPages);
+        for (var i = 0; i < capped.length; i++) { idSet[capped[i]] = true; }
         $('#ai-seo-focus-list input[type="checkbox"]').each(function () {
             $(this).prop('checked', !!idSet[parseInt($(this).val(), 10)]);
         });
         var count = $('#ai-seo-focus-list input:checked').length;
-        var label = count + ' of ' + formatNumber(maxFocusPages) + (count === 1 ? ' page selected' : ' pages selected');
-        if (count > maxFocusPages) {
-            $focusCount.html('<span style="color:#b32d2e;font-weight:600;">' + label + ' — over limit!</span>');
+        var label = count + ' / ' + formatNumber(maxFocusPages) + ' pages selected';
+        if (count === maxFocusPages) {
+            $focusCount.html('<span style="color:#b32d2e;font-weight:600;">' + label + ' (limit reached)</span>');
         } else {
             $focusCount.text(label);
+        }
+        // Show banner if original list was truncated
+        if (ids.length > maxFocusPages) {
+            updateFocusLimitBanner(ids.length);
+        } else {
+            updateFocusLimitBanner(count);
         }
     }
 
@@ -286,15 +294,48 @@ jQuery(function ($) {
         });
     });
 
-    // Count selected focus pages and warn if over limit
-    $('#ai-seo-focus-list').on('change', 'input[type="checkbox"]', function () {
-        var count = $('#ai-seo-focus-list input:checked').length;
-        var label = count + ' of ' + formatNumber(maxFocusPages) + (count === 1 ? ' page selected' : ' pages selected');
+    // --- Focus limit banner (global-style with SVG icon) ---
+    var $limitBanner = $('#ai-seo-focus-limit-banner');
+    var iconUrl = (conf.pluginUrl || '') + 'assets/img/seo-captain-side-d.svg';
+
+    function updateFocusLimitBanner(count) {
         if (count > maxFocusPages) {
-            $focusCount.html('<span style="color:#b32d2e;font-weight:600;">' + label + ' — over limit!</span>');
+            $limitBanner.html(
+                '<div class="ai-seo-captain-notice is-error">' +
+                '<img src="' + iconUrl + '" alt="" class="ai-seo-captain-notice__icon" />' +
+                '<div class="ai-seo-captain-notice__body">' +
+                '<strong class="ai-seo-captain-notice__title">Context Window Limit Reached</strong>' +
+                '<span class="ai-seo-captain-notice__text">' +
+                'The current model <code>' + activeModel + '</code> can analyze up to <strong>' +
+                formatNumber(maxFocusPages) + '</strong> pages with full content. ' +
+                'You selected <strong>' + formatNumber(count) + '</strong>. ' +
+                'Please select a bigger model in <a href="' + (conf.ajaxUrl || '').replace('admin-ajax.php', 'admin.php?page=ai-seo-captain-settings') +
+                '">SEO Captain Settings</a> or uncheck pages.' +
+                '</span></div></div>'
+            ).show();
+        } else {
+            $limitBanner.hide().empty();
+        }
+    }
+
+    // Block checkbox selection when at limit — prevent checking, allow unchecking
+    $('#ai-seo-focus-list').on('change', 'input[type="checkbox"]', function () {
+        var $cb = $(this);
+        var count = $('#ai-seo-focus-list input:checked').length;
+
+        // If just checked and now over limit → revert it
+        if ($cb.is(':checked') && count > maxFocusPages) {
+            $cb.prop('checked', false);
+            count = maxFocusPages; // it's back at the limit
+        }
+
+        var label = count + ' / ' + formatNumber(maxFocusPages) + ' pages selected';
+        if (count === maxFocusPages) {
+            $focusCount.html('<span style="color:#b32d2e;font-weight:600;">' + label + ' (limit reached)</span>');
         } else {
             $focusCount.text(label);
         }
+        updateFocusLimitBanner(count);
     });
 
     function getSelectedFocusIds() {

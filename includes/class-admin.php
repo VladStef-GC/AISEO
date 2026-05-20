@@ -2658,6 +2658,7 @@ JS;
         wp_localize_script('ai-seo-page-site-chat', 'aiSeoSiteChat', array(
             'ajaxUrl'       => admin_url('admin-ajax.php'),
             'nonce'         => wp_create_nonce('ai_seo_captain_site_chat'),
+            'pluginUrl'     => AI_SEO_CAPTAIN_URL,
             'chatAction'    => self::AJAX_SITE_CHAT_ACTION,
             'clearAction'   => self::AJAX_SITE_CHAT_CLEAR_ACTION,
             'activeModel'   => $active_model,

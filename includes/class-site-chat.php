@@ -430,7 +430,6 @@ class Site_Chat
             if (! empty($conflicts)) {
                 $parts[] = "KEYPHRASE CANNIBALIZATION among selected pages:\n" . implode("\n", $conflicts);
             }
-
         } else {
             // ==============================================================
             //  FULL SITE MODE — lightweight tree + aggregates (no body content)

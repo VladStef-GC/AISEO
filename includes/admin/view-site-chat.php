@@ -117,6 +117,7 @@ defined('ABSPATH') || exit;
                     <p class="description" style="margin:4px 0 0;">
                         <span id="ai-seo-focus-count"><?php esc_html_e('0 pages selected', 'ai-seo-captain'); ?></span>
                     </p>
+                    <div id="ai-seo-focus-limit-banner" style="display:none;margin-top:8px;"></div>
                 </div>
             </details>
 
