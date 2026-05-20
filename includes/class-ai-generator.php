@@ -369,6 +369,86 @@ class AI_Generator
         // Site language.
         $site_locale = get_locale();
 
+        // --- Content analysis from raw HTML ---
+        $raw_html       = Content_Helper::get_content($post);
+        $plain_content  = $this->normalize_text($raw_html);
+        $home_url       = home_url();
+        $word_count     = str_word_count($plain_content);
+        $img_count      = preg_match_all('/<img\b/i', $raw_html);
+        $img_no_alt     = preg_match_all('/<img(?![^>]*\balt\s*=\s*"[^"]+")[^>]*>/i', $raw_html);
+        $int_link_count = preg_match_all('/href=["\']' . preg_quote($home_url, '/') . '/i', $raw_html);
+        $ext_total      = preg_match_all('/href=["\'](https?:\/\/)/i', $raw_html);
+        $ext_link_count = max(0, $ext_total - $int_link_count);
+        $video_count    = preg_match_all('/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/|vimeo\.com\/(?:video\/)?\d)/i', $raw_html)
+                        + preg_match_all('/<video\b/i', $raw_html);
+        $doc_count      = preg_match_all('/href=["\'][^"\']*\.(?:pdf|docx?|xlsx?|pptx?|odt|ods|odp|csv|rtf)["\s>]/i', $raw_html);
+
+        // Heading structure.
+        $heading_matches = array();
+        preg_match_all('/<h([1-6])\b/i', $raw_html, $heading_matches);
+        $heading_summary = '';
+        if (! empty($heading_matches[1])) {
+            $counts = array_count_values($heading_matches[1]);
+            ksort($counts);
+            $parts_h = array();
+            foreach ($counts as $level => $count) {
+                $parts_h[] = 'H' . $level . ': ' . $count;
+            }
+            $heading_summary = implode(', ', $parts_h);
+        }
+
+        // Internal link URLs (deduplicated, max 50).
+        $internal_link_urls = array();
+        if (preg_match_all('/href=["\'](' . preg_quote($home_url, '/') . '[^"\']*)/i', $raw_html, $int_m)) {
+            $internal_link_urls = array_unique(array_slice($int_m[1], 0, 50));
+        }
+
+        // External link URLs (deduplicated, max 30).
+        $external_link_urls = array();
+        if (preg_match_all('/href=["\'](https?:\/\/[^"\']+)/i', $raw_html, $ext_m)) {
+            $all_urls = array_unique($ext_m[1]);
+            foreach ($all_urls as $url) {
+                if (0 !== strpos($url, $home_url)) {
+                    $external_link_urls[] = $url;
+                    if (count($external_link_urls) >= 30) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Image details (src + alt, max 30).
+        $image_details = array();
+        if (preg_match_all('/<img\b([^>]*)>/i', $raw_html, $img_m)) {
+            foreach (array_slice($img_m[1], 0, 30) as $attrs) {
+                $src = '';
+                $alt = '';
+                if (preg_match('/\bsrc\s*=\s*["\']([^"\']+)/i', $attrs, $sm)) {
+                    $src = $sm[1];
+                }
+                if (preg_match('/\balt\s*=\s*["\']([^"\']*)/i', $attrs, $am)) {
+                    $alt = $am[1];
+                }
+                $image_details[] = array('src' => $src, 'alt' => $alt);
+            }
+        }
+
+        // Deep analysis: gather sibling body content (truncated excerpts).
+        $sibling_content = array();
+        if ($deep_analysis && ! empty($hierarchy['siblings'])) {
+            foreach ($hierarchy['siblings'] as $sib) {
+                $sib_post = get_post((int) $sib['object_id']);
+                if ($sib_post instanceof \WP_Post) {
+                    $sib_raw  = Content_Helper::get_content($sib_post);
+                    $sib_text = $this->normalize_text($sib_raw);
+                    if ('' !== $sib_text) {
+                        // ~375 words ≈ 1500 chars, same budget as topical pages.
+                        $sibling_content[(int) $sib['object_id']] = mb_substr($sib_text, 0, 1500);
+                    }
+                }
+            }
+        }
+
         return array(
             'focus_keyphrase' => $focus_keyphrase,
             'seo_title_draft' => $seo_title_draft,
@@ -397,6 +477,19 @@ class AI_Generator
             'modified_date' => $modified_date,
             'has_featured_image' => $has_featured_image,
             'site_locale' => $site_locale,
+            // Content analysis.
+            'word_count' => $word_count,
+            'heading_structure' => $heading_summary,
+            'images_total' => $img_count,
+            'images_missing_alt' => $img_no_alt,
+            'internal_links' => $int_link_count,
+            'external_links' => $ext_link_count,
+            'internal_link_urls' => $internal_link_urls,
+            'external_link_urls' => $external_link_urls,
+            'image_details' => $image_details,
+            'video_count' => $video_count,
+            'doc_count' => $doc_count,
+            'sibling_content' => $sibling_content,
         );
     }
 
@@ -507,6 +600,36 @@ class AI_Generator
             }
         }
 
+        // Content analysis stats.
+        if (isset($ctx['word_count'])) {
+            $lines[] = '--- Content Analysis ---';
+            $lines[] = 'Word count: ' . (int) $ctx['word_count'];
+            $lines[] = 'Heading structure: ' . ('' !== ($ctx['heading_structure'] ?? '') ? $ctx['heading_structure'] : 'No headings found');
+            $lines[] = 'Images: ' . (int) ($ctx['images_total'] ?? 0) . ' total, ' . (int) ($ctx['images_missing_alt'] ?? 0) . ' missing alt text';
+            $lines[] = 'Internal links: ' . (int) ($ctx['internal_links'] ?? 0) . ', External links: ' . (int) ($ctx['external_links'] ?? 0);
+            $lines[] = 'Videos embedded: ' . (int) ($ctx['video_count'] ?? 0);
+            $lines[] = 'Documents linked: ' . (int) ($ctx['doc_count'] ?? 0);
+
+            if (! empty($ctx['internal_link_urls'])) {
+                $lines[] = 'Internal link URLs:';
+                foreach ($ctx['internal_link_urls'] as $url) {
+                    $lines[] = '  → ' . $url;
+                }
+            }
+            if (! empty($ctx['external_link_urls'])) {
+                $lines[] = 'External link URLs:';
+                foreach ($ctx['external_link_urls'] as $url) {
+                    $lines[] = '  → ' . $url;
+                }
+            }
+            if (! empty($ctx['image_details'])) {
+                $lines[] = 'Image details:';
+                foreach ($ctx['image_details'] as $img) {
+                    $lines[] = '  - src: ' . $img['src'] . ' | alt: ' . ('' !== $img['alt'] ? '"' . $img['alt'] . '"' : 'MISSING');
+                }
+            }
+        }
+
         // Page hierarchy context (parent, siblings, children with SEO metadata).
         if (! empty($ctx['hierarchy'])) {
             $h = $ctx['hierarchy'];
@@ -526,12 +649,16 @@ class AI_Generator
             }
 
             if (! empty($h['siblings'])) {
-                $lines[] = 'Sibling pages (' . count($h['siblings']) . '):';
+                $has_sib_content = ! empty($ctx['sibling_content']);
+                $lines[] = 'Sibling pages (' . count($h['siblings']) . '):' . ($has_sib_content ? ' [deep analysis — includes body content excerpts]' : '');
                 foreach ($h['siblings'] as $sib) {
                     $lines[] = '  - "' . $sib['title'] . '" /' . ltrim($sib['slug'], '/') . '/'
                         . ('' !== trim((string) $sib['focus_keyphrase']) ? ' [kp: "' . $sib['focus_keyphrase'] . '"]' : '')
                         . ('' !== trim((string) $sib['seo_title']) ? ' | SEO: "' . $sib['seo_title'] . '"' : '')
                         . ('' !== trim((string) $sib['meta_description']) ? ' | desc: "' . $sib['meta_description'] . '"' : '');
+                    if ($has_sib_content && ! empty($ctx['sibling_content'][(int) $sib['object_id']])) {
+                        $lines[] = '    Content preview: ' . $ctx['sibling_content'][(int) $sib['object_id']];
+                    }
                 }
             }
 
