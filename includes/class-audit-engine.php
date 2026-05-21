@@ -4,13 +4,11 @@ namespace AI_SEO_Captain;
 
 class Audit_Engine
 {
-    private const META_TITLE_KEY = '_ai_seo_captain_meta_title';
-
-    private const META_DESCRIPTION_KEY = '_ai_seo_captain_meta_description';
-
-    private const FRONTEND_ENABLE_META_KEY = '_ai_seo_captain_frontend_enabled';
-
-    private const APPROVED_MESSAGE_META_KEY = '_ai_seo_captain_approved_message_id';
+    // Meta key constants — delegated to the central Meta_Keys registry.
+    private const META_TITLE_KEY            = Meta_Keys::TITLE;
+    private const META_DESCRIPTION_KEY      = Meta_Keys::DESCRIPTION;
+    private const FRONTEND_ENABLE_META_KEY  = Meta_Keys::FRONTEND_ON;
+    private const APPROVED_MESSAGE_META_KEY = Meta_Keys::APPROVED_MSG;
 
     private Content_Indexer $content_indexer;
 

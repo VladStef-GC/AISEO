@@ -12,7 +12,7 @@ class Admin
 {
     private const META_BOX_ID = 'ai_seo_captain_meta_box';
 
-    public const FRONTEND_ENABLE_META_KEY = '_ai_seo_captain_frontend_enabled';
+    public const FRONTEND_ENABLE_META_KEY = Meta_Keys::FRONTEND_ON;
 
     private const AJAX_SAVE_ACTION = 'ai_seo_captain_save_meta';
 
@@ -55,29 +55,19 @@ class Admin
 
     public const CHAT_OBJECT_TYPE = 'post_chat';
 
-    public const META_TITLE_KEY = '_ai_seo_captain_meta_title';
-
-    public const META_DESCRIPTION_KEY = '_ai_seo_captain_meta_description';
-
-    public const TITLE_BRANDING_OFF_META_KEY = '_ai_seo_captain_title_branding_off';
-
-    public const FOCUS_KEYPHRASE_META_KEY = '_ai_seo_captain_focus_keyphrase';
-
-    public const KEYWORDS_META_KEY = '_ai_seo_captain_keywords';
-
-    public const SOCIAL_TITLE_META_KEY = '_ai_seo_captain_social_title';
-
-    public const SOCIAL_DESCRIPTION_META_KEY = '_ai_seo_captain_social_description';
-
-    public const SOCIAL_IMAGE_META_KEY = '_ai_seo_captain_social_image';
-
-    public const CANONICAL_URL_META_KEY = '_ai_seo_captain_canonical_url';
-
-    public const ROBOTS_DIRECTIVES_META_KEY = '_ai_seo_captain_robots_directives';
-
-    public const SCHEMA_TYPE_META_KEY = '_ai_seo_captain_schema_type';
-
-    public const EXCLUDE_SITEMAP_META_KEY = '_ai_seo_captain_exclude_sitemap';
+    // Meta key constants — delegated to the central Meta_Keys registry.
+    public const META_TITLE_KEY              = Meta_Keys::TITLE;
+    public const META_DESCRIPTION_KEY        = Meta_Keys::DESCRIPTION;
+    public const TITLE_BRANDING_OFF_META_KEY = Meta_Keys::BRANDING_OFF;
+    public const FOCUS_KEYPHRASE_META_KEY    = Meta_Keys::FOCUS_KEYPHRASE;
+    public const KEYWORDS_META_KEY           = Meta_Keys::KEYWORDS;
+    public const SOCIAL_TITLE_META_KEY       = Meta_Keys::SOCIAL_TITLE;
+    public const SOCIAL_DESCRIPTION_META_KEY = Meta_Keys::SOCIAL_DESCRIPTION;
+    public const SOCIAL_IMAGE_META_KEY       = Meta_Keys::SOCIAL_IMAGE;
+    public const CANONICAL_URL_META_KEY      = Meta_Keys::CANONICAL;
+    public const ROBOTS_DIRECTIVES_META_KEY  = Meta_Keys::ROBOTS;
+    public const SCHEMA_TYPE_META_KEY        = Meta_Keys::SCHEMA_TYPE;
+    public const EXCLUDE_SITEMAP_META_KEY    = Meta_Keys::EXCLUDE_SITEMAP;
 
     private const TITLE_MIN_LENGTH = 30;
 
@@ -318,7 +308,7 @@ class Admin
 
         printf(
             '<span class="aisc-col-score" style="color:%s" title="%s">%s</span>'
-            . '<span class="aisc-col-meta" title="%s">%s</span>',
+                . '<span class="aisc-col-meta" title="%s">%s</span>',
             esc_attr($colour),
             esc_attr($label),
             $icon,

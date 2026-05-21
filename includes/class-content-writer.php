@@ -24,7 +24,7 @@ class Content_Writer
         'tatsu' => 'tatsu_sections',
     );
 
-    private const PENDING_META_KEY = '_ai_seo_captain_pending_content_changes';
+    private const PENDING_META_KEY = Meta_Keys::PENDING_CHANGES;
 
     /**
      * Store approved changes as pending — they will be applied on the next

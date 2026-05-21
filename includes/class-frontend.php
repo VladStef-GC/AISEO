@@ -4,25 +4,17 @@ namespace AI_SEO_Captain;
 
 class Frontend
 {
-    public const FRONTEND_ENABLE_META_KEY = '_ai_seo_captain_frontend_enabled';
-
-    private const META_TITLE_KEY = '_ai_seo_captain_meta_title';
-
-    private const META_DESCRIPTION_KEY = '_ai_seo_captain_meta_description';
-
-    private const SOCIAL_TITLE_META_KEY = '_ai_seo_captain_social_title';
-
-    private const SOCIAL_DESCRIPTION_META_KEY = '_ai_seo_captain_social_description';
-
-    private const SOCIAL_IMAGE_META_KEY = '_ai_seo_captain_social_image';
-
-    private const CANONICAL_URL_META_KEY = '_ai_seo_captain_canonical_url';
-
-    private const ROBOTS_DIRECTIVES_META_KEY = '_ai_seo_captain_robots_directives';
-
-    private const SCHEMA_TYPE_META_KEY = '_ai_seo_captain_schema_type';
-
-    private const TITLE_BRANDING_OFF_META_KEY = '_ai_seo_captain_title_branding_off';
+    // Meta key constants — delegated to the central Meta_Keys registry.
+    public const FRONTEND_ENABLE_META_KEY      = Meta_Keys::FRONTEND_ON;
+    private const META_TITLE_KEY               = Meta_Keys::TITLE;
+    private const META_DESCRIPTION_KEY         = Meta_Keys::DESCRIPTION;
+    private const SOCIAL_TITLE_META_KEY        = Meta_Keys::SOCIAL_TITLE;
+    private const SOCIAL_DESCRIPTION_META_KEY  = Meta_Keys::SOCIAL_DESCRIPTION;
+    private const SOCIAL_IMAGE_META_KEY        = Meta_Keys::SOCIAL_IMAGE;
+    private const CANONICAL_URL_META_KEY       = Meta_Keys::CANONICAL;
+    private const ROBOTS_DIRECTIVES_META_KEY   = Meta_Keys::ROBOTS;
+    private const SCHEMA_TYPE_META_KEY         = Meta_Keys::SCHEMA_TYPE;
+    private const TITLE_BRANDING_OFF_META_KEY  = Meta_Keys::BRANDING_OFF;
 
     private const TITLE_MAX_LENGTH = 60;
 

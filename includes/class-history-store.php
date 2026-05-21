@@ -4,7 +4,7 @@ namespace AI_SEO_Captain;
 
 class History_Store
 {
-    private const APPROVED_MESSAGE_META_KEY = '_ai_seo_captain_approved_message_id';
+    private const APPROVED_MESSAGE_META_KEY = Meta_Keys::APPROVED_MSG;
 
     private const SITE_AUDIT_OBJECT_TYPE = 'site_audit';
 
