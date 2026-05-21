@@ -1,7 +1,7 @@
 # SEO Captain v1.3.1 — Full Plugin Assessment
 
 **Date:** May 20, 2026  
-**Last updated:** May 21, 2026 (8 issues fixed across 3 commits)  
+**Last updated:** May 21, 2026 (11 issues fixed across 5 commits)  
 **Scope:** Complete code review — every PHP class, view file, JS/CSS asset, MD doc, test suite, uninstall file, and activator  
 **Method:** Honest, grounded, marketing-free analysis  
 **Compared against:** Yoast SEO Free, RankMath Free, AIOSEO Free
@@ -119,8 +119,8 @@ Product schema enrichment (price, SKU, availability, ratings, GTIN), product OG 
 
 | Item | Notes |
 |---|---|
-| **No SEO score badge in post list** | Yoast/RankMath show a colored dot in the Posts list. Quick visual triage. |
-| **No SERP preview** | Real-time Google SERP preview (title + description + URL) while editing |
+| ~~**No SEO score badge in post list**~~ | ~~Yoast/RankMath show a colored dot in the Posts list. Quick visual triage.~~ **DONE (May 21, 2026)** |
+| ~~**No SERP preview**~~ | ~~Real-time Google SERP preview (title + description + URL) while editing~~ **DONE (May 21, 2026)** |
 | **No knowledge graph panel** | Organization/Person knowledge graph data in settings |
 | **No rich snippet testing** | Inline structured data validator/preview |
 | **No AMP support** | Not critical in 2026, but competitors have it |
@@ -131,7 +131,7 @@ Product schema enrichment (price, SKU, availability, ratings, GTIN), product OG 
 
 ### A. Potential Token Leaks / Wasteful AI Usage
 
-1. **Full body content sent untruncated to AI for metadata generation** — In `build_user_prompt()`, the full `normalize_text()` output of the page body is sent to the AI with no character/token limit. For long-form content (5,000+ words), this wastes tokens on content the AI doesn't need to read in full for a title + description. Yoast AI sends a truncated excerpt. This could be expensive on large pages.
+1. ~~**Full body content sent untruncated to AI for metadata generation** — In `build_user_prompt()`, the full `normalize_text()` output of the page body is sent to the AI with no character/token limit. For long-form content (5,000+ words), this wastes tokens on content the AI doesn't need to read in full for a title + description. Yoast AI sends a truncated excerpt. This could be expensive on large pages.~~ **FIXED (May 21, 2026):** Body content capped at ~4,000 words (20,000 chars) in `build_user_prompt()`. The AI gets plenty of context for metadata without burning tokens on the full document.
 
 2. **Site tree always included in single-page generation** — `get_compact_site_tree()` is called even for simple "generate metadata" requests where the AI only needs the current page. On a 500-page site, this adds ~500 entries to the prompt even when hierarchy/conflicts are already provided separately.
 
@@ -235,8 +235,8 @@ The WooCommerce integration is well-built — product schema with real price/SKU
 | llms.txt | **Unique** | No | No | No |
 | IndexNow | **Yes** | No | Yes | No |
 | Google Search Console | **No** | Yes | Yes | Yes |
-| SERP Preview | **No** | Yes | Yes | Yes |
-| Post List SEO Score | **No** | Yes | Yes | Yes |
+| SERP Preview | **Yes** | Yes | Yes | Yes |
+| Post List SEO Score | **Yes** | Yes | Yes | Yes |
 | Ecosystem / Community | **None** | Massive | Large | Medium |
 | Documentation for end users | **Dev-only** | Extensive | Extensive | Good |
 
@@ -268,9 +268,9 @@ The WooCommerce integration is well-built — product schema with real price/SKU
 
 | # | Item | Effort | Impact |
 |---|---|---|---|
-| 1 | **SERP preview in editor** | Small | High UX — every competitor has this |
-| 2 | **SEO score column in Posts list** | Small | High UX — quick visual triage |
-| 3 | **Truncate body content for metadata generation** | Small | Saves tokens, reduces cost |
+| 1 | ~~**SERP preview in editor**~~ | ~~Small~~ | ~~High UX — every competitor has this~~ **DONE (May 21, 2026)** |
+| 2 | ~~**SEO score column in Posts list**~~ | ~~Small~~ | ~~High UX — quick visual triage~~ **DONE (May 21, 2026)** |
+| 3 | ~~**Truncate body content for metadata generation**~~ | ~~Small~~ | ~~Saves tokens, reduces cost~~ **DONE (May 21, 2026)** |
 | 4 | ~~**Rate limiting on AI endpoints**~~ | ~~Small~~ | ~~Prevents accidental API credit burn~~ **DONE (May 21, 2026)** |
 | 5 | ~~**Remove dev tools from tests/ before production**~~ | ~~Trivial~~ | ~~Security hygiene~~ **DONE (May 21, 2026)** |
 
