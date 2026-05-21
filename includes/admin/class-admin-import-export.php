@@ -870,6 +870,9 @@ class Admin_Import_Export
 
     /**
      * Map third-party robots values to our canonical format.
+     *
+     * @param string $plugin    Plugin identifier ('rankmath' or 'seopress').
+     * @param string|array $raw_value Raw robots meta value.
      */
     private function map_third_party_robots(string $plugin, $raw_value): string
     {

@@ -18,7 +18,7 @@ defined('ABSPATH') || exit;
 /** @var bool   $is_connected */
 /** @var bool   $has_creds */
 /** @var string $auth_url */
-/** @var array  $gsc_sites */
+/** @var array|\WP_Error $gsc_sites */
 /** @var array|null $gsc_notice */
 /** @var array  $overview */
 /** @var array  $top_queries */

@@ -33,6 +33,9 @@ defined('ABSPATH') || exit;
 /** @var string $generate_site_audit_action */
 /** @var string $submit_indexnow_action */
 /** @var string $bulk_frontend_action */
+/** @var array|null $gsc_summary */
+/** @var array  $gsc_top_queries */
+/** @var array  $gsc_top_pages */
 ?>
 <div class="wrap">
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">

@@ -6,16 +6,19 @@
  * Variables available (set by Admin::render_settings_page):
  *   $options, $indexnow_enabled, $indexnow_auto_submit,
  *   $indexnow_key, $indexnow_key_url, $settings_status,
- *   $settings_message, $yoast_import_action
+ *   $settings_message, $yoast_import_action,
+ *   $rankmath_import_action, $seopress_import_action
  *
  * @package AI_SEO_Captain
  *
  * @var array  $options              Plugin options array.
  * @var string $settings_status      'success' or 'error' flash status.
  * @var string $settings_message     Flash message text.
- * @var string $yoast_import_action  Admin-post action slug for Yoast import.
- * @var bool   $indexnow_enabled     Whether IndexNow is enabled.
- * @var bool   $indexnow_auto_submit Whether auto-submit is enabled.
+ * @var string $yoast_import_action    Admin-post action slug for Yoast import.
+ * @var string $rankmath_import_action  Admin-post action slug for Rank Math import.
+ * @var string $seopress_import_action  Admin-post action slug for SEOPress import.
+ * @var bool   $indexnow_enabled       Whether IndexNow is enabled.
+ * @var bool   $indexnow_auto_submit   Whether auto-submit is enabled.
  * @var string $indexnow_key         The IndexNow API key.
  * @var string $indexnow_key_url     Public URL to the IndexNow key file.
  */

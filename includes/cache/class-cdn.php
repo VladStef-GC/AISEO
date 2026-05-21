@@ -37,10 +37,27 @@ class CDN
 
         // Supported static asset extensions.
         $this->extensions = array(
-            'css', 'js', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg', 'ico',
-            'woff', 'woff2', 'ttf', 'eot', 'otf',
-            'mp4', 'webm', 'ogg', 'mp3',
-            'pdf', 'zip',
+            'css',
+            'js',
+            'jpg',
+            'jpeg',
+            'png',
+            'gif',
+            'webp',
+            'avif',
+            'svg',
+            'ico',
+            'woff',
+            'woff2',
+            'ttf',
+            'eot',
+            'otf',
+            'mp4',
+            'webm',
+            'ogg',
+            'mp3',
+            'pdf',
+            'zip',
         );
 
         // URL patterns to exclude.
@@ -96,7 +113,7 @@ class CDN
         $site_host = preg_quote(wp_parse_url($this->site_url, PHP_URL_HOST), '#');
         $site_path = preg_quote(wp_parse_url($this->site_url, PHP_URL_PATH) ?: '', '#');
 
-        $pattern = '#(?:https?:)?//'. $site_host . $site_path . '/(' . $dirs_pattern . ')/([^\s\'"<>]+\.(?:' . $ext_pattern . '))(\?[^\s\'"<>]*)?#i';
+        $pattern = '#(?:https?:)?//' . $site_host . $site_path . '/(' . $dirs_pattern . ')/([^\s\'"<>]+\.(?:' . $ext_pattern . '))(\?[^\s\'"<>]*)?#i';
 
         $html = preg_replace_callback($pattern, function ($match) {
             $full_url = $match[0];

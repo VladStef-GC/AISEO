@@ -165,9 +165,15 @@ class REST_API
 
         // Collect title templates.
         $template_keys = array(
-            'search_title_post', 'search_title_page', 'search_title_category',
-            'search_title_tag', 'search_title_author', 'search_title_date',
-            'search_title_search', 'search_title_archive', 'search_title_404',
+            'search_title_post',
+            'search_title_page',
+            'search_title_category',
+            'search_title_tag',
+            'search_title_author',
+            'search_title_date',
+            'search_title_search',
+            'search_title_archive',
+            'search_title_404',
         );
 
         foreach ($template_keys as $key) {
