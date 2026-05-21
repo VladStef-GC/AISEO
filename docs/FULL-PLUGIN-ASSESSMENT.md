@@ -1,7 +1,7 @@
 # SEO Captain v1.3.1 — Full Plugin Assessment
 
 **Date:** May 20, 2026  
-**Last updated:** May 21, 2026  
+**Last updated:** May 21, 2026 (8 issues fixed across 3 commits)  
 **Scope:** Complete code review — every PHP class, view file, JS/CSS asset, MD doc, test suite, uninstall file, and activator  
 **Method:** Honest, grounded, marketing-free analysis  
 **Compared against:** Yoast SEO Free, RankMath Free, AIOSEO Free
@@ -16,6 +16,12 @@
 | 4 | "No context window calculation" | **WRONG** — `get_context_window()`, `get_max_focus_pages_for_model()`, and `get_max_pages_for_model()` all exist with proper math. | Claim removed |
 | 5 | "Keyphrase conflicts unbounded" | **CORRECT** — No SQL LIMIT existed. `get_keyphrase_conflicts()` returned all matches. | **FIXED:** Added `LIMIT 20` to SQL |
 | 6 | "Recent messages included without summarization" | **CORRECT** — Last 8 messages sent raw, no token budgeting | **FIXED:** New `Chat_Memory_Manager` class with token-aware trimming + summarization + memory pressure warnings |
+| 7 | "No rate limiting on AI endpoints" | **CORRECT** — No throttling beyond nonce checks | **FIXED:** 5s/user transient-based cooldown on all 5 AI endpoints (editor, chat, audit, content edit, site chat) |
+| 8 | "@unserialize() in Content_Writer" | **CORRECT** — `@unserialize()` with no class restriction | **FIXED:** `allowed_classes => false` to prevent PHP object injection |
+| 9 | "Dev tools ship in tests/" | **CORRECT** — hallucination-test.php and prompt-inspector.php had no web guard | **FIXED:** CLI-only guard (`PHP_SAPI` check) prevents web execution |
+| 10 | "sync() TRUNCATE without rollback" | **CORRECT** — No ROLLBACK on failure, index left empty | **FIXED:** try/catch with ROLLBACK, insert error detection |
+| 11 | "No retry logic for API calls" | **CORRECT** — Single timeout kills the generation | **FIXED:** `call_with_retry()` — 2 retries with exponential backoff for 5xx and 429 |
+| 12 | "Raw API errors shown to users" | **CORRECT** — RuntimeException message passed through to UI | **FIXED:** `humanize_api_error()` maps errors to user-friendly messages, raw errors go to error_log |
 
 ---
 
@@ -135,15 +141,15 @@ Product schema enrichment (price, SKU, availability, ratings, GTIN), product OG 
 
 ### B. Logic Issues
 
-5. **`sync()` TRUNCATE concern** — The audit report mentions this was addressed, but transaction wrapping should be verified in the current code. If the process fails mid-way, the index could be left empty or partial.
+5. ~~**`sync()` TRUNCATE concern** — The audit report mentions this was addressed, but transaction wrapping should be verified in the current code. If the process fails mid-way, the index could be left empty or partial.~~ **FIXED (May 21, 2026):** `sync()` now wraps DELETE + re-inserts in try/catch with ROLLBACK on failure. Individual insert failures are detected and trigger rollback.
 
 6. **API key stored in plaintext in `wp_options`** — The API key (OpenAI/Google) is stored as a plain sanitized text field. Not encrypted at rest. Anyone with DB access can read it. This is standard for WordPress plugins (Yoast does the same), but worth noting.
 
 7. **Google API key passed in URL query parameter** — `call_google()` sends the API key as `?key=...` in the URL. This can leak into server access logs, CDN logs, and proxy logs. The audit report notes this as fixed — verify the current code.
 
-8. **No rate limiting on AI endpoints** — A user (or a compromised admin session) could call `generate_for_post()` or `chat_for_post()` rapidly and burn through API credits. No client-side or server-side throttling beyond WordPress nonce checks.
+8. ~~**No rate limiting on AI endpoints** — A user (or a compromised admin session) could call `generate_for_post()` or `chat_for_post()` rapidly and burn through API credits. No client-side or server-side throttling beyond WordPress nonce checks.~~ **FIXED (May 21, 2026):** 5-second per-user transient-based rate limit on all 5 AI AJAX handlers. Bulk wizard context (BatchProcessor) is excluded since it has its own retry/concurrency logic.
 
-9. **`Content_Writer::apply_changes()` uses `base64_decode()` + `@unserialize()`** for BeTheme — The `@` suppression hides errors, and `unserialize()` on arbitrary data is risky (though the data comes from the local DB, not user input).
+9. ~~**`Content_Writer::apply_changes()` uses `base64_decode()` + `@unserialize()`** for BeTheme — The `@` suppression hides errors, and `unserialize()` on arbitrary data is risky (though the data comes from the local DB, not user input).~~ **FIXED (May 21, 2026):** Replaced with `unserialize($data, ['allowed_classes' => false])` — prevents PHP object instantiation, removes error suppression.
 
 10. **WooCommerce boot timing** — Uses `add_action('init', ..., 0)` from within `plugins_loaded`. This works but is fragile — if WC changes its boot priority, the integration could break silently.
 
@@ -155,13 +161,13 @@ Product schema enrichment (price, SKU, availability, ratings, GTIN), product OG 
 
 13. **Title/description length constants defined in 3 places** — `Admin`, `Frontend`, and `SEO_Analysis` each define `TITLE_MAX_LENGTH = 60` and `DESCRIPTION_MAX_LENGTH = 155`.
 
-14. **`hallucination-test.php` and `prompt-inspector.php` are developer tools** left in the tests directory. The hallucination test even bootstraps WordPress and hits the AI API. These should not ship in a production plugin.
+14. ~~**`hallucination-test.php` and `prompt-inspector.php` are developer tools** left in the tests directory. The hallucination test even bootstraps WordPress and hits the AI API. These should not ship in a production plugin.~~ **FIXED (May 21, 2026):** Both files now have a CLI-only guard (`PHP_SAPI !== 'cli'` → 403 Forbidden) at the top. Cannot be executed via web browser.
 
 ### D. Missing Error Handling
 
-15. **AI API failures show raw error messages to users** — When OpenAI/Google returns an error, the `\RuntimeException` message is passed through to `wp_send_json_error()` and displayed in the admin. This could expose API internals ("rate_limit_exceeded", "invalid_api_key", etc.).
+15. ~~**AI API failures show raw error messages to users** — When OpenAI/Google returns an error, the `\RuntimeException` message is passed through to `wp_send_json_error()` and displayed in the admin. This could expose API internals ("rate_limit_exceeded", "invalid_api_key", etc.).~~ **FIXED (May 21, 2026):** New `humanize_api_error()` method maps raw API errors to user-friendly messages (auth, quota, context length, model not found, server errors). Raw errors are logged via `error_log()` for admin debugging.
 
-16. **No retry logic for API calls** — A single timeout kills the entire generation. No exponential backoff or retry.
+16. ~~**No retry logic for API calls** — A single timeout kills the entire generation. No exponential backoff or retry.~~ **FIXED (May 21, 2026):** New `call_with_retry()` wrapper retries up to 2× on 5xx server errors and 429 rate limits with exponential backoff (capped at 8s/10s). Non-retryable errors (auth, quota, model not found) fail immediately.
 
 17. ~~**Bulk generation is purely sequential** — Each page waits for the AI response before moving to the next. No parallelism, no queue. On a 100-page site, this takes 50+ minutes at 30s per call.~~ **RETRACTED:** This was wrong. The `BatchProcessor` class in `page-setup-wizard.js` supports 1-10 concurrent AJAX calls with HTTP 429 retry and exponential backoff, plus a 5-error circuit breaker. Both Step 2 (metadata generation) and Step 3 (page audit) support parallel bulk operations.
 
@@ -265,8 +271,8 @@ The WooCommerce integration is well-built — product schema with real price/SKU
 | 1 | **SERP preview in editor** | Small | High UX — every competitor has this |
 | 2 | **SEO score column in Posts list** | Small | High UX — quick visual triage |
 | 3 | **Truncate body content for metadata generation** | Small | Saves tokens, reduces cost |
-| 4 | **Rate limiting on AI endpoints** | Small | Prevents accidental API credit burn |
-| 5 | **Remove dev tools from tests/ before production** | Trivial | Security hygiene |
+| 4 | ~~**Rate limiting on AI endpoints**~~ | ~~Small~~ | ~~Prevents accidental API credit burn~~ **DONE (May 21, 2026)** |
+| 5 | ~~**Remove dev tools from tests/ before production**~~ | ~~Trivial~~ | ~~Security hygiene~~ **DONE (May 21, 2026)** |
 
 ### P1 — Medium Impact, Strategic Value
 
@@ -274,8 +280,8 @@ The WooCommerce integration is well-built — product schema with real price/SKU
 |---|---|---|---|
 | 6 | **Google Search Console integration** | Large | #1 missing feature — enables data-driven SEO |
 | 7 | **Consolidate Meta_Keys usage** | Medium | Code quality — eliminate 60+ duplicate constants |
-| 8 | **User-friendly error messages for API failures** | Small | Better UX, no leaked API internals |
-| 9 | **Retry logic for AI API calls** | Small | Resilience — reduces failed generations |
+| 8 | ~~**User-friendly error messages for API failures**~~ | ~~Small~~ | ~~Better UX, no leaked API internals~~ **DONE (May 21, 2026)** |
+| 9 | ~~**Retry logic for AI API calls**~~ | ~~Small~~ | ~~Resilience — reduces failed generations~~ **DONE (May 21, 2026)** |
 | 10 | **Internal linking suggestions** | Medium | Strategic — leverages existing content index |
 
 ### P2 — Nice to Have
