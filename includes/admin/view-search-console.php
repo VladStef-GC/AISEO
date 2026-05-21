@@ -39,16 +39,14 @@ $redirect_uri = $gsc->get_redirect_uri();
     </div>
 
     <?php if ($gsc_notice) : ?>
-        <div class="notice notice-<?php echo esc_attr($gsc_notice['type']); ?> is-dismissible aiseo-gsc-notice">
-            <p>
-                <?php if ('success' === $gsc_notice['type']) : ?>
-                    <span class="dashicons dashicons-yes-alt" style="color:#00a32a;"></span>
-                <?php else : ?>
-                    <span class="dashicons dashicons-warning" style="color:#d63638;"></span>
-                <?php endif; ?>
-                <?php echo esc_html($gsc_notice['message']); ?>
-            </p>
-        </div>
+        <?php
+        echo \AI_SEO_Captain\Admin::render_banner(
+            'success' === $gsc_notice['type'] ? 'is-success' : 'is-error',
+            'success' === $gsc_notice['type'] ? esc_html__('Success', 'ai-seo-captain') : esc_html__('Error', 'ai-seo-captain'),
+            esc_html($gsc_notice['message']),
+            true
+        );
+        ?>
     <?php endif; ?>
 
     <?php if (! $has_creds) : ?>
@@ -76,7 +74,7 @@ $redirect_uri = $gsc->get_redirect_uri();
                                 esc_html__('Go to %s and create a project (or select an existing one).', 'ai-seo-captain'),
                                 '<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console</a>'
                             );
-                        ?></li>
+                            ?></li>
                         <li><?php esc_html_e('Enable the "Google Search Console API" for your project.', 'ai-seo-captain'); ?></li>
                         <li><?php esc_html_e('Create OAuth 2.0 credentials (Web Application type).', 'ai-seo-captain'); ?></li>
                         <li><?php esc_html_e('Add the Redirect URI shown below to your authorized redirect URIs.', 'ai-seo-captain'); ?></li>
@@ -161,7 +159,9 @@ $redirect_uri = $gsc->get_redirect_uri();
                     <h2><?php esc_html_e('Select Your Property', 'ai-seo-captain'); ?></h2>
                 </div>
                 <?php if (is_wp_error($gsc_sites)) : ?>
-                    <div class="notice notice-error inline"><p><?php echo esc_html($gsc_sites->get_error_message()); ?></p></div>
+                    <div class="notice notice-error inline">
+                        <p><?php echo esc_html($gsc_sites->get_error_message()); ?></p>
+                    </div>
                 <?php elseif (empty($gsc_sites)) : ?>
                     <p><?php esc_html_e('No sites found in your Search Console account. Make sure your site is verified at search.google.com/search-console.', 'ai-seo-captain'); ?></p>
                 <?php else : ?>
@@ -239,8 +239,13 @@ $redirect_uri = $gsc->get_redirect_uri();
         </div>
 
         <!-- AJAX result banner (populated by JS) -->
-        <div id="gsc-ajax-notice" class="notice aiseo-gsc-notice" style="display:none;" role="alert">
-            <p id="gsc-ajax-notice-msg"></p>
+        <div id="gsc-ajax-notice" class="ai-seo-captain-notice is-success" style="display:none;" role="alert">
+            <img src="<?php echo esc_url(AI_SEO_CAPTAIN_URL . 'assets/img/seo-captain-side-ok-d.svg'); ?>" alt="" class="ai-seo-captain-notice__icon" id="gsc-ajax-notice-icon" />
+            <div class="ai-seo-captain-notice__body">
+                <strong class="ai-seo-captain-notice__title" id="gsc-ajax-notice-title">Success</strong>
+                <span class="ai-seo-captain-notice__text" id="gsc-ajax-notice-msg"></span>
+            </div>
+            <button type="button" class="ai-seo-captain-notice__dismiss" aria-label="Dismiss" onclick="this.parentElement.style.display='none'">&times;</button>
         </div>
 
         <!-- Overview Cards -->

@@ -247,10 +247,21 @@
     letter-spacing: 0.3px;
 }
 
-.aisc-gsc-clicks .aisc-gsc-num { color: #4285f4; }
-.aisc-gsc-impressions .aisc-gsc-num { color: #5e35b1; }
-.aisc-gsc-ctr .aisc-gsc-num { color: #00897b; }
-.aisc-gsc-position .aisc-gsc-num { color: #e8710a; }
+.aisc-gsc-clicks .aisc-gsc-num {
+    color: #4285f4;
+}
+
+.aisc-gsc-impressions .aisc-gsc-num {
+    color: #5e35b1;
+}
+
+.aisc-gsc-ctr .aisc-gsc-num {
+    color: #00897b;
+}
+
+.aisc-gsc-position .aisc-gsc-num {
+    color: #e8710a;
+}
 
 /* -----------------------------------------------------------------------
    Internal Link Suggestions

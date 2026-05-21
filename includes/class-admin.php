@@ -940,6 +940,7 @@ class Admin
             wp_localize_script('ai-seo-page-search-console', 'aiSeoCaptainGsc', array(
                 'ajaxurl'   => admin_url('admin-ajax.php'),
                 'nonce'     => wp_create_nonce('ai_seo_captain_nonce'),
+                'pluginUrl' => AI_SEO_CAPTAIN_URL,
                 'trendData' => $trend_data,
             ));
         }
@@ -3035,7 +3036,8 @@ JS;
     public function ajax_gsc_page_data(): void
     {
         // Accept either the editor nonce or the admin nonce.
-        if (! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? $_POST['_nonce'] ?? '')), 'ai_seo_captain_save_editor_meta')
+        if (
+            ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? $_POST['_nonce'] ?? '')), 'ai_seo_captain_save_editor_meta')
             && ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_nonce'] ?? '')), 'ai_seo_captain_nonce')
         ) {
             wp_send_json_error(array('message' => __('Security check failed.', 'ai-seo-captain')), 403);

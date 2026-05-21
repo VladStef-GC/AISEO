@@ -266,10 +266,21 @@
     line-height: 1.2;
 }
 
-.aiseo-gsc-metric[data-metric="clicks"] .aiseo-gsc-metric-value { color: #4285f4; }
-.aiseo-gsc-metric[data-metric="impressions"] .aiseo-gsc-metric-value { color: #5e35b1; }
-.aiseo-gsc-metric[data-metric="ctr"] .aiseo-gsc-metric-value { color: #00897b; }
-.aiseo-gsc-metric[data-metric="position"] .aiseo-gsc-metric-value { color: #e8710a; }
+.aiseo-gsc-metric[data-metric="clicks"] .aiseo-gsc-metric-value {
+    color: #4285f4;
+}
+
+.aiseo-gsc-metric[data-metric="impressions"] .aiseo-gsc-metric-value {
+    color: #5e35b1;
+}
+
+.aiseo-gsc-metric[data-metric="ctr"] .aiseo-gsc-metric-value {
+    color: #00897b;
+}
+
+.aiseo-gsc-metric[data-metric="position"] .aiseo-gsc-metric-value {
+    color: #e8710a;
+}
 
 /* ---- Empty state ---- */
 .aiseo-gsc-empty-state {
@@ -354,6 +365,7 @@
     .aiseo-gsc-overview {
         grid-template-columns: repeat(2, 1fr);
     }
+
     .aiseo-gsc-tables {
         grid-template-columns: 1fr;
     }
@@ -363,6 +375,7 @@
     .aiseo-gsc-overview {
         grid-template-columns: 1fr;
     }
+
     .aiseo-gsc-steps {
         flex-wrap: wrap;
     }

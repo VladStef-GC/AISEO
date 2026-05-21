@@ -124,15 +124,24 @@
     }
 
     /* ---- AJAX Notice Banner ---- */
+    var iconBase = (cfg.pluginUrl || '') + 'assets/img/';
+
     function showNotice(message, type) {
-        var wrap = $('#gsc-ajax-notice');
-        var msg  = $('#gsc-ajax-notice-msg');
+        var wrap  = $('#gsc-ajax-notice');
+        var msg   = $('#gsc-ajax-notice-msg');
+        var title = $('#gsc-ajax-notice-title');
+        var icon  = $('#gsc-ajax-notice-icon');
         if (!wrap || !msg) return;
-        wrap.className = 'notice notice-' + (type || 'info') + ' is-dismissible aiseo-gsc-notice';
+
+        var isOk = (type === 'success');
+        wrap.className = 'ai-seo-captain-notice ' + (isOk ? 'is-success' : 'is-error');
+        if (title) title.textContent = isOk ? 'Success' : 'Error';
+        if (icon)  icon.src = iconBase + (isOk ? 'seo-captain-side-ok-d.svg' : 'seo-captain-side-d.svg');
         msg.textContent = message;
         wrap.style.display = '';
+
         // Auto-hide success after 6s.
-        if (type === 'success') {
+        if (isOk) {
             setTimeout(function () { wrap.style.display = 'none'; }, 6000);
         }
     }
@@ -146,7 +155,7 @@
 
         btn.addEventListener('click', function () {
             var start = $('#gsc-start-date').value;
-            var end   = $('#gsc-end-date').value;
+            var end = $('#gsc-end-date').value;
             if (!start || !end) return;
 
             btn.disabled = true;
