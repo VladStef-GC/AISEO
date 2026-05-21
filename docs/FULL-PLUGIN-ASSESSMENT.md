@@ -1,7 +1,7 @@
 # SEO Captain v1.3.1 — Full Plugin Assessment
 
 **Date:** May 20, 2026  
-**Last updated:** May 21, 2026 (11 issues fixed across 5 commits)  
+**Last updated:** May 21, 2026 (12 issues fixed across 7 commits)  
 **Scope:** Complete code review — every PHP class, view file, JS/CSS asset, MD doc, test suite, uninstall file, and activator  
 **Method:** Honest, grounded, marketing-free analysis  
 **Compared against:** Yoast SEO Free, RankMath Free, AIOSEO Free
@@ -155,7 +155,7 @@ Product schema enrichment (price, SKU, availability, ratings, GTIN), product OG 
 
 ### C. Unnecessary or Redundant Code
 
-11. **Meta key strings duplicated across 6+ classes** — Despite having `Meta_Keys` as a central registry, `Content_Indexer`, `Admin`, `Frontend`, `History_Store`, `Content_Writer`, and `Audit_Engine` all define their own `private const META_TITLE_KEY` etc. The `Meta_Keys` class exists but isn't used by most consumers.
+11. ~~**Meta key strings duplicated across 6+ classes** — Despite having `Meta_Keys` as a central registry, `Content_Indexer`, `Admin`, `Frontend`, `History_Store`, `Content_Writer`, and `Audit_Engine` all define their own `private const META_TITLE_KEY` etc. The `Meta_Keys` class exists but isn't used by most consumers.~~ **FIXED (May 21, 2026):** All 39 duplicate constants across 6 classes now reference `Meta_Keys::` constants as their source of truth. Local constants kept as aliases for backward compatibility.
 
 12. **`READABILITY_TRANSITION_WORDS` defined twice** — Once in `class-admin.php` and once in `class-seo-analysis.php`. Same with `GENERIC_ANCHOR_TEXTS`. The Admin class copies the full array that only the analysis class needs.
 
@@ -279,7 +279,7 @@ The WooCommerce integration is well-built — product schema with real price/SKU
 | # | Item | Effort | Impact |
 |---|---|---|---|
 | 6 | **Google Search Console integration** | Large | #1 missing feature — enables data-driven SEO |
-| 7 | **Consolidate Meta_Keys usage** | Medium | Code quality — eliminate 60+ duplicate constants |
+| 7 | ~~**Consolidate Meta_Keys usage**~~ | ~~Medium~~ | ~~Code quality — eliminate 60+ duplicate constants~~ **DONE (May 21, 2026)** |
 | 8 | ~~**User-friendly error messages for API failures**~~ | ~~Small~~ | ~~Better UX, no leaked API internals~~ **DONE (May 21, 2026)** |
 | 9 | ~~**Retry logic for AI API calls**~~ | ~~Small~~ | ~~Resilience — reduces failed generations~~ **DONE (May 21, 2026)** |
 | 10 | **Internal linking suggestions** | Medium | Strategic — leverages existing content index |
