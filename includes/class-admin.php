@@ -776,7 +776,7 @@ class Admin
             'aiSeoKeeperGutenberg',
             array(
                 'ajaxUrl' => admin_url('admin-ajax.php'),
-                'nonce'   => wp_create_nonce('ai_seo_captain_nonce'),
+                'nonce'   => wp_create_nonce('ai_seo_captain_save_editor_meta'),
                 'actions' => array(
                     'save'            => self::AJAX_SAVE_ACTION,
                     'generate'        => self::AJAX_GENERATE_ACTION,

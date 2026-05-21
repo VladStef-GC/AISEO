@@ -213,14 +213,23 @@
         var copied = _copied[0];
         var setCopied = _copied[1];
 
+        var _error = useState(false);
+        var hasError = _error[0];
+        var setError = _error[1];
+
         function loadSuggestions() {
             if (!postId) { return; }
             setLoading(true);
+            setError(false);
             apiFetch(cfg.actions.linkSuggestions, { post_id: postId })
                 .then(function (res) {
-                    setItems(res.success && res.data && res.data.suggestions ? res.data.suggestions : []);
+                    if (res.success && res.data && res.data.suggestions) {
+                        setItems(res.data.suggestions);
+                    } else {
+                        setItems([]);
+                    }
                 })
-                .catch(function () { setItems([]); })
+                .catch(function () { setItems([]); setError(true); })
                 .finally(function () { setLoading(false); });
         }
 
@@ -230,11 +239,23 @@
         }, [postId]);
 
         function handleCopy(url) {
-            if (navigator.clipboard) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(url).then(function () {
                     setCopied(url);
                     setTimeout(function () { setCopied(null); }, 1500);
                 });
+            } else {
+                // Fallback for older browsers / insecure contexts.
+                var ta = document.createElement('textarea');
+                ta.value = url;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                setCopied(url);
+                setTimeout(function () { setCopied(null); }, 1500);
             }
         }
 
@@ -246,6 +267,13 @@
             );
         }
 
+        if (hasError) {
+            return el('p', { className: 'aisc-link-suggestions-empty', style: { color: '#d63638' } },
+                'Could not load link suggestions. ',
+                el(Button, { variant: 'link', isSmall: true, onClick: loadSuggestions }, 'Retry')
+            );
+        }
+
         if (!items || items.length === 0) {
             return el('p', { className: 'aisc-link-suggestions-empty' }, cfg.i18n.noLinkSuggestions);
         }
@@ -254,10 +282,11 @@
             el('p', { className: 'aisc-link-suggestions-desc' }, cfg.i18n.linkSuggestionsDesc),
             el('ul', { className: 'aisc-link-list' },
                 items.map(function (item) {
+                    var safeUrl = (item.url && /^https?:\/\//.test(item.url)) ? item.url : '#';
                     return el('li', { key: item.post_id, className: 'aisc-link-item' },
                         el('div', { className: 'aisc-link-item-header' },
                             el('a', {
-                                href: item.url,
+                                href: safeUrl,
                                 target: '_blank',
                                 rel: 'noopener noreferrer',
                                 className: 'aisc-link-item-title'
@@ -266,8 +295,8 @@
                                 variant: 'tertiary',
                                 isSmall: true,
                                 className: 'aisc-link-copy-btn',
-                                onClick: function () { handleCopy(item.url); }
-                            }, copied === item.url ? cfg.i18n.linkCopied : 'Copy')
+                                onClick: function () { handleCopy(safeUrl); }
+                            }, copied === safeUrl ? cfg.i18n.linkCopied : 'Copy')
                         ),
                         el('span', { className: 'aisc-link-item-reason' }, item.reason)
                     );

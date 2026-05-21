@@ -1731,7 +1731,7 @@ class Frontend
             if (false === $decoded_b64) {
                 return $value;
             }
-            $data = @unserialize($decoded_b64);
+            $data = @unserialize($decoded_b64, array('allowed_classes' => false));
             if (! is_array($data)) {
                 return $value;
             }

@@ -1,7 +1,7 @@
 # SEO Captain v1.3.1 — Full Plugin Assessment
 
 **Date:** May 20, 2026  
-**Last updated:** May 21, 2026 (12 issues fixed across 7 commits)  
+**Last updated:** May 21, 2026 (15 issues fixed across 10 commits, full code audit pass)  
 **Scope:** Complete code review — every PHP class, view file, JS/CSS asset, MD doc, test suite, uninstall file, and activator  
 **Method:** Honest, grounded, marketing-free analysis  
 **Compared against:** Yoast SEO Free, RankMath Free, AIOSEO Free
@@ -22,6 +22,9 @@
 | 10 | "sync() TRUNCATE without rollback" | **CORRECT** — No ROLLBACK on failure, index left empty | **FIXED:** try/catch with ROLLBACK, insert error detection |
 | 11 | "No retry logic for API calls" | **CORRECT** — Single timeout kills the generation | **FIXED:** `call_with_retry()` — 2 retries with exponential backoff for 5xx and 429 |
 | 12 | "Raw API errors shown to users" | **CORRECT** — RuntimeException message passed through to UI | **FIXED:** `humanize_api_error()` maps errors to user-friendly messages, raw errors go to error_log |
+| 13 | "Gutenberg sidebar nonce mismatch" | **FOUND IN AUDIT** — `wp_localize_script` created nonce with `ai_seo_captain_nonce` but editor handlers checked `ai_seo_captain_save_editor_meta` | **FIXED:** Aligned nonce action to `ai_seo_captain_save_editor_meta` across sidebar localization and all handlers |
+| 14 | "Frontend unsafe unserialize (BeTheme)" | **FOUND IN AUDIT** — `@unserialize()` in `class-frontend.php` line 1734 without allowed_classes | **FIXED:** Added `['allowed_classes' => false]` restriction |
+| 15 | "Hardcoded meta key strings in content-indexer" | **FOUND IN AUDIT** — `get_post_meta()` calls used raw strings instead of `Meta_Keys::` constants | **FIXED:** Replaced with `Meta_Keys::FOCUS_KEYPHRASE` constants |
 
 ---
 
@@ -106,7 +109,7 @@ Product schema enrichment (price, SKU, availability, ratings, GTIN), product OG 
 | **Google Search Console integration** | Yoast, RankMath, AIOSEO | HIGH — No click/impression/position data. The AI is flying blind about actual search performance. |
 | **Google Analytics integration** | RankMath, AIOSEO | MEDIUM — No traffic data inside WordPress |
 | **Keyword rank tracking** | RankMath Pro, SEMrush | MEDIUM — Keyphrase distribution is tracked but not actual SERP positions |
-| **Internal linking suggestions** | Yoast Premium, RankMath | MEDIUM — The AI mentions linking but doesn't auto-suggest specific targets |
+| **Internal linking suggestions** | ~~Yoast Premium, RankMath~~ | ~~MEDIUM~~ | ~~The AI mentions linking but doesn't auto-suggest specific targets~~ **DONE (May 21, 2026)** — Gutenberg sidebar panel with scored suggestions (keyphrase-in-body, keyword overlap, hierarchy), copy-to-clipboard, already-linked exclusion |
 | **Automatic image SEO (auto alt-text)** | RankMath, AIOSEO | LOW-MEDIUM — The dashboard exists but no auto-fill |
 | **Social media preview** | Yoast, RankMath | LOW — Visual preview of how OG/Twitter cards will look |
 | **Readability score (Flesch)** | Yoast (Flesch Reading Ease) | LOW — Readability checks exist (transition words, passive voice, sentence length) but no single Flesch score number |
@@ -149,7 +152,7 @@ Product schema enrichment (price, SKU, availability, ratings, GTIN), product OG 
 
 8. ~~**No rate limiting on AI endpoints** — A user (or a compromised admin session) could call `generate_for_post()` or `chat_for_post()` rapidly and burn through API credits. No client-side or server-side throttling beyond WordPress nonce checks.~~ **FIXED (May 21, 2026):** 5-second per-user transient-based rate limit on all 5 AI AJAX handlers. Bulk wizard context (BatchProcessor) is excluded since it has its own retry/concurrency logic.
 
-9. ~~**`Content_Writer::apply_changes()` uses `base64_decode()` + `@unserialize()`** for BeTheme — The `@` suppression hides errors, and `unserialize()` on arbitrary data is risky (though the data comes from the local DB, not user input).~~ **FIXED (May 21, 2026):** Replaced with `unserialize($data, ['allowed_classes' => false])` — prevents PHP object instantiation, removes error suppression.
+9. ~~**`Content_Writer::apply_changes()` uses `base64_decode()` + `@unserialize()`** for BeTheme — The `@` suppression hides errors, and `unserialize()` on arbitrary data is risky (though the data comes from the local DB, not user input).~~ **FIXED (May 21, 2026):** Replaced with `unserialize($data, ['allowed_classes' => false])` — prevents PHP object instantiation. Also fixed identical pattern in `class-frontend.php` (BeTheme pending changes handler).
 
 10. **WooCommerce boot timing** — Uses `add_action('init', ..., 0)` from within `plugins_loaded`. This works but is fragile — if WC changes its boot priority, the integration could break silently.
 
@@ -282,7 +285,7 @@ The WooCommerce integration is well-built — product schema with real price/SKU
 | 7 | ~~**Consolidate Meta_Keys usage**~~ | ~~Medium~~ | ~~Code quality — eliminate 60+ duplicate constants~~ **DONE (May 21, 2026)** |
 | 8 | ~~**User-friendly error messages for API failures**~~ | ~~Small~~ | ~~Better UX, no leaked API internals~~ **DONE (May 21, 2026)** |
 | 9 | ~~**Retry logic for AI API calls**~~ | ~~Small~~ | ~~Resilience — reduces failed generations~~ **DONE (May 21, 2026)** |
-| 10 | **Internal linking suggestions** | Medium | Strategic — leverages existing content index |
+| 10 | ~~**Internal linking suggestions**~~ | ~~Medium~~ | ~~Strategic — leverages existing content index~~ **DONE (May 21, 2026)** — Gutenberg sidebar panel, Content_Indexer scoring engine, AJAX handler |
 
 ### P2 — Nice to Have
 

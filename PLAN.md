@@ -30,7 +30,7 @@ The working model is hybrid by design:
 - **Bulk Editor**: row counter, real-time search, WooCommerce-aware post type filter, site structure tree.
 - **AI SEO Strategist**: dedicated site-wide AI chat page with focus-page scoping and run context.
 - **Data Management**: scope-based clearing (metadata, audits, everything) deleting 20 post meta keys + dynamic video meta keys + 4 term meta + conversations + messages + IndexNow log + runs + active_runs user meta.
-- **Gutenberg sidebar panel** with dedicated JS/CSS assets.
+- **Gutenberg sidebar panel** with SERP preview (Google-style), SEO score meter, inline checks, internal link suggestions with copy-to-clipboard, and AI Commander chat with memory-pressure indicator.
 - The editor workflow, AI drafting, saved manual metadata, history/approval, schema, breadcrumbs, discovery documents, audits, and IndexNow are all in place.
 - Manual or imported metadata can render on the frontend without requiring an approved AI suggestion.
 - Automatic search appearance covers singular content plus archives, categories, tags, author pages, date archives, search results, the posts page, post type archives, and 404 pages.
@@ -184,7 +184,12 @@ The working model is hybrid by design:
 - Skip Rules with URL pattern matching, server-side enforcement in both metadata generation and audits.
 - Scope-based data management (metadata, audits, everything) with confirmation modals.
 - WooCommerce integration for product-aware filtering in wizard, bulk editor, and site tree.
-- Gutenberg sidebar panel with dedicated JS/CSS assets.
+- Gutenberg sidebar panel with SERP preview, SEO score meter, inline checks, internal link suggestions, AI Commander chat with memory-pressure indicator.
+- SEO score column in post/page admin lists with color-coded scores and meta status indicators.
+- Token-aware chat memory manager with conversation summarization to prevent context overflow.
+- AJAX rate limiting on AI endpoints (configurable cooldown via transients).
+- Centralized Meta_Keys registry (24 constants) referenced by all classes — no duplicate meta key strings.
+- Content truncation protection for large posts (>200KB) in AI prompt assembly.
 - Export/Import with selective JSON scope (settings, metadata, redirects).
 - Taxonomy-level SEO fields (title, description, canonical, noindex per category/tag).
 - AI Content Editor with changeset-based editing, preview, apply/discard, backup/restore, multi-builder support.
@@ -209,7 +214,7 @@ All critical Yoast Free parity features have been shipped:
 ### Completed (formerly Phase 2 — Professional-Grade)
 
 7. ✅ **Orphaned Content Detection** — link analysis in editor Checks tab
-8. ✅ **Internal Linking Suggestions** — Links tab in editor metabox
+8. ✅ **Internal Linking Suggestions** — Links tab in editor metabox + Gutenberg sidebar panel with scored suggestions (keyphrase-in-body, keyword overlap, hierarchy), copy-to-clipboard, and auto-exclusion of already-linked pages
 9. ✅ **Cornerstone Content Marking** — per-page toggle in Advanced tab
 10. ✅ **Image SEO Dashboard** — dedicated page with alt text editing, filters, "Used on" toggle
 11. ✅ **Keyword Tracking / Content Insights** — dedicated page with cannibalization detection

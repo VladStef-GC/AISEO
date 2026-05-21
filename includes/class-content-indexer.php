@@ -699,7 +699,7 @@ class Content_Indexer
         $postmeta   = $wpdb->postmeta;
 
         // Get the current page's focus keyphrase.
-        $focus_keyphrase = trim((string) get_post_meta($post_id, '_ai_seo_captain_focus_keyphrase', true));
+        $focus_keyphrase = trim((string) get_post_meta($post_id, Meta_Keys::FOCUS_KEYPHRASE, true));
 
         if ('' === $focus_keyphrase) {
             return array();
@@ -771,8 +771,8 @@ class Content_Indexer
         // 1. Parse existing internal links from the post content.
         $content      = Content_Helper::get_content($post);
         $site_host    = (string) wp_parse_url(home_url(), PHP_URL_HOST);
-        $linked_urls  = $this->extract_internal_hrefs($content, $site_host);
-        $body_lower   = strtolower(preg_replace('/\s+/', ' ', wp_strip_all_tags(strip_shortcodes($content))) ?: '');
+        $linked_urls  = array_flip($this->extract_internal_hrefs($content, $site_host));
+        $body_lower   = strtolower(preg_replace('/\s+/', ' ', wp_strip_all_tags(strip_shortcodes($content))));
 
         // 2. Get the current page's keyphrase and keywords.
         $my_keyphrase = strtolower(trim((string) get_post_meta($post_id, Meta_Keys::FOCUS_KEYPHRASE, true)));
@@ -812,7 +812,7 @@ class Content_Indexer
         foreach ($candidates as $c) {
             // Skip pages already linked from the current content.
             $c_url_normalised = strtolower(rtrim((string) $c['permalink'], '/'));
-            if (in_array($c_url_normalised, $linked_urls, true)) {
+            if (isset($linked_urls[$c_url_normalised])) {
                 continue;
             }
 
@@ -877,10 +877,21 @@ class Content_Indexer
     {
         $hrefs = array();
 
-        preg_match_all('/<a\s[^>]*href=("|\')(.*?)\1/is', $html, $matches);
+        // Match href in quoted or unquoted form, tolerate spaces around =.
+        $found = preg_match_all(
+            '/<a\s[^>]*?\bhref\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s>]+))/is',
+            $html,
+            $matches,
+            PREG_SET_ORDER
+        );
 
-        foreach ($matches[2] as $href) {
-            $href = html_entity_decode(trim($href));
+        if (! $found) {
+            return $hrefs;
+        }
+
+        foreach ($matches as $m) {
+            $href = isset($m[1]) && '' !== $m[1] ? $m[1] : (isset($m[2]) && '' !== $m[2] ? $m[2] : (isset($m[3]) ? $m[3] : ''));
+            $href = html_entity_decode(trim($href), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
             if ('' === $href || '#' === $href[0] || 0 === strpos($href, 'mailto:') || 0 === strpos($href, 'tel:')) {
                 continue;
@@ -922,7 +933,7 @@ class Content_Indexer
         //  3. Top-frequency words from body text (fallback when metadata sparse)
         // ------------------------------------------------------------------
 
-        $focus_keyphrase  = trim((string) get_post_meta($post_id, '_ai_seo_captain_focus_keyphrase', true));
+        $focus_keyphrase  = trim((string) get_post_meta($post_id, Meta_Keys::FOCUS_KEYPHRASE, true));
         $post_title       = (string) get_the_title($post_id);
         $meta_description = trim((string) get_post_meta($post_id, self::META_DESCRIPTION_KEY, true));
 
