@@ -711,6 +711,28 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
         </form>
         <p class="description" style="margin:12px 0 0;">Imports focus keyphrase, SEO title, meta description, social fields, canonical URL, and noindex/nofollow. Existing SEO Captain values are preserved.</p>
     </div>
+
+    <div class="ai-seo-box">
+        <h2><?php esc_html_e('Rank Math migration', 'ai-seo-captain'); ?></h2>
+        <p style="margin:0 0 12px;">Copy existing Rank Math per-page metadata into SEO Captain without overwriting fields already filled here.</p>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+            <?php wp_nonce_field('ai_seo_captain_import_rankmath_metadata'); ?>
+            <input type="hidden" name="action" value="<?php echo esc_attr($rankmath_import_action); ?>" />
+            <button type="submit" class="button button-secondary"><?php esc_html_e('Import Rank Math metadata', 'ai-seo-captain'); ?></button>
+        </form>
+        <p class="description" style="margin:12px 0 0;">Imports focus keyphrase, SEO title, meta description, social fields, canonical URL, and robots directives. Existing SEO Captain values are preserved.</p>
+    </div>
+
+    <div class="ai-seo-box">
+        <h2><?php esc_html_e('SEOPress migration', 'ai-seo-captain'); ?></h2>
+        <p style="margin:0 0 12px;">Copy existing SEOPress per-page metadata into SEO Captain without overwriting fields already filled here.</p>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+            <?php wp_nonce_field('ai_seo_captain_import_seopress_metadata'); ?>
+            <input type="hidden" name="action" value="<?php echo esc_attr($seopress_import_action); ?>" />
+            <button type="submit" class="button button-secondary"><?php esc_html_e('Import SEOPress metadata', 'ai-seo-captain'); ?></button>
+        </form>
+        <p class="description" style="margin:12px 0 0;">Imports focus keyphrase, SEO title, meta description, social fields, canonical URL, and noindex. Existing SEO Captain values are preserved.</p>
+    </div>
 </div>
 <script>
     (function() {

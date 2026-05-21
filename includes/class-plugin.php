@@ -34,6 +34,8 @@ final class Plugin
 
     private ?Search_Console $search_console = null;
 
+    private ?REST_API $rest_api = null;
+
     public static function instance(): Plugin
     {
         if (null === self::$instance) {
@@ -59,6 +61,10 @@ final class Plugin
         // Google Search Console integration.
         $this->search_console = new Search_Console($this->settings);
         add_action('ai_seo_captain_gsc_sync', array($this->search_console, 'daily_sync'));
+
+        // REST API — headless SEO support.
+        $this->rest_api = new REST_API($this->settings);
+        $this->rest_api->register();
 
         // Cache system — boot after sitemap so preloader can access it.
         $this->cache_manager = new Cache\Cache_Manager($this->settings);

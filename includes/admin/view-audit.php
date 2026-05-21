@@ -190,7 +190,8 @@ defined('ABSPATH') || exit;
                             $page_path = $pg->dimension_value;
                             try {
                                 $page_path = wp_parse_url($pg->dimension_value, PHP_URL_PATH) ?: $pg->dimension_value;
-                            } catch (\Exception $e) { /* keep original */ }
+                            } catch (\Exception $e) { /* keep original */
+                            }
                         ?>
                             <tr>
                                 <td title="<?php echo esc_attr($pg->dimension_value); ?>"><?php echo esc_html($page_path); ?></td>

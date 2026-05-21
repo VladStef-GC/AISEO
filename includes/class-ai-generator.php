@@ -457,7 +457,8 @@ class AI_Generator
 
         // Google Search Console performance data (graceful when not connected).
         $gsc_performance = null;
-        if ($this->search_console && $this->search_console->is_connected()
+        if (
+            $this->search_console && $this->search_console->is_connected()
             && '' !== $this->search_console->get_config()['site_url']
         ) {
             $permalink = get_permalink($post);
@@ -882,7 +883,8 @@ class AI_Generator
         }
 
         // Inject Google Search Console data when available.
-        if ($this->search_console && $this->search_console->is_connected()
+        if (
+            $this->search_console && $this->search_console->is_connected()
             && '' !== $this->search_console->get_config()['site_url']
         ) {
             $gsc_summary = $this->search_console->get_site_summary(30);

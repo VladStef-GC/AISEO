@@ -577,6 +577,335 @@ class Admin_Import_Export
     }
 
     // ------------------------------------------------------------------
+    //  RankMath migration
+    // ------------------------------------------------------------------
+
+    public function handle_import_rankmath(): void
+    {
+        if (! current_user_can('manage_options')) {
+            wp_die('You are not allowed to do that.');
+        }
+
+        check_admin_referer('ai_seo_captain_import_rankmath_metadata');
+
+        try {
+            $result = $this->import_third_party_metadata('rankmath');
+        } catch (\Throwable $throwable) {
+            $this->admin->redirect_to_settings_page('error', $throwable->getMessage());
+            return;
+        }
+
+        if (0 === $result['posts_detected']) {
+            $this->admin->redirect_to_settings_page('success', 'No Rank Math metadata was found to import.');
+            return;
+        }
+
+        $message = sprintf('Rank Math import finished. %d item(s) were updated and %d field(s) were copied.', $result['posts_updated'], $result['fields_imported']);
+
+        if ($result['frontend_enabled'] > 0) {
+            $message .= ' ' . sprintf('Frontend output was enabled on %d item(s).', $result['frontend_enabled']);
+        }
+
+        if ($result['skipped_existing'] > 0) {
+            $message .= ' ' . sprintf('%d existing SEO Captain field(s) were left unchanged.', $result['skipped_existing']);
+        }
+
+        $this->admin->redirect_to_settings_page('success', $message);
+    }
+
+    // ------------------------------------------------------------------
+    //  SEOPress migration
+    // ------------------------------------------------------------------
+
+    public function handle_import_seopress(): void
+    {
+        if (! current_user_can('manage_options')) {
+            wp_die('You are not allowed to do that.');
+        }
+
+        check_admin_referer('ai_seo_captain_import_seopress_metadata');
+
+        try {
+            $result = $this->import_third_party_metadata('seopress');
+        } catch (\Throwable $throwable) {
+            $this->admin->redirect_to_settings_page('error', $throwable->getMessage());
+            return;
+        }
+
+        if (0 === $result['posts_detected']) {
+            $this->admin->redirect_to_settings_page('success', 'No SEOPress metadata was found to import.');
+            return;
+        }
+
+        $message = sprintf('SEOPress import finished. %d item(s) were updated and %d field(s) were copied.', $result['posts_updated'], $result['fields_imported']);
+
+        if ($result['frontend_enabled'] > 0) {
+            $message .= ' ' . sprintf('Frontend output was enabled on %d item(s).', $result['frontend_enabled']);
+        }
+
+        if ($result['skipped_existing'] > 0) {
+            $message .= ' ' . sprintf('%d existing SEO Captain field(s) were left unchanged.', $result['skipped_existing']);
+        }
+
+        $this->admin->redirect_to_settings_page('success', $message);
+    }
+
+    // ------------------------------------------------------------------
+    //  Shared third-party import engine (RankMath + SEOPress)
+    // ------------------------------------------------------------------
+
+    /**
+     * Meta key definitions for each supported third-party plugin.
+     */
+    private static function third_party_meta_keys(string $plugin): array
+    {
+        if ('rankmath' === $plugin) {
+            return array(
+                'focus_keyphrase'    => 'rank_math_focus_keyword',
+                'seo_title'          => 'rank_math_title',
+                'seo_description'    => 'rank_math_description',
+                'social_title'       => 'rank_math_facebook_title',
+                'social_description' => 'rank_math_facebook_description',
+                'social_image'       => 'rank_math_facebook_image',
+                'canonical_url'      => 'rank_math_canonical_url',
+                'robots_raw'         => 'rank_math_robots',
+                // Fallback social fields (Twitter).
+                'twitter_title'       => 'rank_math_twitter_title',
+                'twitter_description' => 'rank_math_twitter_description',
+                'twitter_image'       => 'rank_math_twitter_image',
+            );
+        }
+
+        // seopress
+        return array(
+            'focus_keyphrase'    => '_seopress_analysis_target_kw',
+            'seo_title'          => '_seopress_titles_title',
+            'seo_description'    => '_seopress_titles_desc',
+            'social_title'       => '_seopress_social_fb_title',
+            'social_description' => '_seopress_social_fb_desc',
+            'social_image'       => '_seopress_social_fb_img',
+            'canonical_url'      => '_seopress_robots_canonical',
+            'robots_raw'         => '_seopress_robots_index', // '1' = noindex
+            // Fallback social fields (Twitter).
+            'twitter_title'       => '_seopress_social_twitter_title',
+            'twitter_description' => '_seopress_social_twitter_desc',
+            'twitter_image'       => '_seopress_social_twitter_img',
+        );
+    }
+
+    /**
+     * Import metadata from RankMath or SEOPress using a shared pipeline.
+     */
+    private function import_third_party_metadata(string $plugin): array
+    {
+        $meta_keys = self::third_party_meta_keys($plugin);
+
+        $posts_detected    = 0;
+        $posts_updated     = 0;
+        $fields_imported   = 0;
+        $skipped_existing  = 0;
+        $frontend_enabled  = 0;
+
+        $frontend_field_keys = array(
+            'seo_title',
+            'seo_description',
+            'social_title',
+            'social_description',
+            'social_image',
+            'canonical_url',
+            'robots_directives',
+        );
+
+        $field_map = array(
+            'focus_keyphrase'    => AdminBase::FOCUS_KEYPHRASE_META_KEY,
+            'seo_title'          => AdminBase::META_TITLE_KEY,
+            'seo_description'    => AdminBase::META_DESCRIPTION_KEY,
+            'social_title'       => AdminBase::SOCIAL_TITLE_META_KEY,
+            'social_description' => AdminBase::SOCIAL_DESCRIPTION_META_KEY,
+            'social_image'       => AdminBase::SOCIAL_IMAGE_META_KEY,
+            'canonical_url'      => AdminBase::CANONICAL_URL_META_KEY,
+            'robots_directives'  => AdminBase::ROBOTS_DIRECTIVES_META_KEY,
+        );
+
+        foreach ($this->get_third_party_candidate_ids($plugin) as $post_id) {
+            $post = get_post($post_id);
+
+            if (! $post instanceof \WP_Post || ! $this->admin->is_supported_post_type($post->post_type)) {
+                continue;
+            }
+
+            $posts_detected++;
+
+            // Read source meta.
+            $raw = array();
+            foreach ($meta_keys as $key => $meta_key) {
+                $raw[$key] = get_post_meta($post_id, $meta_key, true);
+            }
+
+            // Build social fields with Twitter fallback.
+            $social_title       = sanitize_text_field((string) ($raw['social_title'] ?? ''));
+            $social_description = sanitize_textarea_field((string) ($raw['social_description'] ?? ''));
+            $social_image       = esc_url_raw((string) ($raw['social_image'] ?? ''));
+
+            if ('' === $social_title && ! empty($raw['twitter_title'])) {
+                $social_title = sanitize_text_field((string) $raw['twitter_title']);
+            }
+            if ('' === $social_description && ! empty($raw['twitter_description'])) {
+                $social_description = sanitize_textarea_field((string) $raw['twitter_description']);
+            }
+            if ('' === $social_image && ! empty($raw['twitter_image'])) {
+                $social_image = esc_url_raw((string) $raw['twitter_image']);
+            }
+
+            // Map robots directives.
+            $robots = $this->map_third_party_robots($plugin, $raw['robots_raw'] ?? '');
+
+            $limited_fields = SEO_Analysis::apply_editor_text_limits(
+                array(
+                    'seo_title'          => sanitize_text_field((string) ($raw['seo_title'] ?? '')),
+                    'meta_description'   => sanitize_textarea_field((string) ($raw['seo_description'] ?? '')),
+                    'social_title'       => $social_title,
+                    'social_description' => $social_description,
+                )
+            );
+
+            $import_payload = array(
+                'focus_keyphrase'    => sanitize_text_field((string) ($raw['focus_keyphrase'] ?? '')),
+                'seo_title'          => $limited_fields['seo_title'],
+                'seo_description'    => $limited_fields['meta_description'],
+                'social_title'       => $limited_fields['social_title'],
+                'social_description' => $limited_fields['social_description'],
+                'social_image'       => $social_image,
+                'canonical_url'      => esc_url_raw((string) ($raw['canonical_url'] ?? '')),
+                'robots_directives'  => $robots,
+            );
+
+            $post_updated          = false;
+            $imported_frontend_field = false;
+
+            foreach ($field_map as $field_key => $meta_key) {
+                $value = isset($import_payload[$field_key]) ? (string) $import_payload[$field_key] : '';
+
+                if ('' === trim($value)) {
+                    continue;
+                }
+
+                $existing_value = trim((string) get_post_meta($post_id, $meta_key, true));
+
+                if ('' !== $existing_value) {
+                    $skipped_existing++;
+                    continue;
+                }
+
+                update_post_meta($post_id, $meta_key, $value);
+                $fields_imported++;
+                $post_updated = true;
+
+                if (in_array($field_key, $frontend_field_keys, true)) {
+                    $imported_frontend_field = true;
+                }
+            }
+
+            if ($imported_frontend_field && '1' !== (string) get_post_meta($post_id, AdminBase::FRONTEND_ENABLE_META_KEY, true)) {
+                update_post_meta($post_id, AdminBase::FRONTEND_ENABLE_META_KEY, '1');
+                $frontend_enabled++;
+            }
+
+            if ($post_updated) {
+                $posts_updated++;
+            }
+        }
+
+        return array(
+            'posts_detected'   => $posts_detected,
+            'posts_updated'    => $posts_updated,
+            'fields_imported'  => $fields_imported,
+            'skipped_existing' => $skipped_existing,
+            'frontend_enabled' => $frontend_enabled,
+        );
+    }
+
+    /**
+     * Find posts that have metadata from a third-party SEO plugin.
+     */
+    private function get_third_party_candidate_ids(string $plugin): array
+    {
+        global $wpdb;
+
+        $supported_post_types = get_post_types(array('public' => true), 'names');
+        unset($supported_post_types['attachment']);
+
+        if (empty($supported_post_types)) {
+            return array();
+        }
+
+        $meta_keys = self::third_party_meta_keys($plugin);
+        // Use only the core meta keys (skip twitter fallbacks) for candidate detection.
+        $detect_keys = array();
+        foreach ($meta_keys as $key => $meta_key) {
+            if (0 !== strpos($key, 'twitter_')) {
+                $detect_keys[] = $meta_key;
+            }
+        }
+
+        $meta_placeholders      = implode(', ', array_fill(0, count($detect_keys), '%s'));
+        $post_type_placeholders = implode(', ', array_fill(0, count($supported_post_types), '%s'));
+        $query_args             = array_merge($detect_keys, array_values($supported_post_types), array('auto-draft', 'trash', 'inherit'));
+
+        $sql = $wpdb->prepare(
+            "SELECT DISTINCT pm.post_id
+            FROM {$wpdb->postmeta} pm
+            INNER JOIN {$wpdb->posts} posts ON posts.ID = pm.post_id
+            WHERE pm.meta_key IN ({$meta_placeholders})
+                AND posts.post_type IN ({$post_type_placeholders})
+                AND posts.post_status NOT IN (%s, %s, %s)
+            ORDER BY pm.post_id ASC",
+            $query_args
+        );
+
+        $post_ids = $wpdb->get_col($sql);
+
+        return array_map('intval', is_array($post_ids) ? $post_ids : array());
+    }
+
+    /**
+     * Map third-party robots values to our canonical format.
+     */
+    private function map_third_party_robots(string $plugin, $raw_value): string
+    {
+        if ('rankmath' === $plugin) {
+            // RankMath stores robots as a serialized array: ['index', 'follow'] or ['noindex', 'nofollow'].
+            $robots_array = maybe_unserialize($raw_value);
+
+            if (! is_array($robots_array) || empty($robots_array)) {
+                return '';
+            }
+
+            $is_noindex  = in_array('noindex', $robots_array, true);
+            $is_nofollow = in_array('nofollow', $robots_array, true);
+
+            if ($is_noindex && $is_nofollow) {
+                return 'noindex,nofollow';
+            }
+            if ($is_noindex) {
+                return 'noindex,follow';
+            }
+            if ($is_nofollow) {
+                return 'index,nofollow';
+            }
+
+            return '';
+        }
+
+        // SEOPress: '1' means noindex is enabled.
+        if ('1' === (string) $raw_value) {
+            return 'noindex,follow';
+        }
+
+        return '';
+    }
+
+    // ------------------------------------------------------------------
     //  Cache Settings Export / Import (simple JSON — settings only)
     // ------------------------------------------------------------------
 

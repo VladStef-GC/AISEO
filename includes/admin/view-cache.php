@@ -488,9 +488,32 @@ $option_name = Settings::OPTION_NAME;
                     echo \AI_SEO_Captain\Admin::render_banner(
                         'is-info',
                         esc_html__('CDN Integration', 'ai-seo-captain'),
-                        esc_html__('Coming soon in a future update. Currently supports local file-based caching only.', 'ai-seo-captain')
+                        esc_html__('Rewrite static asset URLs (CSS, JS, images, fonts, videos) to serve them from a CDN origin. Leave the CDN URL empty to disable.', 'ai-seo-captain')
                     );
                     ?>
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row"><label for="cache_cdn_url"><?php esc_html_e('CDN URL', 'ai-seo-captain'); ?></label></th>
+                            <td>
+                                <input type="url" id="cache_cdn_url" name="ai_seo_captain_options[cache_cdn_url]" value="<?php echo esc_attr($options['cache_cdn_url'] ?? ''); ?>" class="regular-text" placeholder="https://cdn.example.com" />
+                                <p class="description"><?php esc_html_e('The base URL of your CDN (e.g. https://cdn.example.com). No trailing slash.', 'ai-seo-captain'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="cache_cdn_dirs"><?php esc_html_e('Included directories', 'ai-seo-captain'); ?></label></th>
+                            <td>
+                                <input type="text" id="cache_cdn_dirs" name="ai_seo_captain_options[cache_cdn_dirs]" value="<?php echo esc_attr($options['cache_cdn_dirs'] ?? 'wp-content,wp-includes'); ?>" class="regular-text" />
+                                <p class="description"><?php esc_html_e('Comma-separated directory paths to rewrite. Default: wp-content,wp-includes', 'ai-seo-captain'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="cache_cdn_exclude"><?php esc_html_e('Exclude URLs containing', 'ai-seo-captain'); ?></label></th>
+                            <td>
+                                <textarea id="cache_cdn_exclude" name="ai_seo_captain_options[cache_cdn_exclude]" rows="3" class="large-text code" placeholder=".php&#10;admin-ajax"><?php echo esc_textarea($options['cache_cdn_exclude'] ?? ''); ?></textarea>
+                                <p class="description"><?php esc_html_e('One pattern per line. URLs containing any of these strings will not be rewritten.', 'ai-seo-captain'); ?></p>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             </div>
 

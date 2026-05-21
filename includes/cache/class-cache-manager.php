@@ -32,6 +32,9 @@ class Cache_Manager
     /** @var Lazy_Loader */
     private $lazy_loader;
 
+    /** @var CDN|null */
+    private $cdn;
+
     /** @var array Cached options. */
     private $options;
 
@@ -112,6 +115,12 @@ class Cache_Manager
         // Lazy loading.
         if (! empty($opts['cache_lazy_load'])) {
             $this->lazy_loader->register_hooks();
+        }
+
+        // CDN URL rewriting.
+        if (! empty($opts['cache_cdn_url'])) {
+            $this->cdn = new CDN($opts);
+            $this->cdn->register_hooks();
         }
 
         // GZIP compression via output buffer (PHP-level fallback).

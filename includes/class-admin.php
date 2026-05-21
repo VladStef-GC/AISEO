@@ -34,6 +34,10 @@ class Admin
 
     private const YOAST_IMPORT_ACTION = 'ai_seo_captain_import_yoast_metadata';
 
+    private const RANKMATH_IMPORT_ACTION = 'ai_seo_captain_import_rankmath_metadata';
+
+    private const SEOPRESS_IMPORT_ACTION = 'ai_seo_captain_import_seopress_metadata';
+
     private const BULK_FRONTEND_ACTION = 'ai_seo_captain_bulk_frontend_rollout';
 
     private const AJAX_TOGGLE_AUDIT_SKIP_ACTION = 'ai_seo_captain_toggle_audit_skip';
@@ -182,6 +186,8 @@ class Admin
         add_action('admin_post_' . self::SUBMIT_INDEXNOW_ACTION, array($this->rollout, 'handle_submit_indexnow'));
         add_action('admin_post_' . self::BULK_FRONTEND_ACTION, array($this->rollout, 'handle_bulk_frontend_rollout'));
         add_action('admin_post_' . self::YOAST_IMPORT_ACTION, array($this->import_export, 'handle_import_yoast'));
+        add_action('admin_post_' . self::RANKMATH_IMPORT_ACTION, array($this->import_export, 'handle_import_rankmath'));
+        add_action('admin_post_' . self::SEOPRESS_IMPORT_ACTION, array($this->import_export, 'handle_import_seopress'));
         add_action('admin_post_ai_seo_captain_export', array($this->import_export, 'handle_export'));
 
         // --- Import v2 AJAX handlers ---
@@ -3079,7 +3085,9 @@ JS;
         $indexnow_key_url     = $this->indexnow_service ? $this->indexnow_service->get_key_url() : '';
         $settings_status      = isset($_GET['settings_status']) ? sanitize_key((string) wp_unslash($_GET['settings_status'])) : '';
         $settings_message     = isset($_GET['settings_message']) ? sanitize_text_field((string) wp_unslash($_GET['settings_message'])) : '';
-        $yoast_import_action  = self::YOAST_IMPORT_ACTION;
+        $yoast_import_action    = self::YOAST_IMPORT_ACTION;
+        $rankmath_import_action  = self::RANKMATH_IMPORT_ACTION;
+        $seopress_import_action  = self::SEOPRESS_IMPORT_ACTION;
 
         require __DIR__ . '/admin/view-settings.php';
     }
