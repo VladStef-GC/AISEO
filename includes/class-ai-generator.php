@@ -1049,7 +1049,11 @@ class AI_Generator
     private function extract_response_text($response, string $provider): string
     {
         if (is_wp_error($response)) {
-            throw new \RuntimeException($response->get_error_message());
+            // Log raw error for debugging, show safe message to user.
+            error_log('[SEO Captain] ' . ucfirst($provider) . ' API connection error: ' . $response->get_error_message());
+            throw new \RuntimeException(
+                'Could not connect to the AI service. Please check your internet connection and try again.'
+            );
         }
 
         $status_code = (int) wp_remote_retrieve_response_code($response);
@@ -1068,8 +1072,10 @@ class AI_Generator
         }
 
         if ($status_code < 200 || $status_code >= 300) {
-            $message = $this->extract_error_message($decoded);
-            throw new \RuntimeException($message ?: sprintf('The %s API returned HTTP %d.', ucfirst($provider), $status_code));
+            $raw_message = $this->extract_error_message($decoded);
+            // Log the raw API error for admin debugging.
+            error_log('[SEO Captain] ' . ucfirst($provider) . ' API error (HTTP ' . $status_code . '): ' . ($raw_message ?: $body));
+            throw new \RuntimeException($this->humanize_api_error($provider, $status_code, $raw_message));
         }
 
         if ('openai' === $provider) {
@@ -1079,10 +1085,53 @@ class AI_Generator
         }
 
         if (! is_string($content) || '' === trim($content)) {
-            throw new \RuntimeException('The AI provider returned an empty response.');
+            error_log('[SEO Captain] ' . ucfirst($provider) . ' API returned empty content. HTTP ' . $status_code . '. Body: ' . substr($body, 0, 500));
+            throw new \RuntimeException('The AI returned an empty response. Please try again or switch to a different model.');
         }
 
         return $content;
+    }
+
+    /**
+     * Convert raw API error details into a user-friendly message.
+     * Keeps technical details out of the UI while remaining actionable.
+     */
+    private function humanize_api_error(string $provider, int $status_code, string $raw_message): string
+    {
+        $lower = strtolower($raw_message);
+
+        // Authentication / key issues.
+        if (401 === $status_code || str_contains($lower, 'invalid_api_key') || str_contains($lower, 'api key not valid') || str_contains($lower, 'incorrect api key')) {
+            return 'Your ' . ucfirst($provider) . ' API key is invalid or expired. Please update it in SEO Captain Settings.';
+        }
+
+        // Quota / billing.
+        if (str_contains($lower, 'quota') || str_contains($lower, 'billing') || str_contains($lower, 'insufficient_quota')) {
+            return 'Your ' . ucfirst($provider) . ' API quota has been exceeded. Check your plan and billing at your provider dashboard.';
+        }
+
+        // Context length exceeded.
+        if (str_contains($lower, 'context length') || str_contains($lower, 'maximum context') || str_contains($lower, 'too many tokens') || str_contains($lower, 'content too large') || str_contains($lower, 'token limit')) {
+            return 'The page content exceeds this model\'s capacity. Try a model with a larger context window, or use a shorter page.';
+        }
+
+        // Model not found / deprecated.
+        if (404 === $status_code || str_contains($lower, 'model not found') || str_contains($lower, 'does not exist')) {
+            return 'The selected AI model is not available. It may have been deprecated. Please choose a different model in Settings.';
+        }
+
+        // Permission denied.
+        if (403 === $status_code || str_contains($lower, 'permission') || str_contains($lower, 'forbidden')) {
+            return 'Your API key does not have permission to use the selected model. Check your ' . ucfirst($provider) . ' account access.';
+        }
+
+        // Server-side errors.
+        if ($status_code >= 500) {
+            return 'The ' . ucfirst($provider) . ' API is temporarily unavailable (server error). Please try again in a moment.';
+        }
+
+        // Fallback — generic but safe.
+        return 'The AI service returned an error (HTTP ' . $status_code . '). Please try again or check your API configuration in Settings.';
     }
 
     /**
