@@ -1429,4 +1429,27 @@ class Admin_Ajax
             'duration' => $result['duration'],
         ));
     }
+
+    // ------------------------------------------------------------------
+    //  Internal Link Suggestions
+    // ------------------------------------------------------------------
+
+    public function handle_link_suggestions(): void
+    {
+        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
+
+        if (! $post_id) {
+            wp_send_json_error(array('message' => __('Missing post id.', 'ai-seo-captain')), 400);
+        }
+
+        check_ajax_referer('ai_seo_captain_nonce', 'nonce');
+
+        if (! current_user_can('edit_post', $post_id)) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
+        }
+
+        $suggestions = $this->content_indexer->get_link_suggestions($post_id, 8);
+
+        wp_send_json_success(array('suggestions' => $suggestions));
+    }
 }

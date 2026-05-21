@@ -196,6 +196,93 @@
     }
 
     // -----------------------------------------------------------------------
+    // Internal Link Suggestions component
+    // -----------------------------------------------------------------------
+    function LinkSuggestions(props) {
+        var postId = props.postId;
+
+        var _loading = useState(false);
+        var loading = _loading[0];
+        var setLoading = _loading[1];
+
+        var _items = useState(null);
+        var items = _items[0];
+        var setItems = _items[1];
+
+        var _copied = useState(null);
+        var copied = _copied[0];
+        var setCopied = _copied[1];
+
+        function loadSuggestions() {
+            if (!postId) { return; }
+            setLoading(true);
+            apiFetch(cfg.actions.linkSuggestions, { post_id: postId })
+                .then(function (res) {
+                    setItems(res.success && res.data && res.data.suggestions ? res.data.suggestions : []);
+                })
+                .catch(function () { setItems([]); })
+                .finally(function () { setLoading(false); });
+        }
+
+        // Load on first render when panel is opened
+        useEffect(function () {
+            loadSuggestions();
+        }, [postId]);
+
+        function handleCopy(url) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(url).then(function () {
+                    setCopied(url);
+                    setTimeout(function () { setCopied(null); }, 1500);
+                });
+            }
+        }
+
+        if (loading) {
+            return el('div', { className: 'aisc-link-suggestions-loading' },
+                el(Spinner),
+                ' ',
+                cfg.i18n.loadingLinks
+            );
+        }
+
+        if (!items || items.length === 0) {
+            return el('p', { className: 'aisc-link-suggestions-empty' }, cfg.i18n.noLinkSuggestions);
+        }
+
+        return el('div', { className: 'aisc-link-suggestions' },
+            el('p', { className: 'aisc-link-suggestions-desc' }, cfg.i18n.linkSuggestionsDesc),
+            el('ul', { className: 'aisc-link-list' },
+                items.map(function (item) {
+                    return el('li', { key: item.post_id, className: 'aisc-link-item' },
+                        el('div', { className: 'aisc-link-item-header' },
+                            el('a', {
+                                href: item.url,
+                                target: '_blank',
+                                rel: 'noopener noreferrer',
+                                className: 'aisc-link-item-title'
+                            }, item.title),
+                            el(Button, {
+                                variant: 'tertiary',
+                                isSmall: true,
+                                className: 'aisc-link-copy-btn',
+                                onClick: function () { handleCopy(item.url); }
+                            }, copied === item.url ? cfg.i18n.linkCopied : 'Copy')
+                        ),
+                        el('span', { className: 'aisc-link-item-reason' }, item.reason)
+                    );
+                })
+            ),
+            el(Button, {
+                variant: 'tertiary',
+                isSmall: true,
+                onClick: loadSuggestions,
+                className: 'aisc-link-refresh'
+            }, '\u21BB Refresh')
+        );
+    }
+
+    // -----------------------------------------------------------------------
     // Main sidebar component
     // -----------------------------------------------------------------------
     function AiSeoSidebar() {
@@ -473,6 +560,11 @@
                 // SEO Checks
                 el(PanelBody, { title: cfg.i18n.seoChecks, initialOpen: false },
                     el(ChecksList, { checks: checks })
+                ),
+
+                // Internal Links
+                el(PanelBody, { title: cfg.i18n.internalLinks, initialOpen: false },
+                    el(LinkSuggestions, { postId: postId })
                 ),
 
                 // AI Commander

@@ -742,6 +742,163 @@ class Content_Indexer
     }
 
     /**
+     * Suggest internal pages to link from the given post.
+     *
+     * Combines three signals:
+     *   1. Keyphrase-in-content — the candidate's focus keyphrase appears in our body text.
+     *   2. Keyword overlap — shared keywords between the two pages.
+     *   3. Hierarchy siblings — pages under the same parent.
+     *
+     * Already-linked pages are excluded by parsing existing internal <a> hrefs.
+     *
+     * @param int $post_id Post to find link targets for.
+     * @param int $limit   Maximum suggestions to return.
+     * @return array Scored suggestions sorted by relevance descending.
+     */
+    public function get_link_suggestions(int $post_id, int $limit = 8): array
+    {
+        global $wpdb;
+
+        $post = get_post($post_id);
+
+        if (! $post instanceof \WP_Post) {
+            return array();
+        }
+
+        $table    = $wpdb->prefix . 'ai_seo_captain_content_index';
+        $postmeta = $wpdb->postmeta;
+
+        // 1. Parse existing internal links from the post content.
+        $content      = Content_Helper::get_content($post);
+        $site_host    = (string) wp_parse_url(home_url(), PHP_URL_HOST);
+        $linked_urls  = $this->extract_internal_hrefs($content, $site_host);
+        $body_lower   = strtolower(preg_replace('/\s+/', ' ', wp_strip_all_tags(strip_shortcodes($content))) ?: '');
+
+        // 2. Get the current page's keyphrase and keywords.
+        $my_keyphrase = strtolower(trim((string) get_post_meta($post_id, Meta_Keys::FOCUS_KEYPHRASE, true)));
+        $my_keywords  = strtolower(trim((string) get_post_meta($post_id, Meta_Keys::KEYWORDS, true)));
+        $my_kw_list   = '' !== $my_keywords
+            ? array_filter(array_map('trim', explode(',', $my_keywords)))
+            : array();
+
+        // 3. Fetch published candidate pages with their keyphrase/keyword metadata.
+        $candidates = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT idx.object_id, idx.title, idx.permalink, idx.post_type, idx.parent_id,
+                        COALESCE(pm_kp.meta_value, '') AS focus_keyphrase,
+                        COALESCE(pm_kw.meta_value, '') AS keywords
+                 FROM {$table} idx
+                 LEFT JOIN {$postmeta} pm_kp ON pm_kp.post_id = idx.object_id AND pm_kp.meta_key = %s
+                 LEFT JOIN {$postmeta} pm_kw ON pm_kw.post_id = idx.object_id AND pm_kw.meta_key = %s
+                 WHERE idx.object_id != %d
+                   AND idx.status      = 'publish'
+                   AND idx.object_type = 'post'
+                 ORDER BY idx.title ASC
+                 LIMIT 200",
+                Meta_Keys::FOCUS_KEYPHRASE,
+                Meta_Keys::KEYWORDS,
+                $post_id
+            ),
+            ARRAY_A
+        );
+
+        if (! is_array($candidates)) {
+            return array();
+        }
+
+        // 4. Score each candidate.
+        $suggestions = array();
+
+        foreach ($candidates as $c) {
+            // Skip pages already linked from the current content.
+            $c_url_normalised = strtolower(rtrim((string) $c['permalink'], '/'));
+            if (in_array($c_url_normalised, $linked_urls, true)) {
+                continue;
+            }
+
+            $score   = 0;
+            $reasons = array();
+            $c_kp    = strtolower(trim((string) $c['focus_keyphrase']));
+            $c_kw    = strtolower(trim((string) $c['keywords']));
+
+            // Signal A: Their keyphrase appears in our body text.
+            if ('' !== $c_kp && false !== strpos($body_lower, $c_kp)) {
+                $score += 10;
+                $reasons[] = 'You mention "' . $c['focus_keyphrase'] . '"';
+            }
+
+            // Signal B: Shared keywords.
+            if (! empty($my_kw_list) && '' !== $c_kw) {
+                $c_kw_list = array_map('trim', explode(',', $c_kw));
+                $overlap   = array_intersect(
+                    array_map('strtolower', $my_kw_list),
+                    array_map('strtolower', $c_kw_list)
+                );
+
+                if (! empty($overlap)) {
+                    $score += min(count($overlap) * 2, 6);
+                    $overlap_preview = array_slice(array_values($overlap), 0, 3);
+                    $reasons[] = 'Keywords: ' . implode(', ', $overlap_preview);
+                }
+            }
+
+            // Signal C: Same parent (hierarchy sibling).
+            if ((int) $c['parent_id'] === (int) $post->post_parent && $post->post_parent > 0) {
+                $score += 3;
+                $reasons[] = 'Same section';
+            }
+
+            if ($score > 0) {
+                $suggestions[] = array(
+                    'post_id'   => (int) $c['object_id'],
+                    'title'     => (string) $c['title'],
+                    'url'       => (string) $c['permalink'],
+                    'post_type' => (string) $c['post_type'],
+                    'score'     => $score,
+                    'reason'    => implode(' · ', $reasons),
+                );
+            }
+        }
+
+        // 5. Sort by score (highest first) and cap.
+        usort($suggestions, static function ($a, $b) {
+            return $b['score'] - $a['score'];
+        });
+
+        return array_slice($suggestions, 0, $limit);
+    }
+
+    /**
+     * Extract normalised internal hrefs from HTML content.
+     *
+     * @return string[] Lowercased URLs without trailing slashes.
+     */
+    private function extract_internal_hrefs(string $html, string $site_host): array
+    {
+        $hrefs = array();
+
+        preg_match_all('/<a\s[^>]*href=("|\')(.*?)\1/is', $html, $matches);
+
+        foreach ($matches[2] as $href) {
+            $href = html_entity_decode(trim($href));
+
+            if ('' === $href || '#' === $href[0] || 0 === strpos($href, 'mailto:') || 0 === strpos($href, 'tel:')) {
+                continue;
+            }
+
+            $link_host = (string) wp_parse_url($href, PHP_URL_HOST);
+
+            if ('' !== $link_host && $link_host !== $site_host) {
+                continue; // External link.
+            }
+
+            $hrefs[] = strtolower(rtrim($href, '/'));
+        }
+
+        return $hrefs;
+    }
+
+    /**
      * Find pages that are topically related to the given post based on keyword overlap
      * in titles, keyphrases, and meta descriptions — regardless of hierarchy.
      *

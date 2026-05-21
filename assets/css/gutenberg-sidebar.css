@@ -217,3 +217,84 @@
     flex-direction: column;
     align-items: stretch;
 }
+
+/* -----------------------------------------------------------------------
+   Internal Link Suggestions
+   ----------------------------------------------------------------------- */
+.aisc-link-suggestions-loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 12px;
+    color: #646970;
+}
+
+.aisc-link-suggestions-empty {
+    font-size: 12px;
+    color: #646970;
+    margin: 0;
+}
+
+.aisc-link-suggestions-desc {
+    font-size: 12px;
+    color: #646970;
+    margin: 0 0 8px;
+}
+
+.aisc-link-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.aisc-link-item {
+    padding: 6px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.aisc-link-item:last-child {
+    border-bottom: none;
+}
+
+.aisc-link-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.aisc-link-item-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #0073aa;
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+
+.aisc-link-item-title:hover {
+    color: #005177;
+    text-decoration: underline;
+}
+
+.aisc-link-copy-btn {
+    flex-shrink: 0;
+    font-size: 11px !important;
+    min-height: unset !important;
+    padding: 2px 6px !important;
+}
+
+.aisc-link-item-reason {
+    display: block;
+    font-size: 11px;
+    color: #787c82;
+    margin-top: 2px;
+}
+
+.aisc-link-refresh {
+    margin-top: 8px;
+    font-size: 12px !important;
+}

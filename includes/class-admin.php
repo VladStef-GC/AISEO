@@ -53,6 +53,8 @@ class Admin
     private const AJAX_SITE_CHAT_ACTION = 'ai_seo_captain_site_chat';
     private const AJAX_SITE_CHAT_CLEAR_ACTION = 'ai_seo_captain_site_chat_clear';
 
+    private const AJAX_LINK_SUGGESTIONS_ACTION = 'ai_seo_captain_link_suggestions';
+
     public const CHAT_OBJECT_TYPE = 'post_chat';
 
     // Meta key constants — delegated to the central Meta_Keys registry.
@@ -211,6 +213,9 @@ class Admin
         // --- Site Chat AJAX handlers ---
         add_action('wp_ajax_' . self::AJAX_SITE_CHAT_ACTION, array($this->site_chat, 'handle_chat'));
         add_action('wp_ajax_' . self::AJAX_SITE_CHAT_CLEAR_ACTION, array($this->site_chat, 'handle_clear_chat'));
+
+        // --- Internal Link Suggestions ---
+        add_action('wp_ajax_' . self::AJAX_LINK_SUGGESTIONS_ACTION, array($this->ajax, 'handle_link_suggestions'));
 
         // --- Runs (Lists) AJAX handlers ---
         add_action('wp_ajax_ai_seo_captain_create_run', array($this->ajax, 'handle_create_run'));
@@ -773,9 +778,10 @@ class Admin
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce'   => wp_create_nonce('ai_seo_captain_nonce'),
                 'actions' => array(
-                    'save'     => self::AJAX_SAVE_ACTION,
-                    'generate' => self::AJAX_GENERATE_ACTION,
-                    'chat'     => self::AJAX_CHAT_ACTION,
+                    'save'            => self::AJAX_SAVE_ACTION,
+                    'generate'        => self::AJAX_GENERATE_ACTION,
+                    'chat'            => self::AJAX_CHAT_ACTION,
+                    'linkSuggestions' => self::AJAX_LINK_SUGGESTIONS_ACTION,
                 ),
                 'metaKeys' => array(
                     'title'       => self::META_TITLE_KEY,
@@ -818,6 +824,11 @@ class Admin
                     'noDescription'  => __('No meta description set', 'ai-seo-captain'),
                     'saveToContinue' => __('Save the post once to see SEO checks.', 'ai-seo-captain'),
                     'brandingNote'   => __('Branding suffix will be appended:', 'ai-seo-captain'),
+                    'internalLinks'  => __('Internal Links', 'ai-seo-captain'),
+                    'linkSuggestionsDesc' => __('Pages you could link to from this content.', 'ai-seo-captain'),
+                    'noLinkSuggestions'   => __('No link suggestions found. Add a focus keyphrase or keywords to get suggestions.', 'ai-seo-captain'),
+                    'loadingLinks'        => __('Finding link opportunities…', 'ai-seo-captain'),
+                    'linkCopied'          => __('Link copied!', 'ai-seo-captain'),
                     'checks' => array(
                         'titleLength' => __('SEO title is between 30–60 characters', 'ai-seo-captain'),
                         'descLength'  => __('Meta description is between 70–155 characters', 'ai-seo-captain'),
