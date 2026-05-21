@@ -738,6 +738,14 @@ class AI_Generator
         $page_content = $this->normalize_text(Content_Helper::get_content($post));
         $page_excerpt = $this->normalize_text((string) $post->post_excerpt);
 
+        // Cap body content to ~4 000 words (≈20 000 chars) for metadata generation.
+        // The AI only needs enough context to write a title + description; sending
+        // a full 10 000-word post wastes tokens without improving output quality.
+        $content_cap = 20000;
+        if (function_exists('mb_strlen') ? mb_strlen($page_content) > $content_cap : strlen($page_content) > $content_cap) {
+            $page_content = $this->truncate_text($page_content, $content_cap) . ' [content truncated for token efficiency]';
+        }
+
         $branding_suffix = $this->settings->get_branding_suffix();
         $branding_note = '';
         if ('' !== $branding_suffix) {
@@ -982,13 +990,13 @@ class AI_Generator
         }
 
         $request_args = array(
-                'headers' => array(
-                    'Authorization' => 'Bearer ' . trim($api_key),
-                    'Content-Type' => 'application/json',
-                ),
-                'timeout' => 60,
-                'body' => wp_json_encode($payload),
-            );
+            'headers' => array(
+                'Authorization' => 'Bearer ' . trim($api_key),
+                'Content-Type' => 'application/json',
+            ),
+            'timeout' => 60,
+            'body' => wp_json_encode($payload),
+        );
 
         return $this->call_with_retry(
             static function () use ($request_args) {
@@ -1044,37 +1052,37 @@ class AI_Generator
         );
 
         $request_args = array(
-                'headers' => array(
-                    'Content-Type' => 'application/json',
-                    'x-goog-api-key' => trim($api_key),
-                ),
-                'timeout' => 60,
-                'body' => wp_json_encode(
-                    array(
-                        'systemInstruction' => array(
+            'headers' => array(
+                'Content-Type' => 'application/json',
+                'x-goog-api-key' => trim($api_key),
+            ),
+            'timeout' => 60,
+            'body' => wp_json_encode(
+                array(
+                    'systemInstruction' => array(
+                        'parts' => array(
+                            array(
+                                'text' => $system_prompt,
+                            ),
+                        ),
+                    ),
+                    'contents' => array(
+                        array(
+                            'role' => 'user',
                             'parts' => array(
                                 array(
-                                    'text' => $system_prompt,
+                                    'text' => $user_prompt,
                                 ),
                             ),
                         ),
-                        'contents' => array(
-                            array(
-                                'role' => 'user',
-                                'parts' => array(
-                                    array(
-                                        'text' => $user_prompt,
-                                    ),
-                                ),
-                            ),
-                        ),
-                        'generationConfig' => array(
-                            'temperature' => $temperature,
-                            'responseMimeType' => 'application/json',
-                        ),
-                    )
-                ),
-            );
+                    ),
+                    'generationConfig' => array(
+                        'temperature' => $temperature,
+                        'responseMimeType' => 'application/json',
+                    ),
+                )
+            ),
+        );
 
         return $this->call_with_retry(
             static function () use ($url, $request_args) {

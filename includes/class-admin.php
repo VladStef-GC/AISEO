@@ -245,6 +245,86 @@ class Admin
         // Show pending AI content changes in page builder editors (BeTheme, Elementor, etc.)
         // by intercepting their meta reads so the editor loads the modified content.
         add_filter('get_post_metadata', array($this, 'filter_admin_pending_builder_meta'), 1, 4);
+
+        // --- SEO score column in the Posts/Pages list table ---
+        $public_types = get_post_types(array('public' => true), 'names');
+        unset($public_types['attachment']);
+        foreach ($public_types as $pt) {
+            add_filter("manage_{$pt}_posts_columns", array($this, 'add_seo_score_column'));
+            add_action("manage_{$pt}_posts_custom_column", array($this, 'render_seo_score_column'), 10, 2);
+        }
+    }
+
+    /**
+     * Add an SEO score column to post/page list tables.
+     */
+    public function add_seo_score_column(array $columns): array
+    {
+        // Insert before the 'date' column.
+        $new = array();
+        foreach ($columns as $key => $label) {
+            if ('date' === $key) {
+                $new['aisc_seo'] = __('SEO', 'ai-seo-captain');
+            }
+            $new[$key] = $label;
+        }
+
+        // Fallback if 'date' column was not found.
+        if (! isset($new['aisc_seo'])) {
+            $new['aisc_seo'] = __('SEO', 'ai-seo-captain');
+        }
+
+        return $new;
+    }
+
+    /**
+     * Render the SEO score dot + title status for each row.
+     */
+    public function render_seo_score_column(string $column, int $post_id): void
+    {
+        if ('aisc_seo' !== $column) {
+            return;
+        }
+
+        $audit = get_post_meta($post_id, '_ai_seo_captain_page_audit', true);
+        $title = get_post_meta($post_id, self::META_TITLE_KEY, true);
+        $desc  = get_post_meta($post_id, self::META_DESCRIPTION_KEY, true);
+
+        $score = is_array($audit) && isset($audit['score']) ? (int) $audit['score'] : -1;
+
+        // Determine colour based on score.
+        if ($score < 0) {
+            $colour = '#a7aaad'; // grey — not audited
+            $label  = __('Not audited', 'ai-seo-captain');
+            $icon   = '○';
+        } elseif ($score >= 75) {
+            $colour = '#00a32a'; // green
+            $label  = $score . '/100';
+            $icon   = '●';
+        } elseif ($score >= 45) {
+            $colour = '#dba617'; // yellow
+            $label  = $score . '/100';
+            $icon   = '●';
+        } else {
+            $colour = '#d63638'; // red
+            $label  = $score . '/100';
+            $icon   = '●';
+        }
+
+        // Build status indicators.
+        $has_title = '' !== trim((string) $title);
+        $has_desc  = '' !== trim((string) $desc);
+        $meta_status = ($has_title ? 'T' : '—') . ($has_desc ? 'D' : '—');
+
+        printf(
+            '<span class="aisc-col-score" style="color:%s" title="%s">%s</span>'
+            . '<span class="aisc-col-meta" title="%s">%s</span>',
+            esc_attr($colour),
+            esc_attr($label),
+            $icon,
+            esc_attr(__('T = Title, D = Description', 'ai-seo-captain')),
+            esc_html($meta_status)
+        );
     }
 
     /**
@@ -721,6 +801,8 @@ class Admin
                 ),
                 'brandingSuffix'       => $suffix,
                 'brandingSuffixLength' => $suffix_len,
+                'siteName'             => get_bloginfo('name'),
+                'siteIconUrl'          => get_site_icon_url(32, ''),
                 'i18n' => array(
                     'sidebarTitle'   => __('SEO Captain', 'ai-seo-captain'),
                     'seoScore'       => __('SEO Score', 'ai-seo-captain'),

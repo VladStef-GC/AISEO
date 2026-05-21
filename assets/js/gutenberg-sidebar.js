@@ -117,16 +117,62 @@
     }
 
     // -----------------------------------------------------------------------
-    // Snippet preview
+    // Snippet preview — realistic Google SERP result
     // -----------------------------------------------------------------------
     function SnippetPreview(props) {
         var title = props.title || '(' + cfg.i18n.noTitle + ')';
         var desc = props.description || '(' + cfg.i18n.noDescription + ')';
-        var url = props.url || window.location.host;
-        return el('div', { className: 'aisc-snippet-preview' },
-            el('div', { className: 'aisc-snippet-url' }, url),
-            el('div', { className: 'aisc-snippet-title' }, title),
-            el('div', { className: 'aisc-snippet-desc' }, desc)
+        var url = props.url || window.location.origin;
+
+        // Truncate title at Google's pixel-equivalent limit (~60 chars).
+        var displayTitle = title.length > 60 ? title.substring(0, 57) + '...' : title;
+
+        // Truncate description at ~155 chars.
+        var displayDesc = desc.length > 155 ? desc.substring(0, 152) + '...' : desc;
+
+        // Build breadcrumb-style URL (domain › path segments).
+        var urlParts;
+        try {
+            var parsed = new URL(url);
+            var pathSegments = parsed.pathname.replace(/\/$/, '').split('/').filter(Boolean);
+            urlParts = parsed.hostname + (pathSegments.length ? ' › ' + pathSegments.join(' › ') : '');
+        } catch (e) {
+            urlParts = url;
+        }
+
+        // Title colour: blue if within limit, red if over.
+        var titleColor = title.length <= 60 ? '#1a0dab' : '#d63638';
+
+        return el('div', { className: 'aisc-serp-preview' },
+            // Header row: favicon + site name + URL breadcrumbs
+            el('div', { className: 'aisc-serp-header' },
+                el('div', { className: 'aisc-serp-favicon' },
+                    el('img', {
+                        src: (cfg.siteIconUrl || '/favicon.ico'),
+                        width: 18,
+                        height: 18,
+                        alt: ''
+                    })
+                ),
+                el('div', { className: 'aisc-serp-site-info' },
+                    el('span', { className: 'aisc-serp-site-name' }, cfg.siteName || window.location.hostname),
+                    el('cite', { className: 'aisc-serp-breadcrumb' }, urlParts)
+                )
+            ),
+            // Title
+            el('h3', { className: 'aisc-serp-title', style: { color: titleColor } }, displayTitle),
+            // Description
+            el('div', { className: 'aisc-serp-desc' }, displayDesc),
+            // Character feedback
+            el('div', { className: 'aisc-serp-meta' },
+                el('span', { className: countClass(title.length, TITLE_MIN, TITLE_MAX) },
+                    'Title: ' + title.length + '/60'
+                ),
+                el('span', null, ' · '),
+                el('span', { className: countClass(desc.length, DESC_MIN, DESC_MAX) },
+                    'Desc: ' + desc.length + '/155'
+                )
+            )
         );
     }
 
@@ -361,7 +407,7 @@
                 ),
 
                 // Snippet Preview
-                el(PanelBody, { title: cfg.i18n.snippetPreview, initialOpen: false },
+                el(PanelBody, { title: cfg.i18n.snippetPreview, initialOpen: true },
                     el(SnippetPreview, {
                         title: fields.seoTitle,
                         description: fields.metaDesc,
