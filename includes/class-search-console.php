@@ -512,8 +512,7 @@ class Search_Console
                 $start_date,
                 $end_date,
                 $limit
-            ),
-            ARRAY_A
+            )
         );
 
         return is_array($rows) ? $rows : array();
@@ -554,6 +553,7 @@ class Search_Console
      * Check if local data exists for the given range.
      */
     public function has_data(string $start_date, string $end_date): bool
+
     {
         global $wpdb;
         $table = $this->table_name();
@@ -574,9 +574,95 @@ class Search_Console
     // ------------------------------------------------------------------
 
     /**
+     * Get performance data for a specific page URL.
+     *
+     * @return array{clicks: int, impressions: int, ctr: float, position: float, top_queries: array}|null
+     */
+    public function get_page_performance(string $page_url, int $days = 30): ?array
+    {
+        global $wpdb;
+        $table = $this->table_name();
+
+        $start = gmdate('Y-m-d', strtotime("-{$days} days"));
+        $end   = gmdate('Y-m-d', strtotime('-2 days'));
+
+        // Aggregate page-level metrics.
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT SUM(clicks) AS clicks,
+                        SUM(impressions) AS impressions,
+                        CASE WHEN SUM(impressions) > 0 THEN SUM(clicks) / SUM(impressions) ELSE 0 END AS ctr,
+                        AVG(position) AS position
+                 FROM {$table}
+                 WHERE dimension = 'page' AND dimension_value = %s AND fetch_date BETWEEN %s AND %s",
+                $page_url,
+                $start,
+                $end
+            )
+        );
+
+        if (! $row || null === $row->clicks) {
+            return null;
+        }
+
+        return array(
+            'clicks'      => (int) $row->clicks,
+            'impressions' => (int) $row->impressions,
+            'ctr'         => round((float) $row->ctr, 4),
+            'position'    => round((float) $row->position, 1),
+        );
+    }
+
+    /**
+     * Get a compact site-wide summary for display in the audit card.
+     *
+     * @return array{clicks: int, impressions: int, ctr: float, position: float, top_page_count: int, period_days: int}
+     */
+    public function get_site_summary(int $days = 30): array
+    {
+        global $wpdb;
+        $table = $this->table_name();
+
+        $start = gmdate('Y-m-d', strtotime("-{$days} days"));
+        $end   = gmdate('Y-m-d', strtotime('-2 days'));
+
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT SUM(clicks) AS clicks,
+                        SUM(impressions) AS impressions,
+                        CASE WHEN SUM(impressions) > 0 THEN SUM(clicks) / SUM(impressions) ELSE 0 END AS ctr,
+                        AVG(position) AS position
+                 FROM {$table}
+                 WHERE dimension = 'query' AND fetch_date BETWEEN %s AND %s",
+                $start,
+                $end
+            )
+        );
+
+        $page_count = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(DISTINCT dimension_value)
+                 FROM {$table}
+                 WHERE dimension = 'page' AND fetch_date BETWEEN %s AND %s",
+                $start,
+                $end
+            )
+        );
+
+        return array(
+            'clicks'         => (int) ($row->clicks ?? 0),
+            'impressions'    => (int) ($row->impressions ?? 0),
+            'ctr'            => round((float) ($row->ctr ?? 0), 4),
+            'position'       => round((float) ($row->position ?? 0), 1),
+            'top_page_count' => $page_count,
+            'period_days'    => $days,
+        );
+    }
+
+    /**
      * The OAuth redirect URI — always points back to our admin page.
      */
-    private function get_redirect_uri(): string
+    public function get_redirect_uri(): string
     {
         return admin_url('admin.php?page=ai-seo-captain-search-console&gsc_oauth_callback=1');
     }

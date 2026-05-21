@@ -4,6 +4,158 @@
  * @package AI_SEO_Captain
  */
 
+/* ---- Header ---- */
+.aiseo-gsc-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+}
+
+.aiseo-gsc-header h1 {
+    margin: 0;
+}
+
+.aiseo-gsc-logo {
+    width: 40px;
+    height: 40px;
+}
+
+.aiseo-gsc-subtitle {
+    color: #646970;
+    margin: 4px 0 0;
+}
+
+/* ---- Notice ---- */
+.aiseo-gsc-notice p .dashicons {
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+/* ---- Setup steps indicator ---- */
+.aiseo-gsc-setup {
+    max-width: 720px;
+}
+
+.aiseo-gsc-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 20px;
+}
+
+.aiseo-gsc-step {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: #8c8f94;
+    font-weight: 500;
+}
+
+.aiseo-gsc-step.active {
+    color: #2271b1;
+    font-weight: 600;
+}
+
+.aiseo-gsc-step.done {
+    color: #00a32a;
+}
+
+.aiseo-gsc-step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #dcdcde;
+    color: #50575e;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.aiseo-gsc-step.active .aiseo-gsc-step-num {
+    background: #2271b1;
+    color: #fff;
+}
+
+.aiseo-gsc-step.done .dashicons {
+    color: #00a32a;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.aiseo-gsc-step-divider {
+    flex: 1;
+    height: 2px;
+    background: #dcdcde;
+    margin: 0 4px;
+    min-width: 24px;
+}
+
+.aiseo-gsc-step-divider.done {
+    background: #00a32a;
+}
+
+/* ---- Cards ---- */
+.aiseo-gsc-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 6px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.aiseo-gsc-card-setup {
+    max-width: 720px;
+}
+
+.aiseo-gsc-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.aiseo-gsc-card-header h2 {
+    margin: 0;
+}
+
+.aiseo-gsc-instructions {
+    background: #f6f7f7;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+}
+
+.aiseo-gsc-instructions ol {
+    margin: 8px 0 0 20px;
+    padding: 0;
+}
+
+.aiseo-gsc-instructions li {
+    margin-bottom: 4px;
+}
+
+.aiseo-gsc-uri-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.aiseo-gsc-uri-row code {
+    background: #f0f0f1;
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 3px;
+    word-break: break-all;
+}
+
 /* ---- Toolbar ---- */
 .aiseo-gsc-toolbar {
     display: flex;
@@ -11,11 +163,18 @@
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 10px;
-    margin: 16px 0 12px;
-    padding: 10px 14px;
+    margin: 12px 0;
+    padding: 12px 16px;
     background: #fff;
     border: 1px solid #ccd0d4;
-    border-radius: 4px;
+    border-radius: 6px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.aiseo-gsc-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
 }
 
 .aiseo-gsc-toolbar-right {
@@ -27,10 +186,11 @@
 
 .aiseo-gsc-toolbar-right label {
     font-weight: 500;
+    font-size: 13px;
 }
 
 .aiseo-gsc-toolbar-right input[type="date"] {
-    width: 150px;
+    width: 142px;
 }
 
 .aiseo-gsc-status {
@@ -38,6 +198,7 @@
     align-items: center;
     gap: 4px;
     font-weight: 600;
+    font-size: 13px;
 }
 
 .aiseo-gsc-connected {
@@ -45,16 +206,8 @@
 }
 
 .aiseo-gsc-last-sync {
-    margin: 0 0 16px;
-}
-
-/* ---- Cards ---- */
-.aiseo-gsc-card {
-    background: #fff;
-    border: 1px solid #ccd0d4;
-    border-radius: 4px;
-    padding: 16px 20px;
-    margin-bottom: 16px;
+    color: #8c8f94;
+    font-size: 12px;
 }
 
 /* ---- Overview metrics ---- */
@@ -68,27 +221,47 @@
 .aiseo-gsc-metric {
     text-align: center;
     cursor: pointer;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
     position: relative;
+    padding: 20px 16px;
 }
 
-.aiseo-gsc-metric:hover,
+.aiseo-gsc-metric:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
 .aiseo-gsc-metric.active {
     border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+.aiseo-gsc-metric-icon {
+    margin-bottom: 6px;
+}
+
+.aiseo-gsc-metric-icon .dashicons {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: #8c8f94;
+}
+
+.aiseo-gsc-metric.active .aiseo-gsc-metric-icon .dashicons {
+    color: #2271b1;
 }
 
 .aiseo-gsc-metric-label {
     display: block;
-    font-size: 12px;
+    font-size: 11px;
     text-transform: uppercase;
     color: #646970;
     letter-spacing: 0.5px;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 }
 
 .aiseo-gsc-metric-value {
     display: block;
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 700;
     line-height: 1.2;
 }
@@ -97,6 +270,24 @@
 .aiseo-gsc-metric[data-metric="impressions"] .aiseo-gsc-metric-value { color: #5e35b1; }
 .aiseo-gsc-metric[data-metric="ctr"] .aiseo-gsc-metric-value { color: #00897b; }
 .aiseo-gsc-metric[data-metric="position"] .aiseo-gsc-metric-value { color: #e8710a; }
+
+/* ---- Empty state ---- */
+.aiseo-gsc-empty-state {
+    padding: 40px 20px;
+}
+
+/* ---- Badge ---- */
+.aiseo-gsc-badge {
+    display: inline-block;
+    background: #f0f0f1;
+    color: #50575e;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 1px 8px;
+    border-radius: 10px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
 
 /* ---- Chart ---- */
 .aiseo-gsc-chart-wrap {
@@ -121,6 +312,8 @@
 
 .aiseo-gsc-table-card h3 {
     margin-top: 0;
+    display: flex;
+    align-items: center;
 }
 
 .aiseo-gsc-table-card .widefat th.num,
@@ -143,10 +336,17 @@
 }
 
 /* ---- Copy button ---- */
+.aiseo-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
 .aiseo-copy-btn .dashicons {
     font-size: 16px;
     width: 16px;
     height: 16px;
+    vertical-align: middle;
 }
 
 /* ---- Responsive ---- */
@@ -162,5 +362,8 @@
 @media (max-width: 600px) {
     .aiseo-gsc-overview {
         grid-template-columns: 1fr;
+    }
+    .aiseo-gsc-steps {
+        flex-wrap: wrap;
     }
 }

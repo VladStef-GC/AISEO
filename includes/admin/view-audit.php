@@ -75,6 +75,22 @@ defined('ABSPATH') || exit;
             <p style="font-size:28px;margin:0;"><?php echo esc_html((string) $readiness['frontend_coverage']); ?>%</p>
             <p style="margin:8px 0 0;"><?php echo esc_html(sprintf(__('%d pages are ready to render SEO Captain metadata.', 'ai-seo-captain'), $summary['frontend_ready_items'])); ?></p>
         </div>
+        <?php if ($gsc_summary && $gsc_summary['impressions'] > 0) : ?>
+        <div style="background:#fff;border:1px solid #dcdcde;padding:16px;">
+            <h2 style="margin-top:0;">
+                <span class="dashicons dashicons-chart-area" style="color:#4285f4;vertical-align:middle;"></span>
+                <?php esc_html_e('Search Console (30d)', 'ai-seo-captain'); ?>
+            </h2>
+            <p style="font-size:28px;margin:0;color:#4285f4;"><?php echo esc_html(number_format_i18n($gsc_summary['clicks'])); ?> <small style="font-size:14px;color:#646970;"><?php esc_html_e('clicks', 'ai-seo-captain'); ?></small></p>
+            <p style="margin:8px 0 0;">
+                <?php echo esc_html(number_format_i18n($gsc_summary['impressions'])); ?> <?php esc_html_e('impressions', 'ai-seo-captain'); ?>
+                &middot; <?php esc_html_e('Avg. pos:', 'ai-seo-captain'); ?> <?php echo esc_html(number_format($gsc_summary['position'], 1)); ?>
+            </p>
+            <p style="margin:4px 0 0;">
+                <a href="<?php echo esc_url(admin_url('admin.php?page=ai-seo-captain-search-console')); ?>"><?php esc_html_e('View full report →', 'ai-seo-captain'); ?></a>
+            </p>
+        </div>
+        <?php endif; ?>
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:16px;max-width:1120px;margin-top:24px;">

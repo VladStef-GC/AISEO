@@ -225,6 +225,8 @@ class Admin
         // --- Google Search Console AJAX handlers ---
         add_action('wp_ajax_ai_seo_captain_gsc_sync', array($this, 'ajax_gsc_sync'));
         add_action('wp_ajax_ai_seo_captain_gsc_data', array($this, 'ajax_gsc_data'));
+        add_action('wp_ajax_ai_seo_captain_gsc_test', array($this, 'ajax_gsc_test'));
+        add_action('wp_ajax_ai_seo_captain_gsc_page', array($this, 'ajax_gsc_page_data'));
 
         // --- Runs (Lists) AJAX handlers ---
         add_action('wp_ajax_ai_seo_captain_create_run', array($this->ajax, 'handle_create_run'));
@@ -801,6 +803,7 @@ class Admin
                     'generate'        => self::AJAX_GENERATE_ACTION,
                     'chat'            => self::AJAX_CHAT_ACTION,
                     'linkSuggestions' => self::AJAX_LINK_SUGGESTIONS_ACTION,
+                    'gscPageData'     => 'ai_seo_captain_gsc_page',
                 ),
                 'metaKeys' => array(
                     'title'       => self::META_TITLE_KEY,
@@ -848,6 +851,9 @@ class Admin
                     'noLinkSuggestions'   => __('No link suggestions found. Add a focus keyphrase or keywords to get suggestions.', 'ai-seo-captain'),
                     'loadingLinks'        => __('Finding link opportunities…', 'ai-seo-captain'),
                     'linkCopied'          => __('Link copied!', 'ai-seo-captain'),
+                    'searchPerformance'   => __('Search Performance', 'ai-seo-captain'),
+                    'gscNotConnected'     => __('Google Search Console not connected. Set it up in SEO Captain → Search Console.', 'ai-seo-captain'),
+                    'gscNoData'           => __('No search data yet for this page. Sync data from the Search Console page.', 'ai-seo-captain'),
                     'checks' => array(
                         'titleLength' => __('SEO title is between 30–60 characters', 'ai-seo-captain'),
                         'descLength'  => __('Meta description is between 70–155 characters', 'ai-seo-captain'),
@@ -2996,6 +3002,68 @@ JS;
         ));
     }
 
+    /**
+     * AJAX: test the GSC connection by listing sites.
+     */
+    public function ajax_gsc_test(): void
+    {
+        check_ajax_referer('ai_seo_captain_nonce', '_nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
+        }
+
+        if (! $this->search_console || ! $this->search_console->is_connected()) {
+            wp_send_json_error(array('message' => __('Not connected to Google Search Console.', 'ai-seo-captain')));
+        }
+
+        $sites = $this->search_console->list_sites();
+
+        if (is_wp_error($sites)) {
+            wp_send_json_error(array('message' => $sites->get_error_message()));
+        }
+
+        wp_send_json_success(array(
+            'message'    => sprintf(__('Connection OK! Found %d site(s) in your account.', 'ai-seo-captain'), count($sites)),
+            'site_count' => count($sites),
+        ));
+    }
+
+    /**
+     * AJAX: get GSC page-level performance for the editor sidebar.
+     */
+    public function ajax_gsc_page_data(): void
+    {
+        // Accept either the editor nonce or the admin nonce.
+        if (! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? $_POST['_nonce'] ?? '')), 'ai_seo_captain_save_editor_meta')
+            && ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_nonce'] ?? '')), 'ai_seo_captain_nonce')
+        ) {
+            wp_send_json_error(array('message' => __('Security check failed.', 'ai-seo-captain')), 403);
+        }
+
+        if (! current_user_can('edit_posts')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
+        }
+
+        $permalink = isset($_POST['permalink']) ? esc_url_raw(wp_unslash($_POST['permalink'])) : '';
+
+        if ('' === $permalink) {
+            wp_send_json_error(array('message' => __('No permalink provided.', 'ai-seo-captain')));
+        }
+
+        if (! $this->search_console || ! $this->search_console->is_connected()) {
+            wp_send_json_success(array('connected' => false));
+        }
+
+        $data = $this->search_console->get_page_performance($permalink);
+
+        wp_send_json_success(array(
+            'connected' => true,
+            'has_data'  => null !== $data,
+            'metrics'   => $data,
+        ));
+    }
+
     public function render_settings_page(): void
     {
         if (! current_user_can('manage_options')) {
@@ -3039,6 +3107,12 @@ JS;
         $generate_site_audit_action = self::GENERATE_SITE_AUDIT_ACTION;
         $submit_indexnow_action     = self::SUBMIT_INDEXNOW_ACTION;
         $bulk_frontend_action       = self::BULK_FRONTEND_ACTION;
+
+        // GSC summary for audit card (graceful if not connected).
+        $gsc_summary = null;
+        if ($this->search_console && $this->search_console->is_connected()) {
+            $gsc_summary = $this->search_console->get_site_summary(30);
+        }
 
         require __DIR__ . '/admin/view-audit.php';
     }

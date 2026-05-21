@@ -312,6 +312,89 @@
     }
 
     // -----------------------------------------------------------------------
+    // Search Performance component (page-level GSC data)
+    // -----------------------------------------------------------------------
+    function SearchPerformance(props) {
+        var postId = props.postId;
+        var permalink = props.permalink;
+
+        var _data = useState(null);
+        var data = _data[0];
+        var setData = _data[1];
+
+        var _loading = useState(false);
+        var loading = _loading[0];
+        var setLoading = _loading[1];
+
+        var _error = useState(null);
+        var error = _error[0];
+        var setError = _error[1];
+
+        function loadData() {
+            if (!permalink) return;
+            setLoading(true);
+            setError(null);
+            apiFetch('ai_seo_captain_gsc_page', { post_id: postId, permalink: permalink })
+                .then(function (res) {
+                    if (res.success && res.data) {
+                        setData(res.data);
+                    } else {
+                        setData(null);
+                    }
+                })
+                .catch(function () { setError('Failed to load search data.'); })
+                .finally(function () { setLoading(false); });
+        }
+
+        useEffect(function () {
+            if (permalink) loadData();
+        }, [permalink]);
+
+        if (loading) {
+            return el(Spinner);
+        }
+
+        if (error) {
+            return el('p', { style: { color: '#d63638' } }, error);
+        }
+
+        if (!data || !data.connected) {
+            return el('p', { className: 'description' },
+                cfg.i18n.gscNotConnected || 'Google Search Console not connected. Set it up in SEO Captain \u2192 Search Console.'
+            );
+        }
+
+        if (!data.has_data || !data.metrics) {
+            return el('p', { className: 'description' },
+                cfg.i18n.gscNoData || 'No search data available for this page yet. Sync data from the Search Console page.'
+            );
+        }
+
+        var m = data.metrics;
+        return el('div', { className: 'aisc-gsc-metrics' },
+            el('div', { className: 'aisc-gsc-grid' },
+                el('div', { className: 'aisc-gsc-item aisc-gsc-clicks' },
+                    el('span', { className: 'aisc-gsc-num' }, String(m.clicks)),
+                    el('span', { className: 'aisc-gsc-lbl' }, 'Clicks')
+                ),
+                el('div', { className: 'aisc-gsc-item aisc-gsc-impressions' },
+                    el('span', { className: 'aisc-gsc-num' }, String(m.impressions)),
+                    el('span', { className: 'aisc-gsc-lbl' }, 'Impressions')
+                ),
+                el('div', { className: 'aisc-gsc-item aisc-gsc-ctr' },
+                    el('span', { className: 'aisc-gsc-num' }, (m.ctr * 100).toFixed(1) + '%'),
+                    el('span', { className: 'aisc-gsc-lbl' }, 'CTR')
+                ),
+                el('div', { className: 'aisc-gsc-item aisc-gsc-position' },
+                    el('span', { className: 'aisc-gsc-num' }, Number(m.position).toFixed(1)),
+                    el('span', { className: 'aisc-gsc-lbl' }, 'Avg. Position')
+                )
+            ),
+            el('p', { className: 'description', style: { marginTop: '8px', fontSize: '11px' } }, 'Last 30 days')
+        );
+    }
+
+    // -----------------------------------------------------------------------
     // Main sidebar component
     // -----------------------------------------------------------------------
     function AiSeoSidebar() {
@@ -589,6 +672,11 @@
                 // SEO Checks
                 el(PanelBody, { title: cfg.i18n.seoChecks, initialOpen: false },
                     el(ChecksList, { checks: checks })
+                ),
+
+                // Search Performance (GSC)
+                el(PanelBody, { title: cfg.i18n.searchPerformance || 'Search Performance', initialOpen: false },
+                    el(SearchPerformance, { postId: postId, permalink: permalink })
                 ),
 
                 // Internal Links

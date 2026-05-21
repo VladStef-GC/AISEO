@@ -9,7 +9,7 @@
 (function () {
     'use strict';
 
-    var cfg   = window.aiSeoCaptainGsc || {};
+    var cfg = window.aiSeoCaptainGsc || {};
     var nonce = cfg.nonce || '';
     var trend = cfg.trendData || [];
 
@@ -48,20 +48,20 @@
         if (!canvas || !data || !data.length) return;
 
         var ctx = canvas.getContext('2d');
-        var W   = canvas.parentElement.clientWidth - 40;
-        var H   = 240;
-        canvas.width  = W * (window.devicePixelRatio || 1);
+        var W = canvas.parentElement.clientWidth - 40;
+        var H = 240;
+        canvas.width = W * (window.devicePixelRatio || 1);
         canvas.height = H * (window.devicePixelRatio || 1);
-        canvas.style.width  = W + 'px';
+        canvas.style.width = W + 'px';
         canvas.style.height = H + 'px';
         ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
 
         var pad = { top: 20, right: 60, bottom: 40, left: 60 };
-        var cw  = W - pad.left - pad.right;
-        var ch  = H - pad.top - pad.bottom;
+        var cw = W - pad.left - pad.right;
+        var ch = H - pad.top - pad.bottom;
 
         var series = {
-            clicks:      { color: '#4285f4', values: data.map(function (d) { return +d.clicks; }) },
+            clicks: { color: '#4285f4', values: data.map(function (d) { return +d.clicks; }) },
             impressions: { color: '#5e35b1', values: data.map(function (d) { return +d.impressions; }) }
         };
 
@@ -70,13 +70,13 @@
         // Draw each active series.
         Object.keys(series).forEach(function (key) {
             if (!activeMetrics[key]) return;
-            var s   = series[key];
+            var s = series[key];
             var max = Math.max.apply(null, s.values) || 1;
             var step = cw / Math.max(s.values.length - 1, 1);
 
             ctx.beginPath();
             ctx.strokeStyle = s.color;
-            ctx.lineWidth   = 2;
+            ctx.lineWidth = 2;
             s.values.forEach(function (v, i) {
                 var x = pad.left + i * step;
                 var y = pad.top + ch - (v / max) * ch;
@@ -123,10 +123,26 @@
         });
     }
 
+    /* ---- AJAX Notice Banner ---- */
+    function showNotice(message, type) {
+        var wrap = $('#gsc-ajax-notice');
+        var msg  = $('#gsc-ajax-notice-msg');
+        if (!wrap || !msg) return;
+        wrap.className = 'notice notice-' + (type || 'info') + ' is-dismissible aiseo-gsc-notice';
+        msg.textContent = message;
+        wrap.style.display = '';
+        // Auto-hide success after 6s.
+        if (type === 'success') {
+            setTimeout(function () { wrap.style.display = 'none'; }, 6000);
+        }
+    }
+
     /* ---- Refresh button (date range) ---- */
     function initRefresh() {
         var btn = $('#gsc-refresh-btn');
         if (!btn) return;
+
+        var origHTML = btn.innerHTML;
 
         btn.addEventListener('click', function () {
             var start = $('#gsc-start-date').value;
@@ -134,16 +150,14 @@
             if (!start || !end) return;
 
             btn.disabled = true;
-            btn.textContent = btn.getAttribute('data-loading') || 'Loading…';
-            document.body.classList.add('aiseo-gsc-loading');
+            btn.innerHTML = '<span class="dashicons dashicons-image-rotate spin" style="vertical-align:middle;"></span> Loading\u2026';
 
             post('ai_seo_captain_gsc_data', { start_date: start, end_date: end }, function (res) {
                 btn.disabled = false;
-                btn.textContent = btn.getAttribute('data-label') || 'Refresh';
-                document.body.classList.remove('aiseo-gsc-loading');
+                btn.innerHTML = origHTML;
 
                 if (!res.success) {
-                    alert(res.data && res.data.message ? res.data.message : 'Request failed.');
+                    showNotice(res.data && res.data.message ? res.data.message : 'Request failed.', 'error');
                     return;
                 }
 
@@ -153,12 +167,9 @@
                 updateTable('pages', d.top_pages);
                 trend = d.trend;
                 drawChart(trend);
+                showNotice('Dashboard updated for ' + start + ' to ' + end + '.', 'success');
             });
         });
-
-        // Store original label.
-        btn.setAttribute('data-label', btn.textContent.trim());
-        btn.setAttribute('data-loading', 'Loading…');
     }
 
     /* ---- Sync button ---- */
@@ -166,22 +177,45 @@
         var btn = $('#gsc-sync-btn');
         if (!btn) return;
 
+        var origHTML = btn.innerHTML;
+
         btn.addEventListener('click', function () {
-            if (!confirm('Pull fresh data from Google Search Console?')) return;
             btn.disabled = true;
-            var origHTML = btn.innerHTML;
-            btn.innerHTML = '<span class="dashicons dashicons-update spin" style="vertical-align:middle;"></span> Syncing…';
+            btn.innerHTML = '<span class="dashicons dashicons-update spin" style="vertical-align:middle;"></span> Syncing\u2026';
 
             post('ai_seo_captain_gsc_sync', { days: 28 }, function (res) {
                 btn.disabled = false;
                 btn.innerHTML = origHTML;
                 if (res.success) {
-                    alert(res.data.message);
+                    showNotice(res.data.message, 'success');
                     // Refresh the dashboard data.
                     var refreshBtn = $('#gsc-refresh-btn');
                     if (refreshBtn) refreshBtn.click();
                 } else {
-                    alert(res.data && res.data.message ? res.data.message : 'Sync failed.');
+                    showNotice(res.data && res.data.message ? res.data.message : 'Sync failed.', 'error');
+                }
+            });
+        });
+    }
+
+    /* ---- Test Connection button ---- */
+    function initTest() {
+        var btn = $('#gsc-test-btn');
+        if (!btn) return;
+
+        var origHTML = btn.innerHTML;
+
+        btn.addEventListener('click', function () {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="dashicons dashicons-admin-plugins spin" style="vertical-align:middle;"></span> Testing\u2026';
+
+            post('ai_seo_captain_gsc_test', {}, function (res) {
+                btn.disabled = false;
+                btn.innerHTML = origHTML;
+                if (res.success) {
+                    showNotice('\u2705 ' + res.data.message, 'success');
+                } else {
+                    showNotice('\u274C ' + (res.data && res.data.message ? res.data.message : 'Connection test failed.'), 'error');
                 }
             });
         });
@@ -191,10 +225,10 @@
     function updateOverview(ov) {
         if (!ov) return;
         var el;
-        el = $('#gsc-val-clicks');      if (el) el.textContent = fmtNum(ov.clicks);
+        el = $('#gsc-val-clicks'); if (el) el.textContent = fmtNum(ov.clicks);
         el = $('#gsc-val-impressions'); if (el) el.textContent = fmtNum(ov.impressions);
-        el = $('#gsc-val-ctr');         if (el) el.textContent = fmtPct(ov.ctr);
-        el = $('#gsc-val-position');    if (el) el.textContent = fmtPos(ov.position);
+        el = $('#gsc-val-ctr'); if (el) el.textContent = fmtPct(ov.ctr);
+        el = $('#gsc-val-position'); if (el) el.textContent = fmtPos(ov.position);
     }
 
     function updateTable(type, rows) {
@@ -209,7 +243,7 @@
         tbody.innerHTML = rows.map(function (r) {
             var label = r.dimension_value;
             if (type === 'pages') {
-                try { label = new URL(r.dimension_value).pathname || r.dimension_value; } catch (e) {}
+                try { label = new URL(r.dimension_value).pathname || r.dimension_value; } catch (e) { }
             }
             return '<tr>'
                 + '<td title="' + esc(r.dimension_value) + '">' + esc(label) + '</td>'
@@ -262,6 +296,7 @@
         initMetricCards();
         initRefresh();
         initSync();
+        initTest();
         initCopy();
         drawChart(trend);
         window.addEventListener('resize', function () { drawChart(trend); });
