@@ -76,12 +76,16 @@ defined('ABSPATH') || exit;
             <p style="font-size:28px;margin:0;"><?php echo esc_html((string) $readiness['frontend_coverage']); ?>%</p>
             <p style="margin:8px 0 0;"><?php echo esc_html(sprintf(__('%d pages are ready to render SEO Captain metadata.', 'ai-seo-captain'), $summary['frontend_ready_items'])); ?></p>
         </div>
-        <?php if ($gsc_summary && $gsc_summary['impressions'] > 0) : ?>
-            <div style="background:#fff;border:1px solid #dcdcde;padding:16px;">
-                <h2 style="margin-top:0;">
-                    <span class="dashicons dashicons-chart-area" style="color:#4285f4;vertical-align:middle;"></span>
-                    <?php esc_html_e('Search Console (30d)', 'ai-seo-captain'); ?>
-                </h2>
+        <?php
+        $gsc_has_data = $gsc_summary && $gsc_summary['impressions'] > 0;
+        $gsc_grey     = ! $gsc_has_data ? 'opacity:.45;pointer-events:none;' : '';
+        ?>
+        <div style="background:#fff;border:1px solid #dcdcde;padding:16px;<?php echo $gsc_grey; ?>">
+            <h2 style="margin-top:0;">
+                <span class="dashicons dashicons-chart-area" style="color:#4285f4;vertical-align:middle;"></span>
+                <?php esc_html_e('Search Console (30d)', 'ai-seo-captain'); ?>
+            </h2>
+            <?php if ($gsc_has_data) : ?>
                 <p style="font-size:28px;margin:0;color:#4285f4;"><?php echo esc_html(number_format_i18n($gsc_summary['clicks'])); ?> <small style="font-size:14px;color:#646970;"><?php esc_html_e('clicks', 'ai-seo-captain'); ?></small></p>
                 <p style="margin:8px 0 0;">
                     <?php echo esc_html(number_format_i18n($gsc_summary['impressions'])); ?> <?php esc_html_e('impressions', 'ai-seo-captain'); ?>
@@ -90,33 +94,37 @@ defined('ABSPATH') || exit;
                 <p style="margin:4px 0 0;">
                     <a href="<?php echo esc_url(admin_url('admin.php?page=ai-seo-captain-search-console')); ?>"><?php esc_html_e('View full report →', 'ai-seo-captain'); ?></a>
                 </p>
-            </div>
-        <?php endif; ?>
+            <?php else : ?>
+                <p style="font-size:28px;margin:0;color:#c3c4c7;">0</p>
+                <p style="margin:8px 0 0;color:#a7aaad;">
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=ai-seo-captain-search-console')); ?>"><?php esc_html_e('Connect Google Search Console →', 'ai-seo-captain'); ?></a>
+                </p>
+            <?php endif; ?>
+        </div>
     </div>
 
-    <?php if ($gsc_summary && $gsc_summary['impressions'] > 0) : ?>
     <!-- ===== Search Console Performance Section ===== -->
-    <div style="display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:16px;max-width:1120px;margin-top:24px;">
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:16px;max-width:1120px;margin-top:24px;<?php echo $gsc_grey; ?>">
         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
-            <p style="font-size:28px;margin:0;font-weight:700;color:#4285f4;"><?php echo esc_html(number_format_i18n($gsc_summary['clicks'])); ?></p>
+            <p style="font-size:28px;margin:0;font-weight:700;color:<?php echo $gsc_has_data ? '#4285f4' : '#c3c4c7'; ?>;"><?php echo $gsc_has_data ? esc_html(number_format_i18n($gsc_summary['clicks'])) : '—'; ?></p>
             <p style="margin:4px 0 0;color:#646970;text-transform:uppercase;font-size:11px;letter-spacing:.5px;"><?php esc_html_e('Clicks', 'ai-seo-captain'); ?></p>
         </div>
         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
-            <p style="font-size:28px;margin:0;font-weight:700;color:#5e35b1;"><?php echo esc_html(number_format_i18n($gsc_summary['impressions'])); ?></p>
+            <p style="font-size:28px;margin:0;font-weight:700;color:<?php echo $gsc_has_data ? '#5e35b1' : '#c3c4c7'; ?>;"><?php echo $gsc_has_data ? esc_html(number_format_i18n($gsc_summary['impressions'])) : '—'; ?></p>
             <p style="margin:4px 0 0;color:#646970;text-transform:uppercase;font-size:11px;letter-spacing:.5px;"><?php esc_html_e('Impressions', 'ai-seo-captain'); ?></p>
         </div>
         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
-            <p style="font-size:28px;margin:0;font-weight:700;color:#00897b;"><?php echo esc_html(number_format($gsc_summary['ctr'] * 100, 1)); ?>%</p>
+            <p style="font-size:28px;margin:0;font-weight:700;color:<?php echo $gsc_has_data ? '#00897b' : '#c3c4c7'; ?>;"><?php echo $gsc_has_data ? esc_html(number_format($gsc_summary['ctr'] * 100, 1)) . '%' : '—'; ?></p>
             <p style="margin:4px 0 0;color:#646970;text-transform:uppercase;font-size:11px;letter-spacing:.5px;"><?php esc_html_e('CTR', 'ai-seo-captain'); ?></p>
         </div>
         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
-            <p style="font-size:28px;margin:0;font-weight:700;color:#e8710a;"><?php echo esc_html(number_format($gsc_summary['position'], 1)); ?></p>
+            <p style="font-size:28px;margin:0;font-weight:700;color:<?php echo $gsc_has_data ? '#e8710a' : '#c3c4c7'; ?>;"><?php echo $gsc_has_data ? esc_html(number_format($gsc_summary['position'], 1)) : '—'; ?></p>
             <p style="margin:4px 0 0;color:#646970;text-transform:uppercase;font-size:11px;letter-spacing:.5px;"><?php esc_html_e('Avg. Position', 'ai-seo-captain'); ?></p>
         </div>
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(2,minmax(320px,1fr));gap:16px;max-width:1120px;margin-top:16px;">
-        <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
+        <div style="background:#fff;border:1px solid #dcdcde;padding:20px;<?php echo $gsc_grey; ?>">
             <h2 style="margin-top:0;">
                 <span class="dashicons dashicons-search" style="color:#4285f4;vertical-align:middle;margin-right:4px;"></span>
                 <?php esc_html_e('Top Queries (30 days)', 'ai-seo-captain'); ?>
@@ -124,7 +132,9 @@ defined('ABSPATH') || exit;
                     <span style="background:#4285f4;color:#fff;font-size:11px;padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;"><?php echo count($gsc_top_queries); ?></span>
                 <?php endif; ?>
             </h2>
-            <?php if (empty($gsc_top_queries)) : ?>
+            <?php if (! $gsc_has_data) : ?>
+                <p style="color:#a7aaad;"><?php esc_html_e('Connect Google Search Console to see which search queries bring visitors to your site.', 'ai-seo-captain'); ?></p>
+            <?php elseif (empty($gsc_top_queries)) : ?>
                 <p style="color:#646970;"><?php esc_html_e('No query data available yet. Sync data from the Search Console page.', 'ai-seo-captain'); ?></p>
             <?php else : ?>
                 <table class="widefat striped" style="margin-top:8px;">
@@ -152,7 +162,7 @@ defined('ABSPATH') || exit;
             <?php endif; ?>
         </div>
 
-        <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
+        <div style="background:#fff;border:1px solid #dcdcde;padding:20px;<?php echo $gsc_grey; ?>">
             <h2 style="margin-top:0;">
                 <span class="dashicons dashicons-admin-page" style="color:#5e35b1;vertical-align:middle;margin-right:4px;"></span>
                 <?php esc_html_e('Top Pages (30 days)', 'ai-seo-captain'); ?>
@@ -160,7 +170,9 @@ defined('ABSPATH') || exit;
                     <span style="background:#5e35b1;color:#fff;font-size:11px;padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;"><?php echo count($gsc_top_pages); ?></span>
                 <?php endif; ?>
             </h2>
-            <?php if (empty($gsc_top_pages)) : ?>
+            <?php if (! $gsc_has_data) : ?>
+                <p style="color:#a7aaad;"><?php esc_html_e('Connect Google Search Console to see which pages get the most traffic from search.', 'ai-seo-captain'); ?></p>
+            <?php elseif (empty($gsc_top_pages)) : ?>
                 <p style="color:#646970;"><?php esc_html_e('No page data available yet. Sync data from the Search Console page.', 'ai-seo-captain'); ?></p>
             <?php else : ?>
                 <table class="widefat striped" style="margin-top:8px;">
@@ -176,7 +188,9 @@ defined('ABSPATH') || exit;
                     <tbody>
                         <?php foreach ($gsc_top_pages as $pg) :
                             $page_path = $pg->dimension_value;
-                            try { $page_path = wp_parse_url($pg->dimension_value, PHP_URL_PATH) ?: $pg->dimension_value; } catch (\Exception $e) { /* keep original */ }
+                            try {
+                                $page_path = wp_parse_url($pg->dimension_value, PHP_URL_PATH) ?: $pg->dimension_value;
+                            } catch (\Exception $e) { /* keep original */ }
                         ?>
                             <tr>
                                 <td title="<?php echo esc_attr($pg->dimension_value); ?>"><?php echo esc_html($page_path); ?></td>
@@ -194,7 +208,6 @@ defined('ABSPATH') || exit;
             </p>
         </div>
     </div>
-    <?php endif; ?>
 
     <div style="display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:16px;max-width:1120px;margin-top:24px;">
         <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">

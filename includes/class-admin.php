@@ -3114,7 +3114,8 @@ JS;
         $gsc_summary    = null;
         $gsc_top_queries = array();
         $gsc_top_pages   = array();
-        if ($this->search_console && $this->search_console->is_connected()
+        if (
+            $this->search_console && $this->search_console->is_connected()
             && '' !== $this->search_console->get_config()['site_url']
         ) {
             $gsc_summary     = $this->search_console->get_site_summary(30);

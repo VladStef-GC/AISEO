@@ -95,7 +95,7 @@ final class Plugin
         add_action('admin_footer', array($this, 'print_adminbar_purge_script'), 99);
 
         if (is_admin()) {
-            $this->ai_generator    = new AI_Generator($this->settings, $this->content_indexer);
+            $this->ai_generator    = new AI_Generator($this->settings, $this->content_indexer, $this->search_console);
             $this->admin           = new Admin($this->settings, $this->content_indexer, $this->ai_generator, $this->history_store, $this->indexnow, $this->search_console);
             return;
         }

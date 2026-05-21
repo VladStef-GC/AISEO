@@ -8,10 +8,13 @@ class AI_Generator
 
     private Content_Indexer $content_indexer;
 
-    public function __construct(Settings $settings, Content_Indexer $content_indexer)
+    private ?Search_Console $search_console;
+
+    public function __construct(Settings $settings, Content_Indexer $content_indexer, ?Search_Console $search_console = null)
     {
         $this->settings = $settings;
         $this->content_indexer = $content_indexer;
+        $this->search_console = $search_console;
     }
 
     public function generate_for_post(int $post_id, array $field_overrides = array()): array
@@ -452,6 +455,17 @@ class AI_Generator
             }
         }
 
+        // Google Search Console performance data (graceful when not connected).
+        $gsc_performance = null;
+        if ($this->search_console && $this->search_console->is_connected()
+            && '' !== $this->search_console->get_config()['site_url']
+        ) {
+            $permalink = get_permalink($post);
+            if ($permalink) {
+                $gsc_performance = $this->search_console->get_page_performance($permalink, 30);
+            }
+        }
+
         return array(
             'focus_keyphrase' => $focus_keyphrase,
             'seo_title_draft' => $seo_title_draft,
@@ -493,6 +507,7 @@ class AI_Generator
             'video_count' => $video_count,
             'doc_count' => $doc_count,
             'sibling_content' => $sibling_content,
+            'gsc_performance' => $gsc_performance,
         );
     }
 
@@ -631,6 +646,28 @@ class AI_Generator
                     $lines[] = '  - src: ' . $img['src'] . ' | alt: ' . ('' !== $img['alt'] ? '"' . $img['alt'] . '"' : 'MISSING');
                 }
             }
+        }
+
+        // Google Search Console performance (30-day).
+        if (! empty($ctx['gsc_performance'])) {
+            $gsc = $ctx['gsc_performance'];
+            $lines[] = '--- Google Search Console (last 30 days) ---';
+            $lines[] = 'Clicks: ' . (int) $gsc['clicks'] . ' | Impressions: ' . (int) $gsc['impressions']
+                . ' | CTR: ' . round((float) $gsc['ctr'] * 100, 1) . '%'
+                . ' | Avg position: ' . number_format((float) $gsc['position'], 1);
+            if ((int) $gsc['impressions'] > 0 && (int) $gsc['clicks'] === 0) {
+                $lines[] = 'NOTE: This page appears in Google results but gets zero clicks — the title and description likely need improvement.';
+            } elseif ((int) $gsc['impressions'] === 0) {
+                $lines[] = 'NOTE: This page has no Google impressions — it may not be indexed or ranks too low to appear.';
+            } elseif ((float) $gsc['ctr'] < 0.02 && (int) $gsc['impressions'] > 100) {
+                $lines[] = 'NOTE: Low CTR despite many impressions — consider making the title more compelling or the description more specific.';
+            }
+            if ((float) $gsc['position'] > 20) {
+                $lines[] = 'NOTE: Average position is beyond page 2 of Google. Content quality, internal linking, or keyphrase targeting may need work.';
+            }
+        } elseif (null === ($ctx['gsc_performance'] ?? null)) {
+            $lines[] = '--- Google Search Console ---';
+            $lines[] = 'Not connected or no data available for this page.';
         }
 
         // Page hierarchy context (parent, siblings, children with SEO metadata).
@@ -842,6 +879,48 @@ class AI_Generator
 
         if ('' !== $branding_context) {
             $prompt_parts[] = $branding_context;
+        }
+
+        // Inject Google Search Console data when available.
+        if ($this->search_console && $this->search_console->is_connected()
+            && '' !== $this->search_console->get_config()['site_url']
+        ) {
+            $gsc_summary = $this->search_console->get_site_summary(30);
+            if ($gsc_summary['impressions'] > 0) {
+                $gsc_end   = gmdate('Y-m-d', strtotime('-2 days'));
+                $gsc_start = gmdate('Y-m-d', strtotime('-30 days'));
+                $top_queries = $this->search_console->get_top_items($gsc_start, $gsc_end, 'query', 10);
+                $top_pages   = $this->search_console->get_top_items($gsc_start, $gsc_end, 'page', 10);
+
+                $gsc_lines = array(
+                    '--- Google Search Console (last 30 days) ---',
+                    'Site totals: ' . $gsc_summary['clicks'] . ' clicks, '
+                        . $gsc_summary['impressions'] . ' impressions, '
+                        . round($gsc_summary['ctr'] * 100, 1) . '% CTR, '
+                        . 'avg position ' . number_format($gsc_summary['position'], 1),
+                );
+
+                if (! empty($top_queries)) {
+                    $gsc_lines[] = 'Top search queries:';
+                    foreach ($top_queries as $q) {
+                        $gsc_lines[] = '  - "' . $q->dimension_value . '" | '
+                            . $q->clicks . ' clicks, ' . $q->impressions . ' impr, '
+                            . round($q->ctr * 100, 1) . '% CTR, pos ' . number_format($q->position, 1);
+                    }
+                }
+
+                if (! empty($top_pages)) {
+                    $gsc_lines[] = 'Top pages by clicks:';
+                    foreach ($top_pages as $pg) {
+                        $path = wp_parse_url($pg->dimension_value, PHP_URL_PATH) ?: $pg->dimension_value;
+                        $gsc_lines[] = '  - ' . $path . ' | '
+                            . $pg->clicks . ' clicks, ' . $pg->impressions . ' impr, '
+                            . round($pg->ctr * 100, 1) . '% CTR, pos ' . number_format($pg->position, 1);
+                    }
+                }
+
+                $prompt_parts[] = implode("\n", $gsc_lines);
+            }
         }
 
         return implode("\n\n", $prompt_parts);
