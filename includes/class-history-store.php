@@ -209,7 +209,7 @@ class History_Store
 
         $conversations_table = $wpdb->prefix . 'ai_seo_captain_conversations';
         $messages_table = $wpdb->prefix . 'ai_seo_captain_messages';
-        $limit = max(1, min(20, $limit));
+        $limit = max(1, min(50, $limit));
 
         $sql = $wpdb->prepare(
             "SELECT m.id, m.role, m.content, m.created_at

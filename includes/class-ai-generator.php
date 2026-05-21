@@ -142,7 +142,9 @@ class AI_Generator
         $model = trim((string) $options['model']);
         $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_chat_system_prompt((string) $options['system_prompt']);
-        $user_prompt = $this->build_chat_user_prompt($post, $message, $recent_messages, $deep_analysis);
+        $prompt_result = $this->build_chat_user_prompt($post, $message, $recent_messages, $deep_analysis, $model);
+        $user_prompt     = $prompt_result['prompt'];
+        $memory_pressure = $prompt_result['memory_pressure'];
 
         if ('openai' === $provider) {
             $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
@@ -173,6 +175,7 @@ class AI_Generator
             'model' => $model,
             'system_prompt' => $system_prompt,
             'user_prompt' => $user_prompt,
+            'memory_pressure' => $memory_pressure,
         );
     }
 
@@ -836,7 +839,7 @@ class AI_Generator
         return implode("\n\n", $prompt_parts);
     }
 
-    private function build_chat_user_prompt(\WP_Post $post, string $message, array $recent_messages, bool $deep_analysis = false): string
+    private function build_chat_user_prompt(\WP_Post $post, string $message, array $recent_messages, bool $deep_analysis = false, string $model_id = ''): array
     {
         $ctx = $this->get_seo_context($post, $deep_analysis ? array('deep_analysis' => true) : array());
 
@@ -846,28 +849,6 @@ class AI_Generator
         $page_html = strip_shortcodes($page_content_raw);
         $page_content = $this->normalize_text($page_content_raw);
         $page_excerpt = $this->normalize_text((string) $post->post_excerpt);
-
-        $conversation_lines = array();
-        foreach ($recent_messages as $recent_message) {
-            if (! is_array($recent_message)) {
-                continue;
-            }
-
-            $role = isset($recent_message['role']) ? (string) $recent_message['role'] : '';
-            $content = 'user' === $role
-                ? (string) ($recent_message['message'] ?? '')
-                : (string) ($recent_message['reply'] ?? '');
-
-            if ('' === trim($content)) {
-                continue;
-            }
-
-            $conversation_lines[] = strtoupper($role) . ': ' . $content;
-        }
-
-        if (empty($conversation_lines)) {
-            $conversation_lines[] = '- No recent chat context.';
-        }
 
         $branding_suffix = $this->settings->get_branding_suffix();
         $branding_note = '';
@@ -879,7 +860,8 @@ class AI_Generator
 
         $site_context = trim((string) ($this->settings->get()['site_chat_context'] ?? ''));
 
-        $prompt_parts = array(
+        // Build "fixed context" — everything EXCEPT conversation history.
+        $fixed_parts = array(
             'Task: Answer the editor user as an SEO copilot for the current WordPress page.',
             'Output format: {"reply":"...","suggested_title":"...","suggested_description":"...","wants_edits":true/false,"notes":"..."}',
             'Requirements: You receive the COMPLETE page content, ALL metadata fields, full audit results, the page hierarchy (parent, siblings, children with their SEO data), keyphrase conflict warnings, and the site structure tree. Use ALL of it. Differentiate this page from its siblings. Flag cannibalization risks. Ground your advice in what you actually see below.',
@@ -891,19 +873,38 @@ class AI_Generator
             'Existing excerpt: ' . ('' !== $page_excerpt ? $page_excerpt : 'None'),
             "Page HTML structure (includes headings, images, links, all elements):\n" . ('' !== $page_html ? $page_html : 'No body content is available.'),
             'Plain text content: ' . ('' !== $page_content ? $page_content : 'No body content is available.'),
-            "Recent conversation:\n" . implode("\n", $conversation_lines),
-            'User question: ' . $message,
         );
 
         if ('' !== $site_context) {
-            $prompt_parts[] = "Site owner's description of the business and goals:\n" . $site_context;
+            $fixed_parts[] = "Site owner's description of the business and goals:\n" . $site_context;
         }
 
         if ('' !== $branding_note) {
-            $prompt_parts[] = $branding_note;
+            $fixed_parts[] = $branding_note;
         }
 
-        return implode("\n\n", $prompt_parts);
+        // The user's current message is also fixed context (always included).
+        $fixed_parts[] = 'User question: ' . $message;
+
+        $fixed_context = implode("\n\n", $fixed_parts);
+
+        // Token-budgeted conversation history.
+        $memory = Chat_Memory_Manager::budget_history($recent_messages, $fixed_context, $model_id);
+
+        // Assemble final prompt: fixed context + budgeted history + user question.
+        // Insert conversation history before the user question.
+        $prompt_parts = array_slice($fixed_parts, 0, -1); // Everything except "User question"
+
+        if (! empty($memory['conversation_lines'])) {
+            $prompt_parts[] = "Recent conversation:\n" . implode("\n", $memory['conversation_lines']);
+        }
+
+        $prompt_parts[] = 'User question: ' . $message;
+
+        return array(
+            'prompt'          => implode("\n\n", $prompt_parts),
+            'memory_pressure' => $memory['memory_pressure'],
+        );
     }
 
     /**

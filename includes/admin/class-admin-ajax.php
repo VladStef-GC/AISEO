@@ -268,7 +268,7 @@ class Admin_Ajax
         }
 
         try {
-            $recent_messages = $this->history_store->get_recent_chat_messages($post_id, 8);
+            $recent_messages = $this->history_store->get_recent_chat_messages($post_id, 30);
             $deep_analysis   = ! empty($_POST['deep_analysis']) && '1' === $_POST['deep_analysis'];
             $reply           = $this->ai_generator->chat_for_post($post_id, $message, $recent_messages, $deep_analysis);
 
@@ -315,6 +315,7 @@ class Admin_Ajax
             'message' => __('AI Commander replied.', 'ai-seo-captain'),
             'notes'   => $reply['notes'],
             'chatHtml' => $this->admin->render_chat_history_markup($chat_messages),
+            'memory_pressure' => ! empty($reply['memory_pressure']),
         );
 
         if (null !== $content_changes) {

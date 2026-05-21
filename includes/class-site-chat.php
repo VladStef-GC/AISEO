@@ -66,7 +66,7 @@ class Site_Chat
         }
 
         try {
-            $recent_messages = $this->get_recent_messages(8);
+            $recent_messages = $this->get_recent_messages(30);
 
             // Focus pages mode — JSON array of post IDs or legacy URL/ID format.
             $focus_ids = array();
@@ -133,8 +133,9 @@ class Site_Chat
         $chat_messages = $this->get_recent_messages(20);
 
         wp_send_json_success(array(
-            'message'  => __('AI Captain replied.', 'ai-seo-captain'),
-            'chatHtml' => $this->render_chat_html($chat_messages),
+            'message'         => __('AI Captain replied.', 'ai-seo-captain'),
+            'chatHtml'        => $this->render_chat_html($chat_messages),
+            'memory_pressure' => ! empty($reply['memory_pressure']),
         ));
     }
 
@@ -205,7 +206,9 @@ class Site_Chat
         }
 
         $system_prompt = $this->build_system_prompt($is_focus_mode);
-        $user_prompt   = $this->build_user_prompt($message, $recent_messages, $focus_ids, $audit_ids);
+        $prompt_result = $this->build_user_prompt($message, $recent_messages, $focus_ids, $audit_ids);
+        $user_prompt     = $prompt_result['prompt'];
+        $memory_pressure = $prompt_result['memory_pressure'];
 
         if ('openai' === $provider) {
             $raw = $this->ai_generator->call_provider($provider, $api_key, $model, $system_prompt, $user_prompt, $temperature);
@@ -230,10 +233,11 @@ class Site_Chat
         }
 
         return array(
-            'reply'    => $reply,
-            'notes'    => $notes,
-            'provider' => $provider,
-            'model'    => $model,
+            'reply'           => $reply,
+            'notes'           => $notes,
+            'provider'        => $provider,
+            'model'           => $model,
+            'memory_pressure' => $memory_pressure,
         );
     }
 
@@ -291,7 +295,7 @@ class Site_Chat
         return trim($base);
     }
 
-    private function build_user_prompt(string $message, array $recent_messages, array $focus_ids = array(), array $audit_ids = array()): string
+    private function build_user_prompt(string $message, array $recent_messages, array $focus_ids = array(), array $audit_ids = array()): array
     {
         $parts = array();
 
@@ -602,29 +606,25 @@ class Site_Chat
             }
         }
 
-        // --- Conversation history ---
-        if (! empty($recent_messages)) {
-            $conv_lines = array();
-            foreach ($recent_messages as $msg) {
-                if (! is_array($msg)) {
-                    continue;
-                }
-                $role    = isset($msg['role']) ? (string) $msg['role'] : '';
-                $content = 'user' === $role
-                    ? (string) ($msg['message'] ?? '')
-                    : (string) ($msg['reply'] ?? '');
-                if ('' !== trim($content)) {
-                    $conv_lines[] = strtoupper($role) . ': ' . $content;
-                }
-            }
-            if (! empty($conv_lines)) {
-                $parts[] = "Recent conversation:\n" . implode("\n", $conv_lines);
-            }
+        // --- Token-budgeted conversation history ---
+        // Build fixed context (everything except history) to calculate remaining budget.
+        $fixed_parts = $parts;
+        $fixed_parts[] = 'User question: ' . $message;
+        $fixed_context = implode("\n\n", $fixed_parts);
+
+        $model = trim((string) ($this->settings->get()['model'] ?? ''));
+        $memory = Chat_Memory_Manager::budget_history($recent_messages, $fixed_context, $model);
+
+        if (! empty($memory['conversation_lines'])) {
+            $parts[] = "Recent conversation:\n" . implode("\n", $memory['conversation_lines']);
         }
 
         $parts[] = 'User question: ' . $message;
 
-        return implode("\n\n", $parts);
+        return array(
+            'prompt'          => implode("\n\n", $parts),
+            'memory_pressure' => $memory['memory_pressure'],
+        );
     }
 
     // ------------------------------------------------------------------

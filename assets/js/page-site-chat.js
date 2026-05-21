@@ -528,6 +528,20 @@ jQuery(function ($) {
                     $input.val('');
                     setStatus('', false);
                     scrollToBottom();
+
+                    // Memory pressure warning.
+                    var $memWarn = $('#ai-seo-memory-warning');
+                    if (response.data.memory_pressure) {
+                        if (!$memWarn.length) {
+                            $shell.after(
+                                '<div id="ai-seo-memory-warning" style="background:#fff3cd;border:1px solid #ffc107;border-radius:4px;padding:8px 12px;margin-top:8px;font-size:12px;color:#856404;line-height:1.4;">' +
+                                '\u26A0\uFE0F Chat memory is nearly full. Older messages are being summarized. Clear chat for a fresh start with full context.' +
+                                '</div>'
+                            );
+                        }
+                    } else {
+                        $memWarn.remove();
+                    }
                 } else {
                     setStatus(response.data && response.data.message ? response.data.message : 'Unexpected response.', true);
                 }
@@ -574,6 +588,7 @@ jQuery(function ($) {
                 if (response.success && response.data && response.data.chatHtml !== undefined) {
                     $shell.html(response.data.chatHtml);
                     setStatus('Chat cleared.', false);
+                    $('#ai-seo-memory-warning').remove();
                 }
             })
             .fail(function () {

@@ -202,6 +202,10 @@
         var chatting = _chatting[0];
         var setChatting = _chatting[1];
 
+        var _memoryPressure = useState(false);
+        var memoryPressure = _memoryPressure[0];
+        var setMemoryPressure = _memoryPressure[1];
+
         // Initialise fields from post meta when postId becomes available
         useEffect(function () {
             if (!postId || initialised.current) { return; }
@@ -311,6 +315,7 @@
             if (!postId || !chatInput.trim()) { return; }
             setChatting(true);
             setChatReply('');
+            setMemoryPressure(false);
             apiFetch(cfg.actions.chat, {
                 post_id: postId,
                 message: chatInput
@@ -318,6 +323,7 @@
                 setChatting(false);
                 if (res.success && res.data && res.data.reply) {
                     setChatReply(res.data.reply);
+                    setMemoryPressure(!!res.data.memory_pressure);
                 } else {
                     setChatReply(res.data && res.data.message ? res.data.message : cfg.i18n.chatError);
                 }
@@ -444,6 +450,11 @@
                     ),
                     chatReply && el(PanelRow, null,
                         el('div', { className: 'aisc-chat-reply' }, chatReply)
+                    ),
+                    memoryPressure && el(PanelRow, null,
+                        el('div', { className: 'aisc-memory-warning', style: { background: '#fff3cd', border: '1px solid #ffc107', borderRadius: '4px', padding: '8px 12px', fontSize: '12px', color: '#856404', lineHeight: '1.4' } },
+                            '\u26A0\uFE0F Chat memory is nearly full. Older messages are being summarized. Clear chat for a fresh start with full context.'
+                        )
                     )
                 )
             )

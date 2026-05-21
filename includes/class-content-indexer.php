@@ -734,7 +734,8 @@ class Content_Indexer
                    AND LOWER(TRIM(pm_kp.meta_value)) = LOWER(%s)
                    AND idx.object_id != %d
                    AND idx.status     = %s
-                 ORDER BY idx.title ASC",
+                 ORDER BY idx.title ASC
+                 LIMIT 20",
                 'post',
                 self::META_TITLE_KEY,
                 self::META_DESCRIPTION_KEY,
