@@ -32,6 +32,8 @@ final class Plugin
 
     private ?Broken_Link_Scanner $broken_link_scanner = null;
 
+    private ?Search_Console $search_console = null;
+
     public static function instance(): Plugin
     {
         if (null === self::$instance) {
@@ -53,6 +55,10 @@ final class Plugin
         $this->cron_manager    = new Cron_Manager($this->settings, $this->content_indexer);
         $this->broken_link_scanner = new Broken_Link_Scanner();
         $this->broken_link_scanner->register_hooks();
+
+        // Google Search Console integration.
+        $this->search_console = new Search_Console($this->settings);
+        add_action('ai_seo_captain_gsc_sync', array($this->search_console, 'daily_sync'));
 
         // Cache system — boot after sitemap so preloader can access it.
         $this->cache_manager = new Cache\Cache_Manager($this->settings);
@@ -90,7 +96,7 @@ final class Plugin
 
         if (is_admin()) {
             $this->ai_generator    = new AI_Generator($this->settings, $this->content_indexer);
-            $this->admin           = new Admin($this->settings, $this->content_indexer, $this->ai_generator, $this->history_store, $this->indexnow);
+            $this->admin           = new Admin($this->settings, $this->content_indexer, $this->ai_generator, $this->history_store, $this->indexnow, $this->search_console);
             return;
         }
 
@@ -155,6 +161,14 @@ final class Plugin
     public function get_cache_manager(): ?Cache\Cache_Manager
     {
         return $this->cache_manager;
+    }
+
+    /**
+     * Get the Search Console instance.
+     */
+    public function get_search_console(): ?Search_Console
+    {
+        return $this->search_console;
     }
 
     /**

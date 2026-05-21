@@ -3,7 +3,7 @@
 /**
  * Plugin Name: SEO Captain
  * Description: AI-assisted SEO copilot for WordPress with metadata approval workflows, audits, discovery documents, schema, and refresh signaling.
- * Version: 1.3.1
+ * Version: 1.4.0
  * Requires at least: 6.7
  * Requires PHP: 7.4
  * Author: Green Coders
@@ -14,7 +14,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('AI_SEO_CAPTAIN_VERSION', '1.3.1');
+define('AI_SEO_CAPTAIN_VERSION', '1.4.0');
 define('AI_SEO_CAPTAIN_FILE', __FILE__);
 define('AI_SEO_CAPTAIN_PATH', plugin_dir_path(__FILE__));
 define('AI_SEO_CAPTAIN_URL', plugin_dir_url(__FILE__));

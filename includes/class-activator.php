@@ -89,6 +89,22 @@ class Activator
 			KEY status (status)
 		) {$charset_collate};";
 
+		$gsc_table = $wpdb->prefix . 'ai_seo_captain_search_analytics';
+		$sql .= "\n\n		CREATE TABLE {$gsc_table} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			fetch_date date NOT NULL,
+			dimension varchar(20) NOT NULL,
+			dimension_value varchar(500) NOT NULL,
+			clicks int unsigned NOT NULL DEFAULT 0,
+			impressions int unsigned NOT NULL DEFAULT 0,
+			ctr double NOT NULL DEFAULT 0,
+			position double NOT NULL DEFAULT 0,
+			PRIMARY KEY  (id),
+			UNIQUE KEY date_dim (fetch_date, dimension, dimension_value(191)),
+			KEY dimension (dimension),
+			KEY fetch_date (fetch_date)
+		) {$charset_collate};";
+
 		dbDelta($sql);
 
 		$options = get_option(Settings::OPTION_NAME, array());

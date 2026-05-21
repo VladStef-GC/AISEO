@@ -59,6 +59,12 @@ class Cron_Manager
             'description' => 'Checks all published content for broken internal links and missing media files by verifying against the database and filesystem. No HTTP requests — zero performance impact.',
             'callback'    => 'run_broken_link_scan',
         ),
+        'ai_seo_captain_gsc_sync' => array(
+            'schedule'    => 'daily',
+            'label'       => 'Search Console Sync',
+            'description' => 'Fetches the latest Google Search Console data (clicks, impressions, CTR, position) and stores it locally. Requires an active GSC connection.',
+            'callback'    => 'run_gsc_sync',
+        ),
     );
 
     public function __construct(Settings $settings, Content_Indexer $indexer)
@@ -289,6 +295,29 @@ class Cron_Manager
             $state['scanned_posts'] ?? 0,
             $state['total_posts'] ?? 0
         );
+    }
+
+    /**
+     * Sync Google Search Console data (daily cron).
+     */
+    private function run_gsc_sync(): string
+    {
+        $gsc = Plugin::instance()->get_search_console();
+
+        if (! $gsc || ! $gsc->is_connected()) {
+            return 'Google Search Console not connected — skipped.';
+        }
+
+        $result = $gsc->daily_sync();
+
+        if (is_wp_error($result)) {
+            return 'GSC sync failed: ' . $result->get_error_message();
+        }
+
+        // Prune data older than 90 days.
+        $pruned = $gsc->prune_old_data(90);
+
+        return sprintf('Synced %d rows of search data. Pruned %d old rows.', $result, $pruned);
     }
 
     // -------------------------------------------------------------------------

@@ -140,12 +140,16 @@ class Admin
     /** @var Run_Manager */
     private $run_manager;
 
+    /** @var Search_Console|null */
+    private $search_console;
+
     /**
-     * @param AI_Generator  $ai_generator
-     * @param History_Store  $history_store
-     * @param IndexNow|null  $indexnow_service
+     * @param AI_Generator      $ai_generator
+     * @param History_Store     $history_store
+     * @param IndexNow|null     $indexnow_service
+     * @param Search_Console|null $search_console
      */
-    public function __construct(Settings $settings, Content_Indexer $content_indexer, $ai_generator, $history_store, $indexnow_service = null)
+    public function __construct(Settings $settings, Content_Indexer $content_indexer, $ai_generator, $history_store, $indexnow_service = null, $search_console = null)
     {
         $this->settings = $settings;
         $this->content_indexer = $content_indexer;
@@ -154,6 +158,7 @@ class Admin
         $audit_engine_class = __NAMESPACE__ . '\\Audit_Engine';
         $this->audit_engine = new $audit_engine_class($content_indexer);
         $this->indexnow_service = $indexnow_service;
+        $this->search_console = $search_console;
 
         // Instantiate delegates.
         $this->run_manager   = new Run_Manager();
@@ -216,6 +221,10 @@ class Admin
 
         // --- Internal Link Suggestions ---
         add_action('wp_ajax_' . self::AJAX_LINK_SUGGESTIONS_ACTION, array($this->ajax, 'handle_link_suggestions'));
+
+        // --- Google Search Console AJAX handlers ---
+        add_action('wp_ajax_ai_seo_captain_gsc_sync', array($this, 'ajax_gsc_sync'));
+        add_action('wp_ajax_ai_seo_captain_gsc_data', array($this, 'ajax_gsc_data'));
 
         // --- Runs (Lists) AJAX handlers ---
         add_action('wp_ajax_ai_seo_captain_create_run', array($this->ajax, 'handle_create_run'));
@@ -663,6 +672,16 @@ class Admin
             'ai-seo-captain-export-import',
             array($this, 'render_export_import_page')
         );
+
+        // 12. Google Search Console
+        add_submenu_page(
+            'ai-seo-captain',
+            'Search Console',
+            'Search Console',
+            'manage_options',
+            'ai-seo-captain-search-console',
+            array($this, 'render_search_console_page')
+        );
     }
 
     public function enqueue_editor_assets(string $hook_suffix): void
@@ -875,6 +894,7 @@ class Admin
             'ai-seo-captain-site-chat'     => 'site-chat',
             'ai-seo-captain-cron-manager'  => 'cron-manager',
             'ai-seo-captain-cache'         => 'cache',
+            'ai-seo-captain-search-console' => 'search-console',
         );
 
         // Determine the page slug from the hook suffix.
@@ -898,6 +918,24 @@ class Admin
         $js_file = AI_SEO_CAPTAIN_PATH . 'assets/js/page-' . $page_slug . '.js';
         if (file_exists($js_file)) {
             wp_enqueue_script('ai-seo-page-' . $page_slug, $url . 'js/page-' . $page_slug . '.js', array('jquery', 'ai-seo-admin-common'), $ver, true);
+        }
+
+        // Per-page localization.
+        if ('search-console' === $page_slug) {
+            $gsc_config = $this->search_console ? $this->search_console->get_config() : array();
+            $end_date   = gmdate('Y-m-d', strtotime('-2 days'));
+            $start_date = gmdate('Y-m-d', strtotime('-30 days'));
+            $trend_data = array();
+
+            if ($this->search_console && $this->search_console->is_connected() && '' !== ($gsc_config['site_url'] ?? '')) {
+                $trend_data = $this->search_console->get_daily_trend($start_date, $end_date);
+            }
+
+            wp_localize_script('ai-seo-page-search-console', 'aiSeoCaptainGsc', array(
+                'ajaxurl'   => admin_url('admin-ajax.php'),
+                'nonce'     => wp_create_nonce('ai_seo_captain_nonce'),
+                'trendData' => $trend_data,
+            ));
         }
     }
 
@@ -2808,6 +2846,154 @@ JS;
         $wc_active        = class_exists('WooCommerce');
 
         require __DIR__ . '/admin/view-cache.php';
+    }
+
+    public function render_search_console_page(): void
+    {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
+        $gsc = $this->search_console;
+
+        // Handle OAuth callback.
+        if (isset($_GET['gsc_oauth_callback'], $_GET['code'])) {
+            // Verify the state nonce to prevent CSRF.
+            $state = isset($_GET['state']) ? sanitize_text_field(wp_unslash($_GET['state'])) : '';
+            if (wp_verify_nonce($state, 'gsc_oauth_state')) {
+                $code   = sanitize_text_field(wp_unslash($_GET['code']));
+                $result = $gsc->exchange_code($code);
+
+                if (is_wp_error($result)) {
+                    $gsc_notice = array('type' => 'error', 'message' => $result->get_error_message());
+                } else {
+                    // Auto-detect site URL if not set.
+                    $cfg = $gsc->get_config();
+                    if ('' === $cfg['site_url']) {
+                        $sites = $gsc->list_sites();
+                        if (! is_wp_error($sites)) {
+                            $home = untrailingslashit(home_url());
+                            foreach ($sites as $site) {
+                                $su = $site['siteUrl'] ?? '';
+                                if (untrailingslashit($su) === $home || 'sc-domain:' . wp_parse_url($home, PHP_URL_HOST) === $su) {
+                                    $gsc->save_config(array('site_url' => $su));
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    $gsc_notice = array('type' => 'success', 'message' => __('Connected to Google Search Console!', 'ai-seo-captain'));
+                }
+            } else {
+                $gsc_notice = array('type' => 'error', 'message' => __('Invalid state token. Please try again.', 'ai-seo-captain'));
+            }
+        }
+
+        // Handle save credentials.
+        if (isset($_POST['gsc_save_credentials'])) {
+            check_admin_referer('ai_seo_captain_gsc_settings');
+            $gsc->save_config(array(
+                'client_id'     => sanitize_text_field(wp_unslash($_POST['gsc_client_id'] ?? '')),
+                'client_secret' => sanitize_text_field(wp_unslash($_POST['gsc_client_secret'] ?? '')),
+            ));
+            $gsc_notice = array('type' => 'success', 'message' => __('Credentials saved.', 'ai-seo-captain'));
+        }
+
+        // Handle site selection.
+        if (isset($_POST['gsc_select_site'])) {
+            check_admin_referer('ai_seo_captain_gsc_settings');
+            $gsc->save_config(array(
+                'site_url' => sanitize_text_field(wp_unslash($_POST['gsc_site_url'] ?? '')),
+            ));
+            $gsc_notice = array('type' => 'success', 'message' => __('Site selected.', 'ai-seo-captain'));
+        }
+
+        // Handle disconnect.
+        if (isset($_POST['gsc_disconnect'])) {
+            check_admin_referer('ai_seo_captain_gsc_settings');
+            $gsc->disconnect();
+            $gsc_notice = array('type' => 'success', 'message' => __('Disconnected from Google Search Console.', 'ai-seo-captain'));
+        }
+
+        $gsc_config    = $gsc->get_config();
+        $is_connected  = $gsc->is_connected();
+        $has_creds     = $gsc->has_credentials();
+        $auth_url      = $has_creds ? $gsc->get_auth_url() : '';
+        $gsc_sites     = $is_connected ? $gsc->list_sites() : array();
+        $gsc_notice    = $gsc_notice ?? null;
+
+        // Dashboard data.
+        $end_date   = gmdate('Y-m-d', strtotime('-2 days'));
+        $start_date = gmdate('Y-m-d', strtotime('-30 days'));
+        $overview   = array('clicks' => 0, 'impressions' => 0, 'ctr' => 0, 'position' => 0);
+        $top_queries = array();
+        $top_pages   = array();
+        $trend_data  = array();
+
+        if ($is_connected && '' !== $gsc_config['site_url']) {
+            $overview    = $gsc->get_overview($start_date, $end_date);
+            $top_queries = $gsc->get_top_items($start_date, $end_date, 'query', 20);
+            $top_pages   = $gsc->get_top_items($start_date, $end_date, 'page', 20);
+            $trend_data  = $gsc->get_daily_trend($start_date, $end_date);
+        }
+
+        require __DIR__ . '/admin/view-search-console.php';
+    }
+
+    /**
+     * AJAX: trigger a manual GSC data sync.
+     */
+    public function ajax_gsc_sync(): void
+    {
+        check_ajax_referer('ai_seo_captain_nonce', '_nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
+        }
+
+        $days = isset($_POST['days']) ? (int) $_POST['days'] : 28;
+        $days = max(1, min($days, 90));
+
+        $end_date   = gmdate('Y-m-d', strtotime('-2 days'));
+        $start_date = gmdate('Y-m-d', strtotime("-{$days} days"));
+
+        $result = $this->search_console->sync_data($start_date, $end_date);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error(array('message' => $result->get_error_message()));
+        }
+
+        wp_send_json_success(array(
+            'message' => sprintf(__('Synced %d rows of search data.', 'ai-seo-captain'), $result),
+            'rows'    => $result,
+        ));
+    }
+
+    /**
+     * AJAX: fetch dashboard data for a date range.
+     */
+    public function ajax_gsc_data(): void
+    {
+        check_ajax_referer('ai_seo_captain_nonce', '_nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
+        }
+
+        $start = isset($_POST['start_date']) ? sanitize_text_field(wp_unslash($_POST['start_date'])) : gmdate('Y-m-d', strtotime('-30 days'));
+        $end   = isset($_POST['end_date']) ? sanitize_text_field(wp_unslash($_POST['end_date'])) : gmdate('Y-m-d', strtotime('-2 days'));
+
+        // Validate date format.
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $start) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $end)) {
+            wp_send_json_error(array('message' => __('Invalid date format.', 'ai-seo-captain')), 400);
+        }
+
+        wp_send_json_success(array(
+            'overview'    => $this->search_console->get_overview($start, $end),
+            'top_queries' => $this->search_console->get_top_items($start, $end, 'query', 20),
+            'top_pages'   => $this->search_console->get_top_items($start, $end, 'page', 20),
+            'trend'       => $this->search_console->get_daily_trend($start, $end),
+        ));
     }
 
     public function render_settings_page(): void

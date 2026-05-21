@@ -1,0 +1,166 @@
+/**
+ * Google Search Console dashboard styles.
+ *
+ * @package AI_SEO_Captain
+ */
+
+/* ---- Toolbar ---- */
+.aiseo-gsc-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 16px 0 12px;
+    padding: 10px 14px;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+}
+
+.aiseo-gsc-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.aiseo-gsc-toolbar-right label {
+    font-weight: 500;
+}
+
+.aiseo-gsc-toolbar-right input[type="date"] {
+    width: 150px;
+}
+
+.aiseo-gsc-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+}
+
+.aiseo-gsc-connected {
+    color: #00a32a;
+}
+
+.aiseo-gsc-last-sync {
+    margin: 0 0 16px;
+}
+
+/* ---- Cards ---- */
+.aiseo-gsc-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+}
+
+/* ---- Overview metrics ---- */
+.aiseo-gsc-overview {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.aiseo-gsc-metric {
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    position: relative;
+}
+
+.aiseo-gsc-metric:hover,
+.aiseo-gsc-metric.active {
+    border-color: #2271b1;
+}
+
+.aiseo-gsc-metric-label {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #646970;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.aiseo-gsc-metric-value {
+    display: block;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.aiseo-gsc-metric[data-metric="clicks"] .aiseo-gsc-metric-value { color: #4285f4; }
+.aiseo-gsc-metric[data-metric="impressions"] .aiseo-gsc-metric-value { color: #5e35b1; }
+.aiseo-gsc-metric[data-metric="ctr"] .aiseo-gsc-metric-value { color: #00897b; }
+.aiseo-gsc-metric[data-metric="position"] .aiseo-gsc-metric-value { color: #e8710a; }
+
+/* ---- Chart ---- */
+.aiseo-gsc-chart-wrap {
+    margin-bottom: 16px;
+    min-height: 300px;
+}
+
+.aiseo-gsc-chart-wrap h3 {
+    margin-top: 0;
+}
+
+/* ---- Tables ---- */
+.aiseo-gsc-tables {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.aiseo-gsc-table-card {
+    overflow: auto;
+}
+
+.aiseo-gsc-table-card h3 {
+    margin-top: 0;
+}
+
+.aiseo-gsc-table-card .widefat th.num,
+.aiseo-gsc-table-card .widefat td.num {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.aiseo-gsc-table-card .widefat td:first-child {
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ---- Loading ---- */
+.aiseo-gsc-loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* ---- Copy button ---- */
+.aiseo-copy-btn .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 960px) {
+    .aiseo-gsc-overview {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .aiseo-gsc-tables {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .aiseo-gsc-overview {
+        grid-template-columns: 1fr;
+    }
+}
