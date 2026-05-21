@@ -3111,9 +3111,17 @@ JS;
         $bulk_frontend_action       = self::BULK_FRONTEND_ACTION;
 
         // GSC summary for audit card (graceful if not connected).
-        $gsc_summary = null;
-        if ($this->search_console && $this->search_console->is_connected()) {
-            $gsc_summary = $this->search_console->get_site_summary(30);
+        $gsc_summary    = null;
+        $gsc_top_queries = array();
+        $gsc_top_pages   = array();
+        if ($this->search_console && $this->search_console->is_connected()
+            && '' !== $this->search_console->get_config()['site_url']
+        ) {
+            $gsc_summary     = $this->search_console->get_site_summary(30);
+            $gsc_end         = gmdate('Y-m-d', strtotime('-2 days'));
+            $gsc_start       = gmdate('Y-m-d', strtotime('-30 days'));
+            $gsc_top_queries = $this->search_console->get_top_items($gsc_start, $gsc_end, 'query', 10);
+            $gsc_top_pages   = $this->search_console->get_top_items($gsc_start, $gsc_end, 'page', 10);
         }
 
         require __DIR__ . '/admin/view-audit.php';

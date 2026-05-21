@@ -127,16 +127,16 @@
     var iconBase = (cfg.pluginUrl || '') + 'assets/img/';
 
     function showNotice(message, type) {
-        var wrap  = $('#gsc-ajax-notice');
-        var msg   = $('#gsc-ajax-notice-msg');
+        var wrap = $('#gsc-ajax-notice');
+        var msg = $('#gsc-ajax-notice-msg');
         var title = $('#gsc-ajax-notice-title');
-        var icon  = $('#gsc-ajax-notice-icon');
+        var icon = $('#gsc-ajax-notice-icon');
         if (!wrap || !msg) return;
 
         var isOk = (type === 'success');
         wrap.className = 'ai-seo-captain-notice ' + (isOk ? 'is-success' : 'is-error');
         if (title) title.textContent = isOk ? 'Success' : 'Error';
-        if (icon)  icon.src = iconBase + (isOk ? 'seo-captain-side-ok-d.svg' : 'seo-captain-side-d.svg');
+        if (icon) icon.src = iconBase + (isOk ? 'seo-captain-side-ok-d.svg' : 'seo-captain-side-d.svg');
         msg.textContent = message;
         wrap.style.display = '';
 
