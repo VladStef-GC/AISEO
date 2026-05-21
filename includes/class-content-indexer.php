@@ -1347,52 +1347,64 @@ class Content_Indexer
         $batch_size = 100;
 
         $wpdb->query('START TRANSACTION');
-        $wpdb->query("DELETE FROM {$table_name}");
 
-        foreach ($post_types as $post_type) {
-            $page = 1;
+        try {
+            $wpdb->query("DELETE FROM {$table_name}");
 
-            do {
-                $items = get_posts(
-                    array(
-                        'post_type'      => $post_type,
-                        'post_status'    => $statuses,
-                        'posts_per_page' => $batch_size,
-                        'paged'          => $page,
-                        'orderby'        => 'menu_order title',
-                        'order'          => 'ASC',
-                    )
-                );
+            foreach ($post_types as $post_type) {
+                $page = 1;
 
-                foreach ($items as $item) {
-                    $wpdb->insert(
-                        $table_name,
+                do {
+                    $items = get_posts(
                         array(
-                            'object_id'    => (int) $item->ID,
-                            'object_type'  => 'post',
-                            'post_type'    => (string) $item->post_type,
-                            'status'       => (string) $item->post_status,
-                            'title'        => (string) $item->post_title,
-                            'slug'         => (string) $item->post_name,
-                            'permalink'    => (string) get_permalink($item),
-                            'parent_id'    => (int) $item->post_parent,
-                            'excerpt'      => wp_trim_words(wp_strip_all_tags(Content_Helper::get_content($item)), 120, '...'),
-                            'content_hash' => md5((string) $item->post_title . '|' . Content_Helper::get_content($item)),
-                            'modified_gmt' => $item->post_modified_gmt,
-                            'indexed_at'   => current_time('mysql', true),
-                        ),
-                        array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s')
+                            'post_type'      => $post_type,
+                            'post_status'    => $statuses,
+                            'posts_per_page' => $batch_size,
+                            'paged'          => $page,
+                            'orderby'        => 'menu_order title',
+                            'order'          => 'ASC',
+                        )
                     );
-                    ++$total_count;
-                }
 
-                // Free memory between batches.
-                wp_cache_flush();
-                ++$page;
-            } while (count($items) === $batch_size);
+                    foreach ($items as $item) {
+                        $inserted = $wpdb->insert(
+                            $table_name,
+                            array(
+                                'object_id'    => (int) $item->ID,
+                                'object_type'  => 'post',
+                                'post_type'    => (string) $item->post_type,
+                                'status'       => (string) $item->post_status,
+                                'title'        => (string) $item->post_title,
+                                'slug'         => (string) $item->post_name,
+                                'permalink'    => (string) get_permalink($item),
+                                'parent_id'    => (int) $item->post_parent,
+                                'excerpt'      => wp_trim_words(wp_strip_all_tags(Content_Helper::get_content($item)), 120, '...'),
+                                'content_hash' => md5((string) $item->post_title . '|' . Content_Helper::get_content($item)),
+                                'modified_gmt' => $item->post_modified_gmt,
+                                'indexed_at'   => current_time('mysql', true),
+                            ),
+                            array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s')
+                        );
+
+                        if (false === $inserted) {
+                            throw new \RuntimeException('Failed to index post ID ' . $item->ID);
+                        }
+
+                        ++$total_count;
+                    }
+
+                    // Free memory between batches.
+                    wp_cache_flush();
+                    ++$page;
+                } while (count($items) === $batch_size);
+            }
+
+            $wpdb->query('COMMIT');
+        } catch (\Throwable $e) {
+            $wpdb->query('ROLLBACK');
+            error_log('[SEO Captain] Content index sync failed: ' . $e->getMessage());
+            throw $e;
         }
-
-        $wpdb->query('COMMIT');
 
         return $total_count;
     }

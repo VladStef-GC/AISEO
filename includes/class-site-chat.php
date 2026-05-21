@@ -65,6 +65,25 @@ class Site_Chat
             wp_send_json_error(array('message' => __('The AI Captain is disabled in settings.', 'ai-seo-captain')), 400);
         }
 
+        // Rate limit: one AI call per 5 seconds per user.
+        $user_id       = get_current_user_id();
+        $transient_key = 'aisc_rate_' . $user_id;
+        $last_call     = get_transient($transient_key);
+
+        if (false !== $last_call) {
+            $elapsed = time() - (int) $last_call;
+            $wait    = max(1, 5 - $elapsed);
+            wp_send_json_error(
+                array('message' => sprintf(
+                    __('Please wait %d seconds before sending another AI request.', 'ai-seo-captain'),
+                    $wait
+                )),
+                429
+            );
+        }
+
+        set_transient($transient_key, time(), 5);
+
         try {
             $recent_messages = $this->get_recent_messages(30);
 

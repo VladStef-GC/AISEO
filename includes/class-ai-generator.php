@@ -923,6 +923,43 @@ class AI_Generator
         throw new \RuntimeException('Unsupported AI provider: ' . $provider);
     }
 
+    /**
+     * Retry an API call on transient failures (5xx, rate limits).
+     *
+     * @param callable $make_request Returns wp_remote_post response.
+     * @param string   $provider     'openai' or 'google'.
+     * @param int      $max_retries  Maximum number of retries (default 2).
+     * @return string Extracted response text.
+     */
+    private function call_with_retry(callable $make_request, string $provider, int $max_retries = 2): string
+    {
+        $attempt = 0;
+
+        while (true) {
+            try {
+                $response = $make_request();
+                return $this->extract_response_text($response, $provider);
+            } catch (RateLimitException $e) {
+                if ($attempt >= $max_retries) {
+                    throw $e;
+                }
+                $wait = min($e->get_retry_after(), 10);
+                sleep($wait);
+            } catch (\RuntimeException $e) {
+                // Only retry on server-side (5xx) errors.
+                $is_server_error = str_contains(strtolower($e->getMessage()), 'temporarily unavailable')
+                    || str_contains(strtolower($e->getMessage()), 'server error');
+
+                if (! $is_server_error || $attempt >= $max_retries) {
+                    throw $e;
+                }
+                sleep(min(2 ** $attempt, 8));
+            }
+
+            ++$attempt;
+        }
+    }
+
     private function call_openai(string $api_key, string $model, string $system_prompt, string $user_prompt, float $temperature): string
     {
         $payload = array(
@@ -944,19 +981,21 @@ class AI_Generator
             $payload['temperature'] = $this->normalize_temperature($temperature);
         }
 
-        $response = wp_remote_post(
-            'https://api.openai.com/v1/chat/completions',
-            array(
+        $request_args = array(
                 'headers' => array(
                     'Authorization' => 'Bearer ' . trim($api_key),
                     'Content-Type' => 'application/json',
                 ),
                 'timeout' => 60,
                 'body' => wp_json_encode($payload),
-            )
-        );
+            );
 
-        return $this->extract_response_text($response, 'openai');
+        return $this->call_with_retry(
+            static function () use ($request_args) {
+                return wp_remote_post('https://api.openai.com/v1/chat/completions', $request_args);
+            },
+            'openai'
+        );
     }
 
     public function test_model_connection(string $provider, string $api_key, string $model, float $temperature = 0.3): array
@@ -1004,9 +1043,7 @@ class AI_Generator
             rawurlencode($effective_model)
         );
 
-        $response = wp_remote_post(
-            $url,
-            array(
+        $request_args = array(
                 'headers' => array(
                     'Content-Type' => 'application/json',
                     'x-goog-api-key' => trim($api_key),
@@ -1037,10 +1074,14 @@ class AI_Generator
                         ),
                     )
                 ),
-            )
-        );
+            );
 
-        return $this->extract_response_text($response, 'google');
+        return $this->call_with_retry(
+            static function () use ($url, $request_args) {
+                return wp_remote_post($url, $request_args);
+            },
+            'google'
+        );
     }
 
     /**

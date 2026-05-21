@@ -1,5 +1,11 @@
 <?php
 
+// CLI only — prevent web execution in production.
+if ('cli' !== PHP_SAPI) {
+    http_response_code(403);
+    exit('Forbidden');
+}
+
 /**
  * Standalone AI Hallucination Test for Site Chat
  *

@@ -188,7 +188,8 @@ class Content_Writer
             if ($is_betheme && is_string($raw)) {
                 $decoded_b64 = base64_decode($raw, true);
                 if (false !== $decoded_b64) {
-                    $data = @unserialize($decoded_b64);
+                    // Restrict to arrays/scalars only — no PHP object instantiation.
+                    $data = unserialize($decoded_b64, array('allowed_classes' => false));
                 }
             } elseif (is_array($raw)) {
                 $data = $raw;

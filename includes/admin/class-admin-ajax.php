@@ -43,6 +43,35 @@ class Admin_Ajax
     //  Editor meta (save / generate / approve)
     // ------------------------------------------------------------------
 
+    /**
+     * Server-side AI rate limiter — prevents accidental rapid-fire API calls.
+     *
+     * Uses a WordPress transient per user. Allows one AI call per $cooldown seconds.
+     * Bulk operations should NOT call this (they have their own concurrency control).
+     *
+     * @param int $cooldown Minimum seconds between AI calls for this user.
+     */
+    private function enforce_ai_rate_limit(int $cooldown = 5): void
+    {
+        $user_id       = get_current_user_id();
+        $transient_key = 'aisc_rate_' . $user_id;
+        $last_call     = get_transient($transient_key);
+
+        if (false !== $last_call) {
+            $elapsed  = time() - (int) $last_call;
+            $wait     = max(1, $cooldown - $elapsed);
+            wp_send_json_error(
+                array('message' => sprintf(
+                    __('Please wait %d seconds before sending another AI request.', 'ai-seo-captain'),
+                    $wait
+                )),
+                429
+            );
+        }
+
+        set_transient($transient_key, time(), $cooldown);
+    }
+
     public function handle_save_editor_meta(): void
     {
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
@@ -96,6 +125,8 @@ class Admin_Ajax
         if (! current_user_can('edit_post', $post_id)) {
             wp_send_json_error(array('message' => __('You are not allowed to edit this post.', 'ai-seo-captain')), 403);
         }
+
+        $this->enforce_ai_rate_limit();
 
         $field_overrides = array(
             'focus_keyphrase'    => isset($_POST['current_focus_keyphrase']) ? sanitize_text_field(wp_unslash($_POST['current_focus_keyphrase'])) : null,
@@ -266,6 +297,8 @@ class Admin_Ajax
         if (empty($options['editor_chat_enabled'])) {
             wp_send_json_error(array('message' => __('The AI Commander is disabled in settings.', 'ai-seo-captain')), 400);
         }
+
+        $this->enforce_ai_rate_limit();
 
         try {
             $recent_messages = $this->history_store->get_recent_chat_messages($post_id, 30);
@@ -554,6 +587,12 @@ class Admin_Ajax
             return;
         }
 
+        // Rate limit single-page audits (editor context), not bulk wizard audits.
+        $is_wizard = wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? '')), 'ai_seo_captain_setup_wizard');
+        if (! $is_wizard) {
+            $this->enforce_ai_rate_limit();
+        }
+
         try {
             $deep_analysis = ! empty($_POST['deep_analysis']) && '1' === $_POST['deep_analysis'];
             $audit = $this->ai_generator->generate_page_audit($post_id, $deep_analysis);
@@ -676,6 +715,8 @@ class Admin_Ajax
         if ('' === trim($instruction)) {
             wp_send_json_error(array('message' => __('Provide an instruction for the AI content editor.', 'ai-seo-captain')), 400);
         }
+
+        $this->enforce_ai_rate_limit();
 
         try {
             $result = $this->ai_generator->generate_content_changes($post_id, $instruction);

@@ -1,5 +1,11 @@
 <?php
 
+// CLI only — prevent web execution in production.
+if ('cli' !== PHP_SAPI) {
+    http_response_code(403);
+    exit('Forbidden');
+}
+
 /**
  * Prompt Inspector — Dumps exact AI prompts for Copilot review (zero API cost)
  *
