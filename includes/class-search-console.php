@@ -201,6 +201,8 @@ class Search_Console
     public function disconnect(): void
     {
         $this->save_config(array(
+            'client_id'     => '',
+            'client_secret' => '',
             'access_token'  => '',
             'refresh_token' => '',
             'token_expires' => 0,
