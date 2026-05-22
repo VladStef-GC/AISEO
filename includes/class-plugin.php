@@ -103,6 +103,16 @@ final class Plugin
         if (is_admin()) {
             $this->ai_generator    = new AI_Generator($this->settings, $this->content_indexer, $this->search_console);
             $this->admin           = new Admin($this->settings, $this->content_indexer, $this->ai_generator, $this->history_store, $this->indexnow, $this->search_console);
+
+            // Local AI module — loads only when the module folder exists.
+            $local_ai_dir = AI_SEO_CAPTAIN_PATH . 'modules/local-ai/';
+            if (is_dir($local_ai_dir)) {
+                require_once $local_ai_dir . 'class-local-ai-provider.php';
+                require_once $local_ai_dir . 'class-local-ai-admin.php';
+                $local_ai_admin = new \AI_SEO_Captain\Modules\LocalAI\Local_AI_Admin();
+                $local_ai_admin->register();
+            }
+
             return;
         }
 

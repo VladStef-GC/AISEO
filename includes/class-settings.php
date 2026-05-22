@@ -166,6 +166,14 @@ class Settings
             'cache_exclude_useragents'   => '',
             'cache_query_string_cache'   => 0,
             'cache_wc_exclude_cart'      => 1,
+
+            // Local AI (LM Studio / Ollama).
+            'local_base_url'        => '',
+            'local_model'           => '',
+            'local_vision_model'    => '',
+            'local_api_key'         => '',
+            'local_context_window'  => 131072,
+            'local_timeout'         => 120,
         );
 
         foreach (self::FEATURE_FLAGS as $feature_key => $label) {
@@ -440,6 +448,19 @@ class Settings
 
         foreach (self::FEATURE_FLAGS as $feature_key => $label) {
             $output['feature_' . $feature_key] = $is_cache_save ? $current['feature_' . $feature_key] : (empty($input['feature_' . $feature_key]) ? 0 : 1);
+        }
+
+        // Local AI (LM Studio / Ollama) — always preserve; managed by modules/local-ai.
+        $output['local_base_url']       = isset($input['local_base_url']) ? esc_url_raw(trim((string) $input['local_base_url'])) : $current['local_base_url'];
+        $output['local_model']          = isset($input['local_model']) ? sanitize_text_field((string) $input['local_model']) : $current['local_model'];
+        $output['local_vision_model']   = isset($input['local_vision_model']) ? sanitize_text_field((string) $input['local_vision_model']) : $current['local_vision_model'];
+        $output['local_context_window'] = isset($input['local_context_window']) ? max(131072, (int) $input['local_context_window']) : $current['local_context_window'];
+        $output['local_timeout']        = isset($input['local_timeout']) ? max(10, min(600, (int) $input['local_timeout'])) : $current['local_timeout'];
+        // API key: only overwrite if a real value was sent (not the masked placeholder).
+        if (isset($input['local_api_key']) && '' !== $input['local_api_key'] && '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022' !== $input['local_api_key']) {
+            $output['local_api_key'] = sanitize_text_field((string) $input['local_api_key']);
+        } else {
+            $output['local_api_key'] = $current['local_api_key'];
         }
 
         return $output;

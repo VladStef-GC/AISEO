@@ -1,0 +1,339 @@
+/**
+ * Local AI — Admin page styles.
+ *
+ * @package AI_SEO_Captain\Modules\LocalAI
+ */
+
+/* ─── Layout ──────────────────────────────────────────────────────── */
+
+.local-ai-wrap {
+    max-width: 900px;
+}
+
+.local-ai-wrap h1 {
+    font-size: 1.6em;
+    margin-bottom: 0.3em;
+}
+
+.local-ai-card {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+}
+
+.local-ai-card h2 {
+    margin-top: 0;
+    font-size: 1.2em;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+/* ─── Status Banner ───────────────────────────────────────────────── */
+
+.local-ai-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.local-ai-banner--info {
+    background: #e7f3fe;
+    border-left: 4px solid #2271b1;
+    color: #1d2327;
+}
+
+.local-ai-banner--success {
+    background: #e9f7ef;
+    border-left: 4px solid #00a32a;
+    color: #1d2327;
+}
+
+.local-ai-banner--error {
+    background: #fce8e6;
+    border-left: 4px solid #d63638;
+    color: #1d2327;
+}
+
+.local-ai-banner--warning {
+    background: #fff8e5;
+    border-left: 4px solid #dba617;
+    color: #1d2327;
+}
+
+.local-ai-banner__icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+/* ─── Vision Badge ────────────────────────────────────────────────── */
+
+.local-ai-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1.4;
+    margin-top: 6px;
+}
+
+.local-ai-badge--vision {
+    background: #e9f7ef;
+    border: 1px solid #00a32a;
+    color: #1d2327;
+}
+
+.local-ai-badge--text {
+    background: #f0f0f1;
+    border: 1px solid #c3c4c7;
+    color: #50575e;
+}
+
+.local-ai-badge--checking {
+    background: #e7f3fe;
+    border: 1px solid #2271b1;
+    color: #1d2327;
+    font-style: italic;
+}
+
+.local-ai-badge--error {
+    background: #fff8e5;
+    border: 1px solid #dba617;
+    color: #1d2327;
+}
+
+/* ─── Capability Assessment ───────────────────────────────────────── */
+
+.local-ai-capabilities {
+    margin-top: 16px;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.local-ai-cap-tier {
+    padding: 10px 16px;
+    font-size: 14px;
+}
+
+.local-ai-cap-tier.tier-full {
+    background: #e9f7ef;
+    border-bottom: 2px solid #00a32a;
+    color: #1d2327;
+}
+
+.local-ai-cap-tier.tier-standard {
+    background: #e7f3fe;
+    border-bottom: 2px solid #2271b1;
+    color: #1d2327;
+}
+
+.local-ai-cap-tier.tier-basic {
+    background: #fff8e5;
+    border-bottom: 2px solid #dba617;
+    color: #1d2327;
+}
+
+.local-ai-cap-tier.tier-minimal {
+    background: #fde8e8;
+    border-bottom: 2px solid #d63638;
+    color: #1d2327;
+}
+
+.local-ai-cap-tier.tier-insufficient {
+    background: #d63638;
+    border-bottom: 2px solid #8b0000;
+    color: #fff;
+}
+
+.local-ai-cap-recommendation {
+    padding: 10px 16px;
+    background: #f6f7f7;
+    border-bottom: 1px solid #dcdcde;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.local-ai-cap-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.local-ai-cap-list li {
+    padding: 6px 12px;
+    font-size: 12px;
+    line-height: 1.4;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.local-ai-cap-list li:last-child {
+    border-bottom: none;
+}
+
+.local-ai-cap-list li .desc {
+    color: #757575;
+}
+
+.local-ai-cap-list li.cap-no strong {
+    color: #d63638;
+}
+
+.local-ai-cap-list li .cap-need {
+    color: #996800;
+    font-size: 11px;
+}
+
+/* ─── Test Result ─────────────────────────────────────────────────── */
+
+.local-ai-test-success {
+    background: #e9f7ef;
+    border: 1px solid #00a32a;
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-top: 12px;
+}
+
+.local-ai-test-success p {
+    margin: 4px 0;
+}
+
+.local-ai-test-error {
+    background: #fce8e6;
+    border: 1px solid #d63638;
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-top: 12px;
+    color: #8b0000;
+}
+
+/* ─── Chat ────────────────────────────────────────────────────────── */
+
+.local-ai-chat-messages {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    padding: 12px;
+    margin-bottom: 12px;
+    background: #f9f9f9;
+}
+
+.local-ai-chat-empty {
+    color: #999;
+    text-align: center;
+    padding: 40px 0;
+    font-style: italic;
+}
+
+.local-ai-msg {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.local-ai-msg:last-child {
+    margin-bottom: 0;
+}
+
+.local-ai-msg__icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.local-ai-msg__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.local-ai-msg__text {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 8px;
+    padding: 8px 12px;
+    line-height: 1.5;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.local-ai-msg--user .local-ai-msg__text {
+    background: #2271b1;
+    color: #fff;
+    border-color: #1a5a8e;
+}
+
+.local-ai-msg__meta {
+    font-size: 11px;
+    color: #999;
+    margin-top: 4px;
+    padding-left: 4px;
+}
+
+.local-ai-chat-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.local-ai-chat-input-row .regular-text {
+    flex: 1;
+}
+
+.local-ai-quick-tests {
+    margin-top: 10px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.local-ai-quick-tests .description {
+    margin-right: 4px;
+}
+
+/* ─── Help ────────────────────────────────────────────────────────── */
+
+.local-ai-help-columns {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 20px;
+}
+
+.local-ai-help-col {
+    flex: 1;
+}
+
+.local-ai-help-col h3 {
+    margin-top: 0;
+}
+
+.local-ai-help-col ol {
+    padding-left: 20px;
+}
+
+.local-ai-help-col ol li {
+    margin-bottom: 6px;
+}
+
+/* ─── Responsive ──────────────────────────────────────────────────── */
+
+@media (max-width: 782px) {
+    .local-ai-help-columns {
+        flex-direction: column;
+    }
+
+    .local-ai-chat-input-row {
+        flex-direction: column;
+    }
+
+    .local-ai-chat-input-row .regular-text {
+        width: 100%;
+    }
+}
