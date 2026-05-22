@@ -24,6 +24,12 @@ defined('ABSPATH') || exit;
 /** @var array      $used_on_map */
 /** @var string     $nonce */
 /** @var string     $readiness_banner */
+
+// Check if Local AI is available for image SEO generation.
+$_aisc_options    = get_option('ai_seo_captain_options', array());
+$_local_model     = $_aisc_options['local_model'] ?? '';
+$_local_has_vision = ! empty($_aisc_options['local_vision_model']);
+$_local_available = '' !== $_local_model;
 ?>
 <div class="wrap">
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
@@ -67,6 +73,14 @@ defined('ABSPATH') || exit;
         <div style="flex:1;min-width:200px;max-width:400px;">
             <input type="text" id="aisc-image-search" placeholder="<?php esc_attr_e('Search images by filename…', 'ai-seo-captain'); ?>" style="width:100%;padding:6px 10px;font-size:13px;border:1px solid #8c8f94;border-radius:4px;" />
         </div>
+        <?php if ($_local_available && $total_missing_alt > 0) : ?>
+            <div>
+                <button type="button" id="aisc-bulk-generate-alt" class="button" title="<?php echo $_local_has_vision ? esc_attr__('Uses vision + text AI pipeline', 'ai-seo-captain') : esc_attr__('Uses text AI (no vision model configured)', 'ai-seo-captain'); ?>">
+                    🤖 <?php esc_html_e('AI Generate Missing Alt', 'ai-seo-captain'); ?>
+                </button>
+                <span id="aisc-bulk-progress" style="display:none;margin-left:8px;font-size:12px;color:#50575e;"></span>
+            </div>
+        <?php endif; ?>
     </div>
 
     <p style="margin:0 0 12px;font-size:12px;color:#646970;"><span class="dashicons dashicons-info-outline" style="font-size:14px;width:14px;height:14px;vertical-align:middle;margin-right:3px;"></span><?php esc_html_e('Purge Cache will also clear the page cache for all pages using that asset, forcing browsers to re-download it.', 'ai-seo-captain'); ?></p>
@@ -79,7 +93,7 @@ defined('ABSPATH') || exit;
                     <th style="width:25%;" class="ai-seo-sort" data-col="1"><?php esc_html_e('File', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
                     <th style="width:40%;" class="ai-seo-sort" data-col="2"><?php esc_html_e('Alt text', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
                     <th style="width:20%;" class="ai-seo-sort" data-col="3"><?php esc_html_e('Used on', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                    <th style="width:5%;"></th>
+                    <th style="width:<?php echo $_local_available ? '10%' : '5%'; ?>;"><?php echo $_local_available ? esc_html__('Actions', 'ai-seo-captain') : ''; ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -136,8 +150,11 @@ defined('ABSPATH') || exit;
                                 <span style="color:#50575e;font-size:12px;"><?php esc_html_e('Unattached', 'ai-seo-captain'); ?></span>
                             <?php endif; ?>
                         </td>
-                        <td>
+                        <td style="white-space:nowrap;">
                             <button type="button" class="button button-small ai-seo-img-save" disabled><?php esc_html_e('Save', 'ai-seo-captain'); ?></button>
+                            <?php if ($_local_available) : ?>
+                                <button type="button" class="button button-small aisc-ai-gen-alt" data-att-id="<?php echo (int) $att_id; ?>" title="<?php esc_attr_e('Generate alt text with Local AI', 'ai-seo-captain'); ?>">🤖</button>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endwhile;

@@ -36,6 +36,7 @@ class Local_AI_Admin
         add_action('wp_ajax_local_ai_save_settings', array($this, 'ajax_save_settings'));
         add_action('wp_ajax_local_ai_disconnect', array($this, 'ajax_disconnect'));
         add_action('wp_ajax_local_ai_heartbeat', array($this, 'ajax_heartbeat'));
+        add_action('wp_ajax_local_ai_generate_image_seo', array($this, 'ajax_generate_image_seo'));
 
         // Admin bar status indicator.
         add_action('admin_bar_menu', array($this, 'admin_bar_status'), 101);
@@ -532,5 +533,67 @@ class Local_AI_Admin
         }
 
         return rtrim($url, '/');
+    }
+
+    /**
+     * AJAX: Generate image SEO metadata using the local AI vision pipeline.
+     *
+     * Expects POST: attachment_id, page_id (optional), _nonce.
+     * Returns: {alt_text, title, caption, decorative, method}
+     */
+    public function ajax_generate_image_seo()
+    {
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('error' => 'Permission denied.'), 403);
+        }
+
+        if (! check_ajax_referer('ai_seo_captain_nonce', '_nonce', false)) {
+            wp_send_json_error(array('error' => 'Security check failed.'), 403);
+        }
+
+        $attachment_id = isset($_POST['attachment_id']) ? (int) $_POST['attachment_id'] : 0;
+        $page_id       = isset($_POST['page_id']) ? (int) $_POST['page_id'] : 0;
+
+        if ($attachment_id <= 0) {
+            wp_send_json_error(array('error' => 'Invalid attachment ID.'));
+        }
+
+        // Ensure Local AI is configured.
+        $options = get_option(self::OPTION_NAME, array());
+        if (empty($options['local_model'])) {
+            wp_send_json_error(array('error' => 'No local AI model configured. Set up Local AI first.'));
+        }
+
+        $image_seo = new Local_AI_Image_SEO();
+        $result    = $image_seo->generate($attachment_id, $page_id);
+
+        if (empty($result['success'])) {
+            wp_send_json_error(array('error' => $result['error'] ?? 'Image SEO generation failed.'));
+        }
+
+        // Auto-save the alt text if generation succeeded.
+        if (isset($result['alt_text'])) {
+            update_post_meta($attachment_id, '_wp_attachment_image_alt', $result['alt_text']);
+        }
+
+        // Save title and caption to the attachment post.
+        $update_data = array('ID' => $attachment_id);
+        if (! empty($result['title'])) {
+            $update_data['post_title'] = $result['title'];
+        }
+        if (isset($result['caption'])) {
+            $update_data['post_excerpt'] = $result['caption'];
+        }
+        if (count($update_data) > 1) {
+            wp_update_post($update_data);
+        }
+
+        wp_send_json_success(array(
+            'alt_text'   => $result['alt_text'] ?? '',
+            'title'      => $result['title'] ?? '',
+            'caption'    => $result['caption'] ?? '',
+            'decorative' => ! empty($result['decorative']),
+            'method'     => $result['method'] ?? 'unknown',
+        ));
     }
 }

@@ -123,4 +123,126 @@
         });
     }
 
+    // ─── AI Generate Alt Text (single image) ─────────────────────────
+    $('#ai-seo-image-table').on('click', '.aisc-ai-gen-alt', function () {
+        var btn = $(this);
+        var row = btn.closest('tr');
+        var attId = btn.data('att-id') || row.data('att-id');
+
+        if (!attId) return;
+
+        btn.prop('disabled', true).text('⏳');
+
+        $.post(ajaxurl, {
+            action: 'local_ai_generate_image_seo',
+            _nonce: nonce,
+            attachment_id: attId
+        }, function (resp) {
+            if (resp.success && resp.data) {
+                var altInput = row.find('.ai-seo-img-alt');
+                var newAlt = resp.data.alt_text || '';
+
+                altInput.val(newAlt).data('original', newAlt);
+                row.find('.ai-seo-img-save').prop('disabled', true);
+
+                var method = resp.data.method || 'ai';
+                var label = resp.data.decorative ? 'Decorative ✓' : method;
+                showFloatingBanner(
+                    '<strong>' + (row.find('td:nth-child(2) strong').text() || 'Image') + '</strong><br>' +
+                    'Alt: ' + (newAlt || '<em>(empty — decorative)</em>') + '<br>' +
+                    '<span style="font-size:11px;color:#888;">Method: ' + label + '</span>',
+                    'is-success'
+                );
+                btn.text('🤖');
+            } else {
+                showFloatingBanner(
+                    'AI generation failed: ' + (resp.data && resp.data.error ? resp.data.error : 'Unknown error'),
+                    'is-error'
+                );
+                btn.text('🤖');
+            }
+        }).fail(function () {
+            showFloatingBanner('Request failed. Is your Local AI server running?', 'is-error');
+            btn.text('🤖');
+        }).always(function () {
+            btn.prop('disabled', false);
+        });
+    });
+
+    // ─── Bulk Generate Missing Alt Text ──────────────────────────────
+    var bulkRunning = false;
+
+    $('#aisc-bulk-generate-alt').on('click', function () {
+        if (bulkRunning) return;
+
+        var btn = $(this);
+        var progressEl = $('#aisc-bulk-progress');
+
+        // Collect rows with empty alt text.
+        var rows = [];
+        $('#ai-seo-image-table tbody tr').each(function () {
+            var altInput = $(this).find('.ai-seo-img-alt');
+            if (altInput.length && $.trim(altInput.val()) === '') {
+                rows.push($(this));
+            }
+        });
+
+        if (rows.length === 0) {
+            showFloatingBanner('All visible images already have alt text.', 'is-success');
+            return;
+        }
+
+        bulkRunning = true;
+        btn.prop('disabled', true).text('⏳ Generating...');
+        progressEl.show();
+
+        var done = 0;
+        var success = 0;
+        var failed = 0;
+        var total = rows.length;
+
+        function processNext() {
+            if (done >= total) {
+                bulkRunning = false;
+                btn.prop('disabled', false).text('🤖 AI Generate Missing Alt');
+                progressEl.hide();
+                showFloatingBanner(
+                    'Bulk generation complete: <strong>' + success + '</strong> generated, <strong>' + failed + '</strong> failed out of ' + total + ' images.',
+                    failed > 0 ? 'is-error' : 'is-success'
+                );
+                return;
+            }
+
+            var row = rows[done];
+            var attId = row.data('att-id');
+            var aiBtn = row.find('.aisc-ai-gen-alt');
+            aiBtn.prop('disabled', true).text('⏳');
+            progressEl.text((done + 1) + ' / ' + total);
+
+            $.post(ajaxurl, {
+                action: 'local_ai_generate_image_seo',
+                _nonce: nonce,
+                attachment_id: attId
+            }, function (resp) {
+                if (resp.success && resp.data) {
+                    var altInput = row.find('.ai-seo-img-alt');
+                    altInput.val(resp.data.alt_text || '').data('original', resp.data.alt_text || '');
+                    row.find('.ai-seo-img-save').prop('disabled', true);
+                    success++;
+                } else {
+                    failed++;
+                }
+            }).fail(function () {
+                failed++;
+            }).always(function () {
+                aiBtn.prop('disabled', false).text('🤖');
+                done++;
+                // Small delay between requests to avoid overwhelming the local server.
+                setTimeout(processNext, 500);
+            });
+        }
+
+        processNext();
+    });
+
 })(jQuery);
