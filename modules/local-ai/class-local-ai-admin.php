@@ -100,7 +100,7 @@ class Local_AI_Admin
             'model'          => $options['local_model'] ?? '',
             'visionModel'    => $options['local_vision_model'] ?? '',
             'apiKey'         => '' !== ($options['local_api_key'] ?? '') ? '••••••••' : '',
-            'contextWindow'  => (int) ($options['local_context_window'] ?? 131072),
+            'contextWindow'  => (int) ($options['context_window'] ?? 128000),
             'timeout'        => (int) ($options['local_timeout'] ?? 120),
             'opRequirements' => Local_AI_Provider::OPERATION_REQUIREMENTS,
         ));
@@ -263,7 +263,7 @@ class Local_AI_Admin
             $options['local_vision_model'] = sanitize_text_field($_POST['vision_model']);
         }
         if (isset($_POST['context_window'])) {
-            $options['local_context_window'] = max(512, (int) $_POST['context_window']);
+            $options['context_window'] = max(32000, (int) $_POST['context_window']);
         }
         if (isset($_POST['timeout'])) {
             $options['local_timeout'] = max(10, min(600, (int) $_POST['timeout']));
@@ -285,7 +285,7 @@ class Local_AI_Admin
             set_transient('ai_seo_captain_local_ai_status', array(
                 'connected' => true,
                 'model'     => $model,
-                'context'   => $options['local_context_window'] ?? 4096,
+                'context'   => $options['context_window'] ?? 128000,
                 'time'      => time(),
             ), 5 * MINUTE_IN_SECONDS);
         }
@@ -398,7 +398,7 @@ class Local_AI_Admin
             $status_data = array(
                 'connected' => true,
                 'model'     => $model,
-                'context'   => (int) ($options['local_context_window'] ?? 131072),
+                'context'   => (int) ($options['context_window'] ?? 128000),
                 'time'      => time(),
             );
             set_transient('ai_seo_captain_local_ai_status', $status_data, 5 * MINUTE_IN_SECONDS);
@@ -406,7 +406,7 @@ class Local_AI_Admin
             wp_send_json_success(array(
                 'status' => 'online',
                 'label'  => '🟢 Local AI: Running',
-                'tip'    => sprintf('Connected to %s (%s tokens)', $model, number_format((int) ($options['local_context_window'] ?? 131072))),
+                'tip'    => sprintf('Connected to %s (%s tokens)', $model, number_format((int) ($options['context_window'] ?? 128000))),
                 'model'  => $model,
             ));
         } else {
@@ -512,7 +512,7 @@ class Local_AI_Admin
             'api_key'        => $api_key,
             'model'          => sanitize_text_field($_POST['model'] ?? ($options['local_model'] ?? '')),
             'vision_model'   => sanitize_text_field($_POST['vision_model'] ?? ($options['local_vision_model'] ?? '')),
-            'context_window' => max(512, (int) ($_POST['context_window'] ?? ($options['local_context_window'] ?? 4096))),
+            'context_window' => max(32000, (int) ($_POST['context_window'] ?? ($options['context_window'] ?? 128000))),
             'timeout'        => max(10, (int) ($_POST['timeout'] ?? ($options['local_timeout'] ?? 120))),
         );
     }

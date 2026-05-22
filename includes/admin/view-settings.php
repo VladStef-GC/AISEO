@@ -38,7 +38,6 @@ $provider_labels = array(
 // Local AI info for display.
 $local_model   = (string) ($options['local_model'] ?? '');
 $local_vision  = (string) ($options['local_vision_model'] ?? '');
-$local_ctx     = (int) ($options['local_context_window'] ?? 131072);
 $local_configured = '' !== $local_model;
 
 foreach ($supported_providers as $provider_key) {
@@ -63,6 +62,7 @@ if ($custom_model_enabled && '' !== trim($custom_model_id)) {
 }
 
 $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_temperature'] : 0.3;
+$active_context_window = isset($options['context_window']) ? (int) $options['context_window'] : 128000;
 ?>
 <div class="wrap">
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
@@ -150,17 +150,15 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                                 <div id="ai-seo-local-model-wrap" <?php echo 'local' !== $active_provider ? 'hidden' : ''; ?>
                                     data-local-model="<?php echo esc_attr($local_model); ?>"
                                     data-local-vision="<?php echo esc_attr($local_vision); ?>"
-                                    data-local-ctx="<?php echo esc_attr($local_ctx); ?>"
                                     data-local-configured="<?php echo $local_configured ? '1' : '0'; ?>">
                                     <?php if ($local_configured) : ?>
                                         <div style="background:#f0f6fc;border:1px solid #c3d9ed;border-radius:4px;padding:12px 16px;margin-bottom:8px;">
                                             <p style="margin:0 0 4px;"><strong>Chat Model:</strong> <?php echo esc_html($local_model); ?></p>
                                             <?php if ('' !== $local_vision) : ?>
-                                                <p style="margin:0 0 4px;"><strong>Vision Model:</strong> <?php echo esc_html($local_vision); ?> 👁️</p>
+                                                <p style="margin:0;"><strong>Vision Model:</strong> <?php echo esc_html($local_vision); ?> 👁️</p>
                                             <?php else : ?>
-                                                <p style="margin:0 0 4px;color:#996800;"><strong>Vision:</strong> Not configured — image SEO will remain manual</p>
+                                                <p style="margin:0;color:#996800;"><strong>Vision:</strong> Not configured — image SEO will remain manual</p>
                                             <?php endif; ?>
-                                            <p style="margin:0;"><strong>Context Window:</strong> <?php echo esc_html(number_format($local_ctx)); ?> tokens</p>
                                         </div>
                                         <p class="description">
                                             <a href="<?php echo esc_url(admin_url('admin.php?page=ai-seo-captain-local-ai')); ?>">⚙️ Change model in Local AI settings</a>
@@ -194,6 +192,30 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                                 </p>
                                 <p id="ai-seo-temperature-hint" class="description ai-seo-temperature-hint" hidden>
                                     Current model is an OpenAI o-series model. Custom temperature is ignored by the provider for this model family.
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="ai-seo-context-window"><?php esc_html_e('Context window', 'ai-seo-captain'); ?></label></th>
+                            <td>
+                                <input
+                                    id="ai-seo-context-window"
+                                    type="number"
+                                    min="32000"
+                                    max="2097152"
+                                    step="1000"
+                                    style="width:120px;"
+                                    name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[context_window]"
+                                    value="<?php echo esc_attr($active_context_window); ?>"
+                                    data-default-local="32000"
+                                    data-default-cloud="128000" />
+                                <span style="margin-left:4px;">tokens</span>
+                                <p class="description" style="margin-top:8px;">
+                                    Maximum number of tokens (input + output) the AI model can process per request.
+                                    <strong>Minimum: 32,000.</strong> Recommended: <strong>128,000</strong> for cloud AI, <strong>32,000+</strong> for local models.
+                                </p>
+                                <p class="description" style="margin-top:4px;color:#996800;">
+                                    Models with less than 32,000 tokens are not supported. Set this to match your model's actual context window for optimal token budgeting.
                                 </p>
                             </td>
                         </tr>

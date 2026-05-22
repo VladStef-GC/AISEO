@@ -68,7 +68,7 @@ class Local_AI_Provider
             'api_key'        => $options['local_api_key'] ?? '',
             'model'          => $options['local_model'] ?? '',
             'vision_model'   => $options['local_vision_model'] ?? '',
-            'context_window' => $options['local_context_window'] ?? 4096,
+            'context_window' => $options['context_window'] ?? 128000,
             'timeout'        => $options['local_timeout'] ?? 120,
         ));
     }

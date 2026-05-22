@@ -58,6 +58,7 @@ class Settings
             'custom_model_enabled' => 0,
             'custom_model_id'      => '',
             'ai_temperature'       => 0.3,
+            'context_window'       => 128000,
             'api_key'              => '',
             'system_prompt'        => 'You are the SEO copilot for this WordPress site. Suggest clear, differentiated, search-intent-aware metadata and explain tradeoffs briefly.',
             'site_chat_context'    => '',
@@ -172,7 +173,7 @@ class Settings
             'local_model'           => '',
             'local_vision_model'    => '',
             'local_api_key'         => '',
-            'local_context_window'  => 131072,
+            'local_context_window'  => 32000,
             'local_timeout'         => 120,
         );
 
@@ -279,19 +280,22 @@ class Settings
      */
     public static function get_context_window(string $model_id): int
     {
-        // Local AI provider: use the user-configured context window.
         $options = get_option(self::OPTION_NAME, array());
-        if ('local' === ($options['provider'] ?? '')) {
-            return (int) ($options['local_context_window'] ?? 131072);
+
+        // Global user-configured context window (applies to ALL providers).
+        $user_ctx = (int) ($options['context_window'] ?? 128000);
+        if ($user_ctx >= 32000) {
+            return $user_ctx;
         }
 
+        // Fallback: look up known model catalog for cloud providers.
         foreach (self::PROVIDER_MODELS as $models) {
             if (isset($models[$model_id]['context_window'])) {
                 return (int) $models[$model_id]['context_window'];
             }
         }
 
-        return 200000;
+        return 128000;
     }
 
     /**
@@ -382,6 +386,9 @@ class Settings
         $output['ai_temperature'] = isset($input['ai_temperature'])
             ? $this->sanitize_temperature((string) $input['ai_temperature'])
             : $this->sanitize_temperature((string) ($current['ai_temperature'] ?? '0.3'));
+        $output['context_window'] = isset($input['context_window'])
+            ? max(32000, (int) $input['context_window'])
+            : (int) ($current['context_window'] ?? 128000);
         $output['api_key']              = isset($input['api_key']) ? sanitize_text_field($input['api_key']) : $current['api_key'];
         $output['system_prompt']        = isset($input['system_prompt']) ? sanitize_textarea_field($input['system_prompt']) : $current['system_prompt'];
         $output['site_chat_context']    = isset($input['site_chat_context']) ? sanitize_textarea_field($input['site_chat_context']) : ($current['site_chat_context'] ?? '');
@@ -476,7 +483,7 @@ class Settings
         $output['local_base_url']       = isset($input['local_base_url']) ? esc_url_raw(trim((string) $input['local_base_url'])) : $current['local_base_url'];
         $output['local_model']          = isset($input['local_model']) ? sanitize_text_field((string) $input['local_model']) : $current['local_model'];
         $output['local_vision_model']   = isset($input['local_vision_model']) ? sanitize_text_field((string) $input['local_vision_model']) : $current['local_vision_model'];
-        $output['local_context_window'] = isset($input['local_context_window']) ? max(131072, (int) $input['local_context_window']) : $current['local_context_window'];
+        $output['local_context_window'] = isset($input['local_context_window']) ? max(32000, (int) $input['local_context_window']) : $current['local_context_window'];
         $output['local_timeout']        = isset($input['local_timeout']) ? max(10, min(600, (int) $input['local_timeout'])) : $current['local_timeout'];
         // API key: only overwrite if a real value was sent (not the masked placeholder).
         if (isset($input['local_api_key']) && '' !== $input['local_api_key'] && '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022' !== $input['local_api_key']) {

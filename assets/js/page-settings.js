@@ -134,6 +134,7 @@ jQuery(function ($) {
     // ─── Local AI provider toggle ──────────────────────────────────────
     var $cloudModelWrap = $('#ai-seo-cloud-model-wrap');
     var $localModelWrap = $('#ai-seo-local-model-wrap');
+    var $contextWindow  = $('#ai-seo-context-window');
 
     function updateProviderView(provider) {
         var isLocal = provider === 'local';
@@ -144,12 +145,25 @@ jQuery(function ($) {
         $model.prop('disabled', isLocal);
     }
 
+    /**
+     * When the provider changes, reset the context window to the recommended default
+     * for that provider type: 32,000 for local, 128,000 for cloud.
+     */
+    function resetContextWindowForProvider(provider) {
+        if (!$contextWindow.length) return;
+        var defaultVal = provider === 'local'
+            ? parseInt($contextWindow.data('default-local'), 10) || 32000
+            : parseInt($contextWindow.data('default-cloud'), 10) || 128000;
+        $contextWindow.val(defaultVal);
+    }
+
     // Apply on load.
     updateProviderView($provider.val());
 
     $provider.on('change', function () {
         var prov = $provider.val();
         updateProviderView(prov);
+        resetContextWindowForProvider(prov);
 
         if (prov !== 'local') {
             renderModelsForProvider(prov, false);

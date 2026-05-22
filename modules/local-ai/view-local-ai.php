@@ -23,14 +23,6 @@ if (isset($_POST['local_ai_save_nonce']) && wp_verify_nonce($_POST['local_ai_sav
     $options['local_vision_model']   = sanitize_text_field($_POST['local_vision_model'] ?? '');
     $options['local_timeout']        = max(10, min(600, (int) ($_POST['local_timeout'] ?? 120)));
 
-    // Context window: use custom value if dropdown is "custom", else use dropdown value.
-    $ctx_select = $_POST['local_context_window'] ?? '131072';
-    if ('custom' === $ctx_select) {
-        $options['local_context_window'] = max(131072, (int) ($_POST['local_context_window_custom'] ?? 131072));
-    } else {
-        $options['local_context_window'] = max(131072, (int) $ctx_select);
-    }
-
     // Only update API key if a real value was sent.
     $api_key = $_POST['local_api_key'] ?? '';
     if ('' !== $api_key && '••••••••' !== $api_key) {
@@ -44,7 +36,7 @@ if (isset($_POST['local_ai_save_nonce']) && wp_verify_nonce($_POST['local_ai_sav
         set_transient('ai_seo_captain_local_ai_status', array(
             'connected' => true,
             'model'     => $options['local_model'],
-            'context'   => $options['local_context_window'],
+            'context'   => (int) ($options['context_window'] ?? 128000),
             'time'      => time(),
         ), 5 * MINUTE_IN_SECONDS);
     }
@@ -77,7 +69,6 @@ $options = get_option('ai_seo_captain_options', array());
 $saved_base_url = $options['local_base_url'] ?? '';
 $saved_model    = $options['local_model'] ?? '';
 $saved_vision   = $options['local_vision_model'] ?? '';
-$saved_ctx      = (int) ($options['local_context_window'] ?? 131072);
 $saved_timeout  = (int) ($options['local_timeout'] ?? 120);
 $has_api_key    = '' !== ($options['local_api_key'] ?? '');
 ?>
@@ -171,22 +162,6 @@ $has_api_key    = '' !== ($options['local_api_key'] ?? '');
                             <?php endif; ?>
                         </select>
                         <p class="description">Multimodal model for image alt text generation (Qwen2-VL, LLaVA, etc.). Only vision models are shown.</p>
-                    </td>
-                </tr>
-                <tr>
-                    <th scope="row"><label for="local-ai-context-window">Context Window</label></th>
-                    <td>
-                        <select id="local-ai-context-window" name="local_context_window">
-                            <option value="131072" <?php selected($saved_ctx, 131072); ?>>128K tokens — Full Parity with Cloud</option>
-                            <option value="custom" <?php echo ($saved_ctx !== 131072) ? 'selected' : ''; ?>>Custom...</option>
-                        </select>
-                        <input type="number" id="local-ai-context-custom" name="local_context_window_custom" style="width:120px;<?php echo ($saved_ctx !== 131072) ? '' : 'display:none;'; ?>" min="131072" max="2097152" value="<?php echo esc_attr($saved_ctx); ?>" placeholder="Tokens">
-                        <span id="local-ai-context-detected" class="description" style="display:none;"></span>
-                        <p class="description">
-                            Minimum <strong>128K tokens (131,072)</strong> required for full feature parity with cloud AI.
-                            <br>128K = 128 × 1,024 = 131,072 tokens (same convention as RAM).
-                            <br>Recommended models: <strong>Qwen 2.5 72B</strong> (128K), <strong>Llama 3.1 70B</strong> (128K).
-                        </p>
                     </td>
                 </tr>
             </table>

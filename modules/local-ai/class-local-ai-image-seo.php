@@ -308,8 +308,15 @@ class Local_AI_Image_SEO
 
         $lower = strtolower($filename);
         $decorative_patterns = array(
-            'spacer', 'divider', 'separator', 'blank', 'pixel',
-            'tracking', 'beacon', 'bg-pattern', 'background-',
+            'spacer',
+            'divider',
+            'separator',
+            'blank',
+            'pixel',
+            'tracking',
+            'beacon',
+            'bg-pattern',
+            'background-',
         );
 
         foreach ($decorative_patterns as $pattern) {

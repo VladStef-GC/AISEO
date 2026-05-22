@@ -943,9 +943,10 @@ class AI_Generator
 
         // Send FULL page content — no truncation. AI needs every element for proper SEO analysis.
         $page_content_raw = Content_Helper::get_content($post);
-        // Provide both: structured HTML (for heading/image/link analysis) and plain text version.
+        // HTML alone is sufficient: AI can read text within tags, AND it preserves
+        // heading hierarchy, image elements, internal/external links, and structure.
+        // Sending a separate plain-text duplicate was wasting ~40% extra tokens.
         $page_html = strip_shortcodes($page_content_raw);
-        $page_content = $this->normalize_text($page_content_raw);
         $page_excerpt = $this->normalize_text((string) $post->post_excerpt);
 
         $branding_suffix = $this->settings->get_branding_suffix();
@@ -969,8 +970,7 @@ class AI_Generator
             'Page URL: ' . (string) get_permalink($post),
             $this->format_seo_context_lines($ctx),
             'Existing excerpt: ' . ('' !== $page_excerpt ? $page_excerpt : 'None'),
-            "Page HTML structure (includes headings, images, links, all elements):\n" . ('' !== $page_html ? $page_html : 'No body content is available.'),
-            'Plain text content: ' . ('' !== $page_content ? $page_content : 'No body content is available.'),
+            "Page content (HTML with headings, images, links, and all elements):\n" . ('' !== $page_html ? $page_html : 'No body content is available.'),
         );
 
         if ('' !== $site_context) {
