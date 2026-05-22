@@ -27,17 +27,20 @@ class AI_Generator
 
         $options = $this->settings->get();
 
-        if (empty($options['api_key'])) {
+        $provider = (string) $options['provider'];
+
+        if ('local' !== $provider && empty($options['api_key'])) {
             throw new \RuntimeException('Add an API key in SEO Captain Settings before generating suggestions.');
         }
 
-        $provider = (string) $options['provider'];
         $model = trim((string) $options['model']);
         $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_system_prompt((string) $options['system_prompt']);
         $user_prompt = $this->build_user_prompt($post, $field_overrides);
 
-        if ('openai' === $provider) {
+        if ('local' === $provider) {
+            $raw_response = $this->call_local($model, $system_prompt, $user_prompt, $temperature);
+        } elseif ('openai' === $provider) {
             $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } elseif ('google' === $provider) {
             $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
@@ -78,17 +81,20 @@ class AI_Generator
     {
         $options = $this->settings->get();
 
-        if (empty($options['api_key'])) {
+        $provider = (string) $options['provider'];
+
+        if ('local' !== $provider && empty($options['api_key'])) {
             throw new \RuntimeException('Add an API key in SEO Captain Settings before generating AI site audits.');
         }
 
-        $provider = (string) $options['provider'];
         $model = trim((string) $options['model']);
         $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_site_audit_system_prompt((string) $options['system_prompt']);
         $user_prompt = $this->build_site_audit_user_prompt($report);
 
-        if ('openai' === $provider) {
+        if ('local' === $provider) {
+            $raw_response = $this->call_local($model, $system_prompt, $user_prompt, $temperature);
+        } elseif ('openai' === $provider) {
             $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } elseif ('google' === $provider) {
             $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
@@ -137,11 +143,12 @@ class AI_Generator
 
         $options = $this->settings->get();
 
-        if (empty($options['api_key'])) {
+        $provider = (string) $options['provider'];
+
+        if ('local' !== $provider && empty($options['api_key'])) {
             throw new \RuntimeException('Add an API key in SEO Captain Settings before using the AI Commander.');
         }
 
-        $provider = (string) $options['provider'];
         $model = trim((string) $options['model']);
         $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_chat_system_prompt((string) $options['system_prompt']);
@@ -149,7 +156,9 @@ class AI_Generator
         $user_prompt     = $prompt_result['prompt'];
         $memory_pressure = $prompt_result['memory_pressure'];
 
-        if ('openai' === $provider) {
+        if ('local' === $provider) {
+            $raw_response = $this->call_local($model, $system_prompt, $user_prompt, $temperature);
+        } elseif ('openai' === $provider) {
             $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } elseif ('google' === $provider) {
             $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
@@ -1001,6 +1010,10 @@ class AI_Generator
      */
     public function call_provider(string $provider, string $api_key, string $model, string $system_prompt, string $user_prompt, float $temperature): string
     {
+        if ('local' === $provider) {
+            return $this->call_local($model, $system_prompt, $user_prompt, $temperature);
+        }
+
         if ('openai' === $provider) {
             return $this->call_openai($api_key, $model, $system_prompt, $user_prompt, $temperature);
         }
@@ -1049,6 +1062,42 @@ class AI_Generator
         }
     }
 
+    /**
+     * Call the local AI server (LM Studio / Ollama) via Local_AI_Provider.
+     *
+     * Bridges the Local_AI_Provider array-based response into the string return
+     * expected by the rest of AI_Generator.
+     */
+    private function call_local(string $model, string $system_prompt, string $user_prompt, float $temperature): string
+    {
+        if (! class_exists('\\AI_SEO_Captain\\Modules\\LocalAI\\Local_AI_Provider')) {
+            throw new \RuntimeException('Local AI module is not installed. Place the local-ai module in wp-content/plugins/ai-seo-captain/modules/local-ai/.');
+        }
+
+        $provider = \AI_SEO_Captain\Modules\LocalAI\Local_AI_Provider::from_options();
+
+        $messages = array(
+            array('role' => 'system', 'content' => $system_prompt),
+            array('role' => 'user', 'content' => $user_prompt),
+        );
+
+        $result = $provider->chat($messages, $model, $temperature, 4096);
+
+        if (empty($result['success'])) {
+            $error = $result['error'] ?? 'Local AI request failed.';
+            error_log('[SEO Captain] Local AI error: ' . $error);
+            throw new \RuntimeException('Local AI error: ' . $error);
+        }
+
+        $content = $result['content'] ?? '';
+
+        if ('' === trim($content)) {
+            throw new \RuntimeException('The local AI model returned an empty response. Check that your model is loaded in LM Studio.');
+        }
+
+        return $content;
+    }
+
     private function call_openai(string $api_key, string $model, string $system_prompt, string $user_prompt, float $temperature): string
     {
         $payload = array(
@@ -1094,14 +1143,16 @@ class AI_Generator
         $api_key = trim($api_key);
         $temperature = $this->normalize_temperature($temperature);
 
-        if ('' === $api_key) {
+        if ('local' !== $provider && '' === $api_key) {
             throw new \RuntimeException('API key is required to test model availability.');
         }
 
         $system_prompt = 'You are a connectivity test assistant. Return short plain text only.';
         $user_prompt = 'Reply with exactly: OK';
 
-        if ('openai' === $provider) {
+        if ('local' === $provider) {
+            $content = $this->call_local($model, $system_prompt, $user_prompt, $temperature);
+        } elseif ('openai' === $provider) {
             $content = $this->call_openai($api_key, $model, $system_prompt, $user_prompt, $temperature);
         } elseif ('google' === $provider) {
             $content = $this->call_google($api_key, $model, $system_prompt, $user_prompt, $temperature);
@@ -1208,7 +1259,7 @@ class AI_Generator
             throw new \RuntimeException($this->humanize_api_error($provider, $status_code, $raw_message));
         }
 
-        if ('openai' === $provider) {
+        if ('openai' === $provider || 'local' === $provider) {
             $content = $decoded['choices'][0]['message']['content'] ?? '';
         } else {
             $content = $decoded['candidates'][0]['content']['parts'][0]['text'] ?? '';

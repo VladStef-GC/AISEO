@@ -185,7 +185,15 @@ class Settings
 
     public static function get_supported_providers(): array
     {
-        return array_keys(self::PROVIDER_MODELS);
+        $providers = array_keys(self::PROVIDER_MODELS);
+
+        // Include 'local' if a local model has been configured.
+        $options = get_option(self::OPTION_NAME, array());
+        if ('' !== ($options['local_model'] ?? '')) {
+            $providers[] = 'local';
+        }
+
+        return $providers;
     }
 
     public static function get_models_for_provider(string $provider): array
@@ -225,6 +233,7 @@ class Settings
         $preferred_defaults = array(
             'openai' => 'gpt-4.1-mini',
             'google' => 'gemini-2.5-flash',
+            'local'  => '',
         );
 
         if (isset($preferred_defaults[$provider])) {
@@ -247,6 +256,13 @@ class Settings
     public static function sanitize_provider_model(string $provider, string $model): string
     {
         $model = sanitize_text_field($model);
+
+        // Local provider: accept whatever model is configured in Local AI settings.
+        if ('local' === $provider) {
+            $options = get_option(self::OPTION_NAME, array());
+            return sanitize_text_field($options['local_model'] ?? '');
+        }
+
         $models = self::get_models_for_provider($provider);
 
         if (isset($models[$model])) {
@@ -263,6 +279,12 @@ class Settings
      */
     public static function get_context_window(string $model_id): int
     {
+        // Local AI provider: use the user-configured context window.
+        $options = get_option(self::OPTION_NAME, array());
+        if ('local' === ($options['provider'] ?? '')) {
+            return (int) ($options['local_context_window'] ?? 131072);
+        }
+
         foreach (self::PROVIDER_MODELS as $models) {
             if (isset($models[$model_id]['context_window'])) {
                 return (int) $models[$model_id]['context_window'];

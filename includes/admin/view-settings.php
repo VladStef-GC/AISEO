@@ -32,7 +32,14 @@ $provider_models = array();
 $provider_labels = array(
     'openai' => 'OpenAI',
     'google' => 'Google',
+    'local'  => 'Local AI (LM Studio / Ollama)',
 );
+
+// Local AI info for display.
+$local_model   = (string) ($options['local_model'] ?? '');
+$local_vision  = (string) ($options['local_vision_model'] ?? '');
+$local_ctx     = (int) ($options['local_context_window'] ?? 131072);
+$local_configured = '' !== $local_model;
 
 foreach ($supported_providers as $provider_key) {
     $provider_models[$provider_key] = Settings::get_model_catalog_for_provider($provider_key);
@@ -40,7 +47,7 @@ foreach ($supported_providers as $provider_key) {
 
 $active_provider = isset($options['provider']) ? sanitize_key((string) $options['provider']) : 'openai';
 
-if (! isset($provider_models[$active_provider])) {
+if ('local' !== $active_provider && ! isset($provider_models[$active_provider])) {
     $active_provider = 'openai';
 }
 
@@ -100,40 +107,69 @@ $active_temperature = isset($options['ai_temperature']) ? (float) $options['ai_t
                         <tr>
                             <th scope="row"><label for="ai-seo-model"><?php esc_html_e('Model', 'ai-seo-captain'); ?></label></th>
                             <td>
-                                <select
-                                    id="ai-seo-model"
-                                    name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[model]"
-                                    data-provider-models="<?php echo esc_attr(wp_json_encode($provider_models)); ?>">
-                                    <?php foreach ($active_models as $model_id => $model_meta) : ?>
-                                        <?php
-                                        $model_label = isset($model_meta['label']) ? (string) $model_meta['label'] : (string) $model_id;
-                                        $model_tier = isset($model_meta['tier']) ? (string) $model_meta['tier'] : 'stable';
-                                        $tier_suffix = 'preview' === $model_tier ? ' [Preview]' : ' [Stable]';
-                                        ?>
-                                        <option value="<?php echo esc_attr($model_id); ?>" data-tier="<?php echo esc_attr($model_tier); ?>" <?php selected($active_model, $model_id); ?>><?php echo esc_html($model_label . $tier_suffix . ' (' . $model_id . ')'); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <span id="ai-seo-model-tier-badge" class="ai-seo-model-tier-badge" aria-live="polite"></span>
-                                <p class="description" style="margin-top:8px;">
-                                    Curated text-generation models only. Image, TTS, realtime, and transcription models are intentionally excluded.
-                                </p>
-                                <label class="aisc-toggle ai-seo-custom-model-toggle" style="display:flex;margin-top:8px;">
-                                    <input id="ai-seo-custom-model-enabled" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[custom_model_enabled]" value="1" <?php checked($custom_model_enabled); ?> />
-                                    <span class="aisc-toggle__track"></span>
-                                    <span class="aisc-toggle__label">Advanced: use custom model ID</span>
-                                </label>
-                                <div id="ai-seo-custom-model-wrap" class="ai-seo-custom-model-wrap" <?php echo $custom_model_enabled ? '' : 'hidden'; ?>>
-                                    <input
-                                        id="ai-seo-custom-model-id"
-                                        class="regular-text"
-                                        type="text"
-                                        name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[custom_model_id]"
-                                        value="<?php echo esc_attr($custom_model_id); ?>"
-                                        maxlength="120"
-                                        placeholder="e.g. gpt-5.5 or gemini-2.5-flash" />
+                                <!-- Cloud model dropdown (hidden when provider=local) -->
+                                <div id="ai-seo-cloud-model-wrap" <?php echo 'local' === $active_provider ? 'hidden' : ''; ?>>
+                                    <select
+                                        id="ai-seo-model"
+                                        name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[model]"
+                                        data-provider-models="<?php echo esc_attr(wp_json_encode($provider_models)); ?>">
+                                        <?php foreach ($active_models as $model_id => $model_meta) : ?>
+                                            <?php
+                                            $model_label = isset($model_meta['label']) ? (string) $model_meta['label'] : (string) $model_id;
+                                            $model_tier = isset($model_meta['tier']) ? (string) $model_meta['tier'] : 'stable';
+                                            $tier_suffix = 'preview' === $model_tier ? ' [Preview]' : ' [Stable]';
+                                            ?>
+                                            <option value="<?php echo esc_attr($model_id); ?>" data-tier="<?php echo esc_attr($model_tier); ?>" <?php selected($active_model, $model_id); ?>><?php echo esc_html($model_label . $tier_suffix . ' (' . $model_id . ')'); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <span id="ai-seo-model-tier-badge" class="ai-seo-model-tier-badge" aria-live="polite"></span>
                                     <p class="description" style="margin-top:8px;">
-                                        Use only when needed. If invalid or unavailable for your subscription, requests will fail until corrected.
+                                        Curated text-generation models only. Image, TTS, realtime, and transcription models are intentionally excluded.
                                     </p>
+                                    <label class="aisc-toggle ai-seo-custom-model-toggle" style="display:flex;margin-top:8px;">
+                                        <input id="ai-seo-custom-model-enabled" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[custom_model_enabled]" value="1" <?php checked($custom_model_enabled); ?> />
+                                        <span class="aisc-toggle__track"></span>
+                                        <span class="aisc-toggle__label">Advanced: use custom model ID</span>
+                                    </label>
+                                    <div id="ai-seo-custom-model-wrap" class="ai-seo-custom-model-wrap" <?php echo $custom_model_enabled ? '' : 'hidden'; ?>>
+                                        <input
+                                            id="ai-seo-custom-model-id"
+                                            class="regular-text"
+                                            type="text"
+                                            name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[custom_model_id]"
+                                            value="<?php echo esc_attr($custom_model_id); ?>"
+                                            maxlength="120"
+                                            placeholder="e.g. gpt-5.5 or gemini-2.5-flash" />
+                                        <p class="description" style="margin-top:8px;">
+                                            Use only when needed. If invalid or unavailable for your subscription, requests will fail until corrected.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Local AI model info (shown when provider=local) -->
+                                <div id="ai-seo-local-model-wrap" <?php echo 'local' !== $active_provider ? 'hidden' : ''; ?>
+                                    data-local-model="<?php echo esc_attr($local_model); ?>"
+                                    data-local-vision="<?php echo esc_attr($local_vision); ?>"
+                                    data-local-ctx="<?php echo esc_attr($local_ctx); ?>"
+                                    data-local-configured="<?php echo $local_configured ? '1' : '0'; ?>">
+                                    <?php if ($local_configured) : ?>
+                                        <div style="background:#f0f6fc;border:1px solid #c3d9ed;border-radius:4px;padding:12px 16px;margin-bottom:8px;">
+                                            <p style="margin:0 0 4px;"><strong>Chat Model:</strong> <?php echo esc_html($local_model); ?></p>
+                                            <?php if ('' !== $local_vision) : ?>
+                                                <p style="margin:0 0 4px;"><strong>Vision Model:</strong> <?php echo esc_html($local_vision); ?> 👁️</p>
+                                            <?php else : ?>
+                                                <p style="margin:0 0 4px;color:#996800;"><strong>Vision:</strong> Not configured — image SEO will remain manual</p>
+                                            <?php endif; ?>
+                                            <p style="margin:0;"><strong>Context Window:</strong> <?php echo esc_html(number_format($local_ctx)); ?> tokens</p>
+                                        </div>
+                                        <p class="description">
+                                            <a href="<?php echo esc_url(admin_url('admin.php?page=ai-seo-captain-local-ai')); ?>">⚙️ Change model in Local AI settings</a>
+                                        </p>
+                                    <?php else : ?>
+                                        <p class="description" style="color:#d63638;">
+                                            No local model configured. <a href="<?php echo esc_url(admin_url('admin.php?page=ai-seo-captain-local-ai')); ?>">Set up Local AI first</a>.
+                                        </p>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>

@@ -87,6 +87,11 @@ jQuery(function ($) {
     }
 
     function getSelectedModelForTest() {
+        // Local AI: model is read-only, get from data attribute.
+        if ($provider.val() === 'local') {
+            return $.trim($localModelWrap.data('local-model') || '');
+        }
+
         if ($customEnabled.is(':checked')) {
             return $.trim($customModelId.val() || '');
         }
@@ -126,8 +131,29 @@ jQuery(function ($) {
         $temperatureHint.prop('hidden', !isOpenAiOSeries);
     }
 
+    // ─── Local AI provider toggle ──────────────────────────────────────
+    var $cloudModelWrap = $('#ai-seo-cloud-model-wrap');
+    var $localModelWrap = $('#ai-seo-local-model-wrap');
+
+    function updateProviderView(provider) {
+        var isLocal = provider === 'local';
+        $cloudModelWrap.prop('hidden', isLocal);
+        $localModelWrap.prop('hidden', !isLocal);
+
+        // Disable model dropdown when local so form doesn't submit a cloud model.
+        $model.prop('disabled', isLocal);
+    }
+
+    // Apply on load.
+    updateProviderView($provider.val());
+
     $provider.on('change', function () {
-        renderModelsForProvider($provider.val(), false);
+        var prov = $provider.val();
+        updateProviderView(prov);
+
+        if (prov !== 'local') {
+            renderModelsForProvider(prov, false);
+        }
         updateTemperatureHint();
         setTestResult('', false);
     });
