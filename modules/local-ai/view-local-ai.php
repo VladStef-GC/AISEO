@@ -180,7 +180,7 @@ $has_api_key    = '' !== ($options['local_api_key'] ?? '');
                             <option value="131072" <?php selected($saved_ctx, 131072); ?>>128K tokens — Full Parity with Cloud</option>
                             <option value="custom" <?php echo ($saved_ctx !== 131072) ? 'selected' : ''; ?>>Custom...</option>
                         </select>
-                        <input type="number" id="local-ai-context-custom" name="local_context_window_custom" class="small-text" style="<?php echo ($saved_ctx !== 131072) ? '' : 'display:none;'; ?>" min="131072" max="2097152" value="<?php echo esc_attr($saved_ctx); ?>" placeholder="Tokens">
+                        <input type="number" id="local-ai-context-custom" name="local_context_window_custom" style="width:120px;<?php echo ($saved_ctx !== 131072) ? '' : 'display:none;'; ?>" min="131072" max="2097152" value="<?php echo esc_attr($saved_ctx); ?>" placeholder="Tokens">
                         <span id="local-ai-context-detected" class="description" style="display:none;"></span>
                         <p class="description">
                             Minimum <strong>128K tokens (131,072)</strong> required for full feature parity with cloud AI.

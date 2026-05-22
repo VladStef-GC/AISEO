@@ -35,9 +35,13 @@ class Local_AI_Admin
         add_action('wp_ajax_local_ai_chat', array($this, 'ajax_chat'));
         add_action('wp_ajax_local_ai_save_settings', array($this, 'ajax_save_settings'));
         add_action('wp_ajax_local_ai_disconnect', array($this, 'ajax_disconnect'));
+        add_action('wp_ajax_local_ai_heartbeat', array($this, 'ajax_heartbeat'));
 
         // Admin bar status indicator.
         add_action('admin_bar_menu', array($this, 'admin_bar_status'), 101);
+
+        // Heartbeat script — fires on ALL admin pages to keep status fresh.
+        add_action('admin_footer', array($this, 'heartbeat_script'));
     }
 
     /**
@@ -354,6 +358,120 @@ class Local_AI_Admin
             'href'   => admin_url('admin.php?page=ai-seo-captain-local-ai'),
             'meta'   => array('title' => $title),
         ));
+    }
+
+    /**
+     * AJAX: Lightweight heartbeat — ping the Local AI server.
+     *
+     * Called in the background on admin page loads to keep the admin bar
+     * status indicator fresh. Uses a 5-second timeout so it doesn't
+     * block anything.
+     */
+    public function ajax_heartbeat()
+    {
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('error' => 'Permission denied.'), 403);
+        }
+
+        if (! check_ajax_referer(self::NONCE_ACTION, 'nonce', false)) {
+            wp_send_json_error(array('error' => 'Security check failed.'), 403);
+        }
+
+        $options  = get_option(self::OPTION_NAME, array());
+        $base_url = $options['local_base_url'] ?? '';
+        $model    = $options['local_model'] ?? '';
+
+        if ('' === $base_url || '' === $model) {
+            wp_send_json_error(array('status' => 'not_configured'));
+        }
+
+        $provider = new Local_AI_Provider(array(
+            'base_url' => $base_url,
+            'api_key'  => $options['local_api_key'] ?? '',
+            'timeout'  => 5, // Short timeout for heartbeat.
+        ));
+
+        $result = $provider->discover_models();
+
+        if ($result['success']) {
+            $status_data = array(
+                'connected' => true,
+                'model'     => $model,
+                'context'   => (int) ($options['local_context_window'] ?? 131072),
+                'time'      => time(),
+            );
+            set_transient('ai_seo_captain_local_ai_status', $status_data, 5 * MINUTE_IN_SECONDS);
+
+            wp_send_json_success(array(
+                'status' => 'online',
+                'label'  => '🟢 Local AI: Running',
+                'tip'    => sprintf('Connected to %s (%s tokens)', $model, number_format((int) ($options['local_context_window'] ?? 131072))),
+                'model'  => $model,
+            ));
+        } else {
+            delete_transient('ai_seo_captain_local_ai_status');
+
+            wp_send_json_success(array(
+                'status' => 'offline',
+                'label'  => '🔴 Local AI: Offline',
+                'tip'    => 'Local AI server not responding. Click to check settings.',
+            ));
+        }
+    }
+
+    /**
+     * Output a tiny inline heartbeat script on all admin pages.
+     *
+     * Pings the Local AI server in the background to keep the admin bar
+     * status indicator accurate. Throttled: only pings if the last check
+     * was more than 2 minutes ago (stored in sessionStorage).
+     */
+    public function heartbeat_script()
+    {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
+        $options = get_option(self::OPTION_NAME, array());
+        $model   = $options['local_model'] ?? '';
+
+        // Only output if Local AI is configured.
+        if ('' === $model) {
+            return;
+        }
+
+        $nonce    = wp_create_nonce(self::NONCE_ACTION);
+        $ajax_url = admin_url('admin-ajax.php');
+?>
+        <script>
+            (function() {
+                var THROTTLE_MS = 120000; // 2 minutes
+                var key = 'localAiHeartbeat';
+                var last = parseInt(sessionStorage.getItem(key) || '0', 10);
+                var now = Date.now();
+
+                if (now - last < THROTTLE_MS) return;
+                sessionStorage.setItem(key, now.toString());
+
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', <?php echo wp_json_encode($ajax_url); ?>, true);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                xhr.onload = function() {
+                    if (xhr.status !== 200) return;
+                    try {
+                        var resp = JSON.parse(xhr.responseText);
+                        var data = resp.data || {};
+                        var node = document.querySelector('#wp-admin-bar-ai-seo-captain-local-ai-status .ab-item');
+                        if (node && data.label) {
+                            node.textContent = data.label;
+                            node.title = data.tip || '';
+                        }
+                    } catch (e) {}
+                };
+                xhr.send('action=local_ai_heartbeat&nonce=' + encodeURIComponent(<?php echo wp_json_encode($nonce); ?>));
+            })();
+        </script>
+<?php
     }
 
     /**
