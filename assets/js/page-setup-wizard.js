@@ -478,6 +478,7 @@
         this.state = 'idle';
         this.consecutiveErrors = 0;
         this.retryTimers = [];
+        this.activeXhrs = [];   // Track in-flight AJAX requests for abort on stop.
     }
 
     BatchProcessor.prototype.start = function () {
@@ -517,6 +518,7 @@
             self.state = 'stopped';
             self.timer.stop();
             self.clearRetryTimers();
+            self.abortAllXhrs();
             $(self.btnPause).hide();
             $(self.btnStop).hide();
             $(self.prefix + '-stopped-info').text(
@@ -536,6 +538,15 @@
             clearTimeout(this.retryTimers[i]);
         }
         this.retryTimers = [];
+    };
+
+    BatchProcessor.prototype.abortAllXhrs = function () {
+        for (var i = 0; i < this.activeXhrs.length; i++) {
+            if (this.activeXhrs[i] && typeof this.activeXhrs[i].abort === 'function') {
+                this.activeXhrs[i].abort();
+            }
+        }
+        this.activeXhrs = [];
     };
 
     BatchProcessor.prototype.updateProgress = function () {
@@ -584,12 +595,14 @@
         this.inFlight++;
         this.updateProgress();
 
-        $.post(ajaxUrl, $.extend({
+        var xhr = $.post(ajaxUrl, $.extend({
             action: this.ajaxAction,
             nonce: nonce,
             post_id: postId
         }, this.extraData), function (response) {
             self.inFlight--;
+            self.removeXhr(xhr);
+            if (self.state === 'stopped') return; // Aborted — ignore late response.
             self.consecutiveErrors = 0;
             if (response.success) {
                 if (response.data.skipped) {
@@ -612,6 +625,8 @@
             self.fillPool();
         }).fail(function (jqXHR, textStatus) {
             self.inFlight--;
+            self.removeXhr(xhr);
+            if (self.state === 'stopped') return; // Aborted — ignore.
 
             // Handle 429 rate limit — retry with exponential backoff (max 5 retries).
             if (jqXHR.status === 429) {
@@ -648,6 +663,12 @@
             self.updateProgress();
             self.fillPool();
         });
+        this.activeXhrs.push(xhr);
+    };
+
+    BatchProcessor.prototype.removeXhr = function (xhr) {
+        var idx = this.activeXhrs.indexOf(xhr);
+        if (idx > -1) this.activeXhrs.splice(idx, 1);
     };
 
     BatchProcessor.prototype.finish = function () {
@@ -656,6 +677,7 @@
         $(this.prefix + '-bar').css('width', '100%');
         $(this.btnPause).hide();
         $(this.btnStop).hide();
+        this.activeXhrs = [];
         this.onDone(this.stats);
     };
 

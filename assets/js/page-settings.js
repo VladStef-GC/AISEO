@@ -134,7 +134,7 @@ jQuery(function ($) {
     // ─── Local AI provider toggle ──────────────────────────────────────
     var $cloudModelWrap = $('#ai-seo-cloud-model-wrap');
     var $localModelWrap = $('#ai-seo-local-model-wrap');
-    var $contextWindow  = $('#ai-seo-context-window');
+    var $contextWindow = $('#ai-seo-context-window');
 
     function updateProviderView(provider) {
         var isLocal = provider === 'local';
