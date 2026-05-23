@@ -69,7 +69,7 @@ class Local_AI_Provider
             'model'          => $options['local_model'] ?? '',
             'vision_model'   => $options['local_vision_model'] ?? '',
             'context_window' => $options['context_window'] ?? 128000,
-            'timeout'        => $options['local_timeout'] ?? 300,
+            'timeout'        => max(300, (int) ($options['local_timeout'] ?? 300)),
         ));
     }
 
