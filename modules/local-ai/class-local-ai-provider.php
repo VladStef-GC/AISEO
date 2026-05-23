@@ -41,7 +41,7 @@ class Local_AI_Provider
      *     @type string $model          Chat model name.
      *     @type string $vision_model   Vision model name.
      *     @type int    $context_window Context window in tokens. Default 4096.
-     *     @type int    $timeout        Timeout in seconds. Default 120.
+     *     @type int    $timeout        Timeout in seconds. Default 300.
      * }
      */
     public function __construct(array $config = array())
@@ -51,7 +51,7 @@ class Local_AI_Provider
         $this->model          = $config['model'] ?? '';
         $this->vision_model   = $config['vision_model'] ?? '';
         $this->context_window = (int) ($config['context_window'] ?? 4096);
-        $this->timeout        = (int) ($config['timeout'] ?? 120);
+        $this->timeout        = (int) ($config['timeout'] ?? 300);
     }
 
     /**
@@ -69,7 +69,7 @@ class Local_AI_Provider
             'model'          => $options['local_model'] ?? '',
             'vision_model'   => $options['local_vision_model'] ?? '',
             'context_window' => $options['context_window'] ?? 128000,
-            'timeout'        => $options['local_timeout'] ?? 120,
+            'timeout'        => $options['local_timeout'] ?? 300,
         ));
     }
 
