@@ -39,7 +39,7 @@ class AI_Generator
         $user_prompt = $this->build_user_prompt($post, $field_overrides);
 
         if ('local' === $provider) {
-            $raw_response = $this->call_local($model, $system_prompt, $user_prompt, $temperature);
+            $raw_response = $this->call_local($model, $system_prompt, $user_prompt, $temperature, 1024);
         } elseif ('openai' === $provider) {
             $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } elseif ('google' === $provider) {
@@ -93,7 +93,7 @@ class AI_Generator
         $user_prompt = $this->build_site_audit_user_prompt($report);
 
         if ('local' === $provider) {
-            $raw_response = $this->call_local($model, $system_prompt, $user_prompt, $temperature);
+            $raw_response = $this->call_local($model, $system_prompt, $user_prompt, $temperature, 2048);
         } elseif ('openai' === $provider) {
             $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } elseif ('google' === $provider) {
@@ -1068,7 +1068,7 @@ class AI_Generator
      * Bridges the Local_AI_Provider array-based response into the string return
      * expected by the rest of AI_Generator.
      */
-    private function call_local(string $model, string $system_prompt, string $user_prompt, float $temperature): string
+    private function call_local(string $model, string $system_prompt, string $user_prompt, float $temperature, int $max_tokens = 4096): string
     {
         if (! class_exists('\\AI_SEO_Captain\\Modules\\LocalAI\\Local_AI_Provider')) {
             throw new \RuntimeException('Local AI module is not installed. Place the local-ai module in wp-content/plugins/ai-seo-captain/modules/local-ai/.');
@@ -1081,7 +1081,7 @@ class AI_Generator
             array('role' => 'user', 'content' => $user_prompt),
         );
 
-        $result = $provider->chat($messages, $model, $temperature, 4096);
+        $result = $provider->chat($messages, $model, $temperature, $max_tokens);
 
         if (empty($result['success'])) {
             $error = $result['error'] ?? 'Local AI request failed.';
@@ -1151,7 +1151,7 @@ class AI_Generator
         $user_prompt = 'Reply with exactly: OK';
 
         if ('local' === $provider) {
-            $content = $this->call_local($model, $system_prompt, $user_prompt, $temperature);
+            $content = $this->call_local($model, $system_prompt, $user_prompt, $temperature, 64);
         } elseif ('openai' === $provider) {
             $content = $this->call_openai($api_key, $model, $system_prompt, $user_prompt, $temperature);
         } elseif ('google' === $provider) {
