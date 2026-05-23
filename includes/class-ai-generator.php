@@ -39,7 +39,7 @@ class AI_Generator
         $user_prompt = $this->build_user_prompt($post, $field_overrides);
 
         if ('local' === $provider) {
-            $raw_response = $this->call_local($model, $system_prompt, $user_prompt, $temperature, 1024);
+            $raw_response = $this->call_local($model, $system_prompt, $user_prompt, $temperature);
         } elseif ('openai' === $provider) {
             $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } elseif ('google' === $provider) {
@@ -93,7 +93,7 @@ class AI_Generator
         $user_prompt = $this->build_site_audit_user_prompt($report);
 
         if ('local' === $provider) {
-            $raw_response = $this->call_local($model, $system_prompt, $user_prompt, $temperature, 2048);
+            $raw_response = $this->call_local($model, $system_prompt, $user_prompt, $temperature);
         } elseif ('openai' === $provider) {
             $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } elseif ('google' === $provider) {
@@ -1185,7 +1185,7 @@ class AI_Generator
         $user_prompt = 'Reply with exactly: OK';
 
         if ('local' === $provider) {
-            $content = $this->call_local($model, $system_prompt, $user_prompt, $temperature, 64);
+            $content = $this->call_local($model, $system_prompt, $user_prompt, $temperature);
         } elseif ('openai' === $provider) {
             $content = $this->call_openai($api_key, $model, $system_prompt, $user_prompt, $temperature);
         } elseif ('google' === $provider) {
