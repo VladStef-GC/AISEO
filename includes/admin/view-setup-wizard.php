@@ -91,13 +91,13 @@ defined('ABSPATH') || exit;
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;">
             <strong><?php esc_html_e('Parallel requests:', 'ai-seo-captain'); ?></strong>
             <select id="aisc-concurrency" style="width:auto;min-width:60px;">
-                <option value="1">1</option>
+                <option value="1" selected>1</option>
                 <option value="2">2</option>
-                <option value="3" selected>3</option>
+                <option value="3">3</option>
                 <option value="5">5</option>
                 <option value="10">10</option>
             </select>
-            <span style="color:#50575e;"><?php esc_html_e('Higher = faster but uses more server resources. Start with 3. Lower to 1 if you see rate-limit errors.', 'ai-seo-captain'); ?></span>
+            <span style="color:#50575e;"><?php esc_html_e('Higher = faster but uses more server resources. Start with 1 for local AI. Cloud providers can handle 3-5.', 'ai-seo-captain'); ?></span>
         </label>
     </div>
 
