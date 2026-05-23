@@ -188,13 +188,15 @@ class Local_AI_Provider
         }
 
         $content = $data['choices'][0]['message']['content'] ?? '';
+        $finish_reason = $data['choices'][0]['finish_reason'] ?? 'stop';
 
         return array(
-            'success' => true,
-            'content' => $content,
-            'usage'   => $data['usage'] ?? array(),
-            'model'   => $data['model'] ?? $model,
-            'latency' => $latency,
+            'success'       => true,
+            'content'       => $content,
+            'finish_reason' => $finish_reason,
+            'usage'         => $data['usage'] ?? array(),
+            'model'         => $data['model'] ?? $model,
+            'latency'       => $latency,
         );
     }
 

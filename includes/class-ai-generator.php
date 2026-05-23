@@ -1076,26 +1076,60 @@ class AI_Generator
 
         $provider = \AI_SEO_Captain\Modules\LocalAI\Local_AI_Provider::from_options();
 
+        // Build the initial conversation.
         $messages = array(
             array('role' => 'system', 'content' => $system_prompt),
             array('role' => 'user', 'content' => $user_prompt),
         );
 
-        $result = $provider->chat($messages, $model, $temperature, $max_tokens);
+        // ── Multi-batch continuation loop ──────────────────────────────
+        // If the model hits max_tokens (finish_reason=length), we automatically
+        // send a continuation request and concatenate the fragments.
+        // This allows the AI to produce responses of any length without truncation.
+        $max_continuations = 10;
+        $accumulated       = '';
 
-        if (empty($result['success'])) {
-            $error = $result['error'] ?? 'Local AI request failed.';
-            error_log('[SEO Captain] Local AI error: ' . $error);
-            throw new \RuntimeException('Local AI error: ' . $error);
+        for ($round = 0; $round <= $max_continuations; $round++) {
+            $result = $provider->chat($messages, $model, $temperature, $max_tokens);
+
+            if (empty($result['success'])) {
+                $error = $result['error'] ?? 'Local AI request failed.';
+                error_log('[SEO Captain] Local AI error: ' . $error);
+                throw new \RuntimeException('Local AI error: ' . $error);
+            }
+
+            $chunk = $result['content'] ?? '';
+            $accumulated .= $chunk;
+            $finish_reason = $result['finish_reason'] ?? 'stop';
+
+            // Model finished naturally — we have the complete response.
+            if ('length' !== $finish_reason) {
+                break;
+            }
+
+            // Response was truncated — ask the model to continue.
+            // Add the partial response as assistant, then a continue instruction.
+            $messages[] = array('role' => 'assistant', 'content' => $chunk);
+            $messages[] = array(
+                'role'    => 'user',
+                'content' => 'Your previous response was cut off at the token limit. '
+                    . 'Continue EXACTLY where you stopped — do not repeat anything you already wrote. '
+                    . 'Do not add any preamble like "Certainly" or "Here is the rest". '
+                    . 'Just output the remaining content starting from the exact cut-off point.',
+            );
+
+            error_log(sprintf(
+                '[SEO Captain] Local AI continuation round %d — finish_reason=length, accumulated %d chars so far.',
+                $round + 1,
+                strlen($accumulated)
+            ));
         }
 
-        $content = $result['content'] ?? '';
-
-        if ('' === trim($content)) {
+        if ('' === trim($accumulated)) {
             throw new \RuntimeException('The local AI model returned an empty response. Check that your model is loaded in LM Studio.');
         }
 
-        return $content;
+        return $accumulated;
     }
 
     private function call_openai(string $api_key, string $model, string $system_prompt, string $user_prompt, float $temperature): string
