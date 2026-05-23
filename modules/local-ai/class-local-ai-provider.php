@@ -159,16 +159,12 @@ class Local_AI_Provider
             'model'       => $model,
             'messages'    => $messages,
             'temperature' => $temperature,
+            // -1 = unlimited (generate until EOS or context limit).
+            // Utility calls (probe_vision, test_connection) pass explicit
+            // small values for speed; content generation uses -1 so the
+            // model decides when it's done.
+            'max_tokens'  => null !== $max_tokens ? (int) $max_tokens : -1,
         );
-
-        // Only include max_tokens when explicitly set (utility calls like
-        // probe_vision or test_connection). For content generation the field
-        // is omitted so the model generates freely until it finishes or hits
-        // the context window — the continuation loop in call_local() handles
-        // the latter case.
-        if (null !== $max_tokens) {
-            $payload['max_tokens'] = (int) $max_tokens;
-        }
 
         $start = microtime(true);
 
