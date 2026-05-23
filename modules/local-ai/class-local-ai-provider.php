@@ -142,7 +142,7 @@ class Local_AI_Provider
      *
      * @return array{success: bool, content?: string, usage?: array, latency?: float, error?: string}
      */
-    public function chat(array $messages, $model = '', $temperature = 0.3, $max_tokens = 2048)
+    public function chat(array $messages, $model = '', $temperature = 0.3, $max_tokens = null)
     {
         $model = $model ?: $this->model;
 
@@ -159,8 +159,16 @@ class Local_AI_Provider
             'model'       => $model,
             'messages'    => $messages,
             'temperature' => $temperature,
-            'max_tokens'  => $max_tokens,
         );
+
+        // Only include max_tokens when explicitly set (utility calls like
+        // probe_vision or test_connection). For content generation the field
+        // is omitted so the model generates freely until it finishes or hits
+        // the context window — the continuation loop in call_local() handles
+        // the latter case.
+        if (null !== $max_tokens) {
+            $payload['max_tokens'] = (int) $max_tokens;
+        }
 
         $start = microtime(true);
 

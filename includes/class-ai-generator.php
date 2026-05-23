@@ -1068,7 +1068,7 @@ class AI_Generator
      * Bridges the Local_AI_Provider array-based response into the string return
      * expected by the rest of AI_Generator.
      */
-    private function call_local(string $model, string $system_prompt, string $user_prompt, float $temperature, int $max_tokens = 4096): string
+    private function call_local(string $model, string $system_prompt, string $user_prompt, float $temperature): string
     {
         if (! class_exists('\\AI_SEO_Captain\\Modules\\LocalAI\\Local_AI_Provider')) {
             throw new \RuntimeException('Local AI module is not installed. Place the local-ai module in wp-content/plugins/ai-seo-captain/modules/local-ai/.');
@@ -1083,14 +1083,15 @@ class AI_Generator
         );
 
         // ── Multi-batch continuation loop ──────────────────────────────
-        // If the model hits max_tokens (finish_reason=length), we automatically
-        // send a continuation request and concatenate the fragments.
-        // This allows the AI to produce responses of any length without truncation.
+        // No max_tokens is sent to the API — the model generates freely until
+        // it finishes (EOS) or runs out of context window. If the latter
+        // happens (finish_reason=length), we send a continuation request and
+        // concatenate the fragments. This works with any model size.
         $max_continuations = 10;
         $accumulated       = '';
 
         for ($round = 0; $round <= $max_continuations; $round++) {
-            $result = $provider->chat($messages, $model, $temperature, $max_tokens);
+            $result = $provider->chat($messages, $model, $temperature);
 
             if (empty($result['success'])) {
                 $error = $result['error'] ?? 'Local AI request failed.';
