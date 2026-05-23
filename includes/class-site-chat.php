@@ -43,6 +43,8 @@ class Site_Chat
 
     public function handle_chat(): void
     {
+        set_time_limit(300);
+
         check_ajax_referer('ai_seo_captain_site_chat', 'nonce');
 
         if (! current_user_can('manage_options')) {

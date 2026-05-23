@@ -108,6 +108,8 @@ class Admin_Ajax
 
     public function handle_generate_editor_meta(): void
     {
+        set_time_limit(300);
+
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
 
         if (! $post_id) {
@@ -269,6 +271,7 @@ class Admin_Ajax
 
     public function handle_chat_for_post(): void
     {
+        set_time_limit(300);
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
         $message = isset($_POST['message']) ? sanitize_textarea_field(wp_unslash($_POST['message'])) : '';
 
@@ -387,6 +390,8 @@ class Admin_Ajax
 
     public function handle_bulk_generate(): void
     {
+        set_time_limit(300);
+
         check_ajax_referer('ai_seo_captain_setup_wizard', 'nonce');
 
         if (! current_user_can('manage_options')) {
@@ -542,6 +547,7 @@ class Admin_Ajax
 
     public function handle_page_audit(): void
     {
+        set_time_limit(300);
         // Accept both editor nonce and wizard nonce since this is called from both contexts.
         if (
             ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? '')), 'ai_seo_captain_save_editor_meta')
@@ -699,6 +705,7 @@ class Admin_Ajax
 
     public function handle_content_edit(): void
     {
+        set_time_limit(300);
         $post_id     = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
         $instruction = isset($_POST['instruction']) ? sanitize_textarea_field(wp_unslash($_POST['instruction'])) : '';
 
@@ -872,6 +879,7 @@ class Admin_Ajax
 
     public function handle_test_model(): void
     {
+        set_time_limit(300);
         check_ajax_referer('ai_seo_captain_settings_test_model', 'nonce');
 
         if (! current_user_can('manage_options')) {

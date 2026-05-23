@@ -154,6 +154,7 @@ class Local_AI_Admin
      */
     public function ajax_test_connection()
     {
+        set_time_limit(300);
         $this->verify_ajax_request();
 
         $config = $this->get_ajax_config();
@@ -209,6 +210,8 @@ class Local_AI_Admin
      */
     public function ajax_chat()
     {
+        set_time_limit(300);
+
         $this->verify_ajax_request();
 
         $message = sanitize_textarea_field($_POST['message'] ?? '');
@@ -543,6 +546,7 @@ class Local_AI_Admin
      */
     public function ajax_generate_image_seo()
     {
+        set_time_limit(300);
         if (! current_user_can('manage_options')) {
             wp_send_json_error(array('error' => 'Permission denied.'), 403);
         }
