@@ -21,7 +21,7 @@ if (isset($_POST['local_ai_save_nonce']) && wp_verify_nonce($_POST['local_ai_sav
     $options['local_base_url']       = esc_url_raw(trim($_POST['local_base_url'] ?? ''));
     $options['local_model']          = sanitize_text_field($_POST['local_model'] ?? '');
     $options['local_vision_model']   = sanitize_text_field($_POST['local_vision_model'] ?? '');
-    $options['local_timeout']        = max(10, min(900, (int) ($_POST['local_timeout'] ?? 120)));
+    $options['local_timeout']        = max(60, min(3600, (int) ($_POST['local_timeout'] ?? 3600)));
 
     // Context window — use custom value if the dropdown is set to "custom".
     $ctx_raw = $_POST['context_window'] ?? '';
@@ -147,8 +147,8 @@ $ctx_is_preset = isset($ctx_presets[$saved_ctx]);
                 <tr>
                     <th scope="row"><label for="local-ai-timeout">Timeout</label></th>
                     <td>
-                        <input type="number" id="local-ai-timeout" name="local_timeout" class="small-text" value="<?php echo esc_attr($saved_timeout); ?>" min="10" max="900"> seconds
-                        <p class="description">Local models can be slower than cloud. Increase if you get timeout errors. Deep analysis audits may need 600+ seconds for large models.</p>
+                        <input type="number" id="local-ai-timeout" name="local_timeout" class="small-text" value="<?php echo esc_attr($saved_timeout); ?>" min="60" max="3600"> seconds
+                        <p class="description">Maximum time to wait for the AI model to respond. Default 3600s (1 hour). Only reduce if you want faster failure detection.</p>
                     </td>
                 </tr>
             </table>

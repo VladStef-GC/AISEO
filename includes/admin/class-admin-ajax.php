@@ -48,8 +48,8 @@ class Admin_Ajax
         $options  = $this->settings->get();
         $provider = (string) ($options['provider'] ?? '');
         if ('local' === $provider) {
-            $local_timeout = max(300, (int) ($options['local_timeout'] ?? 300));
-            set_time_limit($local_timeout + 30);
+            $local_timeout = max(3600, (int) ($options['local_timeout'] ?? 3600));
+            set_time_limit($local_timeout + 60);
         } else {
             set_time_limit(300);
         }
