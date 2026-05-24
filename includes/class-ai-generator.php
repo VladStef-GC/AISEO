@@ -1469,14 +1469,15 @@ class AI_Generator
         }
 
         if (! is_array($decoded)) {
-            // Log the raw response for debugging.
+            // Log the raw AND escaped response for debugging.
             $len = strlen($content);
             $preview_start = substr($content, 0, 300);
             $preview_end   = substr($content, -300);
             $json_error = json_last_error_msg();
             error_log('[SEO Captain] JSON decode failed: ' . $json_error . ' — Length: ' . $len);
-            error_log('[SEO Captain] JSON START: ' . $preview_start);
-            error_log('[SEO Captain] JSON END: ' . $preview_end);
+            error_log('[SEO Captain] JSON START (raw): ' . $preview_start);
+            error_log('[SEO Captain] JSON END (raw): ' . $preview_end);
+            error_log('[SEO Captain] JSON END (escaped): ' . substr($normalized, -300));
             throw new \RuntimeException('The AI response was not valid JSON. (' . $json_error . ')');
         }
 
@@ -1531,8 +1532,18 @@ class AI_Generator
 
             // Inside a JSON string value.
             if ('\\' === $c && $i + 1 < $len) {
-                // Valid escape sequence — keep as-is.
-                $out .= $c . $json[$i + 1];
+                $next_char = $json[$i + 1];
+
+                // Valid JSON escape sequences: \", \\, \/, \b, \f, \n, \r, \t, \uXXXX.
+                if (in_array($next_char, array('"', '\\', '/', 'b', 'f', 'n', 'r', 't', 'u'), true)) {
+                    $out .= $c . $next_char;
+                    $i += 2;
+                    continue;
+                }
+
+                // Invalid escape (e.g. \* \_ \[ from Markdown).
+                // Double the backslash so json_decode sees \\ + char.
+                $out .= '\\\\' . $next_char;
                 $i += 2;
                 continue;
             }

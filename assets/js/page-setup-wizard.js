@@ -465,6 +465,7 @@
         this.extraData = config.extraData || {};
         this.timer = createTimer(config.timerEl);
         this.concurrency = Math.max(1, Math.min(10, parseInt(config.concurrency, 10) || 1));
+        this.stopBtnText = config.stopBtnText || $(config.btnStart).text().trim();
 
         this.current = 0;      // next index to dispatch
         this.completed = 0;    // total items finished (success + skip + error)
@@ -527,7 +528,7 @@
                 self.stats.errors + ' errors.'
             );
             $(self.prefix + '-stopped').show();
-            $(self.btnStart).prop('disabled', false).text('Continue');
+            $(self.btnStart).prop('disabled', false).text(self.stopBtnText);
         });
 
         this.fillPool();
@@ -804,6 +805,7 @@
                 btnStop: '#aisc-btn-s2-stop',
                 timerEl: '#aisc-s2-elapsed',
                 concurrency: $('#aisc-concurrency').val() || 1,
+                stopBtnText: 'Re-Generate All',
                 extraData: {
                     override_all: $('#aisc-s2-override').is(':checked') ? 1 : 0,
                     draft_mode: $('#aisc-s2-draft').is(':checked') ? 1 : 0
@@ -1194,6 +1196,7 @@
                 btnStop: '#aisc-btn-s3-stop',
                 timerEl: '#aisc-s3-elapsed',
                 concurrency: $('#aisc-concurrency').val() || 1,
+                stopBtnText: 'Re-Audit All',
                 extraData: {
                     deep_analysis: $('#aisc-s3-deep').is(':checked') ? '1' : '0',
                     override_all: overrideAll ? '1' : '0'
