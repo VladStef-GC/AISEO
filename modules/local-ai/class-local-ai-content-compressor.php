@@ -166,8 +166,8 @@ class Local_AI_Content_Compressor
 
             $new_total = $total_chars - $target_len + $prefix_len + mb_strlen($compressed_body);
 
-            if ($new_total <= $budget_chars || self::LEVEL_MINIMAL === $level) {
-                // Add transparency note so AI knows content was condensed.
+            if ($new_total <= $budget_chars) {
+                // Fits at this compression level — reassemble.
                 $final_tokens = self::estimate_tokens($new_total);
                 $reassembled  = self::prepend_compression_note(
                     $seo_prefix . $compressed_body,
@@ -183,8 +183,54 @@ class Local_AI_Content_Compressor
             }
         }
 
-        // Should never reach here, but safety net.
-        return self::build_result($messages, self::LEVEL_NONE, $original_tokens, $original_tokens, $context_window);
+        // ── Max compression still doesn't fit — truncate the SEO prefix ──
+        // The sibling/related page metadata can be very large on sites with
+        // many pages. Progressively trim it to fit the budget.
+        $compressed_body = self::compress($html_body, self::LEVEL_MINIMAL);
+        $body_chars = mb_strlen($compressed_body);
+        $other_chars = $total_chars - $target_len; // system prompt + other messages
+        $available_for_user = $budget_chars - $other_chars;
+        $available_for_prefix = $available_for_user - $body_chars;
+
+        if ($available_for_prefix > 500) {
+            // Truncate the SEO prefix to fit.
+            $truncated_prefix = mb_substr($seo_prefix, 0, (int) $available_for_prefix);
+            // Try to cut at last newline for cleaner output.
+            $last_nl = mb_strrpos($truncated_prefix, "\n");
+            if (false !== $last_nl && $last_nl > (int) ($available_for_prefix * 0.5)) {
+                $truncated_prefix = mb_substr($truncated_prefix, 0, $last_nl + 1);
+            }
+            $truncated_prefix .= "\n[SEO metadata truncated to fit context window]\n";
+
+            $new_total = $other_chars + mb_strlen($truncated_prefix) + $body_chars;
+            $final_tokens = self::estimate_tokens($new_total);
+            $reassembled = self::prepend_compression_note(
+                $truncated_prefix . $compressed_body,
+                self::LEVEL_MINIMAL,
+                $original_tokens,
+                $final_tokens,
+                $context_window
+            );
+
+            $messages[$target_idx]['content'] = $reassembled;
+
+            return self::build_result($messages, self::LEVEL_MINIMAL, $original_tokens, $final_tokens, $context_window);
+        }
+
+        // Even truncation won't help — context window is too small for this page.
+        // Still return what we have (LEVEL_MINIMAL) and let the API reject it
+        // with a clear error rather than silently failing.
+        $final_tokens = self::estimate_tokens($total_chars - $target_len + $prefix_len + $body_chars);
+        $reassembled = self::prepend_compression_note(
+            $seo_prefix . $compressed_body,
+            self::LEVEL_MINIMAL,
+            $original_tokens,
+            $final_tokens,
+            $context_window
+        );
+        $messages[$target_idx]['content'] = $reassembled;
+
+        return self::build_result($messages, self::LEVEL_MINIMAL, $original_tokens, $final_tokens, $context_window);
     }
 
     /**

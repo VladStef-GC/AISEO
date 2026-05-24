@@ -1098,6 +1098,23 @@ class AI_Generator
                     number_format($fit['context_window'])
                 ));
             }
+
+            // Pre-flight check: if even max compression couldn't fit, fail early
+            // with a clear error instead of sending a doomed request.
+            $input_budget = (int) ($ctx_window * 0.6);
+            if ($fit['final_tokens'] > $input_budget) {
+                $msg = sprintf(
+                    'This page needs ~%s tokens but your %s-token context window only fits ~%s tokens of input (after compression level %d: %s). ' .
+                    'Increase the Context Window in Local AI settings, or use a model with a larger context.',
+                    number_format($fit['final_tokens']),
+                    number_format($ctx_window),
+                    number_format($input_budget),
+                    $fit['level'],
+                    $fit['level_label']
+                );
+                error_log('[SEO Captain] Pre-flight token check failed: ' . $msg);
+                throw new \RuntimeException('Local AI error: ' . $msg);
+            }
         }
 
         // ── Multi-batch continuation loop ──────────────────────────────

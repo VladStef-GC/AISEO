@@ -387,7 +387,7 @@ class Settings
             ? $this->sanitize_temperature((string) $input['ai_temperature'])
             : $this->sanitize_temperature((string) ($current['ai_temperature'] ?? '0.3'));
         $output['context_window'] = isset($input['context_window'])
-            ? max(32000, (int) $input['context_window'])
+            ? max(2048, (int) $input['context_window'])
             : (int) ($current['context_window'] ?? 128000);
         $output['api_key']              = isset($input['api_key']) ? sanitize_text_field($input['api_key']) : $current['api_key'];
         $output['system_prompt']        = isset($input['system_prompt']) ? sanitize_textarea_field($input['system_prompt']) : $current['system_prompt'];
@@ -483,8 +483,8 @@ class Settings
         $output['local_base_url']       = isset($input['local_base_url']) ? esc_url_raw(trim((string) $input['local_base_url'])) : $current['local_base_url'];
         $output['local_model']          = isset($input['local_model']) ? sanitize_text_field((string) $input['local_model']) : $current['local_model'];
         $output['local_vision_model']   = isset($input['local_vision_model']) ? sanitize_text_field((string) $input['local_vision_model']) : $current['local_vision_model'];
-        $output['local_context_window'] = isset($input['local_context_window']) ? max(32000, (int) $input['local_context_window']) : $current['local_context_window'];
-        $output['local_timeout']        = isset($input['local_timeout']) ? max(10, min(600, (int) $input['local_timeout'])) : $current['local_timeout'];
+        $output['local_context_window'] = isset($input['local_context_window']) ? max(2048, (int) $input['local_context_window']) : $current['local_context_window'];
+        $output['local_timeout']        = isset($input['local_timeout']) ? max(60, min(3600, (int) $input['local_timeout'])) : $current['local_timeout'];
         // API key: only overwrite if a real value was sent (not the masked placeholder).
         if (isset($input['local_api_key']) && '' !== $input['local_api_key'] && '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022' !== $input['local_api_key']) {
             $output['local_api_key'] = sanitize_text_field((string) $input['local_api_key']);

@@ -103,6 +103,7 @@ class Local_AI_Provider
         }
 
         $models = array();
+        $seen_ids = array();
         $raw_models = $data['data'] ?? $data['models'] ?? array();
 
         foreach ($raw_models as $m) {
@@ -110,6 +111,13 @@ class Local_AI_Provider
             if ('' === $id) {
                 continue;
             }
+
+            // Deduplicate: LM Studio can list the same model with different
+            // ID suffixes (e.g. "model:3" and "model"). Keep the first occurrence.
+            if (isset($seen_ids[$id])) {
+                continue;
+            }
+            $seen_ids[$id] = true;
 
             $models[] = array(
                 'id'             => $id,
