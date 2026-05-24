@@ -1472,17 +1472,20 @@ class AI_Generator
 
         $options = $this->settings->get();
 
-        if (empty($options['api_key'])) {
+        $provider = (string) $options['provider'];
+
+        if ('local' !== $provider && empty($options['api_key'])) {
             throw new \RuntimeException('Add an API key in SEO Captain Settings before generating page audits.');
         }
 
-        $provider = (string) $options['provider'];
         $model = trim((string) $options['model']);
         $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_page_audit_system_prompt((string) $options['system_prompt']);
         $user_prompt = $this->build_page_audit_user_prompt($post, $deep_analysis);
 
-        if ('openai' === $provider) {
+        if ('local' === $provider) {
+            $raw_response = $this->call_local($model, $system_prompt, $user_prompt, $temperature);
+        } elseif ('openai' === $provider) {
             $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } elseif ('google' === $provider) {
             $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
@@ -1516,17 +1519,20 @@ class AI_Generator
 
         $options = $this->settings->get();
 
-        if (empty($options['api_key'])) {
+        $provider = (string) $options['provider'];
+
+        if ('local' !== $provider && empty($options['api_key'])) {
             throw new \RuntimeException('Add an API key in SEO Captain Settings before requesting content changes.');
         }
 
-        $provider = (string) $options['provider'];
         $model = trim((string) $options['model']);
         $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_content_edit_system_prompt((string) $options['system_prompt']);
         $user_prompt = $this->build_content_edit_user_prompt($post, $instruction, $recent_messages);
 
-        if ('openai' === $provider) {
+        if ('local' === $provider) {
+            $raw_response = $this->call_local($model, $system_prompt, $user_prompt, $temperature);
+        } elseif ('openai' === $provider) {
             $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
         } elseif ('google' === $provider) {
             $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
