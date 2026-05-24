@@ -7,6 +7,7 @@
  *   php test-steps.php                       # Test Step 2 + 3 on the 4-page TT1 list
  *   php test-steps.php --step=2              # Step 2 only
  *   php test-steps.php --step=3              # Step 3 only
+ *   php test-steps.php --deep                 # Step 2 with deep analysis (sibling content)
  *   php test-steps.php --pages=1545,17       # Specific page IDs
  *   php test-steps.php --pages=all --step=2  # All 43 pages, Step 2
  *   php test-steps.php --dry                 # Dry run: show prompts/tokens without calling AI
@@ -40,6 +41,7 @@ foreach ($argv as $arg) {
 
 $step     = isset($args['step']) ? (int) $args['step'] : 0; // 0 = both
 $dry_run  = isset($args['dry']);
+$deep     = isset($args['deep']);
 $page_ids = array();
 
 if (isset($args['pages'])) {
@@ -107,6 +109,7 @@ echo "║  Model:    " . str_pad($opts['local_model'] ?? ($opts['model'] ?? 'NOT
 echo "║  Context:  " . str_pad(number_format((int) ($opts['context_window'] ?? 128000)) . ' tokens', 47) . "║\n";
 echo "║  Pages:    " . str_pad(count($page_ids) . ' pages', 47) . "║\n";
 echo "║  Steps:    " . str_pad($step === 0 ? '2 + 3' : (string) $step, 47) . "║\n";
+echo "║  Deep:     " . str_pad($deep ? 'YES (sibling content)' : 'no', 47) . "║\n";
 echo "║  Mode:     " . str_pad($dry_run ? 'DRY RUN (no AI calls)' : 'LIVE', 47) . "║\n";
 echo "╚══════════════════════════════════════════════════════════════╝\n\n";
 
@@ -140,11 +143,13 @@ if ($dry_run) {
 
         if ($step === 0 || $step === 2) {
             $sp = $buildSystem->invoke($generator, (string) ($opts['system_prompt'] ?? ''));
-            $up = $buildUser->invoke($generator, $post, array());
+            $overrides = $deep ? array('deep_analysis' => true) : array();
+            $up = $buildUser->invoke($generator, $post, $overrides);
             $total = mb_strlen($sp) + mb_strlen($up);
             $est_tokens = (int) ceil($total / 3.5);
+            $label = $deep ? 'Step 2 (deep)' : 'Step 2 (metadata)';
             $status = $est_tokens <= $input_budget ? '✅' : '⚠️ needs compression';
-            echo "  Step 2 (metadata): {$total} chars ≈ {$est_tokens} tokens {$status}\n";
+            echo "  {$label}: {$total} chars ≈ {$est_tokens} tokens {$status}\n";
         }
 
         if ($step === 0 || $step === 3) {
@@ -178,10 +183,12 @@ foreach ($page_ids as $idx => $pid) {
 
     // ── Step 2: Metadata ─────────────────────────────────────────────
     if ($step === 0 || $step === 2) {
-        echo "[{$n}/{$total}] Step 2 — {$post->post_title} ... ";
+        $label = $deep ? 'Step 2 (deep)' : 'Step 2';
+        echo "[{$n}/{$total}] {$label} — {$post->post_title} ... ";
         $t = microtime(true);
         try {
-            $result = $generator->generate_for_post($pid);
+            $overrides = $deep ? array('deep_analysis' => true) : array();
+            $result = $generator->generate_for_post($pid, $overrides);
             $elapsed = round(microtime(true) - $t, 1);
             echo "✅ {$elapsed}s — \"{$result['seo_title']}\"\n";
             $results['step2'][] = array('id' => $pid, 'title' => $post->post_title, 'ok' => true, 'time' => $elapsed);

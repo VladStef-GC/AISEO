@@ -161,10 +161,12 @@ class Local_AI_Content_Compressor
         $body_len   = mb_strlen($html_body);
 
         // Try each compression level on the HTML body only.
+        // Reserve space for the compression note that gets prepended.
+        $note_overhead = 600; // compression note is ~500 chars + margin.
         foreach (array(self::LEVEL_TRIM, self::LEVEL_SPARSE, self::LEVEL_SKELETON, self::LEVEL_MINIMAL) as $level) {
             $compressed_body = self::compress($html_body, $level);
 
-            $new_total = $total_chars - $target_len + $prefix_len + mb_strlen($compressed_body);
+            $new_total = $total_chars - $target_len + $prefix_len + mb_strlen($compressed_body) + $note_overhead;
 
             if ($new_total <= $budget_chars) {
                 // Fits at this compression level — reassemble.
@@ -183,31 +185,69 @@ class Local_AI_Content_Compressor
             }
         }
 
-        // ── Max compression still doesn't fit — truncate the SEO prefix ──
-        // The sibling/related page metadata can be very large on sites with
-        // many pages. Progressively trim it to fit the budget.
+        // ── Max body compression still doesn't fit ──────────────────────
+        // The SEO prefix (especially deep-analysis sibling content previews)
+        // can be very large. Compress it progressively:
+        //   Step 1: Strip sibling "Content preview:" excerpts from the prefix.
+        //   Step 2: Truncate remaining prefix if still too large.
         $compressed_body = self::compress($html_body, self::LEVEL_MINIMAL);
         $body_chars = mb_strlen($compressed_body);
         $other_chars = $total_chars - $target_len; // system prompt + other messages
-        $available_for_user = $budget_chars - $other_chars;
+
+        // Step 1: Strip sibling body content previews from the prefix.
+        // These are formatted as "    Content preview: <HTML>" and are the
+        // most expendable part of the deep-analysis data.
+        $trimmed_prefix = $seo_prefix;
+        $trimmed_prefix_len = $prefix_len;
+        $new_total = $other_chars + $prefix_len + $body_chars + $note_overhead;
+
+        if ($new_total > $budget_chars) {
+            $trimmed_prefix = preg_replace('/^    Content preview: .+$/m', '', $seo_prefix) ?? $seo_prefix;
+            // Collapse resulting blank lines.
+            $trimmed_prefix = (string) preg_replace('/\n{3,}/', "\n\n", $trimmed_prefix);
+            $trimmed_prefix_len = mb_strlen($trimmed_prefix);
+            $new_total = $other_chars + $trimmed_prefix_len + $body_chars + $note_overhead;
+
+            if ($new_total <= $budget_chars) {
+                $final_tokens = self::estimate_tokens($new_total);
+                $reassembled = self::prepend_compression_note(
+                    $trimmed_prefix . $compressed_body,
+                    self::LEVEL_MINIMAL,
+                    $original_tokens,
+                    $final_tokens,
+                    $context_window
+                );
+                $messages[$target_idx]['content'] = $reassembled;
+
+                error_log('[SEO Captain] Compressor: stripped sibling content previews from prefix to fit.');
+
+                return self::build_result($messages, self::LEVEL_MINIMAL, $original_tokens, $final_tokens, $context_window);
+            }
+        }
+
+        // Step 2: Truncate the remaining prefix to fit.
+        $available_for_user = $budget_chars - $other_chars - $note_overhead;
         $available_for_prefix = $available_for_user - $body_chars;
 
         if ($available_for_prefix > 500) {
-            // Truncate the SEO prefix to fit.
+            // Truncate the SEO prefix to fit (after sibling content was already stripped).
+            $trunc_note = "\n[SEO metadata truncated to fit context window]\n";
+            $trunc_budget = (int) $available_for_prefix - mb_strlen($trunc_note);
+
             error_log(sprintf(
                 '[SEO Captain] Compressor: body compressed to %s chars but prefix is %s chars (budget %s chars). Truncating prefix to %s chars.',
                 number_format($body_chars),
-                number_format($prefix_len),
+                number_format($trimmed_prefix_len),
                 number_format((int) $budget_chars),
-                number_format((int) $available_for_prefix)
+                number_format($trunc_budget)
             ));
-            $truncated_prefix = mb_substr($seo_prefix, 0, (int) $available_for_prefix);
+            $truncated_prefix = mb_substr($trimmed_prefix, 0, $trunc_budget);
             // Try to cut at last newline for cleaner output.
             $last_nl = mb_strrpos($truncated_prefix, "\n");
-            if (false !== $last_nl && $last_nl > (int) ($available_for_prefix * 0.5)) {
+            if (false !== $last_nl && $last_nl > (int) ($trunc_budget * 0.5)) {
                 $truncated_prefix = mb_substr($truncated_prefix, 0, $last_nl + 1);
             }
-            $truncated_prefix .= "\n[SEO metadata truncated to fit context window]\n";
+            $truncated_prefix .= $trunc_note;
 
             $new_total = $other_chars + mb_strlen($truncated_prefix) + $body_chars;
             $final_tokens = self::estimate_tokens($new_total);

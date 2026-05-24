@@ -476,8 +476,9 @@ class AI_Generator
                 if ($sib_post instanceof \WP_Post) {
                     $sib_clean = Content_Helper::sanitize_for_ai(Content_Helper::get_content($sib_post));
                     if ('' !== $sib_clean) {
-                        // ~375 words ≈ 1500 chars — structured HTML keeps headings/links/images in context.
-                        $sibling_content[(int) $sib['object_id']] = mb_substr($sib_clean, 0, 1500);
+                        // ~200 words ≈ 800 chars — enough structural context for SEO
+                        // differentiation without overwhelming small context windows.
+                        $sibling_content[(int) $sib['object_id']] = mb_substr($sib_clean, 0, 800);
                     }
                 }
             }
@@ -1121,8 +1122,11 @@ class AI_Generator
 
             // Pre-flight check: if even max compression couldn't fit, fail early
             // with a clear error instead of sending a doomed request.
+            // Allow 2% tolerance because CHARS_PER_TOKEN is an estimate;
+            // a few tokens over the calculated budget won't actually overflow.
             $input_budget = (int) ($ctx_window * 0.6);
-            if ($fit['final_tokens'] > $input_budget) {
+            $tolerance = max(50, (int) ($input_budget * 0.02));
+            if ($fit['final_tokens'] > $input_budget + $tolerance) {
                 $msg = sprintf(
                     'This page needs ~%s tokens but your %s-token context window only fits ~%s tokens of input (after compression level %d: %s). ' .
                         'Increase the Context Window in Local AI settings, or use a model with a larger context.',
