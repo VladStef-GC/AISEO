@@ -572,10 +572,11 @@ class Admin_Ajax
             wp_send_json_error(array('message' => __('Page not found.', 'ai-seo-captain')), 404);
         }
 
-        // Return cached audit if already completed.
+        // Return cached audit if already completed (unless override requested).
+        $override_all = ! empty($_POST['override_all']) && '1' === $_POST['override_all'];
         $cached = get_post_meta($post_id, '_ai_seo_captain_page_audit', true);
 
-        if (is_array($cached) && isset($cached['score'])) {
+        if (! $override_all && is_array($cached) && isset($cached['score'])) {
             wp_send_json_success(array(
                 'post_id'           => $post_id,
                 'title'             => $post->post_title,

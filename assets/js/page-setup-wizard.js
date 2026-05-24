@@ -1093,12 +1093,13 @@
 
     $('#aisc-btn-audit').on('click', function () {
         var btn = $(this);
-        var isRerun = btn.text().indexOf('Re-Run') !== -1;
+        var overrideAll = $('#aisc-s3-override').is(':checked');
 
         var idsForCount = publishedIds.filter(function (id) {
             return skippedIds.indexOf(id) === -1;
         });
-        if (!isRerun && allAudits.length > 0) {
+        // When override is off, exclude already-audited pages from the count.
+        if (!overrideAll && allAudits.length > 0) {
             var auditedCheck = {};
             for (var c = 0; c < allAudits.length; c++) {
                 auditedCheck[allAudits[c].post_id] = true;
@@ -1128,7 +1129,8 @@
                 idsToProcess = publishedIds.filter(function (id) {
                     return skippedIds.indexOf(id) === -1;
                 });
-                if (!isRerun && allAudits.length > 0) {
+                // When override is off, skip already-audited pages.
+                if (!overrideAll && allAudits.length > 0) {
                     var auditedIds = {};
                     for (var i = 0; i < allAudits.length; i++) {
                         auditedIds[allAudits[i].post_id] = true;
@@ -1141,8 +1143,8 @@
 
             if (idsToProcess.length === 0) {
                 $('#aisc-s3-done').show();
-                $('#aisc-s3-result').text('All ' + publishedIds.length + ' pages already audited. Click "Re-Run Audits" to refresh all scores.');
-                btn.prop('disabled', false).text('Re-Run Audits');
+                $('#aisc-s3-result').text('All ' + publishedIds.length + ' pages already audited. Enable "Override all Audits" to re-audit everything.');
+                btn.prop('disabled', false).text('Start Page Audits');
                 markStepDone(3);
                 var deepQ = $('#aisc-s3-deep').is(':checked') ? 'deep' : 'standard';
                 if (s3RunIds.length > 0) {
@@ -1178,7 +1180,8 @@
                 timerEl: '#aisc-s3-elapsed',
                 concurrency: $('#aisc-concurrency').val() || 1,
                 extraData: {
-                    deep_analysis: $('#aisc-s3-deep').is(':checked') ? '1' : '0'
+                    deep_analysis: $('#aisc-s3-deep').is(':checked') ? '1' : '0',
+                    override_all: overrideAll ? '1' : '0'
                 },
                 onItem: function (response) {
                     addOrUpdateAudit(response.data);
@@ -1192,7 +1195,7 @@
                     $('#aisc-s3-result').text(total + ' pages audited' +
                         (stats.cached > 0 ? ' (' + stats.cached + ' from cache)' : '') +
                         ', ' + stats.errors + ' errors. Total: ' + allAudits.length + ' pages.');
-                    btn.prop('disabled', false).text('Re-Run Audits');
+                    btn.prop('disabled', false).text('Start Page Audits');
                     markStepDone(3);
                     refreshSummaryTab();
                     refreshDetailsTab();

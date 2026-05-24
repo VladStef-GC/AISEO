@@ -428,7 +428,7 @@ class Content_Helper
      * (text, editor, heading, html, content, description, caption)
      * and ignores values that are too short to be real body content.
      */
-    private static function extract_structured_text($data, int $depth = 0): string
+    private static function extract_structured_text(mixed $data, int $depth = 0): string
     {
         // Guard against excessively nested or circular structures.
         if ($depth > 15) {

@@ -265,7 +265,7 @@ exit(0);
 //  Helper functions
 // ══════════════════════════════════════════════════════════════════════
 
-function call_private(object $obj, string $method, ...$args)
+function call_private(object $obj, string $method, mixed ...$args): mixed
 {
     $ref = new ReflectionMethod($obj, $method);
     $ref->setAccessible(true);

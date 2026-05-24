@@ -190,6 +190,11 @@ defined('ABSPATH') || exit;
         <?php if ($audited_count > 0 && ! $step3_all_done) : ?>
             <p style="font-size:13px;color:#50575e;">&#128204; <?php echo (int) $audited_count; ?> of <?php echo (int) $total_pages; ?> pages already audited. Previously audited pages load from cache instantly.</p>
         <?php endif; ?>
+        <label class="aisc-toggle" style="display:flex;margin:0 0 8px;">
+            <input id="aisc-s3-override" type="checkbox" value="1" />
+            <span class="aisc-toggle__track"></span>
+            <span class="aisc-toggle__label"><?php esc_html_e('Override all Audits — AI will re-audit ALL pages, even if audit data already exists (ignores cache).', 'ai-seo-captain'); ?></span>
+        </label>
         <label class="aisc-toggle" style="display:flex;margin:0 0 12px;">
             <input id="aisc-s3-deep" type="checkbox" value="1" />
             <span class="aisc-toggle__track"></span>
@@ -198,9 +203,7 @@ defined('ABSPATH') || exit;
         <div class="aisc-controls">
             <button id="aisc-btn-audit" class="button button-primary button-hero" type="button" <?php disabled(! $has_index || ! $has_metadata); ?>>
                 <?php
-                if ($step3_all_done) {
-                    echo 'Re-Run Audits';
-                } elseif ($audited_count > 0) {
+                if ($audited_count > 0 && ! $step3_all_done) {
                     echo 'Continue Audits';
                 } else {
                     echo 'Start Page Audits';
