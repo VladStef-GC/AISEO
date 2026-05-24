@@ -657,8 +657,22 @@
 
             self.stats.errors++;
             self.consecutiveErrors++;
-            var detail = textStatus === 'timeout' ? 'Request timed out' : 'Network error (' + textStatus + ')';
-            self.onError(postId, 'Post #' + postId, detail);
+            // Extract the real error message from the JSON response body if possible.
+            var detail = '';
+            var errorTitle = 'Post #' + postId;
+            try {
+                var errData = JSON.parse(jqXHR.responseText);
+                if (errData && errData.data) {
+                    detail = errData.data.message || '';
+                    errorTitle = errData.data.title || errorTitle;
+                }
+            } catch (e) { /* not JSON */ }
+            if (!detail) {
+                detail = textStatus === 'timeout'
+                    ? 'Request timed out — the AI model may need more time. Try increasing the timeout in Local AI settings.'
+                    : 'HTTP ' + jqXHR.status + ' — ' + (jqXHR.statusText || textStatus);
+            }
+            self.onError(postId, errorTitle, detail);
             self.completed++;
             self.updateProgress();
             self.fillPool();
@@ -1236,9 +1250,8 @@
                     }
                 },
                 onError: function (postId, title, msg) {
-                    $('#aisc-s3-results').prepend(
-                        '<div style="border:1px solid #d63638;padding:12px;margin-bottom:12px;background:#fcf0f1;border-radius:4px;">' +
-                        '<strong>' + esc(title) + '</strong> \u2014 <span style="color:#d63638;">' + esc(msg) + '</span></div>'
+                    $('#aisc-s3-log').prepend(
+                        '<div class="aisc-log-entry" style="color:#d63638;">\u2717 <strong>' + esc(title) + '</strong> \u2014 ' + esc(msg) + '</div>'
                     );
                 }
             });
