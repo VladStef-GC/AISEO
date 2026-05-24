@@ -194,6 +194,13 @@ class Local_AI_Content_Compressor
 
         if ($available_for_prefix > 500) {
             // Truncate the SEO prefix to fit.
+            error_log(sprintf(
+                '[SEO Captain] Compressor: body compressed to %s chars but prefix is %s chars (budget %s chars). Truncating prefix to %s chars.',
+                number_format($body_chars),
+                number_format($prefix_len),
+                number_format((int) $budget_chars),
+                number_format((int) $available_for_prefix)
+            ));
             $truncated_prefix = mb_substr($seo_prefix, 0, (int) $available_for_prefix);
             // Try to cut at last newline for cleaner output.
             $last_nl = mb_strrpos($truncated_prefix, "\n");

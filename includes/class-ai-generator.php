@@ -1105,7 +1105,7 @@ class AI_Generator
             if ($fit['final_tokens'] > $input_budget) {
                 $msg = sprintf(
                     'This page needs ~%s tokens but your %s-token context window only fits ~%s tokens of input (after compression level %d: %s). ' .
-                    'Increase the Context Window in Local AI settings, or use a model with a larger context.',
+                        'Increase the Context Window in Local AI settings, or use a model with a larger context.',
                     number_format($fit['final_tokens']),
                     number_format($ctx_window),
                     number_format($input_budget),

@@ -248,14 +248,28 @@
                             tierText + ' — ' + formatNumber(d.context_window) + ' tokens — ' +
                             d.latency + 's response time.');
 
-                        $result.html(
+                        var resultHtml =
                             '<div class="local-ai-test-success">' +
                             '<p><strong>Model:</strong> ' + escapeHtml(d.model) + '</p>' +
                             '<p><strong>Context:</strong> ' + formatNumber(d.context_window) + ' tokens</p>' +
                             '<p><strong>Response time:</strong> ' + d.latency + 's</p>' +
-                            '<p><strong>AI says:</strong> ' + escapeHtml(d.message) + '</p>' +
-                            '</div>'
-                        ).slideDown(200);
+                            '<p><strong>AI says:</strong> ' + escapeHtml(d.message) + '</p>';
+
+                        // Show real-world content estimation warning.
+                        if (d.site_content_estimate) {
+                            var est = d.site_content_estimate;
+                            resultHtml += '<p><strong>Site pages:</strong> ' + est.page_count +
+                                ' — Estimated max prompt: ~' + formatNumber(est.estimated_max_tokens) + ' tokens</p>';
+                            if (est.warning) {
+                                resultHtml += '<div class="local-ai-content-warning" style="margin-top:8px;padding:8px 12px;background:#fff3cd;border-left:4px solid #ffc107;border-radius:3px;font-size:13px;">' +
+                                    '⚠️ <strong>Real-world note:</strong> ' + escapeHtml(est.warning) +
+                                    '<br><em>The compressor will automatically fit content to your context window, but some sibling data may be trimmed.</em>' +
+                                    '</div>';
+                            }
+                        }
+
+                        resultHtml += '</div>';
+                        $result.html(resultHtml).slideDown(200);
                     } else {
                         showBanner('error', resp.data ? resp.data.error : 'Connection test failed.');
                         $result.html('<div class="local-ai-test-error">' + escapeHtml(resp.data ? resp.data.error : 'Unknown error') + '</div>').slideDown(200);

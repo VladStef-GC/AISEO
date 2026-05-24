@@ -170,11 +170,102 @@ class Local_AI_Admin
                 'time'      => time(),
             ), 5 * MINUTE_IN_SECONDS);
 
+            // ── Real-world content estimation ──
+            // Count actual site pages and estimate prompt size so the user
+            // sees whether their context window is realistic for their site.
+            $ctx_window = (int) ($config['context_window'] ?? 32768);
+            $result['site_content_estimate'] = $this->estimate_site_content_tokens($ctx_window);
+
             wp_send_json_success($result);
         } else {
             delete_transient('ai_seo_captain_local_ai_status');
             wp_send_json_error($result);
         }
+    }
+
+    /**
+     * Estimate real-world token requirements for this site's pages.
+     *
+     * Counts published pages, estimates SEO metadata overhead from siblings,
+     * and samples the largest page to give an honest assessment of whether
+     * the configured context window is sufficient.
+     *
+     * @param int $context_window Configured context window in tokens.
+     * @return array{page_count: int, estimated_max_tokens: int, fits: bool, warning: string}
+     */
+    private function estimate_site_content_tokens(int $context_window): array
+    {
+        $post_types = get_post_types(array('public' => true), 'names');
+        $pages = get_posts(array(
+            'post_type'      => array_values($post_types),
+            'post_status'    => 'publish',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+        ));
+        $page_count = count($pages);
+
+        // Each sibling in the SEO context adds ~300 chars (title + slug + keyphrase + seo_title + desc + keywords + social).
+        // System prompt + task instructions: ~3,000 chars.
+        // Content cap for metadata: 20,000 chars. Page audit: full content.
+        $chars_per_sibling = 300;
+        $system_overhead   = 3000;
+        $content_cap       = 20000; // Step 2 metadata cap
+        $chars_per_token   = 3.5;   // Conservative estimate
+
+        // Worst case: a page with ALL other pages as siblings.
+        $sibling_chars   = max(0, $page_count - 1) * $chars_per_sibling;
+        $total_chars     = $system_overhead + $sibling_chars + $content_cap;
+        $estimated_tokens = (int) ceil($total_chars / $chars_per_token);
+
+        // Also sample the largest published page for audit estimation.
+        $largest_content = 0;
+        if ($page_count > 0 && $page_count <= 200) {
+            // Sample up to 10 largest pages.
+            $sample = get_posts(array(
+                'post_type'      => array_values($post_types),
+                'post_status'    => 'publish',
+                'orderby'        => 'content_length',
+                'posts_per_page' => 1,
+                'fields'         => 'ids',
+            ));
+            foreach ($sample as $pid) {
+                $len = mb_strlen(get_post_field('post_content', $pid));
+                if ($len > $largest_content) {
+                    $largest_content = $len;
+                }
+            }
+        }
+
+        $audit_tokens = (int) ceil(($system_overhead + $sibling_chars + $largest_content) / $chars_per_token);
+        $input_budget = (int) ($context_window * 0.6);
+
+        $fits_metadata = $estimated_tokens <= $input_budget;
+        $fits_audit    = $audit_tokens <= $input_budget;
+
+        $warning = '';
+        if (! $fits_metadata) {
+            $warning = sprintf(
+                'Your site has %d pages. Metadata generation needs ~%s tokens per page (including sibling SEO data), but your %s-token context window only fits ~%s tokens of input. The compressor will auto-truncate sibling data to fit, but results may lack full site context.',
+                $page_count,
+                number_format($estimated_tokens),
+                number_format($context_window),
+                number_format($input_budget)
+            );
+        } elseif (! $fits_audit) {
+            $warning = sprintf(
+                'Metadata generation should work, but page audits for your largest pages (~%s tokens with %d siblings) may require content compression.',
+                number_format($audit_tokens),
+                $page_count - 1
+            );
+        }
+
+        return array(
+            'page_count'          => $page_count,
+            'estimated_max_tokens' => max($estimated_tokens, $audit_tokens),
+            'fits_metadata'       => $fits_metadata,
+            'fits_audit'          => $fits_audit,
+            'warning'             => $warning,
+        );
     }
 
     /**
