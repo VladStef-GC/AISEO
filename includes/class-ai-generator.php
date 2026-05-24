@@ -1392,10 +1392,12 @@ class AI_Generator
     {
         $normalized = trim($content);
 
+        // Strip markdown code fences.
         if (preg_match('/```(?:json)?\s*(\{.*\})\s*```/is', $normalized, $matches)) {
             $normalized = $matches[1];
         }
 
+        // Extract the outermost JSON object.
         $start = strpos($normalized, '{');
         $end = strrpos($normalized, '}');
 
@@ -1403,10 +1405,17 @@ class AI_Generator
             $normalized = substr($normalized, $start, ($end - $start) + 1);
         }
 
+        // Fix common LLM JSON issues: trailing commas before } or ].
+        $normalized = preg_replace('/,\s*([\]}])/s', '$1', $normalized) ?? $normalized;
+
         $decoded = json_decode($normalized, true);
 
         if (! is_array($decoded)) {
-            throw new \RuntimeException('The AI response was not valid JSON.');
+            // Log the raw response for debugging.
+            $preview = substr($content, 0, 500);
+            $json_error = json_last_error_msg();
+            error_log('[SEO Captain] JSON decode failed: ' . $json_error . ' — Raw response preview: ' . $preview);
+            throw new \RuntimeException('The AI response was not valid JSON. (' . $json_error . ')');
         }
 
         return $decoded;
