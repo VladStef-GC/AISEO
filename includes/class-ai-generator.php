@@ -1445,35 +1445,34 @@ class AI_Generator
         // Fix common LLM JSON issues: trailing commas before } or ].
         $normalized = preg_replace('/,\s*([\]}])/s', '$1', $normalized) ?? $normalized;
 
+        // Fix unescaped control characters inside JSON string values.
+        // LLMs often emit literal newlines/tabs in multi-line fields like
+        // full_report (Markdown content). Use a character scanner instead
+        // of regex to avoid backtrack limits on large strings.
+        $normalized = $this->escape_json_strings($normalized);
+
         $decoded = json_decode($normalized, true);
 
-        // If first attempt fails, try fixing unescaped control characters
-        // inside JSON string values. LLMs often emit literal newlines/tabs
-        // in multi-line fields like full_report (Markdown content).
+        // If still failing, try repairing truncated JSON.
+        // LLMs with limited output tokens often produce valid JSON that is
+        // cut off mid-string or mid-array. We close open structures to
+        // salvage as much data as possible.
         if (! is_array($decoded)) {
-            $fixed = preg_replace_callback(
-                '/"((?:[^"\\\\]|\\\\.)*)"/s',
-                function ($m) {
-                    $val = $m[1];
-                    $val = str_replace(
-                        array("\r\n", "\r", "\n", "\t"),
-                        array('\\n', '\\n', '\\n', '\\t'),
-                        $val
-                    );
-                    return '"' . $val . '"';
-                },
-                $normalized
-            );
-            if (null !== $fixed) {
-                $decoded = json_decode($fixed, true);
+            $repaired = $this->repair_truncated_json($normalized);
+            if (null !== $repaired) {
+                $decoded = json_decode($repaired, true);
             }
         }
 
         if (! is_array($decoded)) {
             // Log the raw response for debugging.
-            $preview = substr($content, 0, 500);
+            $len = strlen($content);
+            $preview_start = substr($content, 0, 300);
+            $preview_end   = substr($content, -300);
             $json_error = json_last_error_msg();
-            error_log('[SEO Captain] JSON decode failed: ' . $json_error . ' — Raw response preview: ' . $preview);
+            error_log('[SEO Captain] JSON decode failed: ' . $json_error . ' — Length: ' . $len);
+            error_log('[SEO Captain] JSON START: ' . $preview_start);
+            error_log('[SEO Captain] JSON END: ' . $preview_end);
             throw new \RuntimeException('The AI response was not valid JSON. (' . $json_error . ')');
         }
 
@@ -1496,6 +1495,241 @@ class AI_Generator
         }
 
         return substr($text, 0, $limit);
+    }
+
+    /**
+     * Escape literal control characters inside JSON string values.
+     *
+     * Uses a character-by-character scanner (no regex) to reliably handle
+     * large strings that would hit PCRE backtrack limits.
+     *
+     * @param string $json Raw JSON text that may contain literal newlines inside strings.
+     * @return string Fixed JSON with control characters properly escaped.
+     */
+    private function escape_json_strings(string $json): string
+    {
+        $len       = strlen($json);
+        $out       = '';
+        $in_string = false;
+        $i         = 0;
+
+        while ($i < $len) {
+            $c = $json[$i];
+
+            if (!$in_string) {
+                $out .= $c;
+                if ('"' === $c) {
+                    $in_string = true;
+                }
+                $i++;
+                continue;
+            }
+
+            // Inside a JSON string value.
+            if ('\\' === $c && $i + 1 < $len) {
+                // Valid escape sequence — keep as-is.
+                $out .= $c . $json[$i + 1];
+                $i += 2;
+                continue;
+            }
+
+            if ('"' === $c) {
+                // Check if this is the real end of the string or an
+                // unescaped quote in the content. LLMs often forget to
+                // escape quotes in natural language (e.g. "Contact us").
+                // Heuristic: after a real closing quote, the next
+                // non-whitespace char must be a JSON structural char.
+                $next_nws = '';
+                for ($j = $i + 1; $j < $len; $j++) {
+                    if (!ctype_space($json[$j])) {
+                        $next_nws = $json[$j];
+                        break;
+                    }
+                }
+                if ('' !== $next_nws && !in_array($next_nws, array(',', '}', ']', ':'), true)) {
+                    // Not a structural char — this quote is content.
+                    $out .= '\\"';
+                    $i++;
+                    continue;
+                }
+
+                // Real end of string.
+                $out .= $c;
+                $in_string = false;
+                $i++;
+                continue;
+            }
+
+            // Replace literal control characters with escape sequences.
+            $ord = ord($c);
+            if ($ord < 32) {
+                switch ($c) {
+                    case "\n":
+                        $out .= '\\n';
+                        break;
+                    case "\r":
+                        // Skip \r if followed by \n (will be caught as \n next).
+                        if ($i + 1 < $len && "\n" === $json[$i + 1]) {
+                            $i++;
+                            $out .= '\\n';
+                        } else {
+                            $out .= '\\n';
+                        }
+                        break;
+                    case "\t":
+                        $out .= '\\t';
+                        break;
+                    default:
+                        // Other control chars: unicode escape.
+                        $out .= sprintf('\\u%04x', $ord);
+                        break;
+                }
+                $i++;
+                continue;
+            }
+
+            $out .= $c;
+            $i++;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Attempt to repair truncated JSON from LLMs.
+     *
+     * When a model runs out of output tokens mid-response, it produces
+     * structurally valid JSON that is simply cut off (e.g. an open string
+     * or unclosed arrays/objects). This method tries to close all open
+     * structures so json_decode() can salvage the successfully generated fields.
+     *
+     * @param string $json The broken JSON string.
+     * @return string|null Repaired JSON, or null if repair wasn't possible.
+     */
+    private function repair_truncated_json(string $json): ?string
+    {
+        $json = trim($json);
+
+        // Must start with {.
+        if ('' === $json || '{' !== $json[0]) {
+            return null;
+        }
+
+        // Already ends with } — not a truncation issue.
+        if ('}' === $json[strlen($json) - 1]) {
+            return null;
+        }
+
+        // Note: escape_json_strings() has already been called on the input,
+        // so literal newlines/tabs inside strings are already fixed.
+
+        // Walk the string to find the deepest valid parse point.
+        // Track nesting: { } [ ] and whether we're inside a string.
+        $in_string = false;
+        $escape    = false;
+        $stack     = array(); // tracks { and [
+        $last_safe = 0;      // last position after a complete value
+
+        for ($i = 0, $len = strlen($json); $i < $len; $i++) {
+            $c = $json[$i];
+
+            if ($escape) {
+                $escape = false;
+                continue;
+            }
+
+            if ($in_string) {
+                if ('\\' === $c) {
+                    $escape = true;
+                } elseif ('"' === $c) {
+                    $in_string = false;
+                    $last_safe = $i + 1;
+                }
+                continue;
+            }
+
+            switch ($c) {
+                case '"':
+                    $in_string = true;
+                    break;
+                case '{':
+                case '[':
+                    $stack[] = $c;
+                    break;
+                case '}':
+                    array_pop($stack);
+                    $last_safe = $i + 1;
+                    break;
+                case ']':
+                    array_pop($stack);
+                    $last_safe = $i + 1;
+                    break;
+                case ',':
+                case ':':
+                    break;
+                default:
+                    // Literals (numbers, true, false, null).
+                    if (!ctype_space($c)) {
+                        $last_safe = $i + 1;
+                    }
+                    break;
+            }
+        }
+
+        // If we're inside a string, close it.
+        $repaired = $json;
+        if ($in_string) {
+            // Truncate to last safe point if there's enough data,
+            // otherwise just close the string.
+            $repaired .= ' [truncated]"';
+        }
+
+        // Remove any trailing comma.
+        $repaired = rtrim($repaired);
+        $repaired = preg_replace('/,\s*$/', '', $repaired) ?? $repaired;
+
+        // Close all open structures.
+        // Re-scan to get current stack state.
+        $in_string = false;
+        $escape = false;
+        $stack = array();
+        for ($i = 0, $len = strlen($repaired); $i < $len; $i++) {
+            $c = $repaired[$i];
+            if ($escape) {
+                $escape = false;
+                continue;
+            }
+            if ($in_string) {
+                if ('\\' === $c) {
+                    $escape = true;
+                } elseif ('"' === $c) {
+                    $in_string = false;
+                }
+                continue;
+            }
+            if ('"' === $c) {
+                $in_string = true;
+            } elseif ('{' === $c || '[' === $c) {
+                $stack[] = $c;
+            } elseif ('}' === $c || ']' === $c) {
+                array_pop($stack);
+            }
+        }
+
+        // Close remaining open structures in reverse order.
+        while (!empty($stack)) {
+            $opener = array_pop($stack);
+            $repaired .= ('{' === $opener) ? '}' : ']';
+        }
+
+        // Validate the repair worked.
+        $test = json_decode($repaired, true);
+        if (is_array($test)) {
+            error_log('[SEO Captain] Repaired truncated JSON — salvaged ' . count($test) . ' top-level fields.');
+            return $repaired;
+        }
+
+        return null;
     }
 
     /**

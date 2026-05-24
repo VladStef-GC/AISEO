@@ -1,4 +1,5 @@
 <?php
+
 /**
  * CLI test runner for Step 2 (metadata) and Step 3 (page audit).
  *
