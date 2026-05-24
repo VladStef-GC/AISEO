@@ -1457,12 +1457,28 @@ class AI_Generator
 
         $decoded = json_decode($normalized, true);
 
+        // Fallback: the naive strrpos('}') extraction may have found a '}'
+        // inside a string value (e.g. CSS, code examples). Now that
+        // escape_json_strings has fixed string delimiters, re-extract using
+        // a structure-aware scanner that tracks depth & strings properly.
+        if (! is_array($decoded)) {
+            $reextracted = $this->extract_json_object_safe($normalized);
+            if (null !== $reextracted && $reextracted !== $normalized) {
+                $reextracted = preg_replace('/,\s*([\]}])/s', '$1', $reextracted) ?? $reextracted;
+                $decoded = json_decode($reextracted, true);
+                if (is_array($decoded)) {
+                    error_log('[SEO Captain] JSON recovered by structure-aware re-extraction.');
+                }
+            }
+        }
+
         // If still failing, try repairing truncated JSON.
         // LLMs with limited output tokens often produce valid JSON that is
         // cut off mid-string or mid-array. We close open structures to
         // salvage as much data as possible.
         if (! is_array($decoded)) {
-            $repaired = $this->repair_truncated_json($normalized);
+            $to_repair = $reextracted ?? $normalized;
+            $repaired = $this->repair_truncated_json($to_repair);
             if (null !== $repaired) {
                 $decoded = json_decode($repaired, true);
             }
@@ -1611,6 +1627,58 @@ class AI_Generator
     }
 
     /**
+     * Structure-aware extraction of the outermost JSON object.
+     *
+     * Unlike strrpos('}'), this tracks brace depth and string boundaries
+     * to find the REAL closing '}'. Must be called AFTER escape_json_strings()
+     * so that string delimiters are reliable.
+     *
+     * @param string $text Escaped text that may contain a JSON object.
+     * @return string|null The extracted JSON, or the substring from '{' to end if unclosed (truncated).
+     */
+    private function extract_json_object_safe(string $text): ?string
+    {
+        $start = strpos($text, '{');
+
+        if (false === $start) {
+            return null;
+        }
+
+        $depth     = 0;
+        $in_string = false;
+        $len       = strlen($text);
+
+        for ($i = $start; $i < $len; $i++) {
+            $c = $text[$i];
+
+            if ($in_string) {
+                if ('\\' === $c && $i + 1 < $len) {
+                    $i++; // skip escaped character
+                    continue;
+                }
+                if ('"' === $c) {
+                    $in_string = false;
+                }
+                continue;
+            }
+
+            if ('"' === $c) {
+                $in_string = true;
+            } elseif ('{' === $c) {
+                $depth++;
+            } elseif ('}' === $c) {
+                $depth--;
+                if (0 === $depth) {
+                    return substr($text, $start, $i - $start + 1);
+                }
+            }
+        }
+
+        // JSON not closed (truncated) — return everything from '{' to end.
+        return substr($text, $start);
+    }
+
+    /**
      * Attempt to repair truncated JSON from LLMs.
      *
      * When a model runs out of output tokens mid-response, it produces
@@ -1627,11 +1695,6 @@ class AI_Generator
 
         // Must start with {.
         if ('' === $json || '{' !== $json[0]) {
-            return null;
-        }
-
-        // Already ends with } — not a truncation issue.
-        if ('}' === $json[strlen($json) - 1]) {
             return null;
         }
 

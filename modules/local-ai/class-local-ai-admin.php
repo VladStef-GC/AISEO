@@ -170,6 +170,10 @@ class Local_AI_Admin
                 'time'      => time(),
             ), 5 * MINUTE_IN_SECONDS);
 
+            // ── JSON capability test ──
+            // Verify the model can produce valid JSON (critical for audits/metadata).
+            $result['json_test'] = $this->test_json_capability($provider);
+
             // ── Real-world content estimation ──
             // Count actual site pages and estimate prompt size so the user
             // sees whether their context window is realistic for their site.
@@ -181,6 +185,58 @@ class Local_AI_Admin
             delete_transient('ai_seo_captain_local_ai_status');
             wp_send_json_error($result);
         }
+    }
+
+    /**
+     * Test whether the model can produce valid JSON output.
+     *
+     * Sends a small prompt asking for a JSON response and verifies it parses.
+     * This catches models that consistently produce malformed JSON.
+     *
+     * @param Local_AI_Provider $provider The configured provider.
+     * @return bool True if JSON test passed.
+     */
+    private function test_json_capability(Local_AI_Provider $provider): bool
+    {
+        $result = $provider->chat(
+            array(
+                array(
+                    'role'    => 'system',
+                    'content' => 'You are a JSON API. Respond ONLY with valid JSON, no extra text.',
+                ),
+                array(
+                    'role'    => 'user',
+                    'content' => 'Return a JSON object with exactly these fields: "status" (string "ok"), "score" (integer 85), "issues" (array with one string "test issue"). Nothing else.',
+                ),
+            ),
+            '', // use configured model
+            0.1,
+            256
+        );
+
+        if (! $result['success'] || empty($result['content'])) {
+            return false;
+        }
+
+        $raw = $result['content'];
+
+        // Strip markdown code fences if present.
+        if (preg_match('/```(?:json)?\s*(\{.*\})\s*```/is', $raw, $m)) {
+            $raw = $m[1];
+        }
+
+        // Extract JSON object.
+        $start = strpos($raw, '{');
+        $end   = strrpos($raw, '}');
+
+        if (false === $start || false === $end) {
+            return false;
+        }
+
+        $json = substr($raw, $start, ($end - $start) + 1);
+        $decoded = json_decode($json, true);
+
+        return is_array($decoded) && isset($decoded['status']);
     }
 
     /**

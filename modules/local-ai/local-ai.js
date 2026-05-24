@@ -226,27 +226,41 @@
         $btn.prop('disabled', true);
         setSpinner($spinner, true);
         $result.hide();
+        $('#local-ai-capabilities').hide();
         showBanner('info', 'Testing <strong>' + escapeHtml(model) + '</strong>...');
 
-        // Phase 1: Capability assessment (context window).
-        var ctx = getCurrentContextWindow();
-        updateCapabilities(ctx);
-        $('#local-ai-test-model-hint').text('Checking capabilities...');
-
-        // Phase 2: Vision probe.
+        // Phase 1: Vision probe.
+        $('#local-ai-test-model-hint').text('Checking vision support...');
         probeVision(model, function () {
             $('#local-ai-test-model-hint').text('Testing connection...');
 
-            // Phase 3: Live connection test (actual chat request).
+            // Phase 2: Live connection test (actual chat request + JSON test).
             $.post(config.ajaxurl, $.extend({ action: 'local_ai_test_connection', nonce: config.nonce }, values))
                 .done(function (resp) {
                     if (resp.success) {
                         var d = resp.data;
-                        var tierText = $('#local-ai-cap-tier strong').text() || 'Full Feature Access';
-                        showBanner('success',
-                            '✅ <strong>' + escapeHtml(d.model) + '</strong> — ' +
-                            tierText + ' — ' + formatNumber(d.context_window) + ' tokens — ' +
-                            d.latency + 's response time.');
+
+                        // Phase 3: Show capabilities AFTER connection is confirmed.
+                        var ctx = d.context_window || getCurrentContextWindow();
+                        $('#local-ai-test-model-hint').text('Evaluating capabilities...');
+
+                        // Reveal capabilities with a brief delay so the user
+                        // sees the sequential progression (connection → capabilities).
+                        setTimeout(function () {
+                            updateCapabilities(ctx);
+                        }, 400);
+
+                        var tierText = '';
+                        setTimeout(function () {
+                            tierText = $('#local-ai-cap-tier strong').text() || 'Full Feature Access';
+                            var banner = '✅ <strong>' + escapeHtml(d.model) + '</strong> — ' +
+                                tierText + ' — ' + formatNumber(d.context_window) + ' tokens — ' +
+                                d.latency + 's response time.';
+                            if (d.json_test === false) {
+                                banner += '<br>⚠️ <em>JSON test failed — the model may produce malformed audit/metadata responses.</em>';
+                            }
+                            showBanner(d.json_test === false ? 'warning' : 'success', banner);
+                        }, 500);
 
                         var resultHtml =
                             '<div class="local-ai-test-success">' +
