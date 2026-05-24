@@ -23,6 +23,15 @@ if (isset($_POST['local_ai_save_nonce']) && wp_verify_nonce($_POST['local_ai_sav
     $options['local_vision_model']   = sanitize_text_field($_POST['local_vision_model'] ?? '');
     $options['local_timeout']        = max(10, min(600, (int) ($_POST['local_timeout'] ?? 120)));
 
+    // Context window — use custom value if the dropdown is set to "custom".
+    $ctx_raw = $_POST['context_window'] ?? '';
+    if ('custom' === $ctx_raw) {
+        $ctx_val = (int) ($_POST['context_window_custom'] ?? 128000);
+    } else {
+        $ctx_val = (int) $ctx_raw;
+    }
+    $options['context_window'] = max(2048, $ctx_val);
+
     // Only update API key if a real value was sent.
     $api_key = $_POST['local_api_key'] ?? '';
     if ('' !== $api_key && '••••••••' !== $api_key) {
@@ -66,11 +75,24 @@ if (isset($_POST['local_ai_disconnect_nonce']) && wp_verify_nonce($_POST['local_
 // ─── Load Saved Values ───────────────────────────────────────────────
 $options = get_option('ai_seo_captain_options', array());
 
-$saved_base_url = $options['local_base_url'] ?? '';
-$saved_model    = $options['local_model'] ?? '';
-$saved_vision   = $options['local_vision_model'] ?? '';
-$saved_timeout  = (int) ($options['local_timeout'] ?? 120);
-$has_api_key    = '' !== ($options['local_api_key'] ?? '');
+$saved_base_url    = $options['local_base_url'] ?? '';
+$saved_model       = $options['local_model'] ?? '';
+$saved_vision      = $options['local_vision_model'] ?? '';
+$saved_timeout     = (int) ($options['local_timeout'] ?? 120);
+$saved_ctx         = (int) ($options['context_window'] ?? 128000);
+$has_api_key       = '' !== ($options['local_api_key'] ?? '');
+
+// Pre-defined context window options (tokens).
+$ctx_presets = array(
+    4096   => '4K',
+    8192   => '8K',
+    16384  => '16K',
+    32768  => '32K',
+    65536  => '64K',
+    131072 => '128K',
+    262144 => '256K',
+);
+$ctx_is_preset = isset($ctx_presets[$saved_ctx]);
 ?>
 
 <div class="wrap local-ai-wrap">
@@ -162,6 +184,27 @@ $has_api_key    = '' !== ($options['local_api_key'] ?? '');
                             <?php endif; ?>
                         </select>
                         <p class="description">Multimodal model for image alt text generation (Qwen2-VL, LLaVA, etc.). Only vision models are shown.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="local-ai-context-window">Context Window</label></th>
+                    <td>
+                        <select id="local-ai-context-window" name="context_window" class="regular-text">
+                            <?php foreach ($ctx_presets as $val => $label) : ?>
+                                <option value="<?php echo (int) $val; ?>"<?php selected($ctx_is_preset && $saved_ctx === $val); ?>><?php echo esc_html($label . ' (' . number_format($val) . ' tokens)'); ?></option>
+                            <?php endforeach; ?>
+                            <option value="custom"<?php selected(! $ctx_is_preset); ?>>Custom…</option>
+                        </select>
+                        <input type="number" id="local-ai-context-custom" name="context_window_custom"
+                               value="<?php echo $ctx_is_preset ? '' : (int) $saved_ctx; ?>"
+                               min="2048" step="1024" class="small-text"
+                               style="width:120px;<?php echo $ctx_is_preset ? 'display:none;' : ''; ?>"
+                               placeholder="e.g. 49152">
+                        <span id="local-ai-context-detected" class="description" style="display:none;margin-left:6px;"></span>
+                        <p class="description">
+                            How many tokens your model can process at once. Check your model card in LM Studio or Ollama for this value.
+                            This controls how many focus pages AI can include in Site Chat.
+                        </p>
                     </td>
                 </tr>
             </table>

@@ -427,12 +427,13 @@
 
     // ─── Save Settings (form POST — handled by PHP, no AJAX needed) ───
     // The form submit saves via standard POST. The JS save button is removed.
-    // Context window: sync custom field into the hidden name field before submit.
+    // Context window: when dropdown is "custom", sync the custom value into context_window.
     $('#local-ai-form').on('submit', function () {
         var ctxSelect = $('#local-ai-context-window').val();
         if (ctxSelect === 'custom') {
-            // The custom field value is already in the form via name="local_context_window_custom".
-            // Override the select name to "custom" so PHP knows to use the custom field.
+            var customVal = parseInt($('#local-ai-context-custom').val(), 10) || 128000;
+            // Ensure the select sends "custom" so PHP reads the custom input field.
+            $('#local-ai-context-custom').val(customVal);
         }
     });
 
