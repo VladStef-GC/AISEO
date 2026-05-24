@@ -527,4 +527,261 @@ class Content_Helper
 
         return (is_string($value) && '' !== trim($value)) ? $value : '';
     }
+
+    // ------------------------------------------------------------------
+    //  AI-ready HTML sanitizer
+    // ------------------------------------------------------------------
+
+    /**
+     * Tags to keep (with optional allowed attributes).
+     *
+     * Everything else is "unwrapped" — the tag is removed but its
+     * children are preserved in-place, exactly like CTRL+A → copy →
+     * paste into Microsoft Word: content flows naturally, junk disappears.
+     */
+    private const AI_KEEP_TAGS = array(
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'p', 'blockquote', 'pre', 'code',
+        'ul', 'ol', 'li', 'dl', 'dt', 'dd',
+        'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption',
+        'strong', 'b', 'em', 'i', 'u', 'mark', 'small', 'sub', 'sup', 'br', 'hr',
+        'a', 'img', 'video', 'audio', 'source', 'iframe',
+        'figure', 'figcaption',
+    );
+
+    /** Per-tag allowed attributes (tags not listed keep NO attributes). */
+    private const AI_ALLOWED_ATTRS = array(
+        'a'      => array('href'),
+        'img'    => array('src', 'alt'),
+        'video'  => array('src', 'poster'),
+        'audio'  => array('src'),
+        'source' => array('src', 'type'),
+        'iframe' => array('src'),
+        'td'     => array('colspan', 'rowspan'),
+        'th'     => array('colspan', 'rowspan'),
+    );
+
+    /** Tags removed entirely — including all their children. */
+    private const AI_REMOVE_TAGS = array(
+        'script', 'style', 'noscript', 'svg', 'canvas', 'template', 'map',
+    );
+
+    /**
+     * Sanitize HTML for AI consumption.
+     *
+     * Produces clean, structured HTML that preserves content flow:
+     * headings, paragraphs, lists, tables, links (with href), images
+     * (with src + alt), videos, and embedded iframes — all in their
+     * natural position on the page.
+     *
+     * Strips: JavaScript, CSS, builder wrapper divs/spans, class/style/
+     * data-* attributes, shortcodes, HTML comments, tracking pixels,
+     * and all non-semantic markup.
+     *
+     * Think of it as CTRL+A → Copy → Paste into Microsoft Word:
+     * everything the user can SEE stays; everything under the hood goes.
+     *
+     * @param string $html Raw HTML from Content_Helper::get_content().
+     * @return string Clean, structured HTML safe for AI prompts.
+     */
+    public static function sanitize_for_ai(string $html): string
+    {
+        if ('' === trim($html)) {
+            return '';
+        }
+
+        // 1. Strip WordPress shortcodes.
+        $html = strip_shortcodes($html);
+
+        // 2. Remove blocks that should vanish entirely (pre-DOM, for speed).
+        $html = (string) preg_replace(
+            '/<(script|style|noscript|svg|canvas|template)\b[^>]*>.*?<\/\1>/is',
+            '',
+            $html
+        );
+
+        // Remove HTML comments.
+        $html = (string) preg_replace('/<!--.*?-->/s', '', $html);
+
+        // 3. Parse into DOM.
+        if (! class_exists('\DOMDocument')) {
+            return self::ai_fallback_strip($html);
+        }
+
+        $dom = new \DOMDocument('1.0', 'UTF-8');
+        $dom->encoding = 'UTF-8';
+        libxml_use_internal_errors(true);
+
+        $wrapped = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>'
+            . $html . '</body></html>';
+        $dom->loadHTML($wrapped, LIBXML_NOERROR);
+        libxml_clear_errors();
+
+        $body = $dom->getElementsByTagName('body')->item(0);
+        if (! $body) {
+            return self::ai_fallback_strip($html);
+        }
+
+        // 4. Recursive clean: keep semantic tags, unwrap containers, remove junk.
+        self::ai_clean_node($body);
+
+        // 5. Serialize cleaned DOM.
+        $output = '';
+        foreach ($body->childNodes as $child) {
+            $output .= $dom->saveHTML($child);
+        }
+
+        // 6. Final whitespace cleanup.
+        // Collapse runs of spaces/tabs (not newlines).
+        $output = (string) preg_replace('/[ \t]+/', ' ', $output);
+        // Add line breaks around block-level elements for readability.
+        $block_tags = 'h[1-6]|p|blockquote|pre|ul|ol|li|dl|dt|dd'
+            . '|table|thead|tbody|tfoot|tr|th|td|caption'
+            . '|figure|figcaption|hr|br|img|video|iframe';
+        $output = (string) preg_replace(
+            '/\s*(<\/?(?:' . $block_tags . ')[^>]*>)\s*/i',
+            "\n$1\n",
+            $output
+        );
+        // Collapse excessive blank lines.
+        $output = (string) preg_replace('/\n{3,}/', "\n\n", $output);
+
+        return trim($output);
+    }
+
+    /**
+     * Recursively clean a DOM subtree for AI consumption.
+     */
+    private static function ai_clean_node(\DOMNode $parent): void
+    {
+        // Collect children first — modifying DOM during iteration is unsafe.
+        $children = array();
+        if ($parent->childNodes) {
+            foreach ($parent->childNodes as $child) {
+                $children[] = $child;
+            }
+        }
+
+        foreach ($children as $child) {
+            // Keep text nodes as-is.
+            if (XML_TEXT_NODE === $child->nodeType) {
+                continue;
+            }
+
+            // Remove comment nodes.
+            if (XML_COMMENT_NODE === $child->nodeType) {
+                $parent->removeChild($child);
+                continue;
+            }
+
+            // Only process element nodes.
+            if (XML_ELEMENT_NODE !== $child->nodeType) {
+                continue;
+            }
+
+            /** @var \DOMElement $child */
+            $tag = strtolower($child->nodeName);
+
+            // Remove entirely (including all children).
+            if (in_array($tag, self::AI_REMOVE_TAGS, true)) {
+                $parent->removeChild($child);
+                continue;
+            }
+
+            // Recurse into children FIRST — clean from the inside out.
+            self::ai_clean_node($child);
+
+            if (in_array($tag, self::AI_KEEP_TAGS, true)) {
+                // --- Kept tag: strip all non-allowed attributes ---
+                self::ai_strip_attributes($child, self::AI_ALLOWED_ATTRS[$tag] ?? array());
+
+                // Sanitize href: remove javascript: URIs.
+                if ($child->hasAttribute('href')) {
+                    $href = trim($child->getAttribute('href'));
+                    if (str_starts_with(strtolower($href), 'javascript:')) {
+                        $child->removeAttribute('href');
+                    }
+                }
+
+                // Sanitize src: replace massive data: URIs with placeholder.
+                if ($child->hasAttribute('src')) {
+                    $src = $child->getAttribute('src');
+                    if (str_starts_with($src, 'data:')) {
+                        $child->setAttribute('src', '[embedded]');
+                    }
+                }
+
+                // For iframes, only keep known video embeds.
+                if ('iframe' === $tag) {
+                    $src = $child->getAttribute('src');
+                    if ('' === $src || ! preg_match('/youtube|youtu\.be|vimeo|dailymotion|wistia/i', $src)) {
+                        $parent->removeChild($child);
+                    }
+                }
+
+                // Remove empty links (no text, no children) — e.g. anchor targets.
+                if ('a' === $tag && '' === trim($child->textContent) && 0 === $child->childNodes->length) {
+                    $parent->removeChild($child);
+                }
+            } else {
+                // --- Unknown / non-semantic tag: unwrap (keep children, remove shell) ---
+                while ($child->firstChild) {
+                    $parent->insertBefore($child->firstChild, $child);
+                }
+                $parent->removeChild($child);
+            }
+        }
+    }
+
+    /**
+     * Strip all attributes from a DOM element except the allowed ones.
+     *
+     * @param \DOMElement $el      The element to clean.
+     * @param string[]    $allowed Attribute names to keep.
+     */
+    private static function ai_strip_attributes(\DOMElement $el, array $allowed): void
+    {
+        if (! $el->hasAttributes()) {
+            return;
+        }
+
+        $remove = array();
+        foreach ($el->attributes as $attr) {
+            if (! in_array($attr->name, $allowed, true)) {
+                $remove[] = $attr->name;
+            }
+        }
+
+        foreach ($remove as $name) {
+            $el->removeAttribute($name);
+        }
+    }
+
+    /**
+     * Fallback sanitizer when DOMDocument is unavailable.
+     *
+     * Uses strip_tags() with an allow-list, then removes all attributes.
+     * Less precise but still much better than raw HTML.
+     */
+    private static function ai_fallback_strip(string $html): string
+    {
+        $allowed = '<h1><h2><h3><h4><h5><h6><p><br><hr>'
+            . '<ul><ol><li><dl><dt><dd>'
+            . '<table><thead><tbody><tfoot><tr><th><td><caption>'
+            . '<strong><b><em><i><u><blockquote><pre><code>'
+            . '<a><img><video><audio><source><iframe>'
+            . '<figure><figcaption>';
+        $html = strip_tags($html, $allowed);
+
+        // Crude attribute removal for the fallback path.
+        $html = (string) preg_replace(
+            '/<([a-zA-Z][a-zA-Z0-9]*)\s+[^>]*>/i',
+            '<$1>',
+            $html
+        );
+
+        $html = (string) preg_replace('/\s+/', ' ', $html);
+
+        return trim($html);
+    }
 }

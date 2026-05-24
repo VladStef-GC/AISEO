@@ -672,12 +672,12 @@ class Site_Chat
                 continue;
             }
 
-            // --- Body content (raw HTML for analysis, plain text for AI) ---
+            // --- Body content (raw HTML for analysis, sanitized HTML for AI) ---
             $raw_html     = Content_Helper::get_content($post);
-            $body_content = $this->normalize_text($raw_html);
+            $body_content = Content_Helper::sanitize_for_ai($raw_html);
 
             // --- Content stats from raw HTML ---
-            $word_count     = str_word_count($body_content);
+            $word_count     = str_word_count($this->normalize_text($raw_html));
             $img_count      = preg_match_all('/<img\b/i', $raw_html);
             $img_no_alt     = preg_match_all('/<img(?![^>]*\balt\s*=\s*"[^"]+")[^>]*>/i', $raw_html);
             $internal_links = preg_match_all('/href=["\']' . preg_quote($home_url, '/') . '/i', $raw_html);

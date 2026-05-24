@@ -782,7 +782,7 @@ class AI_Generator
     private function build_user_prompt(\WP_Post $post, array $field_overrides = array()): string
     {
         $ctx = $this->get_seo_context($post, $field_overrides);
-        $page_content = $this->normalize_text(Content_Helper::get_content($post));
+        $page_content = Content_Helper::sanitize_for_ai(Content_Helper::get_content($post));
         $page_excerpt = $this->normalize_text((string) $post->post_excerpt);
 
         // Cap body content to ~4 000 words (≈20 000 chars) for metadata generation.
@@ -942,11 +942,9 @@ class AI_Generator
         $ctx = $this->get_seo_context($post, $deep_analysis ? array('deep_analysis' => true) : array());
 
         // Send FULL page content — no truncation. AI needs every element for proper SEO analysis.
-        $page_content_raw = Content_Helper::get_content($post);
-        // HTML alone is sufficient: AI can read text within tags, AND it preserves
-        // heading hierarchy, image elements, internal/external links, and structure.
-        // Sending a separate plain-text duplicate was wasting ~40% extra tokens.
-        $page_html = strip_shortcodes($page_content_raw);
+        // Sanitized HTML preserves structure (headings, images with position, links, videos)
+        // while stripping all builder junk, inline styles, scripts, and non-semantic wrappers.
+        $page_html = Content_Helper::sanitize_for_ai(Content_Helper::get_content($post));
         $page_excerpt = $this->normalize_text((string) $post->post_excerpt);
 
         $branding_suffix = $this->settings->get_branding_suffix();
@@ -1650,7 +1648,9 @@ class AI_Generator
 
         $page_content_raw = Content_Helper::get_content($post);
         // Send FULL content to AI for audit — no truncation.
-        $page_content = $this->normalize_text($page_content_raw);
+        // Sanitized HTML keeps structure (headings, images, links, videos in position)
+        // while stripping builder wrappers, styles, scripts, and non-semantic markup.
+        $page_content = Content_Helper::sanitize_for_ai($page_content_raw);
 
         $img_count = preg_match_all('/<img\b/i', $page_content_raw);
         $img_no_alt = preg_match_all('/<img(?![^>]*\balt\s*=\s*"[^"]+")[^>]*>/i', $page_content_raw);
