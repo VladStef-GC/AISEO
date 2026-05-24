@@ -1410,6 +1410,28 @@ class AI_Generator
 
         $decoded = json_decode($normalized, true);
 
+        // If first attempt fails, try fixing unescaped control characters
+        // inside JSON string values. LLMs often emit literal newlines/tabs
+        // in multi-line fields like full_report (Markdown content).
+        if (! is_array($decoded)) {
+            $fixed = preg_replace_callback(
+                '/"((?:[^"\\\\]|\\\\.)*)"/s',
+                function ($m) {
+                    $val = $m[1];
+                    $val = str_replace(
+                        array("\r\n", "\r", "\n", "\t"),
+                        array('\\n', '\\n', '\\n', '\\t'),
+                        $val
+                    );
+                    return '"' . $val . '"';
+                },
+                $normalized
+            );
+            if (null !== $fixed) {
+                $decoded = json_decode($fixed, true);
+            }
+        }
+
         if (! is_array($decoded)) {
             // Log the raw response for debugging.
             $preview = substr($content, 0, 500);
