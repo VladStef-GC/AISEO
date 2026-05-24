@@ -109,6 +109,7 @@ final class Plugin
             if (is_dir($local_ai_dir)) {
                 require_once $local_ai_dir . 'class-local-ai-provider.php';
                 require_once $local_ai_dir . 'class-local-ai-image-seo.php';
+                require_once $local_ai_dir . 'class-local-ai-content-compressor.php';
                 require_once $local_ai_dir . 'class-local-ai-admin.php';
                 $local_ai_admin = new \AI_SEO_Captain\Modules\LocalAI\Local_AI_Admin();
                 $local_ai_admin->register();

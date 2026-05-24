@@ -1079,6 +1079,27 @@ class AI_Generator
             array('role' => 'user', 'content' => $user_prompt),
         );
 
+        // ── Smart compression for small context windows ────────────────
+        // If the prompt exceeds the model's input budget, progressively
+        // compress the HTML content (headings/images/links always preserved).
+        // Only activates for Local AI — cloud providers never hit this path.
+        if (class_exists('\\AI_SEO_Captain\\Modules\\LocalAI\\Local_AI_Content_Compressor')) {
+            $ctx_window = $this->settings->get_context_window($model);
+            $fit = \AI_SEO_Captain\Modules\LocalAI\Local_AI_Content_Compressor::fit_messages($messages, $ctx_window);
+            $messages = $fit['messages'];
+
+            if ($fit['compressed']) {
+                error_log(sprintf(
+                    '[SEO Captain] Content compressed (level %d: %s) — %s → %s tokens to fit %s-token window.',
+                    $fit['level'],
+                    $fit['level_label'],
+                    number_format($fit['original_tokens']),
+                    number_format($fit['final_tokens']),
+                    number_format($fit['context_window'])
+                ));
+            }
+        }
+
         // ── Multi-batch continuation loop ──────────────────────────────
         // No max_tokens is sent to the API — the model generates freely until
         // it finishes (EOS) or runs out of context window. If the latter
