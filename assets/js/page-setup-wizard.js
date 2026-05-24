@@ -1120,6 +1120,7 @@
             // Reset audit table for a fresh run.
             allAudits = [];
             $('#aisc-s3-results').empty();
+            $('#aisc-s3-log').empty().show();
             refreshSummaryTab();
 
             var idsToProcess;
@@ -1184,9 +1185,22 @@
                     override_all: overrideAll ? '1' : '0'
                 },
                 onItem: function (response) {
-                    addOrUpdateAudit(response.data);
+                    var d = response.data;
+                    addOrUpdateAudit(d);
                     refreshSummaryTab();
                     refreshDetailsTab();
+                    // Real-time log entry (like Step 2).
+                    var color = d.score >= 70 ? '#00a32a' : (d.score >= 40 ? '#dba617' : '#d63638');
+                    var icon = d.cached ? '\u23ED' : '\u2713';
+                    var extra = d.cached ? ' \u2014 from cache' : '';
+                    var issues = d.issues ? d.issues.length : 0;
+                    $('#aisc-s3-log').prepend(
+                        '<div class="aisc-log-entry" style="color:' + color + ';">' +
+                        icon + ' <strong>' + esc(d.title) + '</strong>' +
+                        ' \u2014 Score: ' + d.score + '/100' +
+                        (issues > 0 ? ', ' + issues + ' issue' + (issues > 1 ? 's' : '') : '') +
+                        extra + '</div>'
+                    );
                 },
                 onDone: function (stats) {
                     var total = stats.processed + stats.cached;

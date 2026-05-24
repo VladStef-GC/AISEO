@@ -222,6 +222,7 @@ defined('ABSPATH') || exit;
                 <span id="aisc-s3-counts" style="font-size:12px;"></span>
             </div>
         </div>
+        <div id="aisc-s3-log" class="aisc-log"></div>
         <div id="aisc-s3-done" class="aisc-done-banner warning">
             <strong>&#10003; Audit complete.</strong> <span id="aisc-s3-result"></span>
         </div>
