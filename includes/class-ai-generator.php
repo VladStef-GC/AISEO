@@ -1571,8 +1571,7 @@ class AI_Generator
     private function build_content_edit_user_prompt(\WP_Post $post, string $instruction, array $recent_messages = array()): string
     {
         $ctx = $this->get_seo_context($post);
-        $page_content_raw = Content_Helper::get_content($post);
-        $page_content = $page_content_raw;
+        $page_content = Content_Helper::sanitize_for_ai(Content_Helper::get_content($post));
 
         $conversation_lines = array();
         foreach ($recent_messages as $recent_message) {

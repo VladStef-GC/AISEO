@@ -540,13 +540,49 @@ class Content_Helper
      * paste into Microsoft Word: content flows naturally, junk disappears.
      */
     private const AI_KEEP_TAGS = array(
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-        'p', 'blockquote', 'pre', 'code',
-        'ul', 'ol', 'li', 'dl', 'dt', 'dd',
-        'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption',
-        'strong', 'b', 'em', 'i', 'u', 'mark', 'small', 'sub', 'sup', 'br', 'hr',
-        'a', 'img', 'video', 'audio', 'source', 'iframe',
-        'figure', 'figcaption',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+        'p',
+        'blockquote',
+        'pre',
+        'code',
+        'ul',
+        'ol',
+        'li',
+        'dl',
+        'dt',
+        'dd',
+        'table',
+        'thead',
+        'tbody',
+        'tfoot',
+        'tr',
+        'th',
+        'td',
+        'caption',
+        'strong',
+        'b',
+        'em',
+        'i',
+        'u',
+        'mark',
+        'small',
+        'sub',
+        'sup',
+        'br',
+        'hr',
+        'a',
+        'img',
+        'video',
+        'audio',
+        'source',
+        'iframe',
+        'figure',
+        'figcaption',
     );
 
     /** Per-tag allowed attributes (tags not listed keep NO attributes). */
@@ -563,7 +599,13 @@ class Content_Helper
 
     /** Tags removed entirely — including all their children. */
     private const AI_REMOVE_TAGS = array(
-        'script', 'style', 'noscript', 'svg', 'canvas', 'template', 'map',
+        'script',
+        'style',
+        'noscript',
+        'svg',
+        'canvas',
+        'template',
+        'map',
     );
 
     /**
