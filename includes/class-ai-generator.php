@@ -17,6 +17,26 @@ class AI_Generator
         $this->search_console = $search_console;
     }
 
+    /**
+     * Resolve the effective model ID based on the active provider.
+     *
+     * When provider is 'local', uses local_model (stored separately by the
+     * Local AI module). For cloud providers, uses model (or custom_model_id).
+     */
+    private function resolve_model(array $options): string
+    {
+        $provider = (string) ($options['provider'] ?? 'openai');
+
+        if ('local' === $provider) {
+            $local_model = trim((string) ($options['local_model'] ?? ''));
+            if ('' !== $local_model) {
+                return $local_model;
+            }
+        }
+
+        return trim((string) ($options['model'] ?? ''));
+    }
+
     public function generate_for_post(int $post_id, array $field_overrides = array()): array
     {
         $post = get_post($post_id);
@@ -33,7 +53,7 @@ class AI_Generator
             throw new \RuntimeException('Add an API key in SEO Captain Settings before generating suggestions.');
         }
 
-        $model = trim((string) $options['model']);
+        $model = $this->resolve_model($options);
         $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_system_prompt((string) $options['system_prompt']);
         $user_prompt = $this->build_user_prompt($post, $field_overrides);
@@ -87,7 +107,7 @@ class AI_Generator
             throw new \RuntimeException('Add an API key in SEO Captain Settings before generating AI site audits.');
         }
 
-        $model = trim((string) $options['model']);
+        $model = $this->resolve_model($options);
         $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_site_audit_system_prompt((string) $options['system_prompt']);
         $user_prompt = $this->build_site_audit_user_prompt($report);
@@ -149,7 +169,7 @@ class AI_Generator
             throw new \RuntimeException('Add an API key in SEO Captain Settings before using the AI Commander.');
         }
 
-        $model = trim((string) $options['model']);
+        $model = $this->resolve_model($options);
         $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_chat_system_prompt((string) $options['system_prompt']);
         $prompt_result = $this->build_chat_user_prompt($post, $message, $recent_messages, $deep_analysis, $model);
@@ -1526,7 +1546,7 @@ class AI_Generator
             throw new \RuntimeException('Add an API key in SEO Captain Settings before generating page audits.');
         }
 
-        $model = trim((string) $options['model']);
+        $model = $this->resolve_model($options);
         $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_page_audit_system_prompt((string) $options['system_prompt']);
         $user_prompt = $this->build_page_audit_user_prompt($post, $deep_analysis);
@@ -1573,7 +1593,7 @@ class AI_Generator
             throw new \RuntimeException('Add an API key in SEO Captain Settings before requesting content changes.');
         }
 
-        $model = trim((string) $options['model']);
+        $model = $this->resolve_model($options);
         $temperature = $this->get_effective_temperature($options);
         $system_prompt = $this->build_content_edit_system_prompt((string) $options['system_prompt']);
         $user_prompt = $this->build_content_edit_user_prompt($post, $instruction, $recent_messages);

@@ -23,6 +23,12 @@ if (isset($_POST['local_ai_save_nonce']) && wp_verify_nonce($_POST['local_ai_sav
     $options['local_vision_model']   = sanitize_text_field($_POST['local_vision_model'] ?? '');
     $options['local_timeout']        = max(60, min(3600, (int) ($_POST['local_timeout'] ?? 3600)));
 
+    // Activate Local AI as the provider when a model is configured.
+    if ('' !== $options['local_model']) {
+        $options['provider']    = 'local';
+        $options['local_model'] = $options['local_model'];
+    }
+
     // Context window — use custom value if the dropdown is set to "custom".
     $ctx_raw = $_POST['context_window'] ?? '';
     if ('custom' === $ctx_raw) {
