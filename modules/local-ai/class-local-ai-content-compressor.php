@@ -58,6 +58,19 @@ class Local_AI_Content_Compressor
         4 => 'headings and counts only',
     );
 
+    /**
+     * Content section markers used in user prompts.
+     *
+     * Everything BEFORE these markers is SEO metadata / instructions
+     * and must NEVER be compressed. Only the HTML body that follows
+     * the marker is eligible for compression.
+     */
+    const CONTENT_MARKERS = array(
+        'Main page content: ',
+        "Page content (HTML with headings, images, links, and all elements):\n",
+        "Full page content:\n",
+    );
+
     // ------------------------------------------------------------------
     //  Public API
     // ------------------------------------------------------------------
@@ -126,24 +139,45 @@ class Local_AI_Content_Compressor
         $original_tokens = self::estimate_tokens($total_chars);
         $user_content    = $messages[$target_idx]['content'];
 
-        // Try each compression level until the prompt fits.
-        foreach (array(self::LEVEL_TRIM, self::LEVEL_SPARSE, self::LEVEL_SKELETON, self::LEVEL_MINIMAL) as $level) {
-            $compressed = self::compress($user_content, $level);
+        // ── Split: SEO metadata (never compressed) vs HTML body (compressible) ──
+        // All SEO fields (title drafts, meta descriptions, focus keyphrase, audit
+        // results, hierarchy, GSC data, etc.) sit BEFORE the content marker and
+        // are ALWAYS sent to the AI in full. Only the page HTML body is compressed.
+        list($seo_prefix, $html_body) = self::split_at_content($user_content);
 
-            $new_total = $total_chars - $target_len + mb_strlen($compressed);
+        if ('' === $html_body) {
+            // No content marker found — the prompt is all metadata / instructions.
+            // Cannot compress safely, return as-is.
+            return self::build_result(
+                $messages,
+                self::LEVEL_NONE,
+                $original_tokens,
+                $original_tokens,
+                $context_window
+            );
+        }
+
+        $prefix_len = mb_strlen($seo_prefix);
+        $body_len   = mb_strlen($html_body);
+
+        // Try each compression level on the HTML body only.
+        foreach (array(self::LEVEL_TRIM, self::LEVEL_SPARSE, self::LEVEL_SKELETON, self::LEVEL_MINIMAL) as $level) {
+            $compressed_body = self::compress($html_body, $level);
+
+            $new_total = $total_chars - $target_len + $prefix_len + mb_strlen($compressed_body);
 
             if ($new_total <= $budget_chars || self::LEVEL_MINIMAL === $level) {
                 // Add transparency note so AI knows content was condensed.
                 $final_tokens = self::estimate_tokens($new_total);
-                $compressed   = self::prepend_compression_note(
-                    $compressed,
+                $reassembled  = self::prepend_compression_note(
+                    $seo_prefix . $compressed_body,
                     $level,
                     $original_tokens,
                     $final_tokens,
                     $context_window
                 );
 
-                $messages[$target_idx]['content'] = $compressed;
+                $messages[$target_idx]['content'] = $reassembled;
 
                 return self::build_result($messages, $level, $original_tokens, $final_tokens, $context_window);
             }
@@ -507,6 +541,36 @@ class Local_AI_Content_Compressor
     }
 
     /**
+     * Split a user prompt into SEO metadata prefix and HTML body.
+     *
+     * Looks for the first known content marker (e.g. "Main page content: ").
+     * Everything up to and including the marker is the SEO prefix (kept in
+     * full). Everything after the marker is the HTML body (compressible).
+     *
+     * If no marker is found, returns ['', $text] — nothing is protected and
+     * fit_messages() will skip compression as a safety measure.
+     *
+     * @param string $text Full user prompt.
+     * @return array{0: string, 1: string} [seo_prefix, html_body]
+     */
+    private static function split_at_content(string $text): array
+    {
+        foreach (self::CONTENT_MARKERS as $marker) {
+            $pos = mb_strpos($text, $marker);
+            if (false !== $pos) {
+                $split = $pos + mb_strlen($marker);
+                return array(
+                    mb_substr($text, 0, $split),
+                    mb_substr($text, $split),
+                );
+            }
+        }
+
+        // No content marker found — cannot safely separate metadata from body.
+        return array('', $text);
+    }
+
+    /**
      * Estimate token count from character count.
      */
     private static function estimate_tokens(int $chars): int
@@ -528,22 +592,23 @@ class Local_AI_Content_Compressor
             ? round((1 - $final_tokens / $original_tokens) * 100)
             : 0;
 
-        $preserved = array('all headings (H1–H6)');
+        $preserved = array('ALL SEO metadata (titles, descriptions, keyphrases, audit data, hierarchy — uncompressed)', 'all headings (H1–H6)');
         if ($level <= self::LEVEL_SKELETON) {
             $preserved[] = 'all images with alt text';
             $preserved[] = 'all links with URLs';
             $preserved[] = 'tables and lists';
         }
         if ($level >= self::LEVEL_MINIMAL) {
-            $preserved = array('all headings (H1–H6)', 'element placeholders');
+            $preserved = array('ALL SEO metadata (uncompressed)', 'all headings (H1–H6)', 'element placeholders');
         }
 
         $note = sprintf(
-            "[COMPRESSION NOTE: Page content was condensed (Level %d: %s) to fit the %s-token context window. "
-            . "Preserved: %s. "
-            . "Prompt reduced from ~%s to ~%s tokens (%d%% smaller). "
-            . "Base your analysis on the structural and SEO elements shown. "
-            . "For full-text analysis, the user should load a model with a larger context window.]\n\n",
+            "[COMPRESSION NOTE: Only the page HTML body was condensed (Level %d: %s) to fit the %s-token context window. "
+                . "ALL SEO metadata fields above (title drafts, meta descriptions, focus keyphrase, audit results, hierarchy, GSC data) are complete and unmodified. "
+                . "Preserved in body: %s. "
+                . "Prompt reduced from ~%s to ~%s tokens (%d%% smaller). "
+                . "Base your analysis on the full SEO metadata and the structural elements shown. "
+                . "For full-text body analysis, the user should load a model with a larger context window.]\n\n",
             $level,
             self::LEVEL_LABELS[$level] ?? 'unknown',
             number_format($context_window),
