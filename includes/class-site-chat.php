@@ -59,7 +59,7 @@ class Site_Chat
 
         $options = $this->settings->get();
 
-        if (empty($options['api_key'])) {
+        if ('local' !== ($options['provider'] ?? '') && empty($options['api_key'])) {
             wp_send_json_error(array('message' => __('Add an API key in SEO Captain Settings before using the AI Captain.', 'ai-seo-captain')), 400);
         }
 
@@ -231,9 +231,7 @@ class Site_Chat
         $user_prompt     = $prompt_result['prompt'];
         $memory_pressure = $prompt_result['memory_pressure'];
 
-        if ('openai' === $provider) {
-            $raw = $this->ai_generator->call_provider($provider, $api_key, $model, $system_prompt, $user_prompt, $temperature);
-        } elseif ('google' === $provider) {
+        if ('openai' === $provider || 'google' === $provider || 'local' === $provider) {
             $raw = $this->ai_generator->call_provider($provider, $api_key, $model, $system_prompt, $user_prompt, $temperature);
         } else {
             throw new \RuntimeException('Unsupported AI provider configured.');

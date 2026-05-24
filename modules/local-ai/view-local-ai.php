@@ -201,10 +201,19 @@ $ctx_is_preset = isset($ctx_presets[$saved_ctx]);
                                style="width:120px;<?php echo $ctx_is_preset ? 'display:none;' : ''; ?>"
                                placeholder="e.g. 49152">
                         <span id="local-ai-context-detected" class="description" style="display:none;margin-left:6px;"></span>
-                        <p class="description">
-                            How many tokens your model can process at once. Check your model card in LM Studio or Ollama for this value.
-                            This controls how many focus pages AI can include in Site Chat.
+                        <p class="description" style="margin-top:6px;">
+                            How many tokens your model can process at once. This controls how many focus pages AI can include in Site Chat.
                         </p>
+                        <div class="notice notice-warning inline" style="margin:8px 0 0;padding:8px 12px;max-width:560px;">
+                            <p style="margin:0;">
+                                <strong>⚠️ Critical:</strong> This value <strong>must match</strong> the context length configured in your LM Studio or Ollama server.
+                                Setting it higher than the model's actual limit will cause requests to fail.
+                            </p>
+                            <p style="margin:4px 0 0;font-size:12px;">
+                                <strong>Where to find it:</strong> In LM Studio → select your model → look for <code>n_ctx</code> or <em>Context Length</em> in the model settings panel.
+                                In Ollama → run <code>ollama show &lt;model&gt;</code> and check <code>num_ctx</code>.
+                            </p>
+                        </div>
                     </td>
                 </tr>
             </table>
