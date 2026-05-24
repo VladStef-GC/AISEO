@@ -38,6 +38,10 @@ if (isset($_POST['local_ai_save_nonce']) && wp_verify_nonce($_POST['local_ai_sav
         $options['local_api_key'] = sanitize_text_field($api_key);
     }
 
+    // Bypass the Settings::sanitize() filter which enforces a 32K minimum
+    // context window and reconstructs the full options array from defaults.
+    // The Local AI handler already validates all fields above.
+    remove_all_filters('sanitize_option_ai_seo_captain_options');
     update_option('ai_seo_captain_options', $options);
 
     // Set transient for admin bar status.
@@ -67,6 +71,7 @@ if (isset($_POST['local_ai_disconnect_nonce']) && wp_verify_nonce($_POST['local_
     if ('local' === ($options['provider'] ?? '')) {
         unset($options['provider']);
     }
+    remove_all_filters('sanitize_option_ai_seo_captain_options');
     update_option('ai_seo_captain_options', $options);
     delete_transient('ai_seo_captain_local_ai_status');
     $save_notice = 'disconnected';
@@ -191,15 +196,15 @@ $ctx_is_preset = isset($ctx_presets[$saved_ctx]);
                     <td>
                         <select id="local-ai-context-window" name="context_window" class="regular-text">
                             <?php foreach ($ctx_presets as $val => $label) : ?>
-                                <option value="<?php echo (int) $val; ?>"<?php selected($ctx_is_preset && $saved_ctx === $val); ?>><?php echo esc_html($label . ' (' . number_format($val) . ' tokens)'); ?></option>
+                                <option value="<?php echo (int) $val; ?>" <?php selected($ctx_is_preset && $saved_ctx === $val); ?>><?php echo esc_html($label . ' (' . number_format($val) . ' tokens)'); ?></option>
                             <?php endforeach; ?>
-                            <option value="custom"<?php selected(! $ctx_is_preset); ?>>Custom…</option>
+                            <option value="custom" <?php selected(! $ctx_is_preset); ?>>Custom…</option>
                         </select>
                         <input type="number" id="local-ai-context-custom" name="context_window_custom"
-                               value="<?php echo $ctx_is_preset ? '' : (int) $saved_ctx; ?>"
-                               min="2048" step="1024" class="small-text"
-                               style="width:120px;<?php echo $ctx_is_preset ? 'display:none;' : ''; ?>"
-                               placeholder="e.g. 49152">
+                            value="<?php echo $ctx_is_preset ? '' : (int) $saved_ctx; ?>"
+                            min="2048" step="1024" class="small-text"
+                            style="width:120px;<?php echo $ctx_is_preset ? 'display:none;' : ''; ?>"
+                            placeholder="e.g. 49152">
                         <span id="local-ai-context-detected" class="description" style="display:none;margin-left:6px;"></span>
                         <p class="description" style="margin-top:6px;">
                             How many tokens your model can process at once. This controls how many focus pages AI can include in Site Chat.

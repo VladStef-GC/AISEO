@@ -284,7 +284,7 @@ class Settings
 
         // Global user-configured context window (applies to ALL providers).
         $user_ctx = (int) ($options['context_window'] ?? 128000);
-        if ($user_ctx >= 32000) {
+        if ($user_ctx >= 2048) {
             return $user_ctx;
         }
 

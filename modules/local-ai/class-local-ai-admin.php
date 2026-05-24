@@ -280,6 +280,9 @@ class Local_AI_Admin
             }
         }
 
+        // Bypass Settings::sanitize() filter — it enforces a 32K minimum
+        // context window and rebuilds the options array from defaults.
+        remove_all_filters('sanitize_option_' . self::OPTION_NAME);
         update_option(self::OPTION_NAME, $options);
 
         // Store connection status for admin bar indicator.
@@ -319,6 +322,7 @@ class Local_AI_Admin
             unset($options['provider']);
         }
 
+        remove_all_filters('sanitize_option_' . self::OPTION_NAME);
         update_option(self::OPTION_NAME, $options);
         delete_transient('ai_seo_captain_local_ai_status');
 

@@ -776,7 +776,7 @@
             var idsToUse = result.ids;
             var s2RunId = result.runId;
             var s2RunIds = result.runIds || (s2RunId ? [s2RunId] : []);
-            $('#aisc-s2-log').show();
+            $('#aisc-s2-log').empty().show();
             $('#aisc-s2-done').hide();
             $('#aisc-s2-stopped').hide();
             $('#aisc-s2-paused').hide();
@@ -1115,6 +1115,11 @@
             $('#aisc-s3-done').hide();
             $('#aisc-s3-stopped').hide();
             $('#aisc-s3-paused').hide();
+
+            // Reset audit table for a fresh run.
+            allAudits = [];
+            $('#aisc-s3-results').empty();
+            refreshSummaryTab();
 
             var idsToProcess;
             if (idsFromModal.length < publishedIds.length) {
