@@ -1257,8 +1257,8 @@ class Content_Indexer
             foreach ($results as &$row) {
                 $related_post = get_post((int) $row['object_id']);
                 if ($related_post instanceof \WP_Post) {
-                    $full_content    = Content_Helper::get_content($related_post);
-                    $row['excerpt_content'] = $this->truncate_text($full_content, 1500);
+                    $clean = Content_Helper::sanitize_for_ai(Content_Helper::get_content($related_post));
+                    $row['excerpt_content'] = $this->truncate_text_raw($clean, 1500);
                 } else {
                     $row['excerpt_content'] = '';
                 }
@@ -1275,6 +1275,23 @@ class Content_Indexer
     private function truncate_text(string $text, int $max_chars): string
     {
         $text = trim(wp_strip_all_tags($text));
+        if (mb_strlen($text) <= $max_chars) {
+            return $text;
+        }
+        $truncated = mb_substr($text, 0, $max_chars);
+        $last_space = strrpos($truncated, ' ');
+        if (false !== $last_space && $last_space > ($max_chars * 0.7)) {
+            $truncated = substr($truncated, 0, $last_space);
+        }
+        return $truncated . '…';
+    }
+
+    /**
+     * Truncate already-sanitized content (preserves HTML structure).
+     */
+    private function truncate_text_raw(string $text, int $max_chars): string
+    {
+        $text = trim($text);
         if (mb_strlen($text) <= $max_chars) {
             return $text;
         }

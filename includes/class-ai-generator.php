@@ -448,17 +448,16 @@ class AI_Generator
             }
         }
 
-        // Deep analysis: gather sibling body content (truncated excerpts).
+        // Deep analysis: gather sibling body content (sanitized excerpts).
         $sibling_content = array();
         if ($deep_analysis && ! empty($hierarchy['siblings'])) {
             foreach ($hierarchy['siblings'] as $sib) {
                 $sib_post = get_post((int) $sib['object_id']);
                 if ($sib_post instanceof \WP_Post) {
-                    $sib_raw  = Content_Helper::get_content($sib_post);
-                    $sib_text = $this->normalize_text($sib_raw);
-                    if ('' !== $sib_text) {
-                        // ~375 words ≈ 1500 chars, same budget as topical pages.
-                        $sibling_content[(int) $sib['object_id']] = mb_substr($sib_text, 0, 1500);
+                    $sib_clean = Content_Helper::sanitize_for_ai(Content_Helper::get_content($sib_post));
+                    if ('' !== $sib_clean) {
+                        // ~375 words ≈ 1500 chars — structured HTML keeps headings/links/images in context.
+                        $sibling_content[(int) $sib['object_id']] = mb_substr($sib_clean, 0, 1500);
                     }
                 }
             }
