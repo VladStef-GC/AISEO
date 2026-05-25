@@ -87,6 +87,9 @@ The working model is hybrid by design:
 
 - `includes/class-settings.php` owns defaults, registration, and sanitization.
 - Stores provider selection, model, API key, system prompt, feature flags, frontend toggles, search appearance settings, Google/Bing verification values, and IndexNow options.
+- **Three AI providers supported:** OpenAI (GPT-4.1-mini default), Google Gemini, and **Local AI** (LM Studio / Ollama via `modules/local-ai/`).
+- Local AI module provides: server connection, model discovery, dual model support (Chat + Vision), capability test with JSON validation, context window auto-detect, admin bar status indicator.
+- See `PLAN-LOCAL-AI.md` for full feature plan; `PLAN-LOCAL-AI-IMPLEMENTATION.md` for implementation status (Stage 1+2 complete).
 
 ### 3. Storage, history, and index layer
 
@@ -163,8 +166,8 @@ The working model is hybrid by design:
 
 - Plugin bootstrap, activation routine, PSR-4 autoloader, namespaced runtime, DB auto-upgrade, and uninstall cleanup.
 - Modular admin architecture: slim coordinator + 5 sub-modules (AJAX, rollout, import/export, taxonomy, SEO analysis).
-- 10 admin pages: Dashboard, Settings, Setup Wizard, Audit, Bulk Editor, Image SEO, Keywords, AI Strategist, Export/Import, Redirects.
-- Provider-backed AI generation for page metadata, page-level assistant chat, AI content editor, and strategic site audits.
+- 13 admin pages: Dashboard, Settings, Setup Wizard, Audit, Bulk Editor, Image SEO, Video SEO, Document SEO, Keywords, AI Strategist, Export/Import, Redirects, Scheduled Tasks, Local AI, Cache.
+- Provider-backed AI generation (OpenAI / Google Gemini / Local AI) for page metadata, page-level assistant chat, AI content editor, and strategic site audits. JSON robustness pipeline handles malformed LLM output with auto-retry.
 - Content indexing for site inventory, overlap detection, audit summaries, and discovery prioritization.
 - Per-page draft workflow with history, approval, and page-level frontend gating.
 - Saved page-level SEO fields can render on the frontend through the same page-level gate even without an approved AI suggestion.

@@ -20,7 +20,7 @@ ai-seo-captain/
 │   ├── class-settings.php         ← Options registry, defaults, get/save, title branding helpers
 │   ├── class-admin.php            ← Slim coordinator: menus, assets, metabox, delegation to sub-modules
 │   ├── class-frontend.php         ← Frontend SEO output (meta tags, schema, OG, crawl, title branding)
-│   ├── class-ai-generator.php     ← AI provider integration (OpenAI / Google), live context overrides, preserve-if-good logic
+│   ├── class-ai-generator.php     ← AI provider integration (OpenAI / Google / Local AI), live context overrides, preserve-if-good logic, JSON robustness pipeline (escape → extract → repair → retry)
 │   ├── class-content-indexer.php  ← Site content indexing, summary stats, get_all_indexed_pages()
 │   ├── class-content-writer.php   ← Pending content changes workflow (changeset pattern)
 │   ├── class-content-helper.php   ← Content extraction helper for AI prompts
@@ -74,8 +74,17 @@ ai-seo-captain/
 │       ├── page-videos.js         ← Video SEO title/description save
 │       ├── page-documents.js      ← Document SEO title/description save, "Used on" toggle│       ├── page-redirects.js     ← Redirects page: add/delete, 404 clear, broken link scanner, type filter, search, pagination│       ├── page-settings.js       ← Settings page interactions
 │       ├── page-site-chat.js      ← AI Strategist chat interface, focus pages, runs
+│       ├── page-setup-wizard.js   ← Setup Wizard: BatchProcessor (concurrency, retry, circuit breaker), Stop=clear-data, Pause/Resume
 │       ├── page-cron-manager.js   ← Scheduled Tasks page AJAX controls
 │       └── gutenberg-sidebar.js   ← Gutenberg sidebar panel registration
+│
+├── modules/
+│   └── local-ai/                  ← Local AI provider module (LM Studio / Ollama)
+│       ├── class-local-ai-admin.php   ← Admin page, AJAX handlers (test connection, test model, heartbeat)
+│       ├── class-local-ai-provider.php ← Core API client (OpenAI-compatible: /v1/chat/completions)
+│       ├── view-local-ai.php          ← Admin page template (form POST save)
+│       ├── local-ai.js                ← Connect, model dropdowns, capability test, vision probe
+│       └── local-ai.css               ← Admin page styles
 │
 ├── tests/
 │   ├── bootstrap.php              ← PHPUnit bootstrap with WP stubs
@@ -129,7 +138,11 @@ ai-seo-captain.php
         ├── class-indexnow.php
         ├── class-discovery.php
         ├── class-cron-manager.php
-        └── class-woocommerce-integration.php
+        ├── class-woocommerce-integration.php
+        │
+        └── modules/local-ai/
+              ├── class-local-ai-admin.php (admin page, AJAX, heartbeat)
+              └── class-local-ai-provider.php (API client → AI_Generator)
 ```
 
 ---
@@ -149,7 +162,7 @@ Each admin page follows the **thin-stub pattern**:
 |-----------|------|---------------|-----------|----------|---------|
 | Dashboard | `ai-seo-captain` | `render_dashboard()` | `view-dashboard.php` | — | — |
 | Audit | `ai-seo-captain-audit` | `render_audit_page()` | `view-audit.php` | — | — |
-| Setup Wizard | `ai-seo-captain-setup` | `render_setup_wizard_page()` | `view-setup-wizard.php` | `page-setup-wizard.css` | *(inline)* |
+| Setup Wizard | `ai-seo-captain-setup` | `render_setup_wizard_page()` | `view-setup-wizard.php` | `page-setup-wizard.css` | `page-setup-wizard.js` |
 | Settings | `ai-seo-captain-settings` | `render_settings_page()` | `view-settings.php` | `page-settings.css` | `page-settings.js` |
 | Redirects | `ai-seo-captain-redirects` | `render_redirects_page()` | *(delegated to Redirects class)* | — | `page-redirects.js` |
 | Bulk Editor | `ai-seo-captain-bulk-editor` | `render_bulk_editor_page()` | `view-bulk-editor.php` | — | `page-bulk-editor.js` |
@@ -239,6 +252,14 @@ All AJAX handlers are registered in `class-admin.php` via `wp_ajax_{action}` and
 |--------|--------|---------|
 | `aisc_broken_scan_start` | `ajax_scan_start()` | Start a broken link/media scan |
 | `aisc_broken_scan_status` | `ajax_scan_status()` | Poll scan progress (phase, counts) |
+
+### Local AI AJAX (class-local-ai-admin.php)
+
+| Action | Method | Purpose |
+|--------|--------|---------|
+| `ai_seo_captain_test_local_connection` | `ajax_test_connection()` | Test LM Studio/Ollama server connection |
+| `ai_seo_captain_test_local_model` | `ajax_test_model()` | Real capability test (connection + JSON quality) |
+| `ai_seo_captain_local_heartbeat` | `ajax_heartbeat()` | Background ping for admin bar status |
 
 ---
 

@@ -17,7 +17,8 @@ SEO Captain uses artificial intelligence to generate, manage, and optimize every
 
 | | Feature | Why it matters |
 |---|---------|----------------|
-| 🤖 | **AI-Generated SEO Metadata** | One click generates optimized titles and descriptions using GPT-4.1 or Google Gemini |
+| 🤖 | **AI-Generated SEO Metadata** | One click generates optimized titles and descriptions using GPT-4.1, Google Gemini, or a Local AI model |
+| 🧠 | **Local AI Support (LM Studio / Ollama)** | Run AI privately on your own hardware — zero cloud API costs, full data privacy |
 | 🏷️ | **Title Branding** | Automatic ` | Brand` suffix on all SEO titles with per-page opt-out |
 | ✅ | **Approval Workflow** | AI suggestions stay as drafts until you approve — nothing goes live without your say |
 | 📊 | **Full Page Audits with Scoring** | Every page gets an SEO score (0-100) with specific issues and actionable suggestions |
@@ -91,7 +92,7 @@ Get your entire site SEO-ready in three guided steps:
 2. **Generate SEO Metadata** — AI reads every page and writes optimized titles and descriptions (pages with existing metadata are skipped automatically)
 3. **Full SEO Audit** — AI analyzes each page individually for issues: missing alt tags, heading structure problems, thin content, and more
 
-Each step includes real-time progress bars, pause/resume/stop controls, and a detailed processing log. Previously audited pages load from cache instantly.
+Each step includes real-time progress bars, **Pause** (resume from where you left off) and **Stop** (clears cached data, starts fresh next time) controls, and a detailed processing log.
 
 **Scale-aware features:**
 - **Cost/time warning modal** — always shown before bulk operations, displaying page count and estimated API calls
@@ -104,10 +105,23 @@ Each step includes real-time progress bars, pause/resume/stop controls, and a de
 
 ### 🤖 AI SEO Generation
 
-- **Supported Providers:** OpenAI (GPT-4.1-mini default) and Google Gemini
+- **Supported Providers:** OpenAI (GPT-4.1-mini default), Google Gemini, and **Local AI** (LM Studio / Ollama)
 - **What it generates:** SEO title, meta description, focus keyphrase, keywords (5-8 terms), social title (OG/Twitter), social description, and notes
 - **Custom System Prompt:** Tailor the AI's behavior to your brand voice and industry
 - **Draft-first approach:** AI suggestions are stored as drafts — they never go live until you explicitly approve them
+- **JSON robustness:** Multi-layer parsing pipeline (escape → structure-aware extract → truncation repair → auto-retry) handles malformed LLM output gracefully
+
+#### 🧠 Local AI (LM Studio / Ollama)
+
+Run all AI operations on your own hardware — zero cloud API costs, full data privacy:
+
+- **OpenAI-compatible API:** Works with LM Studio, Ollama, or any server exposing the `/v1/chat/completions` endpoint
+- **Auto-detect models:** Queries `/v1/models` to discover available models and populate dropdowns
+- **Dual model support:** Separate Chat model (text reasoning) and Vision model (image analysis) — vision models auto-detected by naming pattern
+- **Capability test:** Real test against your model — validates connection, JSON output quality, and vision support
+- **Context window aware:** Auto-detects model context length or manual override (2K–128K presets + custom)
+- **Admin bar status:** Live 🟢 Running / 🔴 Offline indicator with background heartbeat (2-min intervals)
+- **Dedicated settings page:** Configure server URL, select models, test capabilities, disconnect — all via standard WordPress form POST (no JS dependency)
 
 ---
 
@@ -557,7 +571,7 @@ Native block editor integration:
 |-------------|---------|
 | WordPress | 6.7+ |
 | PHP | 7.4+ |
-| AI API Key | OpenAI or Google Gemini |
+| AI API Key | OpenAI, Google Gemini, or Local AI (LM Studio / Ollama) |
 | WooCommerce | Optional — enables product-specific features |
 
 ---
@@ -575,7 +589,7 @@ Native block editor integration:
 
 After activation, configure the plugin in **SEO Captain → Settings**:
 
-1. **AI Provider** — Choose OpenAI or Google, enter your API key, select model
+1. **AI Provider** — Choose OpenAI, Google, or Local AI (LM Studio / Ollama), enter your API key or server URL, select model
 2. **Feature Toggles** — Enable/disable meta titles, descriptions, Open Graph, Twitter Cards, canonical URLs, robots directives, schema
 3. **Frontend Output** — Toggle whether AI-generated metadata renders on the frontend
 4. **Search Appearance** — Set title templates and separator for all page types

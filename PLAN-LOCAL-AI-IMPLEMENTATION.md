@@ -1,7 +1,7 @@
 # LOCAL AI — IMPLEMENTATION INTO PLUGIN
 
-> **Status**: Stage 1 COMPLETE (connection, settings, save). Stage 2 IN PROGRESS.
-> **Last updated**: 2026-05-22
+> **Status**: Stage 1 COMPLETE. Stage 2 COMPLETE (provider integration, context window, JSON robustness, capability test).
+> **Last updated**: 2026-06-10
 > **Branch**: Dev-env
 
 ---
@@ -53,7 +53,39 @@
 
 ---
 
-## WHAT TO DO NEXT (Stage 2) — Provider Integration
+## WHAT IS DONE (Stage 2) ✅
+
+### Provider Integration (Completed 2026-06)
+- [x] `'local'` added to provider dropdown on Settings page — appears only when `local_model` is configured
+- [x] `class-ai-generator.php` routes to `Local_AI_Provider` when `provider=local`
+- [x] `get_context_window()` returns `local_context_window` when provider=local
+- [x] All AI operations (metadata generation, page audit, site audit, chat) work through Local AI
+
+### JSON Robustness (Completed 2026-06)
+- [x] `decode_json_payload()` rewritten — removed naive `strrpos('}')` extraction (was finding `}` inside CSS/markdown strings)
+- [x] New pipeline: strip markdown fences → `escape_json_strings()` → `extract_json_object_safe()` (structure-aware depth tracking) → trailing comma fix → `json_decode()` → `repair_truncated_json()` fallback
+- [x] `call_ai_and_decode(callable $call_fn, string $context)` — wraps AI call + JSON decode with automatic 1-retry on parse failure
+- [x] All AI modes (generate_for_post, generate_site_audit, generate_page_audit) use `call_ai_and_decode()`
+
+### Capability Test (Completed 2026-06)
+- [x] `test_json_capability()` in `class-local-ai-admin.php` — sends real JSON test prompt to model
+- [x] Tests connection AND JSON parsing quality in one step
+- [x] Vision probe tests multimodal capability with 1×1 pixel image
+- [x] Results shown as ✅/🚫 per operation in the settings UI
+
+### Setup Wizard Stop = Reset (Completed 2026-06)
+- [x] Stop button clears all cached data (audits or metadata) via AJAX
+- [x] Button text always shows "Start Page Audits" / "Start AI Generation" (not "Continue")
+- [x] Next run starts fresh — no stale cache from previous interrupted runs
+
+### Key Commits
+- `38793a3` — Fix JSON extraction fallback + real capability test
+- `1e7d6e9` — Fix strrpos JSON corruption + add retry on parse failure
+- `e04deec` — Stop = full reset, clears cached data for fresh restart
+
+---
+
+## ORIGINAL PLAN (Stage 2) — Provider Integration (Kept for Reference)
 
 ### Step 2.1: Add 'local' to Provider Dropdown on Settings Page
 
@@ -229,16 +261,16 @@ AI identifies decorative images from:
 ## TESTING CHECKLIST
 
 ### Stage 2 Tests
-- [ ] Provider dropdown shows "Local AI" only when `local_model` is configured
-- [ ] Selecting "Local AI" shows read-only model name (not editable dropdown)
-- [ ] Selecting "Local AI" triggers heartbeat → shows 🟢 or warns if offline
-- [ ] Saving with provider=local persists correctly
-- [ ] AI_Generator uses Local AI provider for all operations when provider=local
-- [ ] Context window correctly returned from `get_context_window()` for local provider
-- [ ] Connection failure during audit shows exact progress and pauses
-- [ ] Connection failure during chat shows error, preserves conversation
-- [ ] Switching back to cloud provider works without issues
-- [ ] All 128+ unit tests still pass
+- [x] Provider dropdown shows "Local AI" only when `local_model` is configured
+- [x] Selecting "Local AI" shows read-only model name (not editable dropdown)
+- [x] Selecting "Local AI" triggers heartbeat → shows 🟢 or warns if offline
+- [x] Saving with provider=local persists correctly
+- [x] AI_Generator uses Local AI provider for all operations when provider=local
+- [x] Context window correctly returned from `get_context_window()` for local provider
+- [x] Connection failure during audit shows exact progress and pauses
+- [x] Connection failure during chat shows error, preserves conversation
+- [x] Switching back to cloud provider works without issues
+- [x] All 128+ unit tests still pass
 
 ### Stage 3 Tests
 - [ ] Image with vision model → generates contextual alt text

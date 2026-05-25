@@ -1,6 +1,6 @@
 # SEO Captain Project Handoff
 
-Snapshot date: 2026-05-20
+Snapshot date: 2026-06-10
 
 Plugin root: `wp-content/plugins/ai-seo-captain`
 
@@ -24,8 +24,9 @@ SEO Captain is a hybrid AI plus deterministic SEO plugin for WordPress. It is th
 
 - Plugin bootstrap, service wiring, activation, uninstall cleanup, PSR-4 autoloader, and namespaced runtime.
 - **Modular admin architecture**: slim `class-admin.php` coordinator delegating to `class-admin-ajax.php` (AJAX handlers), `class-admin-rollout.php` (sync/submit/audit actions), `class-admin-import-export.php` (export, import, Yoast migration), `class-admin-taxonomy.php` (taxonomy SEO fields), and `class-seo-analysis.php` (deterministic SEO checks).
-- Settings page with provider, model, API key, system prompt, feature flags, frontend toggles, search appearance controls, Google/Bing verification fields, and IndexNow controls (107 UI controls audited and verified).
-- **Setup Wizard** with 3-step guided flow: Index → Generate → Audit. Includes cost/time warning modal (always shown), pause/resume/stop controls, WooCommerce Products filter, skip rules, runs system, and "View Full Page List" link to Bulk Editor.
+- Settings page with provider, model, API key, system prompt, feature flags, frontend toggles, search appearance controls, Google/Bing verification fields, and IndexNow controls (107 UI controls audited and verified). Supported AI providers: OpenAI (GPT-4.1-mini default), Google Gemini, and **Local AI** (LM Studio / Ollama).
+- **Local AI module** (`modules/local-ai/`): server connection with auto-model discovery, dual model support (Chat + Vision), real capability test with JSON validation, context window auto-detect with manual override, admin bar status indicator with background heartbeat, form POST save.
+- **Setup Wizard** with 3-step guided flow: Index → Generate → Audit. Includes cost/time warning modal (always shown), **Pause** (resume where you left off) and **Stop** (clears all cached data for a fresh restart) controls, WooCommerce Products filter, skip rules, runs system, and “View Full Page List” link to Bulk Editor.
 - Content indexing into dedicated SQL tables for inventory, audits, and AI context.
 - Page-level editor metabox with snippet analysis, readability and SEO checks, social previews, schema and advanced fields, AI drafting, approval, history, and chat.
 - **Gutenberg sidebar panel** with dedicated JS and CSS assets.
@@ -46,6 +47,7 @@ SEO Captain is a hybrid AI plus deterministic SEO plugin for WordPress. It is th
 - **Export/Import** — JSON export/import of settings, metadata, and redirects with selective checkboxes.
 - Title branding system: automatic ` | Brand` suffix on page-specific SEO titles, configurable site brand setting, per-page opt-out, and AI prompt budget enforcement.
 - AI generation context intelligence: live browser field overrides, preserve-if-good evaluation, keyphrase enforcement in both title and description, full tab data in AI prompts, and keyphrase write-back to editor.
+- **JSON robustness pipeline** in `class-ai-generator.php`: `escape_json_strings()` → `extract_json_object_safe()` (structure-aware depth tracking) → trailing comma fix → `repair_truncated_json()` fallback → automatic 1-retry via `call_ai_and_decode()`. Handles malformed LLM output (unescaped quotes, truncated responses, invalid escape sequences).
 - AI Content Editor with changeset-based editing, preview, apply/discard, backup/restore, and multi-builder support.- AI audit context includes per-page video embed counts and linked document counts for comprehensive media awareness.- **Redirects & 404 Monitor** with 301/302/307 redirect management, 404 error logging, hit counters, and AJAX-based add/delete.
 - **Scale-aware Runs system**: saved named page lists, `completed_steps` tracking per run, create/delete runs via AJAX.
 - **Skip Rules**: URL pattern matching to exclude pages from both metadata generation and full audits; server-side enforced in `handle_bulk_generate()`.
@@ -145,7 +147,7 @@ flowchart TD
 | `includes/admin/class-seo-analysis.php` | Deterministic SEO checks: keyphrase density, readability, link analysis, content structure |
 | `includes/class-content-indexer.php` | Content inventory, audit summary SQL, readiness counts, `get_all_indexed_pages()` |
 | `includes/class-audit-engine.php` | Higher-level audit report assembly for admin |
-| `includes/class-ai-generator.php` | Provider calls, prompt building with live context overrides and preserve-if-good logic, AI response parsing |
+| `includes/class-ai-generator.php` | Provider calls (OpenAI / Google / Local AI), prompt building with live context overrides and preserve-if-good logic, JSON robustness pipeline, AI response parsing |
 | `includes/class-history-store.php` | Conversation storage, suggestion history, approvals, site audit history |
 | `includes/class-content-writer.php` | Pending content changes workflow (changeset pattern) |
 | `includes/class-content-helper.php` | Content extraction helper for AI prompts |
@@ -158,6 +160,8 @@ flowchart TD
 | `includes/class-discovery.php` | `llms.txt` and `llms-full.txt` generation |
 | `includes/class-indexnow.php` | IndexNow key file handling, submissions, log storage |
 | `includes/class-woocommerce-integration.php` | WooCommerce detection and product-aware features |
+| `modules/local-ai/class-local-ai-admin.php` | Local AI admin page, AJAX handlers (test connection, test model, heartbeat), admin bar status |
+| `modules/local-ai/class-local-ai-provider.php` | Local AI API client (OpenAI-compatible: /v1/chat/completions), model discovery |
 | `uninstall.php` | Drops plugin tables, deletes options, removes all post/term meta keys, cleans user meta |
 
 ## Storage model

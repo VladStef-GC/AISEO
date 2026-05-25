@@ -71,6 +71,21 @@ Plus site-wide: **orphaned content**, **duplicate titles**, **keyword cannibaliz
 | **Preserve-if-good** | Per-page | AI evaluates existing drafts before rewriting — keeps if well-optimized |
 | **Keyphrase enforcement** | Per-page | AI ensures keyphrase appears naturally in generated title & description |
 
+**AI Providers:**
+| Provider | Description |
+|----------|-------------|
+| **OpenAI** | GPT-4.1-mini (default), GPT-4.1, configurable model |
+| **Google Gemini** | Gemini Pro / Flash models |
+| **Local AI** | LM Studio / Ollama — runs on your own hardware, zero cloud cost, full data privacy |
+
+**Local AI Capabilities:**
+- Auto-detect models via `/v1/models` endpoint
+- Dual model support: Chat model (text) + Vision model (image analysis)
+- Context window auto-detect with manual override (2K–128K presets + custom)
+- Real capability test: validates connection + JSON output quality + vision support
+- Admin bar status: 🟢 Running / 🔴 Offline with 2-min background heartbeat
+- JSON robustness pipeline handles malformed LLM output gracefully
+
 ---
 
 ## 4. Frontend SEO Output (Live Site)
@@ -178,6 +193,9 @@ Plus site-wide: **orphaned content**, **duplicate titles**, **keyword cannibaliz
 | **Keywords** | Keyphrase analysis, distribution, conflicts |
 | **Export/Import** | Data migration, Yoast import |
 | **Redirects** | Redirect manager + 404 monitor + broken link scanner |
+| **Scheduled Tasks** | Cron job management: index health, stale cleanup, sitemap ping |
+| **Local AI** | Local AI server settings: connect, test model, capability assessment |
+| **Cache** | Page cache & performance optimization settings |
 
 ---
 
@@ -202,10 +220,10 @@ Plus site-wide: **orphaned content**, **duplicate titles**, **keyword cannibaliz
 - **20** post meta fields (+ dynamic video meta keys)
 - **4** term meta fields
 - **17** deterministic SEO checks
-- **9** AI-powered features
+- **9** AI-powered features (3 providers: OpenAI, Google Gemini, Local AI)
 - **13** sitemap/discovery endpoints
 - **11** technical SEO tools
 - **10** page builder integrations
 - **70+** configurable settings
-- **10** admin pages
+- **13** admin pages
 - **5** database tables

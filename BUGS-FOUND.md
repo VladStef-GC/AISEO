@@ -15,6 +15,18 @@
 
 ---
 
+## Bugs Found & Fixed (June 2026 Session)
+
+| # | Bug | Location | Fix | Commit |
+|---|-----|----------|-----|--------|
+| J1 | **`get_model()` on private property** | `class-local-ai-admin.php` `test_json_capability()` | Changed `$provider->get_model()` to `''` (empty string) — `chat()` defaults to `$this->model` | `38793a3` |
+| J2 | **`strrpos('}')` JSON corruption** | `class-ai-generator.php` `decode_json_payload()` | Removed naive `strrpos('}')` extraction. Replaced with `extract_json_object_safe()` structure-aware depth tracking | `1e7d6e9` |
+| J3 | **Fake capability test** | `class-local-ai-admin.php` | Test now sends real JSON prompt to model and validates parsed output | `38793a3` |
+| J4 | **Stop button acting as Pause** | `page-setup-wizard.js` + `view-setup-wizard.php` | Stop now clears all cached data via AJAX, buttons always say "Start" not "Continue" | `e04deec` |
+| J5 | **No retry on JSON parse failure** | `class-ai-generator.php` | Added `call_ai_and_decode()` — wraps AI call + JSON decode with automatic 1-retry | `1e7d6e9` |
+
+---
+
 ## New Findings (This Session)
 
 | # | Finding | Location | Severity | Details |
