@@ -462,6 +462,7 @@
         this.onItem = config.onItem;
         this.onDone = config.onDone;
         this.onError = config.onError;
+        this.onStop = config.onStop || null;
         this.extraData = config.extraData || {};
         this.timer = createTimer(config.timerEl);
         this.concurrency = Math.max(1, Math.min(10, parseInt(config.concurrency, 10) || 1));
@@ -523,12 +524,14 @@
             $(self.btnPause).hide();
             $(self.btnStop).hide();
             $(self.prefix + '-stopped-info').text(
-                self.completed + ' of ' + self.ids.length + ' pages processed. ' +
-                self.stats.processed + ' new, ' + self.stats.skipped + ' skipped, ' +
-                self.stats.errors + ' errors.'
+                self.completed + ' of ' + self.ids.length + ' pages processed before stop. Data cleared — next run starts fresh.'
             );
             $(self.prefix + '-stopped').show();
             $(self.btnStart).prop('disabled', false).text(self.stopBtnText);
+            // Wipe cached data so the next run starts completely fresh.
+            if (typeof self.onStop === 'function') {
+                self.onStop(self.stats);
+            }
         });
 
         this.fillPool();
@@ -809,6 +812,15 @@
                 extraData: {
                     override_all: $('#aisc-s2-override').is(':checked') ? 1 : 0,
                     draft_mode: $('#aisc-s2-draft').is(':checked') ? 1 : 0
+                },
+                onStop: function () {
+                    // Clear all metadata so the next run starts completely fresh.
+                    $.post(ajaxUrl, {
+                        action: 'ai_seo_captain_clear_seo_data',
+                        nonce: nonce,
+                        scope: 'metadata'
+                    });
+                    $('#aisc-s2-log').empty();
                 },
                 onItem: function (response) {
                     var d = response.data;
@@ -1200,6 +1212,19 @@
                 extraData: {
                     deep_analysis: $('#aisc-s3-deep').is(':checked') ? '1' : '0',
                     override_all: overrideAll ? '1' : '0'
+                },
+                onStop: function () {
+                    // Clear all audit data so the next run starts completely fresh.
+                    $.post(ajaxUrl, {
+                        action: 'ai_seo_captain_clear_seo_data',
+                        nonce: nonce,
+                        scope: 'audits'
+                    });
+                    allAudits = [];
+                    $('#aisc-s3-results').empty();
+                    $('#aisc-s3-cache-info').hide();
+                    refreshSummaryTab();
+                    refreshDetailsTab();
                 },
                 onItem: function (response) {
                     var d = response.data;

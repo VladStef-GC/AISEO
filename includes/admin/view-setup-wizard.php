@@ -132,7 +132,7 @@ defined('ABSPATH') || exit;
         </label>
         <div class="aisc-controls">
             <button id="aisc-btn-generate" class="button button-primary button-hero" type="button" <?php disabled(! $has_index); ?>>
-                <?php echo $has_metadata ? esc_html__('Continue Generation', 'ai-seo-captain') : esc_html__('Start AI Generation', 'ai-seo-captain'); ?>
+                <?php esc_html_e('Start AI Generation', 'ai-seo-captain'); ?>
             </button>
             <button id="aisc-btn-s2-pause" class="button" type="button" style="display:none;">&#10074;&#10074; <?php esc_html_e('Pause', 'ai-seo-captain'); ?></button>
             <button id="aisc-btn-s2-stop" class="button" type="button" style="display:none;">&#9632; <?php esc_html_e('Stop', 'ai-seo-captain'); ?></button>
@@ -154,7 +154,7 @@ defined('ABSPATH') || exit;
             <strong>&#10074;&#10074; Paused.</strong> <span id="aisc-s2-paused-info"></span> Click <em>Resume</em> to continue.
         </div>
         <div id="aisc-s2-stopped" class="aisc-done-banner warning" style="display:none;">
-            <strong>&#9632; Stopped.</strong> <span id="aisc-s2-stopped-info"></span> You can restart or continue later.
+            <strong>&#9632; Stopped.</strong> <span id="aisc-s2-stopped-info"></span> All cached metadata has been cleared. Click <em>Re-Generate All</em> to start fresh.
         </div>
         <div id="aisc-s2-error" class="aisc-error-banner"></div>
 
@@ -187,9 +187,7 @@ defined('ABSPATH') || exit;
             <span id="aisc-s3-elapsed" class="aisc-elapsed"></span>
         </div>
         <p><?php esc_html_e('AI reads the full content of each page — body text, headings, images, links, media, and all SEO metadata — then produces a comprehensive audit report: SEO score, detected issues with explanations, actionable improvement suggestions, and a prioritized fix list. AI also identifies up to 20 topically related pages (siblings) and checks their SEO metadata to detect cannibalization risks. This is a read-only analysis — no SEO fields are modified. Results are cached so previously audited pages load instantly on subsequent runs.', 'ai-seo-captain'); ?></p>
-        <?php if ($audited_count > 0 && ! $step3_all_done) : ?>
-            <p style="font-size:13px;color:#50575e;">&#128204; <?php echo (int) $audited_count; ?> of <?php echo (int) $total_pages; ?> pages already audited. Previously audited pages load from cache instantly.</p>
-        <?php endif; ?>
+        <p id="aisc-s3-cache-info" style="font-size:13px;color:#50575e;<?php echo ($audited_count > 0 && ! $step3_all_done) ? '' : 'display:none;'; ?>">&#128204; <span id="aisc-s3-cache-count"><?php echo (int) $audited_count; ?></span> of <?php echo (int) $total_pages; ?> pages already audited. Previously audited pages load from cache instantly.</p>
         <label class="aisc-toggle" style="display:flex;margin:0 0 8px;">
             <input id="aisc-s3-override" type="checkbox" value="1" />
             <span class="aisc-toggle__track"></span>
@@ -202,13 +200,7 @@ defined('ABSPATH') || exit;
         </label>
         <div class="aisc-controls">
             <button id="aisc-btn-audit" class="button button-primary button-hero" type="button" <?php disabled(! $has_index || ! $has_metadata); ?>>
-                <?php
-                if ($audited_count > 0 && ! $step3_all_done) {
-                    echo 'Continue Audits';
-                } else {
-                    echo 'Start Page Audits';
-                }
-                ?>
+                <?php esc_html_e('Start Page Audits', 'ai-seo-captain'); ?>
             </button>
             <button id="aisc-btn-s3-pause" class="button" type="button" style="display:none;">&#10074;&#10074; Pause</button>
             <button id="aisc-btn-s3-stop" class="button" type="button" style="display:none;">&#9632; Stop</button>
@@ -230,7 +222,7 @@ defined('ABSPATH') || exit;
             <strong>&#10074;&#10074; Paused.</strong> <span id="aisc-s3-paused-info"></span> Click <em>Resume</em> to continue.
         </div>
         <div id="aisc-s3-stopped" class="aisc-done-banner warning" style="display:none;">
-            <strong>&#9632; Stopped.</strong> <span id="aisc-s3-stopped-info"></span> You can restart or continue later.
+            <strong>&#9632; Stopped.</strong> <span id="aisc-s3-stopped-info"></span> All cached audit data has been cleared. Click <em>Re-Audit All</em> to start fresh.
         </div>
         <div id="aisc-s3-error" class="aisc-error-banner"></div>
 
