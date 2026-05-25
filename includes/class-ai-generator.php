@@ -58,17 +58,17 @@ class AI_Generator
         $system_prompt = $this->build_system_prompt((string) $options['system_prompt']);
         $user_prompt = $this->build_user_prompt($post, $field_overrides);
 
-        if ('local' === $provider) {
-            $raw_response = $this->call_local($model, $system_prompt, $user_prompt, $temperature);
-        } elseif ('openai' === $provider) {
-            $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
-        } elseif ('google' === $provider) {
-            $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
-        } else {
-            throw new \RuntimeException('Unsupported AI provider configured.');
-        }
+        $call_fn = function () use ($provider, $options, $model, $system_prompt, $user_prompt, $temperature) {
+            if ('local' === $provider) {
+                return $this->call_local($model, $system_prompt, $user_prompt, $temperature);
+            } elseif ('openai' === $provider) {
+                return $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
+            } else {
+                return $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
+            }
+        };
 
-        $payload = $this->decode_json_payload($raw_response);
+        $payload = $this->call_ai_and_decode($call_fn, 'metadata #' . $post_id);
 
         $seo_title = isset($payload['seo_title']) ? sanitize_text_field((string) $payload['seo_title']) : '';
         $meta_description = isset($payload['meta_description']) ? sanitize_textarea_field((string) $payload['meta_description']) : '';
@@ -112,17 +112,17 @@ class AI_Generator
         $system_prompt = $this->build_site_audit_system_prompt((string) $options['system_prompt']);
         $user_prompt = $this->build_site_audit_user_prompt($report);
 
-        if ('local' === $provider) {
-            $raw_response = $this->call_local($model, $system_prompt, $user_prompt, $temperature);
-        } elseif ('openai' === $provider) {
-            $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
-        } elseif ('google' === $provider) {
-            $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
-        } else {
-            throw new \RuntimeException('Unsupported AI provider configured.');
-        }
+        $call_fn = function () use ($provider, $options, $model, $system_prompt, $user_prompt, $temperature) {
+            if ('local' === $provider) {
+                return $this->call_local($model, $system_prompt, $user_prompt, $temperature);
+            } elseif ('openai' === $provider) {
+                return $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
+            } else {
+                return $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
+            }
+        };
 
-        $payload = $this->decode_json_payload($raw_response);
+        $payload = $this->call_ai_and_decode($call_fn, 'site audit');
         $audit_title = isset($payload['audit_title']) ? sanitize_text_field((string) $payload['audit_title']) : 'SEO Captain Site Audit';
         $executive_summary = isset($payload['executive_summary']) ? sanitize_textarea_field((string) $payload['executive_summary']) : '';
         $notes = isset($payload['notes']) ? sanitize_textarea_field((string) $payload['notes']) : '';
@@ -1429,25 +1429,50 @@ class AI_Generator
         return '';
     }
 
+    /**
+     * Call the AI provider and decode the JSON response, retrying once on
+     * parse failure. LLMs under sustained batch load sometimes produce
+     * truncated or malformed JSON randomly; a single retry typically
+     * succeeds because the randomness means the next response is different.
+     *
+     * @param callable $call_fn Zero-argument callable that returns the raw AI response string.
+     * @param string   $context Optional label for log messages (e.g. "page 358").
+     * @return array Decoded JSON payload.
+     * @throws \RuntimeException If both attempts fail.
+     */
+    private function call_ai_and_decode(callable $call_fn, string $context = ''): array
+    {
+        $raw_response = $call_fn();
+        try {
+            return $this->decode_json_payload($raw_response);
+        } catch (\RuntimeException $e) {
+            if (false === strpos($e->getMessage(), 'not valid JSON')) {
+                throw $e;
+            }
+            $label = $context ? " ($context)" : '';
+            error_log('[SEO Captain] JSON parse failed' . $label . ' — retrying once.');
+            $raw_response = $call_fn();
+            return $this->decode_json_payload($raw_response);
+        }
+    }
+
     private function decode_json_payload(string $content): array
     {
         $normalized = trim($content);
 
-        // Strip markdown code fences.
+        // Strip markdown code fences wrapping the JSON.
         if (preg_match('/```(?:json)?\s*(\{.*\})\s*```/is', $normalized, $matches)) {
             $normalized = $matches[1];
+        } else {
+            // Just start from the first '{'.
+            // IMPORTANT: we do NOT use strrpos('}') here because for
+            // truncated responses the last '}' is often inside a string
+            // value (CSS, code, markdown), which corrupts the extraction.
+            $start = strpos($normalized, '{');
+            if (false !== $start) {
+                $normalized = substr($normalized, $start);
+            }
         }
-
-        // Extract the outermost JSON object.
-        $start = strpos($normalized, '{');
-        $end = strrpos($normalized, '}');
-
-        if (false !== $start && false !== $end) {
-            $normalized = substr($normalized, $start, ($end - $start) + 1);
-        }
-
-        // Fix common LLM JSON issues: trailing commas before } or ].
-        $normalized = preg_replace('/,\s*([\]}])/s', '$1', $normalized) ?? $normalized;
 
         // Fix unescaped control characters inside JSON string values.
         // LLMs often emit literal newlines/tabs in multi-line fields like
@@ -1455,30 +1480,24 @@ class AI_Generator
         // of regex to avoid backtrack limits on large strings.
         $normalized = $this->escape_json_strings($normalized);
 
-        $decoded = json_decode($normalized, true);
-
-        // Fallback: the naive strrpos('}') extraction may have found a '}'
-        // inside a string value (e.g. CSS, code examples). Now that
-        // escape_json_strings has fixed string delimiters, re-extract using
-        // a structure-aware scanner that tracks depth & strings properly.
-        if (! is_array($decoded)) {
-            $reextracted = $this->extract_json_object_safe($normalized);
-            if (null !== $reextracted && $reextracted !== $normalized) {
-                $reextracted = preg_replace('/,\s*([\]}])/s', '$1', $reextracted) ?? $reextracted;
-                $decoded = json_decode($reextracted, true);
-                if (is_array($decoded)) {
-                    error_log('[SEO Captain] JSON recovered by structure-aware re-extraction.');
-                }
-            }
+        // Now find the real JSON boundary using structure-aware scanning.
+        // This tracks brace depth + string boundaries, unlike strrpos('}').
+        $extracted = $this->extract_json_object_safe($normalized);
+        if (null !== $extracted) {
+            $normalized = $extracted;
         }
+
+        // Fix common LLM JSON issues: trailing commas before } or ].
+        $normalized = preg_replace('/,\s*([\]}])/s', '$1', $normalized) ?? $normalized;
+
+        $decoded = json_decode($normalized, true);
 
         // If still failing, try repairing truncated JSON.
         // LLMs with limited output tokens often produce valid JSON that is
         // cut off mid-string or mid-array. We close open structures to
         // salvage as much data as possible.
         if (! is_array($decoded)) {
-            $to_repair = $reextracted ?? $normalized;
-            $repaired = $this->repair_truncated_json($to_repair);
+            $repaired = $this->repair_truncated_json($normalized);
             if (null !== $repaired) {
                 $decoded = json_decode($repaired, true);
             }
@@ -1863,17 +1882,17 @@ class AI_Generator
         $system_prompt = $this->build_page_audit_system_prompt((string) $options['system_prompt']);
         $user_prompt = $this->build_page_audit_user_prompt($post, $deep_analysis);
 
-        if ('local' === $provider) {
-            $raw_response = $this->call_local($model, $system_prompt, $user_prompt, $temperature);
-        } elseif ('openai' === $provider) {
-            $raw_response = $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
-        } elseif ('google' === $provider) {
-            $raw_response = $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
-        } else {
-            throw new \RuntimeException('Unsupported AI provider configured.');
-        }
+        $call_fn = function () use ($provider, $options, $model, $system_prompt, $user_prompt, $temperature) {
+            if ('local' === $provider) {
+                return $this->call_local($model, $system_prompt, $user_prompt, $temperature);
+            } elseif ('openai' === $provider) {
+                return $this->call_openai($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
+            } else {
+                return $this->call_google($options['api_key'], $model, $system_prompt, $user_prompt, $temperature);
+            }
+        };
 
-        $payload = $this->decode_json_payload($raw_response);
+        $payload = $this->call_ai_and_decode($call_fn, 'page audit #' . $post_id);
 
         return array(
             'score' => isset($payload['score']) ? max(0, min(100, (int) $payload['score'])) : 0,
