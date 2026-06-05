@@ -183,7 +183,9 @@ class Site_Chat
     private function send_to_ai(string $message, array $recent_messages, array $options, array $focus_ids = array(), array $audit_ids = array()): array
     {
         $provider    = (string) $options['provider'];
-        $model       = trim((string) $options['model']);
+        $model       = ('local' === $provider && ! empty($options['local_model']))
+            ? trim((string) $options['local_model'])
+            : trim((string) $options['model']);
         $api_key     = (string) $options['api_key'];
         $temperature = isset($options['ai_temperature']) ? (float) $options['ai_temperature'] : 0.3;
 

@@ -257,7 +257,7 @@ defined('ABSPATH') || exit;
                 </summary>
                 <div style="padding:18px;">
                     <!-- Score distribution summary -->
-                    <div id="aisc-score-summary" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;"></div>
+                    <div id="aisc-score-summary"></div>
 
                     <!-- Top 10 / Bottom 10 tables side by side -->
                     <div style="display:flex;gap:20px;flex-wrap:wrap;">
@@ -368,10 +368,10 @@ defined('ABSPATH') || exit;
             <?php esc_html_e('Clear generated SEO data from the database. This cannot be undone — you will need to re-run the affected steps.', 'ai-seo-captain'); ?>
         </p>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-            <button type="button" class="button aisc-clear-data-btn" data-scope="metadata" style="color:#b32d2e;border-color:#b32d2e;">
+            <button type="button" class="button button-outline aisc-clear-data-btn" data-scope="metadata">
                 <?php esc_html_e('Clear All Metadata', 'ai-seo-captain'); ?>
             </button>
-            <button type="button" class="button aisc-clear-data-btn" data-scope="audits" style="color:#b32d2e;border-color:#b32d2e;">
+            <button type="button" class="button button-outline aisc-clear-data-btn" data-scope="audits">
                 <?php esc_html_e('Clear All Audits', 'ai-seo-captain'); ?>
             </button>
             <button type="button" class="button aisc-clear-data-btn" data-scope="all" style="color:#fff;background:#b32d2e;border-color:#b32d2e;">

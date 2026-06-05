@@ -104,6 +104,7 @@ defined('ABSPATH') || exit;
                         <?php endforeach; ?>
                 </tbody>
             </table>
+            <div id="aisc-keywords-pagination" class="aisc-pagination" style="margin-top:16px;text-align:center;"></div>
         </div>
     <?php else : ?>
         <p><?php esc_html_e("No focus keyphrases have been set yet. Add keyphrases in the editor's SEO tab.", 'ai-seo-captain'); ?></p>

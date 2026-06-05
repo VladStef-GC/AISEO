@@ -295,23 +295,24 @@
    BUTTONS
    ══════════════════════════════════════════════════════════════════════ */
 
-/* Primary */
+/* Primary — Save / Send actions (green, slightly larger) */
 .ai-seo-accordion-body .button-primary,
 .ai-seo-box .button-primary,
 .ai-seo-accordion .button-primary,
-.wrap .ai-seo-accordion~div .button-primary {
-    background: var(--aisc-primary);
-    border-color: var(--aisc-primary);
-    color: var(--aisc-primary-text);
+.wrap .ai-seo-accordion~div .button-primary,
+.wrap .button-primary {
+    background: #1b8341;
+    border-color: #157036;
+    color: #fff;
     border-radius: var(--aisc-radius-sm);
-    padding: 0 18px;
-    height: 36px;
-    line-height: 36px;
+    padding: 0 22px;
+    height: 38px;
+    line-height: 38px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 600;
     letter-spacing: 0.01em;
     box-shadow: none;
     transition: background var(--aisc-transition), border-color var(--aisc-transition), box-shadow var(--aisc-transition);
@@ -320,16 +321,22 @@
 .ai-seo-accordion-body .button-primary:hover,
 .ai-seo-box .button-primary:hover,
 .ai-seo-accordion .button-primary:hover,
-.wrap .ai-seo-accordion~div .button-primary:hover {
-    background: var(--aisc-primary-hover);
-    border-color: var(--aisc-primary-hover);
-    color: var(--aisc-primary-text);
+.wrap .ai-seo-accordion~div .button-primary:hover,
+.wrap .button-primary:hover {
+    background: #219b4e;
+    border-color: #1b8341;
+    color: #fff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, .12);
 }
 
 .ai-seo-accordion-body .button-primary:focus,
 .ai-seo-box .button-primary:focus,
-.ai-seo-accordion .button-primary:focus {
+.ai-seo-accordion .button-primary:focus,
+.wrap .ai-seo-accordion~div .button-primary:focus,
+.wrap .button-primary:focus {
+    background: #1b8341;
+    border-color: #157036;
+    color: #fff;
     box-shadow: var(--aisc-shadow-focus);
     outline: none;
 }
@@ -338,7 +345,15 @@
 .ai-seo-accordion-body .button-secondary,
 .ai-seo-box .button-secondary,
 .ai-seo-accordion .button-secondary,
-.wrap .ai-seo-accordion~div .button-secondary {
+.wrap .ai-seo-accordion~div .button-secondary,
+.wrap .button:not(.button-primary):not(.button-outline),
+.ai-seo-accordion-body .button:not(.button-primary),
+.ai-seo-box .button:not(.button-primary),
+.ai-seo-accordion .button:not(.button-primary),
+.wrap .ai-seo-accordion~div .button:not(.button-primary) {
+    color: #fff;
+    border-color: #420e56;
+    background: #7c2a63;
     border-radius: var(--aisc-radius-sm);
     padding: 0 16px;
     height: 36px;
@@ -352,15 +367,73 @@
     transition: background var(--aisc-transition), border-color var(--aisc-transition);
 }
 
-/* Submit button under accordion */
+.ai-seo-accordion-body .button-secondary:hover,
+.ai-seo-box .button-secondary:hover,
+.ai-seo-accordion .button-secondary:hover,
+.wrap .ai-seo-accordion~div .button-secondary:hover,
+.wrap .button:not(.button-primary):not(.button-outline):hover,
+.ai-seo-accordion-body .button:not(.button-primary):hover,
+.ai-seo-box .button:not(.button-primary):hover,
+.ai-seo-accordion .button:not(.button-primary):hover,
+.wrap .ai-seo-accordion~div .button:not(.button-primary):hover {
+    color: #fff;
+    border-color: #55145e;
+    background: #93347a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .12);
+}
+
+.ai-seo-accordion-body .button-secondary:focus,
+.ai-seo-box .button-secondary:focus,
+.ai-seo-accordion .button-secondary:focus,
+.wrap .ai-seo-accordion~div .button-secondary:focus,
+.wrap .button:not(.button-primary):not(.button-outline):focus,
+.ai-seo-accordion-body .button:not(.button-primary):focus,
+.ai-seo-box .button:not(.button-primary):focus,
+.ai-seo-accordion .button:not(.button-primary):focus,
+.wrap .ai-seo-accordion~div .button:not(.button-primary):focus {
+    color: #fff;
+    border-color: #420e56;
+    background: #7c2a63;
+    box-shadow: var(--aisc-shadow-focus);
+    outline: none;
+}
+
+/* Submit / Save button under accordion — largest green variant */
 .wrap .ai-seo-accordion~div input[type="submit"].button-primary,
 .wrap .ai-seo-accordion~div .button-primary {
-    height: 40px;
-    line-height: 40px;
-    padding: 0 28px;
+    height: 42px;
+    line-height: 42px;
+    padding: 0 30px;
     font-size: 14px;
     font-weight: 600;
     border-radius: var(--aisc-radius);
+}
+
+/* Outline variant — reusable for secondary actions across all pages */
+.wrap .button.button-outline,
+.button.button-outline {
+    color: #420e56;
+    border-color: #420e56;
+    background: #fff;
+    vertical-align: top;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.wrap .button.button-outline:hover,
+.button.button-outline:hover {
+    color: #fff;
+    border-color: #420e56;
+    background: #7c2a63;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .12);
+}
+
+.wrap .button.button-outline:focus,
+.button.button-outline:focus {
+    color: #420e56;
+    border-color: #420e56;
+    background: #fff;
+    box-shadow: 0 0 0 1px #fff, 0 0 0 3px #7c2a63;
+    outline: none;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -578,7 +651,7 @@
    ══════════════════════════════════════════════════════════════════════ */
 .ai-seo-captain-notice {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 14px;
     padding: 16px 20px;
     margin: 16px 0 24px;
@@ -783,7 +856,8 @@
     overflow: visible;
 }
 
-.tablenav-pages .page-numbers {
+.tablenav-pages .page-numbers,
+.aisc-pagination .page-numbers {
     display: inline-block;
     min-width: 32px;
     height: 32px;
@@ -800,13 +874,15 @@
     transition: all .15s ease;
 }
 
-.tablenav-pages .page-numbers:hover {
+.tablenav-pages .page-numbers:hover,
+.aisc-pagination .page-numbers:hover {
     background: #2271b1;
     color: #fff;
     border-color: #2271b1;
 }
 
-.tablenav-pages .page-numbers.current {
+.tablenav-pages .page-numbers.current,
+.aisc-pagination .page-numbers.current {
     background: #2271b1;
     color: #fff;
     border-color: #2271b1;
@@ -814,7 +890,8 @@
     cursor: default;
 }
 
-.tablenav-pages .page-numbers.dots {
+.tablenav-pages .page-numbers.dots,
+.aisc-pagination .page-numbers.dots {
     background: none;
     border: none;
     color: #50575e;
@@ -822,8 +899,14 @@
 }
 
 .tablenav-pages .page-numbers.prev,
-.tablenav-pages .page-numbers.next {
+.tablenav-pages .page-numbers.next,
+.aisc-pagination .page-numbers.prev,
+.aisc-pagination .page-numbers.next {
     font-weight: 600;
+}
+
+.aisc-pagination {
+    gap: 6px;
 }
 
 .aisc-toggle__track::after {
@@ -873,6 +956,7 @@
    ══════════════════════════════════════════════════════════════════════ */
 .ai-seo-sortable th.ai-seo-sort {
     cursor: pointer;
+    white-space: nowrap;
     transition: background var(--aisc-transition);
 }
 
@@ -884,6 +968,17 @@
     font-size: 14px;
     vertical-align: middle;
     margin-left: 2px;
+}
+
+/* Spin animation for refresh buttons */
+@keyframes aisc-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.dashicons.spin {
+    animation: aisc-spin .8s linear infinite;
+}
 }
 
 /* ══════════════════════════════════════════════════════════════════════

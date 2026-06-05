@@ -246,7 +246,7 @@ defined('ABSPATH') || exit;
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin-top:12px;">
                 <?php wp_nonce_field('ai_seo_captain_submit_indexnow'); ?>
                 <input type="hidden" name="action" value="<?php echo esc_attr($submit_indexnow_action); ?>" />
-                <button type="submit" class="button button-secondary"><?php esc_html_e('Submit Priority Queue to IndexNow', 'ai-seo-captain'); ?></button>
+                <button type="submit" class="button button-outline"><?php esc_html_e('Submit Priority Queue to IndexNow', 'ai-seo-captain'); ?></button>
             </form>
             <p style="margin:12px 0 0;color:#50575e;"><?php esc_html_e('On localhost this will log a safe skip instead of calling the live IndexNow endpoint.', 'ai-seo-captain'); ?></p>
         </div>
@@ -284,7 +284,7 @@ defined('ABSPATH') || exit;
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin-top:16px;">
                 <?php wp_nonce_field('ai_seo_captain_generate_site_audit'); ?>
                 <input type="hidden" name="action" value="<?php echo esc_attr($generate_site_audit_action); ?>" />
-                <button type="submit" class="button button-primary" <?php disabled(! $has_api_key); ?>><?php esc_html_e('Generate AI Strategic Audit', 'ai-seo-captain'); ?></button>
+                <button type="submit" class="button" <?php disabled(! $has_api_key); ?>><?php esc_html_e('Generate AI Strategic Audit', 'ai-seo-captain'); ?></button>
             </form>
             <?php if (! $has_api_key) : ?>
                 <p style="margin:12px 0 0;color:#8a2424;"><?php esc_html_e('Add an API key in Settings before generating AI strategic audits.', 'ai-seo-captain'); ?></p>
@@ -347,9 +347,9 @@ defined('ABSPATH') || exit;
     </div>
 
     <div style="background:#fff;border:1px solid #dcdcde;padding:20px;max-width:1120px;margin-top:24px;">
-        <h2><?php esc_html_e('Priority Queue', 'ai-seo-captain'); ?></h2>
+        <h2><?php esc_html_e('Priority Queue', 'ai-seo-captain'); ?> <span style="font-weight:normal;color:#50575e;font-size:14px;">(<?php echo count($report['priority_rows']); ?>)</span></h2>
         <p><?php esc_html_e('These rows are ordered toward published content with missing AI drafts first, then by approval state and freshness.', 'ai-seo-captain'); ?></p>
-        <table class="widefat striped" style="margin-top:12px;">
+        <table class="widefat striped" id="aisc-priority-table" style="margin-top:12px;">
             <thead>
                 <tr>
                     <th><?php esc_html_e('Content', 'ai-seo-captain'); ?></th>
@@ -378,6 +378,9 @@ defined('ABSPATH') || exit;
                 <?php endforeach; ?>
             </tbody>
         </table>
+        <?php if (count($report['priority_rows']) > 10) : ?>
+            <div class="aisc-pagination" id="aisc-priority-pagination" style="display:flex;justify-content:center;margin-top:12px;"></div>
+        <?php endif; ?>
     </div>
 
     <div style="background:#fff;border:1px solid #dcdcde;padding:20px;max-width:1120px;margin-top:24px;">
@@ -508,29 +511,29 @@ defined('ABSPATH') || exit;
         <?php if (empty($orphaned['orphans'])) : ?>
             <p style="margin:0;color:#00a32a;"><strong><?php esc_html_e('No orphaned content detected.', 'ai-seo-captain'); ?></strong> <?php esc_html_e('Every indexed page has at least one internal link pointing to it.', 'ai-seo-captain'); ?></p>
         <?php else : ?>
-            <table class="widefat striped" style="margin-top:8px;">
+            <table class="widefat striped ai-seo-sortable" id="aisc-orphaned-table" style="margin-top:8px;">
                 <thead>
                     <tr>
-                        <th><?php esc_html_e('Page', 'ai-seo-captain'); ?></th>
-                        <th><?php esc_html_e('Type', 'ai-seo-captain'); ?></th>
-                        <th><?php esc_html_e('Inbound links', 'ai-seo-captain'); ?></th>
+                        <th class="ai-seo-sort" data-col="0"><?php esc_html_e('Page', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                        <th class="ai-seo-sort" data-col="1"><?php esc_html_e('Type', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                        <th class="ai-seo-sort" data-col="2"><?php esc_html_e('Inbound links', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($orphaned['orphans'] as $row) : ?>
                         <tr>
-                            <td>
+                            <td data-sort-value="<?php echo esc_attr(strtolower($row['title'])); ?>">
                                 <a href="<?php echo esc_url(admin_url('post.php?post=' . (int) $row['object_id'] . '&action=edit')); ?>"><?php echo esc_html($row['title']); ?></a>
                                 <div style="margin-top:2px;"><a href="<?php echo esc_url($row['permalink']); ?>" target="_blank" rel="noopener" style="color:#50575e;font-size:12px;"><?php esc_html_e('View', 'ai-seo-captain'); ?></a></div>
                             </td>
-                            <td><?php echo esc_html($row['post_type']); ?></td>
-                            <td style="color:#d63638;"><strong>0</strong></td>
+                            <td data-sort-value="<?php echo esc_attr(strtolower($row['post_type'])); ?>"><?php echo esc_html($row['post_type']); ?></td>
+                            <td data-sort-value="0" style="color:#d63638;"><strong>0</strong></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
-            <?php if ($orphaned['total_orphans'] > count($orphaned['orphans'])) : ?>
-                <p style="margin:8px 0 0;color:#50575e;"><?php echo esc_html(sprintf(__('Showing %d of %d orphaned pages.', 'ai-seo-captain'), count($orphaned['orphans']), $orphaned['total_orphans'])); ?></p>
+            <?php if ($orphaned['total_orphans'] > 10) : ?>
+                <div class="aisc-pagination" id="aisc-orphaned-pagination" style="display:flex;justify-content:center;margin-top:12px;"></div>
             <?php endif; ?>
         <?php endif; ?>
     </div>

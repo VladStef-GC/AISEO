@@ -219,17 +219,23 @@ $active_context_window = isset($options['context_window']) ? (int) $options['con
                                 </p>
                             </td>
                         </tr>
-                        <tr>
+                        <tr class="ai-seo-captain-instructions-row" <?php echo 'local' === $active_provider ? 'style="opacity:.45;pointer-events:none;"' : ''; ?>>
                             <th scope="row"><label for="ai-seo-system-prompt"><?php esc_html_e('AI instructions', 'ai-seo-captain'); ?></label></th>
                             <td>
-                                <textarea id="ai-seo-system-prompt" class="large-text" rows="5" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[system_prompt]"><?php echo esc_textarea($options['system_prompt']); ?></textarea>
+                                <div>
+                                    <textarea id="ai-seo-system-prompt" class="large-text" rows="5" maxlength="2000" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[system_prompt]" <?php echo 'local' === $active_provider ? 'disabled' : ''; ?>><?php echo esc_textarea($options['system_prompt']); ?></textarea>
+                                    <p style="text-align:left;margin:2px 0 10px;font-size:13px;color:#1d2327;"><span class="ai-seo-char-count" data-for="ai-seo-system-prompt"></span></p>
+                                </div>
                                 <p class="description">Global instructions applied to page generation, page chat, and site audit requests.</p>
                             </td>
                         </tr>
-                        <tr>
+                        <tr class="ai-seo-captain-instructions-row" <?php echo 'local' === $active_provider ? 'style="opacity:.45;pointer-events:none;"' : ''; ?>>
                             <th scope="row"><label for="ai-seo-site-chat-context"><?php esc_html_e('Site context for AI', 'ai-seo-captain'); ?></label></th>
                             <td>
-                                <textarea id="ai-seo-site-chat-context" class="large-text" rows="6" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[site_chat_context]" placeholder="Example: We are a B2B software company selling RPA automation tools and professional services. Our main goal is lead generation through product demos and contact forms. Target audience: enterprise IT managers and CIOs."><?php echo esc_textarea($options['site_chat_context'] ?? ''); ?></textarea>
+                                <div>
+                                    <textarea id="ai-seo-site-chat-context" class="large-text" rows="6" maxlength="2000" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[site_chat_context]" placeholder="Example: We are a B2B software company selling RPA automation tools and professional services. Our main goal is lead generation through product demos and contact forms. Target audience: enterprise IT managers and CIOs." <?php echo 'local' === $active_provider ? 'disabled' : ''; ?>><?php echo esc_textarea($options['site_chat_context'] ?? ''); ?></textarea>
+                                    <p style="text-align:left;margin:2px 0 10px;font-size:13px;color:#1d2327;"><span class="ai-seo-char-count" data-for="ai-seo-site-chat-context"></span></p>
+                                </div>
                                 <p class="description">Describe your company, what the website is for (selling products, services, blog, etc.), and any specific instructions for the AI. This context is included in every Site Chat and Page Chat conversation so the AI understands your business goals.</p>
                             </td>
                         </tr>
@@ -756,6 +762,43 @@ $active_context_window = isset($options['context_window']) ? (int) $options['con
             </div>
 
         </div><!-- .ai-seo-accordion -->
+
+        <!-- Experiments section (outside main accordion — always visible) -->
+        <div class="ai-seo-accordion" style="margin-top:24px;">
+            <div class="ai-seo-accordion-section">
+                <div class="ai-seo-accordion-header">
+                    <h2><?php esc_html_e('Experiments', 'ai-seo-captain'); ?></h2>
+                    <span class="dashicons dashicons-arrow-down-alt2"></span>
+                </div>
+                <div class="ai-seo-accordion-body">
+                    <table class="form-table" role="presentation">
+                        <tr>
+                            <th scope="row">Local AI</th>
+                            <td>
+                                <div class="ai-seo-captain-notice is-warning" style="margin-bottom:14px;">
+                                    <img src="<?php echo esc_url(AI_SEO_CAPTAIN_URL . 'assets/img/seo-captain-side-d.svg'); ?>" alt="" class="ai-seo-captain-notice__icon" />
+                                    <div class="ai-seo-captain-notice__body">
+                                        <strong class="ai-seo-captain-notice__title"><?php esc_html_e('Experimental Feature', 'ai-seo-captain'); ?></strong>
+                                        <span class="ai-seo-captain-notice__text">
+                                            Local AI lets you run SEO Captain with a locally hosted model via <strong>LM Studio</strong> or <strong>Ollama</strong>.
+                                            This feature requires a model with a minimum <strong>32,000-token context window</strong>.
+                                            Performance and output quality depend on your hardware and chosen model.
+                                            Use at your own risk &mdash; this is not covered by standard support.
+                                        </span>
+                                    </div>
+                                </div>
+                                <label class="aisc-toggle" style="display:flex;">
+                                    <input id="aisc-experiment-local-ai" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[experiment_local_ai]" value="1" <?php checked(! empty($options['experiment_local_ai'])); ?> />
+                                    <span class="aisc-toggle__track"></span>
+                                    <span class="aisc-toggle__label">Enable Local AI (LM Studio / Ollama)</span>
+                                </label>
+                                <p class="description" style="margin-top:6px;">When disabled, the Local AI provider is hidden from the AI provider dropdown and the Local AI settings page is locked.</p>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
 
         <div style="max-width:960px;margin-top:20px;">
             <?php submit_button(__('Save settings', 'ai-seo-captain')); ?>

@@ -87,11 +87,14 @@ defined('ABSPATH') || exit;
 
     <!-- Chat panel — disabled when no audit data -->
     <div class="<?php echo ! $readiness['is_ready'] ? 'ai-seo-captain-disabled-section' : ''; ?>">
-        <div class="ai-seo-captain-site-chat-panel">
+        <details open class="ai-seo-captain-site-chat-panel">
+            <summary style="cursor:pointer;user-select:none;font-weight:600;margin:0 0 4px;color:#353835;font-size:16px;">
+                <?php esc_html_e('AI Chat', 'ai-seo-captain'); ?>
+            </summary>
 
             <!-- Focus Pages — select audited pages from any list -->
-            <details id="ai-seo-focus-pages-toggle" class="ai-seo-captain-focus-pages">
-                <summary style="cursor:pointer;user-select:none;font-weight:600;margin:0 0 4px;color:#643d87;">
+            <details open id="ai-seo-focus-pages-toggle" class="ai-seo-captain-focus-pages" style="margin-top:12px;">
+                <summary style="cursor:pointer;user-select:none;font-weight:600;margin:0 0 4px;color:#353835;font-size:16px;">
                     <?php esc_html_e('Focus Pages (select from any list)', 'ai-seo-captain'); ?>
                     <span id="ai-seo-capacity-badge" class="ai-seo-captain-capacity-badge"></span>
                 </summary>
@@ -129,6 +132,6 @@ defined('ABSPATH') || exit;
                 <?php echo $site_chat->render_chat_html($chat_messages); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- rendered with escaping inside render_chat_html 
                 ?>
             </div>
-        </div>
+        </details>
     </div>
 </div>

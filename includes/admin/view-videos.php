@@ -77,12 +77,12 @@ defined('ABSPATH') || exit;
         <table class="widefat striped ai-seo-sortable" id="ai-seo-video-table" style="table-layout:fixed;">
             <thead>
                 <tr>
-                    <th style="width:90px;"><?php esc_html_e('Preview', 'ai-seo-captain'); ?></th>
-                    <th style="width:22%;" class="ai-seo-sort" data-col="1"><?php esc_html_e('Video', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                    <th style="width:30%;" class="ai-seo-sort" data-col="2"><?php esc_html_e('SEO Title', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                    <th style="width:30%;" class="ai-seo-sort" data-col="3"><?php esc_html_e('SEO Description', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                    <th style="width:14%;" class="ai-seo-sort" data-col="4"><?php esc_html_e('Used on', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                    <th style="width:50px;"></th>
+                    <th style="width:80px;"><?php esc_html_e('Preview', 'ai-seo-captain'); ?></th>
+                    <th style="width:18%;" class="ai-seo-sort" data-col="1"><?php esc_html_e('Video', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th style="width:26%;" class="ai-seo-sort" data-col="2"><?php esc_html_e('SEO Title', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th style="width:28%;" class="ai-seo-sort" data-col="3"><?php esc_html_e('SEO Description', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th style="width:12%;" class="ai-seo-sort" data-col="4"><?php esc_html_e('Used on', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th style="width:65px;"></th>
                 </tr>
             </thead>
             <tbody>

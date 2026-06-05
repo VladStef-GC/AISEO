@@ -168,6 +168,9 @@ class Settings
             'cache_query_string_cache'   => 0,
             'cache_wc_exclude_cart'      => 1,
 
+            // Experiments.
+            'experiment_local_ai'   => 0,
+
             // Local AI (LM Studio / Ollama).
             'local_base_url'        => '',
             'local_model'           => '',
@@ -188,9 +191,9 @@ class Settings
     {
         $providers = array_keys(self::PROVIDER_MODELS);
 
-        // Include 'local' if a local model has been configured.
+        // Include 'local' only if the experiment is enabled AND a model is configured.
         $options = get_option(self::OPTION_NAME, array());
-        if ('' !== ($options['local_model'] ?? '')) {
+        if (! empty($options['experiment_local_ai']) && '' !== ($options['local_model'] ?? '')) {
             $providers[] = 'local';
         }
 
@@ -390,8 +393,8 @@ class Settings
             ? max(2048, (int) $input['context_window'])
             : (int) ($current['context_window'] ?? 128000);
         $output['api_key']              = isset($input['api_key']) ? sanitize_text_field($input['api_key']) : $current['api_key'];
-        $output['system_prompt']        = isset($input['system_prompt']) ? sanitize_textarea_field($input['system_prompt']) : $current['system_prompt'];
-        $output['site_chat_context']    = isset($input['site_chat_context']) ? sanitize_textarea_field($input['site_chat_context']) : ($current['site_chat_context'] ?? '');
+        $output['system_prompt']        = isset($input['system_prompt']) ? mb_substr(sanitize_textarea_field($input['system_prompt']), 0, 2000) : $current['system_prompt'];
+        $output['site_chat_context']    = isset($input['site_chat_context']) ? mb_substr(sanitize_textarea_field($input['site_chat_context']), 0, 2000) : ($current['site_chat_context'] ?? '');
         $output['google_tracking_code'] = isset($input['google_tracking_code']) ? sanitize_text_field($input['google_tracking_code']) : '';
         $output['bing_tracking_code']   = isset($input['bing_tracking_code']) ? sanitize_text_field($input['bing_tracking_code']) : '';
         $output['editor_chat_enabled']  = $is_cache_save ? $current['editor_chat_enabled'] : (empty($input['editor_chat_enabled']) ? 0 : 1);
@@ -477,6 +480,15 @@ class Settings
 
         foreach (self::FEATURE_FLAGS as $feature_key => $label) {
             $output['feature_' . $feature_key] = $is_cache_save ? $current['feature_' . $feature_key] : (empty($input['feature_' . $feature_key]) ? 0 : 1);
+        }
+
+        // Experiments.
+        $output['experiment_local_ai'] = $is_cache_save ? $current['experiment_local_ai'] : (empty($input['experiment_local_ai']) ? 0 : 1);
+
+        // If Local AI experiment was just disabled and provider is 'local', fall back to default.
+        if (empty($output['experiment_local_ai']) && 'local' === $output['provider']) {
+            $output['provider'] = 'openai';
+            $output['model'] = self::get_default_model_for_provider('openai');
         }
 
         // Local AI (LM Studio / Ollama) — always preserve; managed by modules/local-ai.

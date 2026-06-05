@@ -254,4 +254,383 @@
         });
     });
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // URL Editor Tab
+    // ─────────────────────────────────────────────────────────────────────────
+    var $urlTable = $('#aisc-url-editor-table');
+    if ($urlTable.length) {
+        var urlNonce = $('#aisc-url-editor-nonce').val();
+        var $applyBtn = $('#aisc-url-apply-btn');
+        var $statusSpan = $('#aisc-url-apply-status');
+        var $modal = $('#aisc-url-confirm-modal');
+        var slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+        // ── Slug validation ──────────────────────────────────────────
+        function validateSlug(input) {
+            var $input = $(input);
+            var val = $input.val().trim();
+            var $hint = $input.siblings('.aisc-url-validation');
+            var original = $input.data('original');
+            var $row = $input.closest('tr');
+            var pathPrefix = $row.data('path-prefix') || '/';
+
+            if (val === '' || val === original) {
+                $hint.hide();
+                $input.css('border-color', '');
+                return true; // empty = no change
+            }
+
+            // Auto-fix: lowercase, replace spaces/underscores with hyphens, strip invalid chars.
+            var fixed = val.toLowerCase().replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-{2,}/g, '-').replace(/^-|-$/g, '');
+            if (fixed !== val) {
+                $input.val(fixed);
+                val = fixed;
+            }
+
+            if (val === '') {
+                $hint.text('Slug cannot be empty.').css('color', '#d63638').show();
+                $input.css('border-color', '#d63638');
+                return false;
+            }
+
+            if (!slugRegex.test(val)) {
+                $hint.text('Only lowercase letters, numbers, and hyphens.').css('color', '#d63638').show();
+                $input.css('border-color', '#d63638');
+                return false;
+            }
+
+            if (val === original) {
+                $hint.hide();
+                $input.css('border-color', '');
+                return true;
+            }
+
+            // Check for same-level duplicates: compare full path (path_prefix + slug)
+            // against existing slugs AND other pending changes at the same level.
+            var fullPath = pathPrefix + val;
+            var isDuplicate = false;
+            $urlTable.find('tbody tr').each(function () {
+                var $otherRow = $(this);
+                var $otherInput = $otherRow.find('.aisc-url-new-slug');
+                if ($otherInput[0] === input) return;
+
+                var otherPrefix = $otherRow.data('path-prefix') || '/';
+                var otherNewVal = $otherInput.val().trim();
+                var otherOriginal = $otherInput.data('original');
+                // The effective slug for this other row is the new value if set, otherwise the original.
+                var effectiveSlug = (otherNewVal !== '' && otherNewVal !== otherOriginal) ? otherNewVal : otherOriginal;
+                var otherFullPath = otherPrefix + effectiveSlug;
+
+                if (otherFullPath === fullPath) {
+                    isDuplicate = true;
+                    return false;
+                }
+            });
+
+            if (isDuplicate) {
+                $hint.text('Duplicate — a page already exists at ' + fullPath).css('color', '#d63638').show();
+                $input.css('border-color', '#d63638');
+                return false;
+            }
+
+            $hint.text('✓ Valid').css('color', '#00a32a').show();
+            $input.css('border-color', '#00a32a');
+            return true;
+        }
+
+        $urlTable.on('input', '.aisc-url-new-slug', function () {
+            validateSlug(this);
+            updateApplyButton();
+        });
+
+        // Re-evaluate Apply button when any row checkbox changes.
+        $urlTable.on('change', '.aisc-url-row-check', function () {
+            updateApplyButton();
+        });
+
+        // ── Enable/disable Apply button ──────────────────────────────
+        // A row is "actionable" only when: checkbox is checked AND slug is valid & changed.
+        function getChangedRows() {
+            var rows = [];
+            $urlTable.find('tbody tr').each(function () {
+                var $row = $(this);
+                // Row must have its checkbox checked.
+                if (!$row.find('.aisc-url-row-check').is(':checked')) return;
+
+                var $input = $row.find('.aisc-url-new-slug');
+                var val = $input.val().trim();
+                var original = $input.data('original');
+                // Must have a new, different, valid slug.
+                if (val === '' || val === original || !slugRegex.test(val)) return;
+                // Must pass full validation (same-level dupe check).
+                if (!validateSlug($input[0])) return;
+
+                rows.push({
+                    post_id: $row.data('post-id'),
+                    old_slug: $row.data('original-slug'),
+                    new_slug: val,
+                    auto_redirect: $row.find('.aisc-url-auto-redirect').is(':checked'),
+                    update_refs: $row.find('.aisc-url-update-refs').is(':checked'),
+                    path_prefix: $row.data('path-prefix'),
+                    title: $row.find('td:eq(1) strong').text()
+                });
+            });
+            return rows;
+        }
+
+        function updateApplyButton() {
+            var changes = getChangedRows();
+            $applyBtn.prop('disabled', changes.length === 0);
+            if (changes.length > 0) {
+                $statusSpan.css('color', '').text(changes.length + ' change(s) ready');
+            } else {
+                $statusSpan.text('');
+            }
+        }
+
+        // ── Search filter ────────────────────────────────────────────
+        var urlSearchTerm = '';
+        $('#aisc-url-editor-search').on('input', function () {
+            urlSearchTerm = ($(this).val() || '').toLowerCase();
+            urlPaginationCurrentPage = 1;
+            urlPaginationRender();
+        });
+
+        // ── Confirmation modal ───────────────────────────────────────
+        $applyBtn.on('click', function () {
+            var changes = getChangedRows();
+            if (changes.length === 0) return;
+
+            $('#aisc-url-confirm-count').text(changes.length);
+            var listHtml = '';
+            for (var i = 0; i < changes.length; i++) {
+                var c = changes[i];
+                listHtml += '<div style="margin-bottom:6px;"><strong>' + $('<span>').text(c.title).html() + '</strong>: '
+                    + '<code>' + $('<span>').text(c.old_slug).html() + '</code> → <code>' + $('<span>').text(c.new_slug).html() + '</code>'
+                    + (c.auto_redirect ? ' <span style="color:#00a32a;">+ redirect</span>' : '')
+                    + (c.update_refs ? ' <span style="color:#2271b1;">+ update refs</span>' : '')
+                    + '</div>';
+            }
+            $('#aisc-url-confirm-list').html(listHtml);
+            $modal.css('display', 'flex');
+        });
+
+        $('#aisc-url-confirm-cancel').on('click', function () {
+            $modal.hide();
+        });
+
+        $modal.on('click', function (e) {
+            if (e.target === this) $modal.hide();
+        });
+
+        // ── Apply changes via AJAX ───────────────────────────────────
+        $('#aisc-url-confirm-apply').on('click', function () {
+            var $btn = $(this);
+            $btn.prop('disabled', true).text('Applying…');
+
+            var changes = getChangedRows();
+
+            $.ajax({
+                url: ajaxurl,
+                method: 'POST',
+                data: {
+                    action: 'ai_seo_captain_bulk_url_change',
+                    _nonce: urlNonce,
+                    changes: JSON.stringify(changes)
+                },
+                dataType: 'json'
+            }).done(function (resp) {
+                $modal.hide();
+                if (resp.success) {
+                    $statusSpan.css('color', '#00a32a').text(resp.data.message);
+
+                    // Update the table with new slugs.
+                    if (resp.data.updated) {
+                        var totalRefsUpdated = 0;
+                        for (var i = 0; i < resp.data.updated.length; i++) {
+                            var u = resp.data.updated[i];
+                            var $row = $urlTable.find('tr[data-post-id="' + u.post_id + '"]');
+                            $row.attr('data-original-slug', u.new_slug);
+                            $row.find('td:eq(2) code').text(u.new_slug);
+                            var $inp = $row.find('.aisc-url-new-slug');
+                            $inp.val('').data('original', u.new_slug).attr('placeholder', u.new_slug).css('border-color', '');
+                            $inp.siblings('.aisc-url-validation').hide();
+                            $row.find('.aisc-url-row-check').prop('checked', false);
+                            $row.find('.aisc-url-update-refs').prop('checked', false);
+                            // Update permalink display.
+                            var parsed = $row.data('path-prefix') + u.new_slug + '/';
+                            $row.find('td:eq(1) a').text(parsed).attr('href', u.permalink);
+                            // Tally reference updates.
+                            if (u.refs_updated) {
+                                totalRefsUpdated += (u.refs_updated.posts || 0) + (u.refs_updated.postmeta || 0) + (u.refs_updated.options || 0);
+                            }
+                        }
+                        if (totalRefsUpdated > 0) {
+                            $statusSpan.append(' | ' + totalRefsUpdated + ' reference(s) updated');
+                        }
+                    }
+
+                    if (resp.data.errors && resp.data.errors.length > 0) {
+                        $statusSpan.append(' (' + resp.data.errors.length + ' error(s))');
+                    }
+
+                    updateApplyButton();
+                } else {
+                    $statusSpan.css('color', '#d63638').text(resp.data.message || 'Error applying changes.');
+                }
+                $btn.prop('disabled', false).text('Apply Changes');
+            }).fail(function () {
+                $modal.hide();
+                $statusSpan.css('color', '#d63638').text('Network error. Please try again.');
+                $btn.prop('disabled', false).text('Apply Changes');
+            });
+        });
+
+        // ── Preview references (on-demand per row) ─────────────────
+        $urlTable.on('click', '.aisc-url-preview-refs', function () {
+            var $btn = $(this);
+            var $row = $btn.closest('tr');
+            var pathPrefix = $row.data('path-prefix') || '/';
+            var slug = $row.data('original-slug');
+            var sourcePath = pathPrefix + slug + '/';
+            var title = $row.find('td:eq(1) strong').text();
+
+            // Prevent double-clicks.
+            if ($btn.hasClass('aisc-loading')) return;
+            $btn.addClass('aisc-loading');
+            $btn.find('.dashicons').removeClass('dashicons-search').addClass('dashicons-update spin');
+
+            $.ajax({
+                url: ajaxurl,
+                method: 'POST',
+                data: {
+                    action: 'ai_seo_captain_preview_refs',
+                    _nonce: urlNonce,
+                    source_path: sourcePath
+                },
+                dataType: 'json'
+            }).done(function (resp) {
+                $btn.removeClass('aisc-loading');
+                $btn.find('.dashicons').removeClass('dashicons-update spin').addClass('dashicons-search');
+
+                if (!resp.success) {
+                    alert(resp.data.message || 'Error searching references.');
+                    return;
+                }
+
+                var refs = resp.data.references || [];
+                var total = resp.data.total || 0;
+                var $refModal = $('#aisc-url-refs-modal');
+
+                $('#aisc-refs-modal-title').text('References to: ' + title);
+                $('#aisc-refs-modal-path').text(sourcePath);
+
+                var bodyHtml = '';
+                if (total === 0) {
+                    bodyHtml = '<p style="color:#50575e;text-align:center;padding:20px 0;">No references found in the database. Safe to change without updating references.</p>';
+                } else {
+                    bodyHtml = '<p style="margin-bottom:12px;color:#1d2327;"><strong>' + total + '</strong> location(s) reference this URL:</p>';
+                    for (var i = 0; i < refs.length; i++) {
+                        var ref = refs[i];
+                        var tableBadge = ref.table === 'posts' ? '📄' : (ref.table === 'postmeta' ? '🔧' : '⚙️');
+                        bodyHtml += '<div style="border:1px solid #e0e0e0;border-radius:4px;padding:10px 12px;margin-bottom:8px;background:#f9f9f9;">';
+                        bodyHtml += '<div style="font-weight:500;margin-bottom:4px;">' + tableBadge + ' ' + $('<span>').text(ref.label).html();
+                        if (ref.count > 1) bodyHtml += ' <span style="color:#50575e;font-size:11px;">(' + ref.count + ' occurrences)</span>';
+                        bodyHtml += '</div>';
+                        if (ref.snippets && ref.snippets.length) {
+                            for (var s = 0; s < ref.snippets.length; s++) {
+                                bodyHtml += '<code style="display:block;font-size:11px;background:#fff;padding:4px 8px;border-radius:3px;margin-top:4px;word-break:break-all;color:#50575e;">'
+                                    + $('<span>').text(ref.snippets[s]).html() + '</code>';
+                            }
+                        }
+                        bodyHtml += '</div>';
+                    }
+                }
+                $('#aisc-refs-modal-body').html(bodyHtml);
+                $refModal.css('display', 'flex');
+
+            }).fail(function () {
+                $btn.removeClass('aisc-loading');
+                $btn.find('.dashicons').removeClass('dashicons-update spin').addClass('dashicons-search');
+                alert('Network error while searching references.');
+            });
+        });
+
+        // Close refs modal.
+        $('#aisc-refs-modal-close').on('click', function () {
+            $('#aisc-url-refs-modal').hide();
+        });
+        $('#aisc-url-refs-modal').on('click', function (e) {
+            if (e.target === this) $(this).hide();
+        });
+
+        // ── Pagination (30 rows / page) ──────────────────────────────
+        var urlPaginationCurrentPage = 1;
+        var urlPerPage = 30;
+        var $urlPagination = $('#aisc-url-editor-pagination');
+
+        var urlPaginationRender = function () {
+            var allRows = $urlTable.find('tbody tr').toArray();
+
+            // Apply search filter first — mark matched rows.
+            var matchedRows = [];
+            for (var r = 0; r < allRows.length; r++) {
+                var isMatch = !urlSearchTerm || allRows[r].textContent.toLowerCase().indexOf(urlSearchTerm) !== -1;
+                if (isMatch) {
+                    matchedRows.push(allRows[r]);
+                }
+                allRows[r].style.display = 'none'; // hide all initially
+            }
+
+            var total = matchedRows.length;
+            var totalPages = Math.ceil(total / urlPerPage);
+            if (totalPages < 1) totalPages = 1;
+            if (urlPaginationCurrentPage > totalPages) urlPaginationCurrentPage = totalPages;
+
+            var start = (urlPaginationCurrentPage - 1) * urlPerPage;
+            var end = start + urlPerPage;
+
+            // Show only the current page of matched rows.
+            var vi = 0;
+            for (var i = start; i < end && i < matchedRows.length; i++) {
+                matchedRows[i].style.display = '';
+                matchedRows[i].classList.remove('alternate');
+                if (vi % 2 === 0) matchedRows[i].classList.add('alternate');
+                vi++;
+            }
+
+            if (totalPages <= 1) { $urlPagination.html(''); return; }
+            var html = '';
+            if (urlPaginationCurrentPage > 1) html += '<a class="prev page-numbers" href="#" data-page="' + (urlPaginationCurrentPage - 1) + '">&laquo; Previous</a> ';
+            for (var p = 1; p <= totalPages; p++) {
+                if (p === urlPaginationCurrentPage) {
+                    html += '<span aria-current="page" class="page-numbers current">' + p + '</span> ';
+                } else if (p <= 2 || p > totalPages - 2 || Math.abs(p - urlPaginationCurrentPage) <= 1) {
+                    html += '<a class="page-numbers" href="#" data-page="' + p + '">' + p + '</a> ';
+                } else if (p === 3 && urlPaginationCurrentPage > 4) {
+                    html += '<span class="page-numbers dots">&hellip;</span> ';
+                } else if (p === totalPages - 2 && urlPaginationCurrentPage < totalPages - 3) {
+                    html += '<span class="page-numbers dots">&hellip;</span> ';
+                }
+            }
+            if (urlPaginationCurrentPage < totalPages) html += '<a class="next page-numbers" href="#" data-page="' + (urlPaginationCurrentPage + 1) + '">Next &raquo;</a>';
+            $urlPagination.html(html);
+        };
+
+        $urlPagination.on('click', 'a[data-page]', function (e) {
+            e.preventDefault();
+            urlPaginationCurrentPage = parseInt($(this).data('page'), 10);
+            urlPaginationRender();
+            $urlTable[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        // Reset pagination on sort.
+        $urlTable.on('click', '.ai-seo-sort', function () {
+            urlPaginationCurrentPage = 1;
+            setTimeout(urlPaginationRender, 20);
+        });
+
+        urlPaginationRender();
+    }
+
 })(jQuery);

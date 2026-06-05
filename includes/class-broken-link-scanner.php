@@ -861,7 +861,20 @@ class Broken_Link_Scanner
 
     public function get_state(): array
     {
-        return get_option(self::STATE_OPTION, array());
+        $state = get_option(self::STATE_OPTION, array());
+
+        // Auto-clear stale scans that have been "running" for more than 10 minutes.
+        if (! empty($state['running']) && ! empty($state['started_at'])) {
+            $started = strtotime($state['started_at']);
+            if ($started && (time() - $started) > 600) {
+                $state['running'] = false;
+                $state['phase']   = 'stale';
+                $state['completed_at'] = null;
+                update_option(self::STATE_OPTION, $state, false);
+            }
+        }
+
+        return $state;
     }
 
     private function save_state(array $state): void
@@ -872,10 +885,11 @@ class Broken_Link_Scanner
     private function count_scannable_items(): int
     {
         global $wpdb;
-        // Posts + pages + products + nav menu items + attachments.
+        // Published content (post, page, product) + all attachments.
+        // Nav menu items are scanned separately in scan_nav_menus().
         return (int) $wpdb->get_var(
             "SELECT COUNT(*) FROM {$wpdb->posts}
-             WHERE (post_status = 'publish' AND post_type IN ('post', 'page', 'product', 'nav_menu_item'))
+             WHERE (post_status = 'publish' AND post_type IN ('post', 'page', 'product'))
                 OR post_type = 'attachment'"
         );
     }

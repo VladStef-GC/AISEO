@@ -234,6 +234,9 @@ class Admin
         add_action('wp_ajax_ai_seo_captain_gsc_test', array($this, 'ajax_gsc_test'));
         add_action('wp_ajax_ai_seo_captain_gsc_page', array($this, 'ajax_gsc_page_data'));
 
+        // --- Site Tree refresh ---
+        add_action('wp_ajax_ai_seo_captain_refresh_tree', array($this, 'ajax_refresh_tree'));
+
         // --- Runs (Lists) AJAX handlers ---
         add_action('wp_ajax_ai_seo_captain_create_run', array($this->ajax, 'handle_create_run'));
         add_action('wp_ajax_ai_seo_captain_get_runs', array($this->ajax, 'handle_get_runs'));
@@ -1945,7 +1948,9 @@ jQuery(function ($) {
         $.post(aiSeoKeeperEditor.ajaxUrl, {
             action: 'ai_seo_captain_page_audit',
             nonce: $('#ai_seo_captain_editor_nonce').val(),
-            post_id: postId
+            post_id: postId,
+            override_all: '1',
+            deep_analysis: $('#ai-seo-captain-deep-analysis').is(':checked') ? '1' : '0'
         })
         .done(function (response) {
             if (response && response.success && response.data) {
@@ -2954,6 +2959,21 @@ JS;
     }
 
     /**
+     * AJAX: refresh the site structure tree data.
+     */
+    public function ajax_refresh_tree(): void
+    {
+        check_ajax_referer('ai_seo_captain_nonce', '_nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
+        }
+
+        $tree_data = $this->content_indexer->get_all_indexed_pages();
+        wp_send_json_success(array('treeData' => $tree_data));
+    }
+
+    /**
      * AJAX: trigger a manual GSC data sync.
      */
     public function ajax_gsc_sync(): void
@@ -3100,7 +3120,7 @@ JS;
 
         $readiness     = $this->get_plugin_readiness();
         $readiness_banner = $this->get_readiness_banner_html($readiness);
-        $report        = $this->audit_engine->get_report(12);
+        $report        = $this->audit_engine->get_report(9999);
         $summary       = $report['summary'];
         $readiness     = $report['readiness'];
         $options       = $this->settings->get();

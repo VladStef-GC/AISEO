@@ -956,21 +956,21 @@
         $('#aisc-tab-details-count').text('(' + sorted.length + ' pages)');
 
         $('#aisc-score-summary').html(
-            '<div style="background:#f0f6fc;border:1px solid #72aee6;border-radius:6px;padding:14px 20px;text-align:center;min-width:120px;">' +
-            '<div style="font-size:28px;font-weight:700;color:' + scoreColor(avg) + ';">' + avg + '</div>' +
-            '<div style="font-size:12px;color:#50575e;">Average Score</div></div>' +
-            '<div style="background:#edf8f1;border:1px solid #00a32a;border-radius:6px;padding:14px 20px;text-align:center;min-width:120px;">' +
-            '<div style="font-size:28px;font-weight:700;color:#00a32a;">' + good + '</div>' +
-            '<div style="font-size:12px;color:#50575e;">Good (70+)</div></div>' +
-            '<div style="background:#fef8e7;border:1px solid #dba617;border-radius:6px;padding:14px 20px;text-align:center;min-width:120px;">' +
-            '<div style="font-size:28px;font-weight:700;color:#dba617;">' + warning + '</div>' +
-            '<div style="font-size:12px;color:#50575e;">Needs Work (40-69)</div></div>' +
-            '<div style="background:#fcf0f1;border:1px solid #d63638;border-radius:6px;padding:14px 20px;text-align:center;min-width:120px;">' +
-            '<div style="font-size:28px;font-weight:700;color:#d63638;">' + critical + '</div>' +
-            '<div style="font-size:12px;color:#50575e;">Critical (&lt;40)</div></div>' +
-            '<div style="background:#f6f7f7;border:1px solid #dcdcde;border-radius:6px;padding:14px 20px;text-align:center;min-width:120px;">' +
-            '<div style="font-size:28px;font-weight:700;color:#50575e;">' + totalIssues + '</div>' +
-            '<div style="font-size:12px;color:#50575e;">Total Issues</div></div>'
+            '<div class="aisc-stat-card" style="background:#f0f6fc;border:1px solid #72aee6;">' +
+            '<div class="aisc-stat-value" style="color:' + scoreColor(avg) + ';">' + avg + '</div>' +
+            '<div class="aisc-stat-label">Average Score</div></div>' +
+            '<div class="aisc-stat-card" style="background:#edf8f1;border:1px solid #00a32a;">' +
+            '<div class="aisc-stat-value" style="color:#00a32a;">' + good + '</div>' +
+            '<div class="aisc-stat-label">Good (70+)</div></div>' +
+            '<div class="aisc-stat-card" style="background:#fef8e7;border:1px solid #dba617;">' +
+            '<div class="aisc-stat-value" style="color:#dba617;">' + warning + '</div>' +
+            '<div class="aisc-stat-label">Needs Work (40-69)</div></div>' +
+            '<div class="aisc-stat-card" style="background:#fcf0f1;border:1px solid #d63638;">' +
+            '<div class="aisc-stat-value" style="color:#d63638;">' + critical + '</div>' +
+            '<div class="aisc-stat-label">Critical (&lt;40)</div></div>' +
+            '<div class="aisc-stat-card" style="background:#f6f7f7;border:1px solid #dcdcde;">' +
+            '<div class="aisc-stat-value" style="color:#50575e;">' + totalIssues + '</div>' +
+            '<div class="aisc-stat-label">Total Issues</div></div>'
         );
 
         // Top 10

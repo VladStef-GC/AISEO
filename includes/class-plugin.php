@@ -104,9 +104,10 @@ final class Plugin
             $this->ai_generator    = new AI_Generator($this->settings, $this->content_indexer, $this->search_console);
             $this->admin           = new Admin($this->settings, $this->content_indexer, $this->ai_generator, $this->history_store, $this->indexnow, $this->search_console);
 
-            // Local AI module — loads only when the module folder exists.
+            // Local AI module — loads only when the experiment is enabled and the module folder exists.
             $local_ai_dir = AI_SEO_CAPTAIN_PATH . 'modules/local-ai/';
-            if (is_dir($local_ai_dir)) {
+            $local_ai_experiment = ! empty($this->settings->get()['experiment_local_ai']);
+            if ($local_ai_experiment && is_dir($local_ai_dir)) {
                 require_once $local_ai_dir . 'class-local-ai-provider.php';
                 require_once $local_ai_dir . 'class-local-ai-image-seo.php';
                 require_once $local_ai_dir . 'class-local-ai-content-compressor.php';

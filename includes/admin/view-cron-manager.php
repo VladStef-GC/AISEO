@@ -163,15 +163,15 @@ $nonce = wp_create_nonce('ai_seo_captain_cron_manager');
         <?php if (empty($log)) : ?>
             <p class="aisc-cron-empty"><?php esc_html_e('No executions recorded yet. Tasks will appear here after their first run.', 'ai-seo-captain'); ?></p>
         <?php else : ?>
-            <table class="widefat aisc-cron-table aisc-cron-log-table">
+            <table class="widefat aisc-cron-table aisc-cron-log-table ai-seo-sortable" id="aisc-cron-log-table">
                 <thead>
                     <tr>
-                        <th><?php esc_html_e('Time', 'ai-seo-captain'); ?></th>
-                        <th><?php esc_html_e('Task', 'ai-seo-captain'); ?></th>
-                        <th><?php esc_html_e('Status', 'ai-seo-captain'); ?></th>
-                        <th><?php esc_html_e('Duration', 'ai-seo-captain'); ?></th>
-                        <th><?php esc_html_e('Message', 'ai-seo-captain'); ?></th>
-                        <th><?php esc_html_e('Trigger', 'ai-seo-captain'); ?></th>
+                        <th class="ai-seo-sort" data-col="0"><?php esc_html_e('Time', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                        <th class="ai-seo-sort" data-col="1"><?php esc_html_e('Task', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                        <th class="ai-seo-sort" data-col="2"><?php esc_html_e('Status', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                        <th class="ai-seo-sort" data-col="3"><?php esc_html_e('Duration', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                        <th class="ai-seo-sort" data-col="4"><?php esc_html_e('Message', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                        <th class="ai-seo-sort" data-col="5"><?php esc_html_e('Trigger', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -179,22 +179,24 @@ $nonce = wp_create_nonce('ai_seo_captain_cron_manager');
                         $log_status_class = ('success' === $entry['status']) ? 'aisc-badge--active' : (('error' === $entry['status']) ? 'aisc-badge--error' : 'aisc-badge--paused');
                         $trigger_label    = ! empty($entry['manual']) ? __('Manual', 'ai-seo-captain') : __('Scheduled', 'ai-seo-captain');
                         $time_display     = '';
-                        if (! empty($entry['timestamp'])) {
-                            $ts = strtotime($entry['timestamp']);
+                        $time_raw         = $entry['timestamp'] ?? '';
+                        if (! empty($time_raw)) {
+                            $ts = strtotime($time_raw);
                             $time_display = human_time_diff($ts, time()) . ' ' . __('ago', 'ai-seo-captain');
                         }
                     ?>
                         <tr>
-                            <td title="<?php echo esc_attr($entry['timestamp'] ?? ''); ?>"><?php echo esc_html($time_display); ?></td>
-                            <td><?php echo esc_html($entry['label'] ?? $entry['hook']); ?></td>
-                            <td><span class="aisc-badge <?php echo esc_attr($log_status_class); ?>"><?php echo esc_html(ucfirst($entry['status'])); ?></span></td>
-                            <td><?php echo esc_html($entry['duration'] . 's'); ?></td>
-                            <td class="aisc-cron-log-message"><?php echo esc_html($entry['message']); ?></td>
-                            <td><span class="aisc-cron-trigger"><?php echo esc_html($trigger_label); ?></span></td>
+                            <td data-sort-value="<?php echo esc_attr($time_raw); ?>" title="<?php echo esc_attr($time_raw); ?>"><?php echo esc_html($time_display); ?></td>
+                            <td data-sort-value="<?php echo esc_attr(strtolower($entry['label'] ?? $entry['hook'])); ?>"><?php echo esc_html($entry['label'] ?? $entry['hook']); ?></td>
+                            <td data-sort-value="<?php echo esc_attr($entry['status']); ?>"><span class="aisc-badge <?php echo esc_attr($log_status_class); ?>"><?php echo esc_html(ucfirst($entry['status'])); ?></span></td>
+                            <td data-sort-value="<?php echo esc_attr($entry['duration']); ?>"><?php echo esc_html($entry['duration'] . 's'); ?></td>
+                            <td data-sort-value="<?php echo esc_attr(strtolower($entry['message'])); ?>" class="aisc-cron-log-message"><?php echo esc_html($entry['message']); ?></td>
+                            <td data-sort-value="<?php echo esc_attr(strtolower($trigger_label)); ?>"><span class="aisc-cron-trigger"><?php echo esc_html($trigger_label); ?></span></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
+            <div id="aisc-cron-log-pagination" class="aisc-pagination" style="margin-top:16px;text-align:center;"></div>
         <?php endif; ?>
     </div>
 </div>

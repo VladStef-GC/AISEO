@@ -51,17 +51,6 @@
         var treeContainer = document.getElementById('aisc-site-tree');
         if (!treeContainer || typeof aiSeoBulkEditor === 'undefined' || !aiSeoBulkEditor.treeData) return;
 
-        var treeData = aiSeoBulkEditor.treeData;
-        var byParent = {};
-        var byId = {};
-        for (var i = 0; i < treeData.length; i++) {
-            var node = treeData[i];
-            byId[node.id] = node;
-            var pid = node.parent_id || 0;
-            if (!byParent[pid]) byParent[pid] = [];
-            byParent[pid].push(node);
-        }
-
         var typeIcons = { page: '\uD83D\uDCC4', post: '\uD83D\uDCDD', product: '\uD83D\uDED2' };
 
         function esc(s) {
@@ -70,64 +59,78 @@
             return d.innerHTML;
         }
 
-        function buildTree(parentId, depth) {
-            var children = byParent[parentId];
-            if (!children || children.length === 0) return '';
-            var html = '<ul style="list-style:none;margin:0;padding-left:' + (depth > 0 ? '20' : '0') + 'px;">';
-            for (var i = 0; i < children.length; i++) {
-                var n = children[i];
-                var hasKids = byParent[n.id] && byParent[n.id].length > 0;
-                var icon = typeIcons[n.post_type] || '\uD83D\uDCCE';
-                var statusBadge = n.status !== 'publish' ? ' <span style="font-size:11px;color:#dba617;font-weight:600;">(' + esc(n.status) + ')</span>' : '';
-                var slug = '/' + n.slug;
-                html += '<li style="margin:2px 0;">';
-                if (hasKids) {
-                    html += '<span class="aisc-tree-toggle" style="cursor:pointer;display:inline-block;width:18px;text-align:center;font-weight:700;color:#2271b1;user-select:none;" data-expanded="1">\u2212</span>';
-                } else {
-                    html += '<span style="display:inline-block;width:18px;text-align:center;color:#c3c4c7;">\u00B7</span>';
+        function renderTree(treeData) {
+            var byParent = {};
+            for (var i = 0; i < treeData.length; i++) {
+                var node = treeData[i];
+                var pid = node.parent_id || 0;
+                if (!byParent[pid]) byParent[pid] = [];
+                byParent[pid].push(node);
+            }
+
+            function buildTree(parentId, depth) {
+                var children = byParent[parentId];
+                if (!children || children.length === 0) return '';
+                var html = '<ul style="list-style:none;margin:0;padding-left:' + (depth > 0 ? '20' : '0') + 'px;">';
+                for (var i = 0; i < children.length; i++) {
+                    var n = children[i];
+                    var hasKids = byParent[n.id] && byParent[n.id].length > 0;
+                    var icon = typeIcons[n.post_type] || '\uD83D\uDCCE';
+                    var statusBadge = n.status !== 'publish' ? ' <span style="font-size:11px;color:#dba617;font-weight:600;">(' + esc(n.status) + ')</span>' : '';
+                    var slug = '/' + n.slug;
+                    html += '<li style="margin:2px 0;">';
+                    if (hasKids) {
+                        html += '<span class="aisc-tree-toggle" style="cursor:pointer;display:inline-block;width:18px;text-align:center;font-weight:700;color:#2271b1;user-select:none;" data-expanded="0">+</span>';
+                    } else {
+                        html += '<span style="display:inline-block;width:18px;text-align:center;color:#c3c4c7;">\u00B7</span>';
+                    }
+                    html += icon + ' ';
+                    html += '<a href="' + esc(n.permalink) + '" target="_blank" style="text-decoration:none;color:#1d2327;">' + esc(n.title) + '</a>';
+                    html += ' <span style="color:#787c82;font-size:12px;">' + esc(slug) + '</span>';
+                    html += statusBadge;
+                    if (hasKids) {
+                        html += '<div class="aisc-tree-children" style="display:none;">' + buildTree(n.id, depth + 1) + '</div>';
+                    }
+                    html += '</li>';
                 }
-                html += icon + ' ';
-                html += '<a href="' + esc(n.permalink) + '" target="_blank" style="text-decoration:none;color:#1d2327;">' + esc(n.title) + '</a>';
-                html += ' <span style="color:#787c82;font-size:12px;">' + esc(slug) + '</span>';
-                html += statusBadge;
-                if (hasKids) {
-                    html += '<div class="aisc-tree-children">' + buildTree(n.id, depth + 1) + '</div>';
+                html += '</ul>';
+                return html;
+            }
+
+            var pageTree = buildTree(0, 0);
+            var flatTypes = {};
+            for (var j = 0; j < treeData.length; j++) {
+                var nd = treeData[j];
+                if (nd.post_type !== 'page' && nd.parent_id === 0) {
+                    if (!flatTypes[nd.post_type]) flatTypes[nd.post_type] = [];
+                    flatTypes[nd.post_type].push(nd);
                 }
-                html += '</li>';
             }
-            html += '</ul>';
-            return html;
+
+            var flatHtml = '';
+            for (var pt in flatTypes) {
+                if (!flatTypes.hasOwnProperty(pt)) continue;
+                var icon = typeIcons[pt] || '\uD83D\uDCCE';
+                var label = pt.charAt(0).toUpperCase() + pt.slice(1) + 's';
+                flatHtml += '<div style="margin-top:12px;">';
+                flatHtml += '<span class="aisc-tree-toggle" style="cursor:pointer;display:inline-block;width:18px;text-align:center;font-weight:700;color:#2271b1;user-select:none;" data-expanded="0">+</span>';
+                flatHtml += '<strong>' + icon + ' ' + esc(label) + ' (' + flatTypes[pt].length + ')</strong>';
+                flatHtml += '<div class="aisc-tree-children" style="display:none;"><ul style="list-style:none;margin:0;padding-left:20px;">';
+                for (var k = 0; k < flatTypes[pt].length; k++) {
+                    var fn = flatTypes[pt][k];
+                    var statusB = fn.status !== 'publish' ? ' <span style="font-size:11px;color:#dba617;font-weight:600;">(' + esc(fn.status) + ')</span>' : '';
+                    flatHtml += '<li style="margin:2px 0;"><span style="display:inline-block;width:18px;text-align:center;color:#c3c4c7;">\u00B7</span>' + icon + ' <a href="' + esc(fn.permalink) + '" target="_blank" style="text-decoration:none;color:#1d2327;">' + esc(fn.title) + '</a> <span style="color:#787c82;font-size:12px;">/' + esc(fn.slug) + '</span>' + statusB + '</li>';
+                }
+                flatHtml += '</ul></div></div>';
+            }
+
+            treeContainer.innerHTML = pageTree + flatHtml;
         }
 
-        var pageTree = buildTree(0, 0);
-        var flatTypes = {};
-        for (var j = 0; j < treeData.length; j++) {
-            var nd = treeData[j];
-            if (nd.post_type !== 'page' && nd.parent_id === 0) {
-                if (!flatTypes[nd.post_type]) flatTypes[nd.post_type] = [];
-                flatTypes[nd.post_type].push(nd);
-            }
-        }
+        // Initial render
+        renderTree(aiSeoBulkEditor.treeData);
 
-        var flatHtml = '';
-        for (var pt in flatTypes) {
-            if (!flatTypes.hasOwnProperty(pt)) continue;
-            var icon = typeIcons[pt] || '\uD83D\uDCCE';
-            var label = pt.charAt(0).toUpperCase() + pt.slice(1) + 's';
-            flatHtml += '<div style="margin-top:12px;">';
-            flatHtml += '<span class="aisc-tree-toggle" style="cursor:pointer;display:inline-block;width:18px;text-align:center;font-weight:700;color:#2271b1;user-select:none;" data-expanded="1">\u2212</span>';
-            flatHtml += '<strong>' + icon + ' ' + esc(label) + ' (' + flatTypes[pt].length + ')</strong>';
-            flatHtml += '<div class="aisc-tree-children"><ul style="list-style:none;margin:0;padding-left:20px;">';
-            for (var k = 0; k < flatTypes[pt].length; k++) {
-                var fn = flatTypes[pt][k];
-                var statusB = fn.status !== 'publish' ? ' <span style="font-size:11px;color:#dba617;font-weight:600;">(' + esc(fn.status) + ')</span>' : '';
-                flatHtml += '<li style="margin:2px 0;"><span style="display:inline-block;width:18px;text-align:center;color:#c3c4c7;">\u00B7</span>' + icon + ' <a href="' + esc(fn.permalink) + '" target="_blank" style="text-decoration:none;color:#1d2327;">' + esc(fn.title) + '</a> <span style="color:#787c82;font-size:12px;">/' + esc(fn.slug) + '</span>' + statusB + '</li>';
-            }
-            flatHtml += '</ul></div></div>';
-        }
-
-        treeContainer.innerHTML = pageTree + flatHtml;
-
+        // Toggle expand/collapse on click
         treeContainer.addEventListener('click', function (e) {
             var toggle = e.target.closest('.aisc-tree-toggle');
             if (!toggle) return;
@@ -147,6 +150,7 @@
 
         var expandAll = document.getElementById('aisc-tree-expand-all');
         var collapseAll = document.getElementById('aisc-tree-collapse-all');
+        var refreshBtn = document.getElementById('aisc-tree-refresh');
         if (expandAll) {
             expandAll.addEventListener('click', function () {
                 var toggles = document.querySelectorAll('#aisc-site-tree .aisc-tree-toggle');
@@ -167,6 +171,26 @@
                     var ch = toggles[t].parentElement.querySelector('.aisc-tree-children');
                     if (ch) ch.style.display = 'none';
                 }
+            });
+        }
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function () {
+                refreshBtn.disabled = true;
+                refreshBtn.querySelector('.dashicons').classList.add('spin');
+                jQuery.post(ajaxurl, {
+                    action: 'ai_seo_captain_refresh_tree',
+                    _nonce: aiSeoBulkEditor.nonce
+                }, function (res) {
+                    refreshBtn.disabled = false;
+                    refreshBtn.querySelector('.dashicons').classList.remove('spin');
+                    if (res.success && res.data.treeData) {
+                        aiSeoBulkEditor.treeData = res.data.treeData;
+                        renderTree(res.data.treeData);
+                    }
+                }).fail(function () {
+                    refreshBtn.disabled = false;
+                    refreshBtn.querySelector('.dashicons').classList.remove('spin');
+                });
             });
         }
     })();

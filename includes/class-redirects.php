@@ -32,6 +32,8 @@ class Redirects
         add_action('wp_ajax_ai_seo_captain_add_redirect', array($this, 'ajax_add_redirect'));
         add_action('wp_ajax_ai_seo_captain_delete_redirect', array($this, 'ajax_delete_redirect'));
         add_action('wp_ajax_ai_seo_captain_clear_404s', array($this, 'ajax_clear_404s'));
+        add_action('wp_ajax_ai_seo_captain_bulk_url_change', array($this, 'ajax_bulk_url_change'));
+        add_action('wp_ajax_ai_seo_captain_preview_refs', array($this, 'ajax_preview_refs'));
     }
 
     /**
@@ -366,6 +368,7 @@ class Redirects
                 $broken_counts = $scanner ? $scanner->get_broken_counts() : array('total' => 0);
                 ?>
                 <a href="<?php echo esc_url(add_query_arg('tab', 'broken_links')); ?>" class="nav-tab <?php echo 'broken_links' === $active_tab ? 'nav-tab-active' : ''; ?>">Broken Links (<?php echo (int) $broken_counts['total']; ?>)</a>
+                <a href="<?php echo esc_url(add_query_arg('tab', 'url_editor')); ?>" class="nav-tab <?php echo 'url_editor' === $active_tab ? 'nav-tab-active' : ''; ?>">URL Editor</a>
             </nav>
 
             <?php if ('redirects' === $active_tab) : ?>
@@ -472,6 +475,8 @@ class Redirects
                         <span id="ai-seo-broken-scan-status" style="color:#666;font-style:italic;">
                             <?php if ($is_running) : ?>
                                 Scanning… <?php echo (int) ($scan_state['scanned_posts'] ?? 0); ?>/<?php echo (int) ($scan_state['total_posts'] ?? 0); ?> posts processed.
+                            <?php elseif ('stale' === ($scan_state['phase'] ?? '')) : ?>
+                                Previous scan timed out. Click Scan Now to start a fresh scan.
                             <?php elseif (! empty($scan_state['completed_at'])) : ?>
                                 Last scan: <?php echo esc_html($scan_state['completed_at']); ?> UTC
                             <?php else : ?>
@@ -560,8 +565,271 @@ class Redirects
                     <p style="color:#555;">No broken links or missing media detected. Run a scan to check your content.</p>
                 <?php endif; ?>
             <?php endif; ?>
+
+            <?php if ('url_editor' === $active_tab) : ?>
+                <?php $this->render_url_editor_tab(); ?>
+            <?php endif; ?>
         </div>
 <?php
+    }
+
+    // ─── URL Editor Tab ─────────────────────────────────────────────────
+
+    /**
+     * Render the URL Editor tab content.
+     */
+    private function render_url_editor_tab(): void
+    {
+        $post_types = get_post_types(array('public' => true), 'objects');
+        unset($post_types['attachment']);
+
+        $pt_filter = isset($_GET['pt']) ? sanitize_key($_GET['pt']) : '';
+
+        $query_args = array(
+            'post_type'      => '' !== $pt_filter && isset($post_types[$pt_filter]) ? $pt_filter : array_keys($post_types),
+            'post_status'    => 'publish',
+            'posts_per_page' => 500,
+            'orderby'        => 'title',
+            'order'          => 'ASC',
+        );
+
+        $query = new \WP_Query($query_args);
+        $nonce = wp_create_nonce('ai_seo_captain_nonce');
+?>
+        <div style="margin-bottom:20px; padding:16px; background:#fff; border:1px solid #ccd0d4;">
+            <h3 style="margin-top:0;">Bulk URL Editor</h3>
+            <p style="color:#555;">Change page/post URL slugs in bulk. Optionally create 301 redirects from old URLs to new ones automatically. Only rows with a valid "Change to" value will be processed.</p>
+
+            <?php
+            echo \AI_SEO_Captain\Admin::render_banner(
+                'is-warning',
+                esc_html__('Caution', 'ai-seo-captain'),
+                esc_html__('Changing URLs affects SEO and existing links. Always enable "Auto-redirect" to preserve link equity. Changes are applied immediately after confirmation.', 'ai-seo-captain')
+            );
+            ?>
+
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:16px 0;">
+                <div style="display:flex;gap:6px;">
+                    <a href="<?php echo esc_url(add_query_arg(array('tab' => 'url_editor', 'pt' => ''), remove_query_arg('pt'))); ?>" class="button <?php echo '' === $pt_filter ? 'button-primary' : ''; ?>">All</a>
+                    <?php foreach ($post_types as $pt_slug => $pt_obj) : ?>
+                        <a href="<?php echo esc_url(add_query_arg(array('tab' => 'url_editor', 'pt' => $pt_slug))); ?>" class="button <?php echo $pt_slug === $pt_filter ? 'button-primary' : ''; ?>"><?php echo esc_html($pt_obj->labels->name); ?></a>
+                    <?php endforeach; ?>
+                </div>
+                <div style="flex:1;min-width:200px;max-width:400px;">
+                    <input type="text" id="aisc-url-editor-search" placeholder="<?php esc_attr_e('Search by title or slug…', 'ai-seo-captain'); ?>" style="width:100%;padding:6px 10px;font-size:13px;border:1px solid #8c8f94;border-radius:4px;" />
+                </div>
+            </div>
+
+            <div style="margin-bottom:12px;display:flex;align-items:center;gap:12px;">
+                <button type="button" class="button button-primary" id="aisc-url-apply-btn" disabled>
+                    <span class="dashicons dashicons-yes-alt" style="margin-top:4px;"></span> Apply Changes
+                </button>
+                <span id="aisc-url-apply-status" style="color:#666;font-size:13px;"></span>
+            </div>
+        </div>
+
+        <?php if ($query->have_posts()) : ?>
+            <table class="widefat striped ai-seo-sortable" id="aisc-url-editor-table" style="table-layout:fixed;">
+                <thead>
+                    <tr>
+                        <th style="width:40px;"></th>
+                        <th style="width:22%;" class="ai-seo-sort" data-col="1"><?php esc_html_e('Page Title', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                        <th style="width:16%;" class="ai-seo-sort" data-col="2"><?php esc_html_e('Current Slug', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                        <th style="width:22%;"><?php esc_html_e('Change to', 'ai-seo-captain'); ?></th>
+                        <th style="width:80px;text-align:center;"><?php esc_html_e('Redirect', 'ai-seo-captain'); ?></th>
+                        <th style="width:110px;text-align:center;"><?php esc_html_e('Update refs', 'ai-seo-captain'); ?></th>
+                        <th style="width:8%;" class="ai-seo-sort" data-col="6"><?php esc_html_e('Type', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while ($query->have_posts()) : $query->the_post();
+                        $post_id   = get_the_ID();
+                        $title     = get_the_title();
+                        $slug      = get_post_field('post_name', $post_id);
+                        $post_type = get_post_type($post_id);
+                        $permalink = get_permalink($post_id);
+                        $pt_label  = isset($post_types[$post_type]) ? $post_types[$post_type]->labels->singular_name : $post_type;
+
+                        // Get the parent path portion (everything before the slug).
+                        $parsed   = wp_parse_url($permalink, PHP_URL_PATH);
+                        $path_dir = $parsed ? trailingslashit(dirname($parsed)) : '/';
+                    ?>
+                        <tr data-post-id="<?php echo (int) $post_id; ?>" data-original-slug="<?php echo esc_attr($slug); ?>" data-path-prefix="<?php echo esc_attr($path_dir); ?>">
+                            <td><input type="checkbox" class="aisc-url-row-check" /></td>
+                            <td data-sort-value="<?php echo esc_attr(strtolower($title)); ?>">
+                                <strong><?php echo esc_html($title); ?></strong>
+                                <div style="margin-top:2px;">
+                                    <a href="<?php echo esc_url($permalink); ?>" target="_blank" style="font-size:11px;color:#50575e;word-break:break-all;"><?php echo esc_html($parsed); ?></a>
+                                </div>
+                            </td>
+                            <td data-sort-value="<?php echo esc_attr(strtolower($slug)); ?>">
+                                <code style="font-size:12px;background:#f0f0f1;padding:2px 6px;border-radius:3px;"><?php echo esc_html($slug); ?></code>
+                            </td>
+                            <td>
+                                <input type="text" class="regular-text aisc-url-new-slug" value="" placeholder="<?php echo esc_attr($slug); ?>" style="width:100%;font-size:12px;" data-original="<?php echo esc_attr($slug); ?>" />
+                                <span class="aisc-url-validation" style="display:none;font-size:11px;margin-top:2px;"></span>
+                            </td>
+                            <td style="text-align:center;">
+                                <input type="checkbox" class="aisc-url-auto-redirect" />
+                            </td>
+                            <td style="text-align:center;">
+                                <input type="checkbox" class="aisc-url-update-refs" />
+                                <button type="button" class="aisc-url-preview-refs" title="<?php esc_attr_e('Preview references to this URL', 'ai-seo-captain'); ?>" style="background:none;border:none;cursor:pointer;padding:2px;vertical-align:middle;color:#2271b1;font-size:14px;">
+                                    <span class="dashicons dashicons-search" style="font-size:16px;width:16px;height:16px;"></span>
+                                </button>
+                            </td>
+                            <td data-sort-value="<?php echo esc_attr(strtolower($pt_label)); ?>">
+                                <span style="font-size:12px;"><?php echo esc_html($pt_label); ?></span>
+                            </td>
+                        </tr>
+                    <?php endwhile;
+                    wp_reset_postdata(); ?>
+                </tbody>
+            </table>
+            <div id="aisc-url-editor-pagination" class="aisc-pagination" style="margin-top:16px;text-align:center;"></div>
+        <?php else : ?>
+            <p><?php esc_html_e('No published content found.', 'ai-seo-captain'); ?></p>
+        <?php endif; ?>
+
+        <!-- Confirmation Modal -->
+        <div id="aisc-url-confirm-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:100010;align-items:center;justify-content:center;">
+            <div style="background:#fff;border-radius:8px;padding:24px 32px;max-width:560px;width:90%;box-shadow:0 4px 20px rgba(0,0,0,.2);">
+                <h3 style="margin-top:0;color:#1d2327;">Confirm URL Changes</h3>
+                <p style="color:#50575e;">You are about to change <strong id="aisc-url-confirm-count">0</strong> URL slug(s). This will:</p>
+                <ul style="color:#50575e;margin-left:18px;">
+                    <li>Update the page permalink in the database</li>
+                    <li>Create 301 redirects from old URLs (if checked)</li>
+                    <li>Update internal references across the database (if checked)</li>
+                    <li>Clear relevant page caches</li>
+                </ul>
+                <div id="aisc-url-confirm-list" style="max-height:200px;overflow-y:auto;background:#f6f7f7;border:1px solid #dcdcde;border-radius:4px;padding:10px;margin:12px 0;font-size:12px;"></div>
+                <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+                    <button type="button" class="button" id="aisc-url-confirm-cancel">Cancel</button>
+                    <button type="button" class="button button-primary" id="aisc-url-confirm-apply" style="background:#d63638;border-color:#b32d2e;">Apply Changes</button>
+                </div>
+            </div>
+        </div>
+        <input type="hidden" id="aisc-url-editor-nonce" value="<?php echo esc_attr($nonce); ?>" />
+
+        <!-- References Preview Modal -->
+        <div id="aisc-url-refs-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:100020;align-items:center;justify-content:center;">
+            <div style="background:#fff;border-radius:8px;padding:24px 32px;max-width:820px;width:90%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 4px 20px rgba(0,0,0,.2);">
+                <h3 id="aisc-refs-modal-title" style="margin-top:0;color:#1d2327;">References</h3>
+                <p style="color:#50575e;font-size:12px;margin-bottom:12px;">
+                    URL path: <code id="aisc-refs-modal-path" style="font-size:11px;"></code>
+                </p>
+                <div id="aisc-refs-modal-body" style="overflow-y:auto;flex:1;min-height:0;"></div>
+                <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+                    <button type="button" class="button" id="aisc-refs-modal-close">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            .aisc-url-preview-refs .dashicons.spin {
+                animation: aisc-spin 1s linear infinite;
+            }
+            @keyframes aisc-spin {
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+<?php
+    }
+
+    /**
+     * AJAX: Apply bulk URL slug changes.
+     */
+    public function ajax_bulk_url_change(): void
+    {
+        check_ajax_referer('ai_seo_captain_nonce', '_nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized.'));
+        }
+
+        $raw = isset($_POST['changes']) ? wp_unslash($_POST['changes']) : '';
+        $changes = json_decode($raw, true);
+
+        if (! is_array($changes) || empty($changes)) {
+            wp_send_json_error(array('message' => 'No valid changes provided.'));
+        }
+
+        $results = array();
+        $errors  = array();
+
+        foreach ($changes as $change) {
+            $post_id       = isset($change['post_id']) ? (int) $change['post_id'] : 0;
+            $new_slug      = isset($change['new_slug']) ? sanitize_title($change['new_slug']) : '';
+            $old_slug      = isset($change['old_slug']) ? sanitize_text_field($change['old_slug']) : '';
+            $auto_redirect = ! empty($change['auto_redirect']);
+            $update_refs   = ! empty($change['update_refs']);
+            $path_prefix   = isset($change['path_prefix']) ? sanitize_text_field($change['path_prefix']) : '/';
+
+            if ($post_id < 1 || '' === $new_slug) {
+                $errors[] = sprintf('Invalid data for post ID %d.', $post_id);
+                continue;
+            }
+
+            // Verify post exists and is published.
+            $post = get_post($post_id);
+            if (! $post || 'publish' !== $post->post_status) {
+                $errors[] = sprintf('Post ID %d not found or not published.', $post_id);
+                continue;
+            }
+
+            // Skip if slug hasn't actually changed.
+            if ($new_slug === $post->post_name) {
+                continue;
+            }
+
+            // Generate a unique slug to avoid collisions.
+            $unique_slug = wp_unique_post_slug($new_slug, $post_id, $post->post_status, $post->post_type, $post->post_parent);
+
+            // Update the post slug.
+            $update_result = wp_update_post(array(
+                'ID'        => $post_id,
+                'post_name' => $unique_slug,
+            ), true);
+
+            if (is_wp_error($update_result)) {
+                $errors[] = sprintf('Failed to update "%s": %s', $post->post_title, $update_result->get_error_message());
+                continue;
+            }
+
+            // Create redirect from old URL to new URL.
+            if ($auto_redirect && '' !== $old_slug) {
+                $old_path = trailingslashit($path_prefix . $old_slug);
+                $new_url  = get_permalink($post_id); // Gets the fresh permalink after slug change.
+                $this->add_redirect($old_path, $new_url, 301);
+            }
+
+            // Update all internal references to the old URL.
+            $ref_counts = array('posts' => 0, 'postmeta' => 0, 'options' => 0);
+            if ($update_refs && '' !== $old_slug) {
+                $old_path = trailingslashit($path_prefix . $old_slug);
+                $new_path = trailingslashit($path_prefix . $unique_slug);
+                $ref_counts = $this->update_db_references($old_path, $new_path);
+            }
+
+            // Clear caches for this post.
+            clean_post_cache($post_id);
+
+            $results[] = array(
+                'post_id'     => $post_id,
+                'title'       => $post->post_title,
+                'old_slug'    => $old_slug,
+                'new_slug'    => $unique_slug,
+                'permalink'   => get_permalink($post_id),
+                'redirect'    => $auto_redirect,
+                'refs_updated' => $ref_counts,
+            );
+        }
+
+        wp_send_json_success(array(
+            'message'  => sprintf('%d URL(s) updated successfully.', count($results)),
+            'updated'  => $results,
+            'errors'   => $errors,
+        ));
     }
 
     /**
@@ -638,5 +906,410 @@ class Redirects
         }
 
         return array('id' => 0, 'title' => '', 'label' => '');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Reference Preview & Update — Serialization-aware URL replacement
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * AJAX: Preview all DB references to a given URL path (read-only scan).
+     */
+    public function ajax_preview_refs(): void
+    {
+        check_ajax_referer('ai_seo_captain_nonce', '_nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized.'));
+        }
+
+        $source_path = isset($_POST['source_path']) ? sanitize_text_field(wp_unslash($_POST['source_path'])) : '';
+        if ('' === $source_path) {
+            wp_send_json_error(array('message' => 'No source path provided.'));
+        }
+
+        $results = $this->search_db_references($source_path);
+
+        wp_send_json_success(array(
+            'source_path' => $source_path,
+            'total'       => count($results),
+            'references'  => $results,
+        ));
+    }
+
+    /**
+     * Search the database for all references to a URL path.
+     *
+     * Searches both the full absolute URL and the relative path,
+     * across posts, postmeta, and options tables.
+     *
+     * @param string $relative_path e.g. "/greencoders/legal/terms-of-use/"
+     * @param int    $limit         Max results to return.
+     * @return array List of reference items.
+     */
+    private function search_db_references(string $relative_path, int $limit = 100): array
+    {
+        global $wpdb;
+
+        // Build search variants: relative path + absolute URL.
+        $site_url     = home_url();
+        $absolute_url = rtrim($site_url, '/') . $relative_path;
+        $no_trail_rel = untrailingslashit($relative_path);
+        $no_trail_abs = untrailingslashit($absolute_url);
+
+        // We search for any of these patterns.
+        $like_patterns = array_unique(array(
+            '%' . $wpdb->esc_like($relative_path) . '%',
+            '%' . $wpdb->esc_like($absolute_url) . '%',
+            '%' . $wpdb->esc_like($no_trail_rel) . '%',
+            '%' . $wpdb->esc_like($no_trail_abs) . '%',
+        ));
+
+        $results = array();
+        $count   = 0;
+
+        // 1. Search posts.post_content ────────────────────────────────────
+        $where_parts = array();
+        $where_args  = array();
+        foreach ($like_patterns as $pattern) {
+            $where_parts[] = 'post_content LIKE %s';
+            $where_args[]  = $pattern;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT ID, post_title, post_type, post_content
+                 FROM {$wpdb->posts}
+                 WHERE post_status IN ('publish','draft','pending','private','future')
+                   AND (" . implode(' OR ', $where_parts) . ")
+                 LIMIT %d",
+                array_merge($where_args, array($limit))
+            )
+        );
+
+        if ($rows) {
+            foreach ($rows as $row) {
+                $snippets = $this->extract_context_snippets($row->post_content, $relative_path, $absolute_url);
+                $results[] = array(
+                    'table'   => 'posts',
+                    'column'  => 'post_content',
+                    'row_id'  => (int) $row->ID,
+                    'label'   => $row->post_title . ' (' . $row->post_type . ')',
+                    'count'   => count($snippets),
+                    'snippets' => array_slice($snippets, 0, 5),
+                );
+                $count += count($snippets);
+                if ($count >= $limit) {
+                    break;
+                }
+            }
+        }
+
+        // 2. Search postmeta.meta_value ───────────────────────────────────
+        if ($count < $limit) {
+            $where_parts = array();
+            $where_args  = array();
+            foreach ($like_patterns as $pattern) {
+                $where_parts[] = 'pm.meta_value LIKE %s';
+                $where_args[]  = $pattern;
+            }
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+            $meta_rows = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT pm.meta_id, pm.post_id, pm.meta_key, pm.meta_value, p.post_title
+                     FROM {$wpdb->postmeta} AS pm
+                     LEFT JOIN {$wpdb->posts} AS p ON pm.post_id = p.ID
+                     WHERE (" . implode(' OR ', $where_parts) . ")
+                     LIMIT %d",
+                    array_merge($where_args, array($limit - $count))
+                )
+            );
+
+            if ($meta_rows) {
+                foreach ($meta_rows as $row) {
+                    $value    = $row->meta_value;
+                    $snippets = $this->extract_context_snippets($value, $relative_path, $absolute_url);
+                    $label    = ($row->post_title ?: 'Post #' . $row->post_id) . ' → meta: ' . $row->meta_key;
+                    $results[] = array(
+                        'table'   => 'postmeta',
+                        'column'  => 'meta_value',
+                        'row_id'  => (int) $row->meta_id,
+                        'label'   => $label,
+                        'count'   => count($snippets),
+                        'snippets' => array_slice($snippets, 0, 3),
+                    );
+                    $count += count($snippets);
+                    if ($count >= $limit) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 3. Search options.option_value ──────────────────────────────────
+        if ($count < $limit) {
+            $where_parts = array();
+            $where_args  = array();
+            foreach ($like_patterns as $pattern) {
+                $where_parts[] = 'option_value LIKE %s';
+                $where_args[]  = $pattern;
+            }
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+            $opt_rows = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT option_id, option_name, option_value
+                     FROM {$wpdb->options}
+                     WHERE (" . implode(' OR ', $where_parts) . ")
+                       AND option_name NOT LIKE '\\_transient%'
+                     LIMIT %d",
+                    array_merge($where_args, array($limit - $count))
+                )
+            );
+
+            if ($opt_rows) {
+                foreach ($opt_rows as $row) {
+                    $snippets = $this->extract_context_snippets($row->option_value, $relative_path, $absolute_url);
+                    $results[] = array(
+                        'table'   => 'options',
+                        'column'  => 'option_value',
+                        'row_id'  => (int) $row->option_id,
+                        'label'   => 'Option: ' . $row->option_name,
+                        'count'   => count($snippets),
+                        'snippets' => array_slice($snippets, 0, 3),
+                    );
+                    $count += count($snippets);
+                    if ($count >= $limit) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Extract the exact URL variants found in a text, with occurrence counts.
+     * Returns the precise strings that will be matched by str_replace during update.
+     */
+    private function extract_context_snippets(string $text, string $relative_path, string $absolute_url): array
+    {
+        $snippets = array();
+        $searches = array_unique(array(
+            $absolute_url,
+            untrailingslashit($absolute_url),
+            $relative_path,
+            untrailingslashit($relative_path),
+        ));
+
+        foreach ($searches as $needle) {
+            $count = substr_count($text, $needle);
+            if ($count > 0) {
+                $snippets[] = $needle . '  ×' . $count;
+            }
+        }
+
+        return $snippets;
+    }
+
+    /**
+     * Replace all URL references in the database for a single old→new path change.
+     * Serialization-aware: safely handles serialized PHP data.
+     *
+     * @param string $old_path Old relative path (e.g. /greencoders/legal/old-slug/).
+     * @param string $new_path New relative path (e.g. /greencoders/legal/new-slug/).
+     * @return array Summary: ['posts' => int, 'postmeta' => int, 'options' => int].
+     */
+    private function update_db_references(string $old_path, string $new_path): array
+    {
+        global $wpdb;
+
+        $site_url = home_url();
+        $old_abs  = rtrim($site_url, '/') . $old_path;
+        $new_abs  = rtrim($site_url, '/') . $new_path;
+
+        // Replacement pairs: search → replace (absolute first, then relative).
+        $pairs = array(
+            $old_abs                      => $new_abs,
+            untrailingslashit($old_abs)   => untrailingslashit($new_abs),
+            $old_path                     => $new_path,
+            untrailingslashit($old_path)  => untrailingslashit($new_path),
+        );
+
+        $counts = array('posts' => 0, 'postmeta' => 0, 'options' => 0);
+
+        // Build LIKE conditions for finding rows.
+        $like_patterns = array();
+        foreach (array_keys($pairs) as $search) {
+            $like_patterns[] = '%' . $wpdb->esc_like($search) . '%';
+        }
+
+        // 1. posts.post_content ───────────────────────────────────────────
+        $where_parts = array();
+        $where_args  = array();
+        foreach ($like_patterns as $pattern) {
+            $where_parts[] = 'post_content LIKE %s';
+            $where_args[]  = $pattern;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $post_rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT ID, post_content FROM {$wpdb->posts}
+                 WHERE post_status IN ('publish','draft','pending','private','future')
+                   AND (" . implode(' OR ', $where_parts) . ")
+                 LIMIT 500",
+                $where_args
+            )
+        );
+
+        if ($post_rows) {
+            foreach ($post_rows as $row) {
+                $new_content = $row->post_content;
+                foreach ($pairs as $search => $replace) {
+                    $new_content = str_replace($search, $replace, $new_content);
+                }
+                if ($new_content !== $row->post_content) {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $wpdb->update($wpdb->posts, array('post_content' => $new_content), array('ID' => $row->ID));
+                    clean_post_cache((int) $row->ID);
+                    $counts['posts']++;
+                }
+            }
+        }
+
+        // 2. postmeta.meta_value (serialization-aware) ────────────────────
+        $where_parts = array();
+        $where_args  = array();
+        foreach ($like_patterns as $pattern) {
+            $where_parts[] = 'meta_value LIKE %s';
+            $where_args[]  = $pattern;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $meta_rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT meta_id, meta_value FROM {$wpdb->postmeta}
+                 WHERE (" . implode(' OR ', $where_parts) . ")
+                 LIMIT 1000",
+                $where_args
+            )
+        );
+
+        if ($meta_rows) {
+            foreach ($meta_rows as $row) {
+                $new_value = $this->safe_replace_value($row->meta_value, $pairs);
+                if ($new_value !== $row->meta_value) {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $wpdb->update($wpdb->postmeta, array('meta_value' => $new_value), array('meta_id' => $row->meta_id));
+                    $counts['postmeta']++;
+                }
+            }
+        }
+
+        // 3. options.option_value (serialization-aware) ───────────────────
+        $where_parts = array();
+        $where_args  = array();
+        foreach ($like_patterns as $pattern) {
+            $where_parts[] = 'option_value LIKE %s';
+            $where_args[]  = $pattern;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $opt_rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT option_id, option_name, option_value FROM {$wpdb->options}
+                 WHERE (" . implode(' OR ', $where_parts) . ")
+                   AND option_name NOT LIKE '\\_transient%'
+                 LIMIT 200",
+                $where_args
+            )
+        );
+
+        if ($opt_rows) {
+            foreach ($opt_rows as $row) {
+                $new_value = $this->safe_replace_value($row->option_value, $pairs);
+                if ($new_value !== $row->option_value) {
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+                    $wpdb->update($wpdb->options, array('option_value' => $new_value), array('option_id' => $row->option_id));
+                    $counts['options']++;
+                }
+            }
+        }
+
+        // Flush object cache after bulk changes.
+        wp_cache_flush();
+
+        return $counts;
+    }
+
+    /**
+     * Replace strings inside a value, handling serialized data safely.
+     * If the value is serialized, it unserializes → replaces recursively → reserializes.
+     *
+     * @param string $value The raw DB value.
+     * @param array  $pairs Search→replace pairs.
+     * @return string The updated value.
+     */
+    private function safe_replace_value(string $value, array $pairs): string
+    {
+        if (is_serialized($value)) {
+            $unserialized = @unserialize($value);
+            if (false !== $unserialized || 'b:0;' === $value) {
+                $replaced = $this->recursive_replace($unserialized, $pairs);
+                return serialize($replaced);
+            }
+        }
+
+        // Plain string — simple str_replace.
+        $result = $value;
+        foreach ($pairs as $search => $replace) {
+            $result = str_replace($search, $replace, $result);
+        }
+        return $result;
+    }
+
+    /**
+     * Recursively replace strings inside arrays, objects, and strings.
+     *
+     * @param mixed $data  The unserialized data structure.
+     * @param array $pairs Search→replace pairs.
+     * @return mixed The data with replacements applied.
+     */
+    private function recursive_replace($data, array $pairs)
+    {
+        if (is_string($data)) {
+            // Check if this string is itself serialized (nested serialization).
+            if (is_serialized($data)) {
+                $nested = @unserialize($data);
+                if (false !== $nested || 'b:0;' === $data) {
+                    $nested = $this->recursive_replace($nested, $pairs);
+                    return serialize($nested);
+                }
+            }
+            foreach ($pairs as $search => $replace) {
+                $data = str_replace($search, $replace, $data);
+            }
+            return $data;
+        }
+
+        if (is_array($data)) {
+            foreach ($data as $key => $value) {
+                $data[$key] = $this->recursive_replace($value, $pairs);
+            }
+            return $data;
+        }
+
+        if (is_object($data)) {
+            foreach (get_object_vars($data) as $prop => $value) {
+                $data->$prop = $this->recursive_replace($value, $pairs);
+            }
+            return $data;
+        }
+
+        return $data;
     }
 }

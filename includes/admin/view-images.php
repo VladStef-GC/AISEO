@@ -29,7 +29,8 @@ defined('ABSPATH') || exit;
 $_aisc_options    = get_option('ai_seo_captain_options', array());
 $_local_model     = $_aisc_options['local_model'] ?? '';
 $_local_has_vision = ! empty($_aisc_options['local_vision_model']);
-$_local_available = '' !== $_local_model;
+$_local_experiment = ! empty($_aisc_options['experiment_local_ai']);
+$_local_available = $_local_experiment && '' !== $_local_model;
 ?>
 <div class="wrap">
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
@@ -76,7 +77,7 @@ $_local_available = '' !== $_local_model;
         <?php if ($_local_available && $total_missing_alt > 0) : ?>
             <div>
                 <button type="button" id="aisc-bulk-generate-alt" class="button" title="<?php echo $_local_has_vision ? esc_attr__('Uses vision + text AI pipeline', 'ai-seo-captain') : esc_attr__('Uses text AI (no vision model configured)', 'ai-seo-captain'); ?>">
-                    🤖 <?php esc_html_e('AI Generate Missing Alt', 'ai-seo-captain'); ?>
+                    <img src="<?php echo esc_url(plugins_url('assets/img/ai-captain-small-icon-buttons.png', AI_SEO_CAPTAIN_FILE)); ?>" alt="" style="width:16px;height:16px;vertical-align:text-bottom;margin-right:2px;" /> <?php esc_html_e('AI Generate Missing Alt', 'ai-seo-captain'); ?>
                 </button>
                 <span id="aisc-bulk-progress" style="display:none;margin-left:8px;font-size:12px;color:#50575e;"></span>
             </div>
@@ -153,7 +154,7 @@ $_local_available = '' !== $_local_model;
                         <td style="white-space:nowrap;">
                             <button type="button" class="button button-small ai-seo-img-save" disabled><?php esc_html_e('Save', 'ai-seo-captain'); ?></button>
                             <?php if ($_local_available) : ?>
-                                <button type="button" class="button button-small aisc-ai-gen-alt" data-att-id="<?php echo (int) $att_id; ?>" title="<?php esc_attr_e('Generate alt text with Local AI', 'ai-seo-captain'); ?>">🤖</button>
+                                <button type="button" class="button button-small aisc-ai-gen-alt" data-att-id="<?php echo (int) $att_id; ?>" title="<?php esc_attr_e('Generate alt text with Local AI', 'ai-seo-captain'); ?>"><img src="<?php echo esc_url(plugins_url('assets/img/ai-captain-small-icon-buttons.png', AI_SEO_CAPTAIN_FILE)); ?>" alt="" style="width:16px;height:16px;vertical-align:middle;" /></button>
                             <?php endif; ?>
                         </td>
                     </tr>

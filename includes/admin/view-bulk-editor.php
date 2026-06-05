@@ -149,6 +149,7 @@ defined('ABSPATH') || exit;
             <div style="display:flex;gap:8px;margin-bottom:12px;">
                 <button type="button" id="aisc-tree-expand-all" class="button button-small"><?php esc_html_e('Expand All', 'ai-seo-captain'); ?></button>
                 <button type="button" id="aisc-tree-collapse-all" class="button button-small"><?php esc_html_e('Collapse All', 'ai-seo-captain'); ?></button>
+                <button type="button" id="aisc-tree-refresh" class="button button-small" style="margin-left:auto;"><span class="dashicons dashicons-update" style="font-size:16px;width:16px;height:16px;vertical-align:middle;margin-right:2px;"></span><?php esc_html_e('Refresh', 'ai-seo-captain'); ?></button>
             </div>
             <div id="aisc-site-tree" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;font-size:13px;line-height:1.6;"></div>
         </div>

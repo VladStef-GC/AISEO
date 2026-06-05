@@ -508,6 +508,9 @@ class AI_Generator
             'audit_issues' => isset($audit_data['issues']) ? $audit_data['issues'] : array(),
             'audit_suggestions' => isset($audit_data['suggestions']) ? $audit_data['suggestions'] : array(),
             'audit_summary' => isset($audit_data['summary']) ? (string) $audit_data['summary'] : '',
+            'audit_full_report' => isset($audit_data['full_report']) ? (string) $audit_data['full_report'] : '',
+            'audit_audited_at' => isset($audit_data['audited_at']) ? (string) $audit_data['audited_at'] : '',
+            'audit_deep_analysis' => ! empty($audit_data['deep_analysis']),
             'social_title' => $social_title,
             'social_description' => $social_description,
             'schema_type' => $schema_type,
@@ -557,7 +560,15 @@ class AI_Generator
         $lines[] = 'Keyphrase in description: ' . ($ctx['keyphrase_in_desc'] ? 'Found' : 'Missing');
 
         if (null !== $ctx['audit_score']) {
-            $lines[] = '--- AI SEO Audit Results (score ' . $ctx['audit_score'] . '/100) ---';
+            $audit_header = '--- AI SEO Audit Results (score ' . $ctx['audit_score'] . '/100';
+            if (! empty($ctx['audit_audited_at'])) {
+                $audit_header .= ', audited ' . $ctx['audit_audited_at'] . ' UTC';
+            }
+            if (! empty($ctx['audit_deep_analysis'])) {
+                $audit_header .= ', deep analysis';
+            }
+            $audit_header .= ') ---';
+            $lines[] = $audit_header;
             if (! empty($ctx['audit_issues'])) {
                 $lines[] = 'Issues found:';
                 foreach ($ctx['audit_issues'] as $issue) {
@@ -572,6 +583,10 @@ class AI_Generator
             }
             if ('' !== $ctx['audit_summary']) {
                 $lines[] = 'Audit summary: ' . $ctx['audit_summary'];
+            }
+            if ('' !== ($ctx['audit_full_report'] ?? '')) {
+                $lines[] = 'Full audit report:';
+                $lines[] = $ctx['audit_full_report'];
             }
         }
 

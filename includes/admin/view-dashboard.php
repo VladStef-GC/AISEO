@@ -125,8 +125,7 @@ defined('ABSPATH') || exit;
                             </td>
                             <td data-sort-value="<?php echo esc_attr($row['post_type'] . ' ' . $row['status']); ?>"><?php echo esc_html($row['post_type']); ?> / <?php echo esc_html($row['status']); ?></td>
                             <td data-sort-value="<?php echo $row['has_title_draft'] ? 'yes' : 'no'; ?>">
-                                <?php esc_html_e('Title:', 'ai-seo-captain'); ?> <?php echo $row['has_title_draft'] ? esc_html__('Yes', 'ai-seo-captain') : esc_html__('No', 'ai-seo-captain'); ?><br />
-                                <p class="description"><?php esc_html_e('Global instructions applied to page generation, page chat, and site audit requests.', 'ai-seo-captain'); ?></p>
+                                <?php esc_html_e('Title:', 'ai-seo-captain'); ?> <?php echo $row['has_title_draft'] ? esc_html__('Yes', 'ai-seo-captain') : esc_html__('No', 'ai-seo-captain'); ?>
                             </td>
                             <td data-sort-value="<?php echo $row['has_approved_suggestion'] ? 'approved' : 'pending'; ?>"><?php echo $row['has_approved_suggestion'] ? esc_html__('Approved', 'ai-seo-captain') : esc_html__('Pending', 'ai-seo-captain'); ?></td>
                             <td data-sort-value="<?php echo ($row['frontend_enabled'] ? '1' : '0') . ($row['frontend_ready'] ? '1' : '0'); ?>">

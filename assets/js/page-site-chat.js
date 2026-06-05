@@ -52,7 +52,7 @@ jQuery(function ($) {
             var fsAnalysis = conf.fullSiteAnalysisType || '';
             var fsAnalysisBadge = '';
             if (fsAnalysis) {
-                var fsBadgeColor = fsAnalysis === 'deep' ? '#2271b1' : '#787c82';
+                var fsBadgeColor = fsAnalysis === 'deep' ? '#00a32a' : '#787c82';
                 var fsBadgeLabel = fsAnalysis === 'deep' ? 'Deep Analysis' : 'Standard Analysis';
                 fsAnalysisBadge = '<span class="aisc-list-card__analysis" style="display:inline-block;font-size:11px;background:' + fsBadgeColor + ';color:#fff;padding:1px 6px;border-radius:3px;margin-left:6px;">' + fsBadgeLabel + '</span>';
             }
@@ -111,7 +111,7 @@ jQuery(function ($) {
             // Analysis type badge.
             var analysisBadge = '';
             if (analysisType) {
-                var badgeColor = analysisType === 'deep' ? '#2271b1' : '#787c82';
+                var badgeColor = analysisType === 'deep' ? '#00a32a' : '#787c82';
                 var badgeLabel = analysisType === 'deep' ? 'Deep Analysis' : 'Standard Analysis';
                 analysisBadge = '<span class="aisc-list-card__analysis" style="display:inline-block;font-size:11px;background:' + badgeColor + ';color:#fff;padding:1px 6px;border-radius:3px;margin-left:6px;">' + badgeLabel + '</span>';
             }

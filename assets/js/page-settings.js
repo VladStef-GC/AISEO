@@ -143,6 +143,11 @@ jQuery(function ($) {
 
         // Disable model dropdown when local so form doesn't submit a cloud model.
         $model.prop('disabled', isLocal);
+
+        // Disable AI instruction textareas for Local AI (32K context is too tight).
+        var $instructionRows = $('.ai-seo-captain-instructions-row');
+        $instructionRows.css({ opacity: isLocal ? '.45' : '', pointerEvents: isLocal ? 'none' : '' });
+        $('#ai-seo-system-prompt, #ai-seo-site-chat-context').prop('disabled', isLocal);
     }
 
     /**
@@ -264,4 +269,22 @@ jQuery(function ($) {
             wcPanel.style.pointerEvents = this.checked ? '' : 'none';
         });
     }
+
+    // Character counters for AI instruction textareas.
+    $('.ai-seo-char-count').each(function () {
+        var $counter = $(this);
+        var $textarea = $('#' + $counter.data('for'));
+        if (!$textarea.length) return;
+
+        var maxLen = parseInt($textarea.attr('maxlength'), 10) || 2000;
+
+        function updateCount() {
+            var len = $textarea.val().length;
+            $counter.text(len + ' / ' + maxLen);
+            $counter.css('color', len > maxLen * 0.9 ? '#d63638' : '');
+        }
+
+        $textarea.on('input', updateCount);
+        updateCount();
+    });
 });

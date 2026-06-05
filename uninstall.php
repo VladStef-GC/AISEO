@@ -47,8 +47,14 @@ foreach ($meta_keys as $meta_key) {
 }
 
 // Dynamic video meta keys (pattern: _ai_seo_captain_video_title_{hash} / _ai_seo_captain_video_desc_{hash}).
-$wpdb->query("DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE '_ai_seo_captain_video_title_%'");
-$wpdb->query("DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE '_ai_seo_captain_video_desc_%'");
+$wpdb->query($wpdb->prepare(
+    "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE %s",
+    $wpdb->esc_like('_ai_seo_captain_video_title_') . '%'
+));
+$wpdb->query($wpdb->prepare(
+    "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE %s",
+    $wpdb->esc_like('_ai_seo_captain_video_desc_') . '%'
+));
 
 // Term meta (taxonomy SEO fields).
 $term_meta_keys = array(

@@ -30,7 +30,7 @@ class Audit_Engine
             'duplicate_post_titles' => $this->get_duplicate_post_titles(6),
             'duplicate_ai_titles' => $this->get_duplicate_ai_titles(6),
             'thin_content_rows' => $this->get_thin_content_rows(8),
-            'orphaned_content' => $this->get_orphaned_content(12),
+            'orphaned_content' => $this->get_orphaned_content($priorityLimit),
         );
     }
 

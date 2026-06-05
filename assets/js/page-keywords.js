@@ -1,5 +1,5 @@
 /**
- * SEO Captain — Audit page scripts
+ * SEO Captain — Keywords page scripts
  */
 (function () {
     'use strict';
@@ -84,15 +84,13 @@
             e.preventDefault();
             currentPage = parseInt(target.getAttribute('data-page'), 10);
             render();
-            // Scroll to table top
             table.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
 
-        // Re-render page 1 after column sorting (admin-common.js reorders DOM rows)
+        // Re-render page 1 after column sorting
         table.addEventListener('click', function (e) {
             if (e.target.closest('.ai-seo-sort')) {
                 currentPage = 1;
-                // Small delay so the sort handler finishes first
                 setTimeout(render, 20);
             }
         });
@@ -100,61 +98,5 @@
         render();
     }
 
-    initPagination('aisc-priority-table', 'aisc-priority-pagination', 10);
-    initPagination('aisc-orphaned-table', 'aisc-orphaned-pagination', 10);
-
-    /* ---------- Load More helper ---------- */
-    function initLoadMore(btnId, entrySelector) {
-        var btn = document.getElementById(btnId);
-        if (!btn) return;
-        btn.addEventListener('click', function () {
-            var entries = document.querySelectorAll(entrySelector);
-            var shown = 0,
-                newlyShown = 0;
-            for (var i = 0; i < entries.length; i++) {
-                if (entries[i].style.display === 'none') {
-                    if (newlyShown < 5) {
-                        entries[i].style.display = '';
-                        newlyShown++;
-                    }
-                } else {
-                    shown++;
-                }
-            }
-            if (newlyShown === 0 || shown + newlyShown >= entries.length) {
-                btn.style.display = 'none';
-            }
-        });
-    }
-
-    initLoadMore('aisc-indexnow-loadmore', '.aisc-indexnow-entry');
-    initLoadMore('aisc-siteaudits-loadmore', '.aisc-siteaudit-entry');
-
-    /* ---------- Export to .txt helper ---------- */
-    function initExport(btnId, entrySelector, filename) {
-        var btn = document.getElementById(btnId);
-        if (!btn) return;
-        btn.addEventListener('click', function () {
-            var entries = document.querySelectorAll(entrySelector);
-            var lines = [];
-            for (var i = 0; i < entries.length; i++) {
-                lines.push('--- Entry ' + (i + 1) + ' ---');
-                lines.push(entries[i].textContent.trim());
-                lines.push('');
-            }
-            var blob = new Blob([lines.join('\n')], {
-                type: 'text/plain'
-            });
-            var a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(a.href);
-        });
-    }
-
-    initExport('aisc-indexnow-export', '.aisc-indexnow-entry', 'indexnow-activity.txt');
-    initExport('aisc-siteaudits-export', '.aisc-siteaudit-entry', 'ai-site-audits.txt');
+    initPagination('ai-seo-keywords-table', 'aisc-keywords-pagination', 30);
 })();

@@ -621,7 +621,7 @@ class Local_AI_Admin
                             node.textContent = data.label;
                             node.title = data.tip || '';
                         }
-                    } catch (e) {}
+                    } catch (e) { /* heartbeat UI update — non-critical */ }
                 };
                 xhr.send('action=local_ai_heartbeat&nonce=' + encodeURIComponent(<?php echo wp_json_encode($nonce); ?>));
             })();
