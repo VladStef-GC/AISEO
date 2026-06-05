@@ -520,6 +520,41 @@
                         $statusSpan.append(' (' + resp.data.errors.length + ' error(s))');
                     }
 
+                    // ── Search Engine Notification Banner ──────────────
+                    var $banner = $('#aisc-url-notify-banner');
+                    $banner.remove(); // Clear any previous banner.
+
+                    var inStatus = (resp.data.indexnow && resp.data.indexnow.status) || 'none';
+                    var severity = inStatus === 'success' ? 'is-success' : 'is-info';
+                    var iconFile = inStatus === 'success' ? 'seo-captain-side-ok-d.svg' : 'seo-captain-side-d.svg';
+                    var iconUrl  = (aiscRedirects.pluginUrl || '') + 'assets/img/' + iconFile;
+
+                    var bodyHtml = '';
+
+                    // IndexNow result line.
+                    if (resp.data.indexnow) {
+                        var inr = resp.data.indexnow;
+                        var inIcon = inr.status === 'success' ? '✅' : (inr.status === 'error' ? '❌' : '⚠️');
+                        bodyHtml += '<p style="margin:4px 0;">' + inIcon + ' <strong>IndexNow</strong> (Bing, Yandex): ' + $('<span>').text(inr.message).html() + '</p>';
+                    } else {
+                        bodyHtml += '<p style="margin:4px 0;">⚠️ <strong>IndexNow</strong>: Not available — enable it in <em>Settings → IndexNow</em>.</p>';
+                    }
+
+                    // Google Search Console link.
+                    bodyHtml += '<p style="margin:6px 0 4px;">🔍 <strong>Google</strong>: Submit your updated URLs in ';
+                    bodyHtml += '<a href="https://search.google.com/search-console/inspect" target="_blank" rel="noopener">Google Search Console → URL Inspection</a>.</p>';
+                    bodyHtml += '<p style="margin:2px 0 0;font-size:11px;color:#787c82;">💡 You need your site verified in <a href="https://search.google.com/search-console" target="_blank" rel="noopener">Google Search Console</a>. ';
+                    bodyHtml += 'Google does not support IndexNow — re-crawl requests must go through URL Inspection. Without it, Google discovers changes via regular crawl (typically days).</p>';
+
+                    var bannerHtml = '<div id="aisc-url-notify-banner" class="ai-seo-captain-notice ' + severity + '" style="margin-top:12px;">'
+                        + '<img src="' + iconUrl + '" alt="" class="ai-seo-captain-notice__icon" />'
+                        + '<div class="ai-seo-captain-notice__body">'
+                        + '<strong class="ai-seo-captain-notice__title">Search Engine Notifications</strong>'
+                        + '<span class="ai-seo-captain-notice__text">' + bodyHtml + '</span>'
+                        + '</div></div>';
+
+                    $statusSpan.closest('div').after(bannerHtml);
+
                     updateApplyButton();
                 } else {
                     $statusSpan.css('color', '#d63638').text(resp.data.message || 'Error applying changes.');

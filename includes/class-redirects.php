@@ -1263,10 +1263,51 @@ class Redirects
             );
         }
 
+        // ── Notify search engines via IndexNow ───────────────────────
+        $indexnow_result = null;
+        if (! empty($results)) {
+            $notify_urls = array();
+            foreach ($results as $r) {
+                // Submit new URL so engines discover the fresh content.
+                if (! empty($r['permalink'])) {
+                    $notify_urls[] = $r['permalink'];
+                }
+                // Submit old URL so engines discover the 301 redirect.
+                // Derive old URL from the new permalink by slug substitution
+                // to avoid double-prefix issues with home_url().
+                if ($r['redirect'] && ! empty($r['old_slug']) && ! empty($r['permalink'])) {
+                    $old_url = str_replace(
+                        '/' . $r['new_slug'] . '/',
+                        '/' . $r['old_slug'] . '/',
+                        $r['permalink']
+                    );
+                    if ($old_url !== $r['permalink']) {
+                        $notify_urls[] = $old_url;
+                    }
+                }
+            }
+
+            if (! empty($notify_urls)) {
+                try {
+                    $indexnow = Plugin::instance()->get_indexnow();
+                    if ($indexnow) {
+                        $indexnow_result = $indexnow->submit_urls(array_unique($notify_urls), 'url_change');
+                    }
+                } catch (\Throwable $e) {
+                    $indexnow_result = array(
+                        'status'  => 'error',
+                        'code'    => 'exception',
+                        'message' => $e->getMessage(),
+                    );
+                }
+            }
+        }
+
         wp_send_json_success(array(
             'message'  => sprintf('%d URL(s) updated successfully.', count($results)),
             'updated'  => $results,
             'errors'   => $errors,
+            'indexnow' => $indexnow_result,
         ));
     }
 

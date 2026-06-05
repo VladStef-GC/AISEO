@@ -191,6 +191,14 @@ final class Plugin
     }
 
     /**
+     * Get the IndexNow instance.
+     */
+    public function get_indexnow(): ?IndexNow
+    {
+        return $this->indexnow;
+    }
+
+    /**
      * Print a small inline script so admin bar cache purge works on every page.
      */
     public function print_adminbar_purge_script(): void
