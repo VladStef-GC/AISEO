@@ -49,6 +49,31 @@
     });
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Chain Flattening — Fix All button
+    // ─────────────────────────────────────────────────────────────────────────
+    $('#aisc-fix-chains-btn').on('click', function () {
+        var btn = $(this);
+        if (!confirm('This will flatten all redirect chains so every redirect points directly to the final destination. Continue?')) {
+            return;
+        }
+        btn.prop('disabled', true).text('Fixing…');
+        $.post(ajaxurl, {
+            action: 'ai_seo_captain_fix_chains',
+            _nonce: nonce
+        }, function (resp) {
+            if (resp.success) {
+                location.reload();
+            } else {
+                alert(resp.data || 'Error fixing chains.');
+                btn.prop('disabled', false).html('<span class="dashicons dashicons-admin-tools" style="margin-top:4px;"></span> Fix All');
+            }
+        }).fail(function () {
+            alert('Network error. Please try again.');
+            btn.prop('disabled', false).html('<span class="dashicons dashicons-admin-tools" style="margin-top:4px;"></span> Fix All');
+        });
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Broken Link Scanner
     // ─────────────────────────────────────────────────────────────────────────
     var $scanBtn = $('#ai-seo-broken-scan-btn');
@@ -266,7 +291,7 @@
         var slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
         // ── Slug validation ──────────────────────────────────────────
-        function validateSlug(input) {
+        function validateSlug(input, autoFix) {
             var $input = $(input);
             var val = $input.val().trim();
             var $hint = $input.siblings('.aisc-url-validation');
@@ -280,11 +305,20 @@
                 return true; // empty = no change
             }
 
-            // Auto-fix: lowercase, replace spaces/underscores with hyphens, strip invalid chars.
-            var fixed = val.toLowerCase().replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-{2,}/g, '-').replace(/^-|-$/g, '');
-            if (fixed !== val) {
-                $input.val(fixed);
-                val = fixed;
+            // Auto-fix only on blur — don't modify while the user is still typing.
+            if (autoFix) {
+                var fixed = val.toLowerCase().replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-{2,}/g, '-').replace(/^-|-$/g, '');
+                if (fixed !== val) {
+                    $input.val(fixed);
+                    val = fixed;
+                }
+            } else {
+                // During typing: only lowercase, don't strip trailing hyphens.
+                var softFixed = val.toLowerCase().replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-{2,}/g, '-').replace(/^-/, '');
+                if (softFixed !== val) {
+                    $input.val(softFixed);
+                    val = softFixed;
+                }
             }
 
             if (val === '') {
@@ -294,6 +328,12 @@
             }
 
             if (!slugRegex.test(val)) {
+                // During typing, allow trailing hyphen (user hasn't finished).
+                if (!autoFix && /^[a-z0-9]+(?:-[a-z0-9]*)*$/.test(val)) {
+                    $hint.text('…').css('color', '#999').show();
+                    $input.css('border-color', '#dba617');
+                    return false;
+                }
                 $hint.text('Only lowercase letters, numbers, and hyphens.').css('color', '#d63638').show();
                 $input.css('border-color', '#d63638');
                 return false;
@@ -339,7 +379,13 @@
         }
 
         $urlTable.on('input', '.aisc-url-new-slug', function () {
-            validateSlug(this);
+            validateSlug(this, false);
+            updateApplyButton();
+        });
+
+        // On blur: apply full auto-fix (strip trailing hyphens, etc.).
+        $urlTable.on('blur', '.aisc-url-new-slug', function () {
+            validateSlug(this, true);
             updateApplyButton();
         });
 

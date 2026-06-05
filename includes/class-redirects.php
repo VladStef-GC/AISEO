@@ -34,6 +34,8 @@ class Redirects
         add_action('wp_ajax_ai_seo_captain_clear_404s', array($this, 'ajax_clear_404s'));
         add_action('wp_ajax_ai_seo_captain_bulk_url_change', array($this, 'ajax_bulk_url_change'));
         add_action('wp_ajax_ai_seo_captain_preview_refs', array($this, 'ajax_preview_refs'));
+        add_action('wp_ajax_ai_seo_captain_detect_chains', array($this, 'ajax_detect_chains'));
+        add_action('wp_ajax_ai_seo_captain_fix_chains', array($this, 'ajax_fix_chains'));
     }
 
     /**
@@ -199,7 +201,12 @@ class Redirects
     }
 
     /**
-     * Add a new redirect.
+     * Add a new redirect with automatic chain flattening.
+     *
+     * When creating A→B, this method checks for:
+     * 1. Forward chains — any existing X→A will be rewritten to X→B.
+     * 2. Reverse chains — if B→C already exists, A is pointed directly to C
+     *    (the final destination) instead.
      */
     public function add_redirect(string $source, string $target, int $status_code = 301): bool
     {
@@ -213,9 +220,23 @@ class Redirects
         }
 
         // Prevent redirect loops — source must not equal target path.
-        $target_path = wp_parse_url($target, PHP_URL_PATH);
-        if (is_string($target_path) && trailingslashit($target_path) === $source) {
+        $target_rel = $this->url_to_source_path($target);
+        if (is_string($target_rel) && $target_rel === $source) {
             return false;
+        }
+
+        // ── Chain flattening: resolve reverse chains ────────────────────
+        // If the target itself is the source of another redirect (B→C),
+        // point directly to the final destination to avoid B→C chain.
+        $final_target = $this->resolve_final_target($target);
+        if ($final_target !== $target) {
+            $target = $final_target;
+
+            // Re-check loop after resolution.
+            $target_rel = $this->url_to_source_path($target);
+            if (is_string($target_rel) && $target_rel === $source) {
+                return false;
+            }
         }
 
         // Delete any existing entry for this source.
@@ -223,7 +244,7 @@ class Redirects
         $wpdb->delete($this->table, array('source_url' => $source), array('%s'));
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-        return (bool) $wpdb->insert(
+        $inserted = (bool) $wpdb->insert(
             $this->table,
             array(
                 'source_url'  => $source,
@@ -236,6 +257,318 @@ class Redirects
             ),
             array('%s', '%s', '%d', '%s', '%d', '%s', '%s')
         );
+
+        if (! $inserted) {
+            return false;
+        }
+
+        // ── Chain flattening: resolve forward chains ────────────────────
+        // Any existing redirect X→(source) now points to a redirect source
+        // itself. Rewrite those to X→(target) so they skip the hop.
+        $this->flatten_forward_chains($source, $target);
+
+        return true;
+    }
+
+    /**
+     * Follow the redirect chain from a target URL to find the final destination.
+     *
+     * Prevents infinite loops by capping at 10 hops.
+     */
+    private function resolve_final_target(string $target, int $max_hops = 10): string
+    {
+        global $wpdb;
+
+        $current = $target;
+
+        for ($i = 0; $i < $max_hops; $i++) {
+            $variants = $this->get_source_path_variants($current);
+            if (empty($variants)) {
+                break;
+            }
+
+            // Try each variant to find a matching source in the redirects table.
+            $next = null;
+            foreach ($variants as $variant) {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+                $found = $wpdb->get_var(
+                    $wpdb->prepare(
+                        "SELECT target_url FROM {$this->table} WHERE source_url = %s AND type = 'redirect' LIMIT 1",
+                        $variant
+                    )
+                );
+                if (null !== $found && '' !== $found) {
+                    $next = $found;
+                    break;
+                }
+            }
+
+            if (null === $next) {
+                break;
+            }
+
+            $current = $next;
+        }
+
+        return $current;
+    }
+
+    /**
+     * Convert an absolute URL or full path to the source_url format(s)
+     * used in the redirects table.
+     *
+     * Source URLs may be stored with or without the WP install sub-directory
+     * depending on how they were created. This method returns the FULL path
+     * (preserving the sub-directory) since that's what handle_request() matches.
+     *
+     * Example: http://localhost/greencoders/about/ → /greencoders/about/
+     *          /greencoders/about/                 → /greencoders/about/
+     *          /about/                             → /about/
+     *
+     * Returns null if no valid path can be derived.
+     */
+    private function url_to_source_path(string $url): ?string
+    {
+        $path = wp_parse_url($url, PHP_URL_PATH);
+        if (! is_string($path) || '' === $path) {
+            return null;
+        }
+
+        return trailingslashit('/' . ltrim($path, '/'));
+    }
+
+    /**
+     * Get all possible source_url variants for a given URL/path.
+     *
+     * Returns both the full path and the WP-base-stripped path
+     * to handle sources stored in either format.
+     */
+    private function get_source_path_variants(string $url): array
+    {
+        $path = wp_parse_url($url, PHP_URL_PATH);
+        if (! is_string($path) || '' === $path) {
+            return array();
+        }
+
+        $full = trailingslashit('/' . ltrim($path, '/'));
+        $variants = array($full);
+
+        // Also try without the WP install sub-directory.
+        $home_path = wp_parse_url(home_url(), PHP_URL_PATH);
+        if (is_string($home_path) && '/' !== $home_path) {
+            $home_path = rtrim($home_path, '/');
+            if (0 === strpos($full, $home_path . '/')) {
+                $stripped = trailingslashit(substr($full, strlen($home_path)));
+                $variants[] = $stripped;
+            }
+        }
+
+        return array_unique($variants);
+    }
+
+    /**
+     * Rewrite any existing redirect whose target matches the given source path
+     * so that it points directly to the new final target.
+     */
+    private function flatten_forward_chains(string $source_path, string $new_target): void
+    {
+        global $wpdb;
+
+        $site_url  = home_url();
+        $home_path = wp_parse_url($site_url, PHP_URL_PATH);
+        $home_path = is_string($home_path) ? rtrim($home_path, '/') : '';
+
+        // Build the absolute URL correctly — avoid doubling the WP sub-directory.
+        if ('' !== $home_path && 0 === strpos($source_path, $home_path . '/')) {
+            // source_path already includes the WP base (e.g., /greencoders/tai/).
+            $source_abs = rtrim($site_url, '/') . substr($source_path, strlen($home_path));
+        } else {
+            $source_abs = rtrim($site_url, '/') . $source_path;
+        }
+
+        $source_abs_notrs  = untrailingslashit($source_abs);
+        $source_path_notrs = untrailingslashit($source_path);
+
+        $variants = array($source_path, $source_path_notrs, $source_abs, $source_abs_notrs);
+        $variants = array_unique(array_filter($variants));
+
+        foreach ($variants as $variant) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+            $wpdb->update(
+                $this->table,
+                array('target_url' => $new_target),
+                array(
+                    'target_url' => $variant,
+                    'type'       => 'redirect',
+                ),
+                array('%s'),
+                array('%s', '%s')
+            );
+        }
+    }
+
+    /**
+     * Build a map of redirect targets → source entries for quick lookup.
+     *
+     * Returns array keyed by normalised target path, each value is an array of
+     * ['source' => source_url, 'id' => redirect_id].
+     */
+    private function get_redirect_target_map(): array
+    {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $rows = $wpdb->get_results(
+            "SELECT id, source_url, target_url FROM {$this->table} WHERE type = 'redirect'"
+        );
+
+        $map = array();
+
+        if (empty($rows)) {
+            return $map;
+        }
+
+        foreach ($rows as $row) {
+            $variants = $this->get_source_path_variants($row->target_url);
+            $entry = array(
+                'source' => $row->source_url,
+                'id'     => (int) $row->id,
+            );
+
+            foreach ($variants as $normalised) {
+                if (! isset($map[$normalised])) {
+                    $map[$normalised] = array();
+                }
+                $map[$normalised][] = $entry;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * Detect redirect chains in the database.
+     *
+     * Returns an array of chain descriptions, each containing:
+     * - 'chain'   => array of [source, target] hops
+     * - 'fix'     => the flattened destination each hop should point to
+     * - 'ids'     => redirect IDs involved
+     */
+    public function detect_chains(): array
+    {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $redirects = $wpdb->get_results(
+            "SELECT id, source_url, target_url FROM {$this->table} WHERE type = 'redirect'"
+        );
+
+        if (empty($redirects)) {
+            return array();
+        }
+
+        // Build source→target lookup.
+        $source_map = array();
+        $id_map     = array();
+        foreach ($redirects as $r) {
+            $source_map[$r->source_url] = $r->target_url;
+            $id_map[$r->source_url]     = (int) $r->id;
+        }
+
+        $chains   = array();
+        $visited  = array();
+
+        foreach ($source_map as $source => $target) {
+            if (isset($visited[$source])) {
+                continue;
+            }
+
+            // Check if the target resolves to a source in the table (using all path variants).
+            $target_variants = $this->get_source_path_variants($target);
+            $matched_target  = null;
+            foreach ($target_variants as $variant) {
+                if (isset($source_map[$variant])) {
+                    $matched_target = $variant;
+                    break;
+                }
+            }
+
+            if (null === $matched_target) {
+                continue;
+            }
+
+            // We found a chain. Walk it to the end.
+            $hops = array(array('source' => $source, 'target' => $target, 'id' => $id_map[$source]));
+            $current = $matched_target;
+            $seen    = array($source => true);
+
+            while (isset($source_map[$current]) && ! isset($seen[$current])) {
+                $seen[$current] = true;
+                $next_target = $source_map[$current];
+                $hops[] = array('source' => $current, 'target' => $next_target, 'id' => $id_map[$current]);
+                $visited[$current] = true;
+
+                $next_variants = $this->get_source_path_variants($next_target);
+                $next_matched  = null;
+                foreach ($next_variants as $variant) {
+                    if (isset($source_map[$variant])) {
+                        $next_matched = $variant;
+                        break;
+                    }
+                }
+                if (null === $next_matched) {
+                    break;
+                }
+                $current = $next_matched;
+            }
+
+            $final_target = $hops[count($hops) - 1]['target'];
+
+            $chains[] = array(
+                'chain' => $hops,
+                'fix'   => $final_target,
+                'ids'   => array_column($hops, 'id'),
+            );
+
+            $visited[$source] = true;
+        }
+
+        return $chains;
+    }
+
+    /**
+     * Fix all detected redirect chains by flattening them.
+     *
+     * Returns the number of redirects updated.
+     */
+    public function fix_all_chains(): int
+    {
+        global $wpdb;
+
+        $chains = $this->detect_chains();
+        $fixed  = 0;
+
+        foreach ($chains as $chain_info) {
+            $final = $chain_info['fix'];
+
+            // Update all hops except the last one (which already points to final).
+            $hops = $chain_info['chain'];
+            for ($i = 0, $count = count($hops) - 1; $i < $count; $i++) {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+                $updated = $wpdb->update(
+                    $this->table,
+                    array('target_url' => $final),
+                    array('id' => $hops[$i]['id']),
+                    array('%s'),
+                    array('%d')
+                );
+                if ($updated) {
+                    $fixed++;
+                }
+            }
+        }
+
+        return $fixed;
     }
 
     /**
@@ -261,14 +594,17 @@ class Redirects
     }
 
     /**
-     * Convert a 404 entry into a redirect.
+     * Convert a 404 entry into a redirect (chain-aware).
      */
     public function convert_404_to_redirect(int $id, string $target_url, int $status_code = 301): bool
     {
         global $wpdb;
 
+        // Resolve reverse chains: if target itself redirects elsewhere, skip the hop.
+        $target_url = $this->resolve_final_target($target_url);
+
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-        return (bool) $wpdb->update(
+        $updated = (bool) $wpdb->update(
             $this->table,
             array(
                 'target_url'  => $target_url,
@@ -280,6 +616,19 @@ class Redirects
             array('%s', '%d', '%s', '%d'),
             array('%d')
         );
+
+        if ($updated) {
+            // Get the source for this entry to flatten any forward chains.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+            $source = $wpdb->get_var(
+                $wpdb->prepare("SELECT source_url FROM {$this->table} WHERE id = %d", $id)
+            );
+            if ($source) {
+                $this->flatten_forward_chains($source, $target_url);
+            }
+        }
+
+        return $updated;
     }
 
     // -------------------------------------------------------------------------
@@ -341,6 +690,42 @@ class Redirects
     }
 
     /**
+     * AJAX: Detect redirect chains.
+     */
+    public function ajax_detect_chains(): void
+    {
+        check_ajax_referer('ai_seo_captain_nonce', '_nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized');
+        }
+
+        $chains = $this->detect_chains();
+        wp_send_json_success(array(
+            'count'  => count($chains),
+            'chains' => $chains,
+        ));
+    }
+
+    /**
+     * AJAX: Fix all redirect chains by flattening.
+     */
+    public function ajax_fix_chains(): void
+    {
+        check_ajax_referer('ai_seo_captain_nonce', '_nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized');
+        }
+
+        $fixed = $this->fix_all_chains();
+        wp_send_json_success(array(
+            'message' => sprintf('%d redirect(s) flattened.', $fixed),
+            'fixed'   => $fixed,
+        ));
+    }
+
+    /**
      * Render the Redirects admin page content.
      */
     public function render_admin_page(): void
@@ -353,6 +738,18 @@ class Redirects
         $redirects = $this->get_redirects();
         $errors_404 = $this->get_404s();
         $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'redirects';
+
+        // Detect chains for the redirects tab indicator.
+        $chains      = $this->detect_chains();
+        $chain_count = count($chains);
+
+        // Build a set of redirect IDs involved in chains for row highlighting.
+        $chain_ids = array();
+        foreach ($chains as $chain_info) {
+            foreach ($chain_info['ids'] as $rid) {
+                $chain_ids[$rid] = true;
+            }
+        }
 ?>
         <div class="wrap">
             <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
@@ -397,6 +794,19 @@ class Redirects
                     <p><button type="button" class="button button-primary" id="ai-seo-redir-add-btn">Add redirect</button></p>
                 </div>
 
+                <?php if ($chain_count > 0) : ?>
+                    <div id="aisc-chain-banner" style="margin-bottom:16px;padding:12px 16px;background:#fff8e1;border:1px solid #dba617;border-left:4px solid #dba617;border-radius:4px;display:flex;align-items:center;gap:12px;">
+                        <span class="dashicons dashicons-warning" style="color:#dba617;font-size:20px;"></span>
+                        <div style="flex:1;">
+                            <strong style="color:#7a5e00;"><?php echo (int) $chain_count; ?> redirect chain(s) detected</strong>
+                            <span style="color:#50575e;font-size:12px;margin-left:8px;">Chains cause extra hops and hurt SEO. Click "Fix All" to flatten them — each redirect will point directly to the final destination.</span>
+                        </div>
+                        <button type="button" class="button button-primary" id="aisc-fix-chains-btn" style="white-space:nowrap;">
+                            <span class="dashicons dashicons-admin-tools" style="margin-top:4px;"></span> Fix All
+                        </button>
+                    </div>
+                <?php endif; ?>
+
                 <?php if (! empty($redirects)) : ?>
                     <table class="widefat striped">
                         <thead>
@@ -410,9 +820,16 @@ class Redirects
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($redirects as $r) : ?>
-                                <tr data-id="<?php echo (int) $r->id; ?>">
-                                    <td><code><?php echo esc_html($r->source_url); ?></code></td>
+                            <?php foreach ($redirects as $r) :
+                                $is_chain = isset($chain_ids[(int) $r->id]);
+                            ?>
+                                <tr data-id="<?php echo (int) $r->id; ?>"<?php echo $is_chain ? ' style="background:#fff8e1;"' : ''; ?>>
+                                    <td>
+                                        <code><?php echo esc_html($r->source_url); ?></code>
+                                        <?php if ($is_chain) : ?>
+                                            <span title="Part of a redirect chain" style="display:inline-block;background:#dba617;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle;cursor:help;">CHAIN</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><?php echo esc_html($r->target_url); ?></td>
                                     <td><?php echo (int) $r->status_code; ?></td>
                                     <td><?php echo (int) $r->hit_count; ?></td>
@@ -595,6 +1012,10 @@ class Redirects
 
         $query = new \WP_Query($query_args);
         $nonce = wp_create_nonce('ai_seo_captain_nonce');
+
+        // Pre-build lookup: which published page URLs are redirect targets?
+        // This lets us show an indicator so users know a page already has redirects pointing to it.
+        $redirect_targets = $this->get_redirect_target_map();
 ?>
         <div style="margin-bottom:20px; padding:16px; background:#fff; border:1px solid #ccd0d4;">
             <h3 style="margin-top:0;">Bulk URL Editor</h3>
@@ -653,11 +1074,28 @@ class Redirects
                         // Get the parent path portion (everything before the slug).
                         $parsed   = wp_parse_url($permalink, PHP_URL_PATH);
                         $path_dir = $parsed ? trailingslashit(dirname($parsed)) : '/';
+
+                        // Check if this page has redirects pointing to it.
+                        $incoming_redirects = array();
+                        if ($parsed) {
+                            $norm_path = trailingslashit($parsed);
+                            if (isset($redirect_targets[$norm_path])) {
+                                $incoming_redirects = $redirect_targets[$norm_path];
+                            }
+                        }
+                        $has_redirects = ! empty($incoming_redirects);
                     ?>
-                        <tr data-post-id="<?php echo (int) $post_id; ?>" data-original-slug="<?php echo esc_attr($slug); ?>" data-path-prefix="<?php echo esc_attr($path_dir); ?>">
+                        <tr data-post-id="<?php echo (int) $post_id; ?>" data-original-slug="<?php echo esc_attr($slug); ?>" data-path-prefix="<?php echo esc_attr($path_dir); ?>"<?php echo $has_redirects ? ' data-has-redirects="1"' : ''; ?>>
                             <td><input type="checkbox" class="aisc-url-row-check" /></td>
                             <td data-sort-value="<?php echo esc_attr(strtolower($title)); ?>">
                                 <strong><?php echo esc_html($title); ?></strong>
+                                <?php if ($has_redirects) : ?>
+                                    <span class="aisc-url-redirect-badge" title="<?php echo esc_attr(sprintf(
+                                        /* translators: %d = number of redirects */
+                                        _n('%d redirect points to this page', '%d redirects point to this page', count($incoming_redirects), 'ai-seo-captain'),
+                                        count($incoming_redirects)
+                                    ) . ': ' . esc_attr(implode(', ', array_column($incoming_redirects, 'source')))); ?>" style="display:inline-block;background:#dba617;color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:3px;margin-left:6px;vertical-align:middle;cursor:help;">⇐ <?php echo count($incoming_redirects); ?></span>
+                                <?php endif; ?>
                                 <div style="margin-top:2px;">
                                     <a href="<?php echo esc_url($permalink); ?>" target="_blank" style="font-size:11px;color:#50575e;word-break:break-all;"><?php echo esc_html($parsed); ?></a>
                                 </div>
@@ -1064,6 +1502,10 @@ class Redirects
                      FROM {$wpdb->options}
                      WHERE (" . implode(' OR ', $where_parts) . ")
                        AND option_name NOT LIKE '\\_transient%'
+                       AND option_name NOT LIKE '%%\\_log'
+                       AND option_name NOT LIKE '%%\\_log\\_%%'
+                       AND option_name NOT LIKE '%%\\_cache%%'
+                       AND option_name NOT LIKE '%%\\_cron%%'
                      LIMIT %d",
                     array_merge($where_args, array($limit - $count))
                 )
@@ -1224,6 +1666,10 @@ class Redirects
                 "SELECT option_id, option_name, option_value FROM {$wpdb->options}
                  WHERE (" . implode(' OR ', $where_parts) . ")
                    AND option_name NOT LIKE '\\_transient%'
+                   AND option_name NOT LIKE '%%\\_log'
+                   AND option_name NOT LIKE '%%\\_log\\_%%'
+                   AND option_name NOT LIKE '%%\\_cache%%'
+                   AND option_name NOT LIKE '%%\\_cron%%'
                  LIMIT 200",
                 $where_args
             )
