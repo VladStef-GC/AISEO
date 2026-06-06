@@ -86,7 +86,7 @@ $format_labels = array(
         </div>
         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
             <p style="font-size:28px;margin:0;font-weight:600;color:<?php echo $total_missing_title > 0 ? '#d63638' : '#00a32a'; ?>;"><?php echo (int) $total_missing_title; ?></p>
-            <p style="margin:4px 0 0;color:#50575e;"><?php esc_html_e('Missing SEO title', 'ai-seo-captain'); ?></p>
+            <p style="margin:4px 0 0;color:#50575e;"><?php esc_html_e('Missing SEO title', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Documents without an SEO title use the filename as their search result title (e.g. \"report-v3-final.pdf\"). Add a descriptive title so users can find them.', 'ai-seo-captain')); ?></p>
         </div>
     </div>
 

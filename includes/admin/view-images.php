@@ -61,7 +61,7 @@ $_local_available = $_local_experiment && '' !== $_local_model;
         </div>
         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
             <p style="font-size:28px;margin:0;font-weight:600;color:<?php echo $total_missing_alt > 0 ? '#d63638' : '#00a32a'; ?>;"><?php echo $total_missing_alt; ?></p>
-            <p style="margin:4px 0 0;color:#50575e;"><?php esc_html_e('Missing alt text', 'ai-seo-captain'); ?></p>
+            <p style="margin:4px 0 0;color:#50575e;"><?php esc_html_e('Missing alt text', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Alt text describes images for search engines and screen readers. Missing alt text hurts both SEO and accessibility. Google cannot "see" images without it.', 'ai-seo-captain')); ?></p>
         </div>
     </div>
 
@@ -92,7 +92,7 @@ $_local_available = $_local_experiment && '' !== $_local_model;
                 <tr>
                     <th style="width:80px;"><?php esc_html_e('Image', 'ai-seo-captain'); ?></th>
                     <th style="width:25%;" class="ai-seo-sort" data-col="1"><?php esc_html_e('File', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                    <th style="width:40%;" class="ai-seo-sort" data-col="2"><?php esc_html_e('Alt text', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th style="width:40%;" class="ai-seo-sort" data-col="2"><?php esc_html_e('Alt text', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Describes the image content in plain text. Good alt text is short, specific, and includes relevant keywords naturally. Example: "Red hiking boots on a mountain trail"', 'ai-seo-captain')); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
                     <th style="width:20%;" class="ai-seo-sort" data-col="3"><?php esc_html_e('Used on', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
                     <th style="width:<?php echo $_local_available ? '10%' : '5%'; ?>;"><?php echo $_local_available ? esc_html__('Actions', 'ai-seo-captain') : ''; ?></th>
                 </tr>

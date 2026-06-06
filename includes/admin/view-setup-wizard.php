@@ -65,7 +65,7 @@ defined('ABSPATH') || exit;
     <div id="aisc-step-1" class="aisc-step">
         <div class="aisc-step-header">
             <span id="aisc-s1-badge" class="aisc-badge active">1</span>
-            <h2 style="margin:0;"><?php esc_html_e('Index Your Site', 'ai-seo-captain'); ?></h2>
+            <h2 style="margin:0;"><?php esc_html_e('Index Your Site', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Creates a content inventory of all published pages. The index is needed for AI to understand your site structure before generating SEO metadata.', 'ai-seo-captain')); ?></h2>
         </div>
         <p><?php esc_html_e('Scan all published pages and build the content index. This is required before AI processing.', 'ai-seo-captain'); ?></p>
         <div class="aisc-controls">
@@ -89,7 +89,7 @@ defined('ABSPATH') || exit;
     <!-- SHARED SETTINGS: Parallel Requests -->
     <div class="aisc-step" style="padding:10px 20px;background:#f9f9f9;border-left:3px solid #2271b1;">
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;">
-            <strong><?php esc_html_e('Parallel requests:', 'ai-seo-captain'); ?></strong>
+            <strong><?php esc_html_e('Parallel requests:', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('How many pages to process at the same time. 1 is safest for local AI servers. Cloud APIs (OpenAI, Anthropic) can handle 3-5 easily.', 'ai-seo-captain')); ?></strong>
             <select id="aisc-concurrency" style="width:auto;min-width:60px;">
                 <option value="1" selected>1</option>
                 <option value="2">2</option>

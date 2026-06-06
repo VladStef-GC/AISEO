@@ -74,7 +74,7 @@ $option_name = Settings::OPTION_NAME;
             <span class="aisc-cache-card__sub" id="aisc-cached-size"><?php echo esc_html(size_format($page_size)); ?></span>
         </div>
         <div class="aisc-cache-card">
-            <span class="aisc-cache-card__label"><?php esc_html_e('Drop-ins', 'ai-seo-captain'); ?></span>
+            <span class="aisc-cache-card__label"><?php esc_html_e('Drop-ins', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('PHP files placed in wp-content/ that WordPress loads very early. They make the cache work before the full WordPress stack loads.', 'ai-seo-captain')); ?></span>
             <span class="aisc-cache-card__value" id="aisc-dropins-status">
                 advanced-cache.php <span id="aisc-ac-check"><?php echo $ac_installed ? '✓' : '✗'; ?></span><br>
                 object-cache.php <span id="aisc-oc-check"><?php echo $oc_installed ? '✓' : '✗'; ?></span>
@@ -181,7 +181,7 @@ $option_name = Settings::OPTION_NAME;
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row"><?php esc_html_e('GZIP Compression', 'ai-seo-captain'); ?></th>
+                            <th scope="row"><?php esc_html_e('GZIP Compression', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Compresses cached HTML before sending to browsers. Reduces page size by 60-80%. Only needed if your server doesn\'t already compress responses.', 'ai-seo-captain')); ?></th>
                             <td>
                                 <label class="aisc-toggle">
                                     <input type="checkbox" name="<?php echo esc_attr($option_name); ?>[cache_gzip_enabled]" value="1" <?php checked(! empty($options['cache_gzip_enabled'])); ?>>
@@ -191,7 +191,7 @@ $option_name = Settings::OPTION_NAME;
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row"><?php esc_html_e('Cache Query Strings', 'ai-seo-captain'); ?></th>
+                            <th scope="row"><?php esc_html_e('Cache Query Strings', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('When off, pages with ?param=value are never cached (safer). Turn on only if your site uses query strings for normal page variations.', 'ai-seo-captain')); ?></th>
                             <td>
                                 <label class="aisc-toggle">
                                     <input type="checkbox" name="<?php echo esc_attr($option_name); ?>[cache_query_string_cache]" value="1" <?php checked(! empty($options['cache_query_string_cache'])); ?>>
@@ -378,7 +378,7 @@ $option_name = Settings::OPTION_NAME;
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="aisc-lazy-skip"><?php esc_html_e('Skip First N Images', 'ai-seo-captain'); ?></label></th>
+                            <th scope="row"><label for="aisc-lazy-skip"><?php esc_html_e('Skip First N Images', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Images visible when the page first loads (above the fold) should NOT be lazy-loaded. Set this to 2-3 to keep your hero images loading immediately.', 'ai-seo-captain')); ?></label></th>
                             <td>
                                 <input type="number" id="aisc-lazy-skip" name="<?php echo esc_attr($option_name); ?>[cache_lazy_skip_count]" value="<?php echo (int) ($options['cache_lazy_skip_count'] ?? 2); ?>" min="0" max="10" class="small-text">
                                 <p class="description"><?php esc_html_e('Number of above-the-fold images to skip. Default: 2.', 'ai-seo-captain'); ?></p>
@@ -405,7 +405,7 @@ $option_name = Settings::OPTION_NAME;
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="aisc-exclude-cookies"><?php esc_html_e('Exclude Cookies', 'ai-seo-captain'); ?></label></th>
+                            <th scope="row"><label for="aisc-exclude-cookies"><?php esc_html_e('Exclude Cookies', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Visitors with these cookies see uncached pages. Useful for logged-in users, A/B tests, or affiliate tracking cookies.', 'ai-seo-captain')); ?></label></th>
                             <td>
                                 <textarea id="aisc-exclude-cookies" name="<?php echo esc_attr($option_name); ?>[cache_exclude_cookies]" rows="3" class="large-text"><?php echo esc_textarea($options['cache_exclude_cookies'] ?? ''); ?></textarea>
                                 <p class="description"><?php esc_html_e('One cookie name per line. Requests with these cookies will not be cached.', 'ai-seo-captain'); ?></p>

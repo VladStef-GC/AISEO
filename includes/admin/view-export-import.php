@@ -35,7 +35,7 @@ defined('ABSPATH') || exit;
 
         <!-- ========== EXPORT PANEL ========== -->
         <div class="aisc-ei-panel">
-            <h2><span class="dashicons dashicons-download"></span> <?php esc_html_e('Export SEO Captain Settings', 'ai-seo-captain'); ?></h2>
+            <h2><span class="dashicons dashicons-download"></span> <?php esc_html_e('Export SEO Captain Settings', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Creates a portable JSON backup of your SEO data. Use it to migrate between sites, create backups, or replicate settings across staging and production.', 'ai-seo-captain')); ?></h2>
             <p><?php esc_html_e('Download a JSON file with your SEO Captain data. Choose which sections to include in the export.', 'ai-seo-captain'); ?></p>
 
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">

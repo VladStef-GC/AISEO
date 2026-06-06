@@ -53,7 +53,7 @@ defined('ABSPATH') || exit;
         </div>
         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
             <p style="font-size:28px;margin:0;font-weight:600;color:<?php echo $total_missing_desc > 0 ? '#d63638' : '#00a32a'; ?>;"><?php echo (int) $total_missing_desc; ?></p>
-            <p style="margin:4px 0 0;color:#50575e;"><?php esc_html_e('Missing description', 'ai-seo-captain'); ?></p>
+            <p style="margin:4px 0 0;color:#50575e;"><?php esc_html_e('Missing description', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Videos without an SEO description won\'t appear in Google Video search results. Add a description to be eligible for video rich snippets.', 'ai-seo-captain')); ?></p>
         </div>
     </div>
 

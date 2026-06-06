@@ -759,7 +759,7 @@ class Redirects
 
             <nav class="nav-tab-wrapper" style="margin-bottom:16px;">
                 <a href="<?php echo esc_url(add_query_arg('tab', 'redirects')); ?>" class="nav-tab <?php echo 'redirects' === $active_tab ? 'nav-tab-active' : ''; ?>">Redirects (<?php echo count($redirects); ?>)</a>
-                <a href="<?php echo esc_url(add_query_arg('tab', '404s')); ?>" class="nav-tab <?php echo '404s' === $active_tab ? 'nav-tab-active' : ''; ?>">404 Monitor (<?php echo count($errors_404); ?>)</a>
+                <a href="<?php echo esc_url(add_query_arg('tab', '404s')); ?>" class="nav-tab <?php echo '404s' === $active_tab ? 'nav-tab-active' : ''; ?>">404 Monitor<?php echo \AI_SEO_Captain\Admin::info(__('Tracks URLs that visitors tried to access but don\'t exist. High-hit 404s should be redirected to relevant pages.', 'ai-seo-captain')); ?> (<?php echo count($errors_404); ?>)</a>
                 <?php
                 $scanner = Plugin::instance()->get_broken_link_scanner();
                 $broken_counts = $scanner ? $scanner->get_broken_counts() : array('total' => 0);
@@ -773,7 +773,7 @@ class Redirects
                     <h3 style="margin-top:0;">Add redirect</h3>
                     <table class="form-table" style="margin:0;">
                         <tr>
-                            <th style="width:120px;"><label for="ai-seo-redir-source">Source path</label></th>
+                            <th style="width:120px;"><label for="ai-seo-redir-source">Source path<?php echo \AI_SEO_Captain\Admin::info(__('The old URL path that visitors or search engines might request. Use relative paths like /old-page/.', 'ai-seo-captain')); ?></label></th>
                             <td><input id="ai-seo-redir-source" type="text" class="regular-text" placeholder="/old-page/" /></td>
                         </tr>
                         <tr>
@@ -781,7 +781,7 @@ class Redirects
                             <td><input id="ai-seo-redir-target" type="url" class="regular-text" placeholder="<?php echo esc_attr(home_url('/new-page/')); ?>" /></td>
                         </tr>
                         <tr>
-                            <th><label for="ai-seo-redir-status">Type</label></th>
+                            <th><label for="ai-seo-redir-status">Type<?php echo \AI_SEO_Captain\Admin::info(__('301 = permanent (tells Google to transfer ranking power). 302/307 = temporary (Google keeps the old URL indexed). Use 301 for most cases.', 'ai-seo-captain')); ?></label></th>
                             <td>
                                 <select id="ai-seo-redir-status">
                                     <option value="301">301 — Permanent</option>
@@ -1057,8 +1057,8 @@ class Redirects
                         <th style="width:22%;" class="ai-seo-sort" data-col="1"><?php esc_html_e('Page Title', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
                         <th style="width:16%;" class="ai-seo-sort" data-col="2"><?php esc_html_e('Current Slug', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
                         <th style="width:22%;"><?php esc_html_e('Change to', 'ai-seo-captain'); ?></th>
-                        <th style="width:80px;text-align:center;"><?php esc_html_e('Redirect', 'ai-seo-captain'); ?></th>
-                        <th style="width:110px;text-align:center;"><?php esc_html_e('Update refs', 'ai-seo-captain'); ?></th>
+                        <th style="width:80px;text-align:center;"><?php esc_html_e('Redirect', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Creates a 301 redirect from old URL to new URL. Always recommended — without it, old links become 404 errors.', 'ai-seo-captain')); ?></th>
+                        <th style="width:110px;text-align:center;"><?php esc_html_e('Update refs', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Finds and updates internal links in your content that point to the old URL. Saves crawl budget by reducing redirect hops.', 'ai-seo-captain')); ?></th>
                         <th style="width:8%;" class="ai-seo-sort" data-col="6"><?php esc_html_e('Type', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
                     </tr>
                 </thead>

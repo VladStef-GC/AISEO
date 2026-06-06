@@ -173,7 +173,7 @@ $ctx_is_preset = isset($ctx_presets[$saved_ctx]);
 
             <table class="form-table" role="presentation">
                 <tr>
-                    <th scope="row"><label for="local-ai-model">Chat Model</label></th>
+                    <th scope="row"><label for="local-ai-model">Chat Model<?php echo \AI_SEO_Captain\Admin::info(__('The main AI model used for all SEO tasks: generating titles, descriptions, audits, and chat. Larger models (13B+) give better results but need more RAM.', 'ai-seo-captain')); ?></label></th>
                     <td>
                         <select id="local-ai-model" name="local_model" class="regular-text">
                             <option value="">— Select a model —</option>
@@ -186,7 +186,7 @@ $ctx_is_preset = isset($ctx_presets[$saved_ctx]);
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="local-ai-vision-model">Vision Model <span class="description">(optional)</span></label></th>
+                    <th scope="row"><label for="local-ai-vision-model">Vision Model<?php echo \AI_SEO_Captain\Admin::info(__('A multimodal model that can "see" images and generate accurate alt text descriptions. Without this, alt text is generated from filenames and context only.', 'ai-seo-captain')); ?> <span class="description">(optional)</span></label></th>
                     <td>
                         <select id="local-ai-vision-model" name="local_vision_model" class="regular-text">
                             <option value="">— None (no vision) —</option>

@@ -252,22 +252,22 @@ $redirect_uri = $gsc->get_redirect_uri();
         <div class="aiseo-gsc-overview" id="gsc-overview">
             <div class="aiseo-gsc-card aiseo-gsc-metric active" data-metric="clicks">
                 <div class="aiseo-gsc-metric-icon"><span class="dashicons dashicons-admin-links"></span></div>
-                <span class="aiseo-gsc-metric-label"><?php esc_html_e('Total Clicks', 'ai-seo-captain'); ?></span>
+                <span class="aiseo-gsc-metric-label"><?php esc_html_e('Total Clicks', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('How many times someone clicked on your site in Google search results during this period.', 'ai-seo-captain')); ?></span>
                 <span class="aiseo-gsc-metric-value" id="gsc-val-clicks"><?php echo esc_html(number_format_i18n($overview['clicks'])); ?></span>
             </div>
             <div class="aiseo-gsc-card aiseo-gsc-metric active" data-metric="impressions">
                 <div class="aiseo-gsc-metric-icon"><span class="dashicons dashicons-visibility"></span></div>
-                <span class="aiseo-gsc-metric-label"><?php esc_html_e('Total Impressions', 'ai-seo-captain'); ?></span>
+                <span class="aiseo-gsc-metric-label"><?php esc_html_e('Total Impressions', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('How many times your pages appeared in Google search results, even if nobody clicked. High impressions with low clicks = your titles/descriptions need improvement.', 'ai-seo-captain')); ?></span>
                 <span class="aiseo-gsc-metric-value" id="gsc-val-impressions"><?php echo esc_html(number_format_i18n($overview['impressions'])); ?></span>
             </div>
             <div class="aiseo-gsc-card aiseo-gsc-metric" data-metric="ctr">
                 <div class="aiseo-gsc-metric-icon"><span class="dashicons dashicons-chart-line"></span></div>
-                <span class="aiseo-gsc-metric-label"><?php esc_html_e('Average CTR', 'ai-seo-captain'); ?></span>
+                <span class="aiseo-gsc-metric-label"><?php esc_html_e('Average CTR', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Click-Through Rate: the percentage of impressions that resulted in clicks. Higher is better. Industry average is 2-5%. Improve with better SEO titles and meta descriptions.', 'ai-seo-captain')); ?></span>
                 <span class="aiseo-gsc-metric-value" id="gsc-val-ctr"><?php echo esc_html(number_format($overview['ctr'] * 100, 1) . '%'); ?></span>
             </div>
             <div class="aiseo-gsc-card aiseo-gsc-metric" data-metric="position">
                 <div class="aiseo-gsc-metric-icon"><span class="dashicons dashicons-sort"></span></div>
-                <span class="aiseo-gsc-metric-label"><?php esc_html_e('Avg. Position', 'ai-seo-captain'); ?></span>
+                <span class="aiseo-gsc-metric-label"><?php esc_html_e('Avg. Position', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Your average ranking in Google results. 1.0 = first result. Under 10 means page 1. Lower numbers are better.', 'ai-seo-captain')); ?></span>
                 <span class="aiseo-gsc-metric-value" id="gsc-val-position"><?php echo esc_html(number_format($overview['position'], 1)); ?></span>
             </div>
         </div>

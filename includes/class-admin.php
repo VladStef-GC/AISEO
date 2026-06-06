@@ -506,6 +506,22 @@ class Admin
             . '</div>';
     }
 
+    /**
+     * Render an inline info-icon with a hover tooltip.
+     *
+     * Usage: <?php echo \AI_SEO_Captain\Admin::info('Tooltip text here'); ?>
+     */
+    public static function info(string $tip): string
+    {
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16">'
+            . '<circle cx="8" cy="8" r="8" fill="#1d2327"/>'
+            . '<rect x="7.35" y="7.2" width="1.3" height="4" rx="0.65" fill="#fff"/>'
+            . '<circle cx="8" cy="5.3" r="0.75" fill="#fff"/>'
+            . '</svg>';
+
+        return '<span class="aisc-info-icon" data-tip="' . esc_attr($tip) . '">' . $svg . '</span>';
+    }
+
     public function get_readiness_banner_html(array $readiness): string
     {
         if ($readiness['is_ready']) {

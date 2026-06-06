@@ -65,17 +65,17 @@ defined('ABSPATH') || exit;
             <p style="margin:8px 0 0;"><?php echo esc_html($readiness['label']); ?></p>
         </div>
         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;">
-            <h2 style="margin-top:0;"><?php esc_html_e('Draft Coverage', 'ai-seo-captain'); ?></h2>
+            <h2 style="margin-top:0;"><?php esc_html_e('Draft Coverage', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Percentage of published pages that have AI-generated title and description drafts. Higher = more pages ready for review.', 'ai-seo-captain')); ?></h2>
             <p style="font-size:28px;margin:0;"><?php echo esc_html((string) $readiness['draft_coverage']); ?>%</p>
             <p style="margin:8px 0 0;"><?php esc_html_e('Published items with AI title and description drafts.', 'ai-seo-captain'); ?></p>
         </div>
         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;">
-            <h2 style="margin-top:0;"><?php esc_html_e('Approval Coverage', 'ai-seo-captain'); ?></h2>
+            <h2 style="margin-top:0;"><?php esc_html_e('Approval Coverage', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Percentage of pages where you have approved the AI suggestion. Approved pages are ready for frontend output.', 'ai-seo-captain')); ?></h2>
             <p style="font-size:28px;margin:0;"><?php echo esc_html((string) $readiness['approval_coverage']); ?>%</p>
             <p style="margin:8px 0 0;"><?php echo esc_html(sprintf(__('%d approved suggestions across %d published items.', 'ai-seo-captain'), $summary['approved_items'], $summary['published_items'])); ?></p>
         </div>
         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;">
-            <h2 style="margin-top:0;"><?php esc_html_e('Frontend Coverage', 'ai-seo-captain'); ?></h2>
+            <h2 style="margin-top:0;"><?php esc_html_e('Frontend Coverage', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Pages where SEO Captain metadata actually renders on your live site. Requires: approved suggestion + frontend gate enabled.', 'ai-seo-captain')); ?></h2>
             <p style="font-size:28px;margin:0;"><?php echo esc_html((string) $readiness['frontend_coverage']); ?>%</p>
             <p style="margin:8px 0 0;"><?php echo esc_html(sprintf(__('%d pages are ready to render SEO Captain metadata.', 'ai-seo-captain'), $summary['frontend_ready_items'])); ?></p>
         </div>
@@ -347,7 +347,7 @@ defined('ABSPATH') || exit;
     </div>
 
     <div style="background:#fff;border:1px solid #dcdcde;padding:20px;max-width:1120px;margin-top:24px;">
-        <h2><?php esc_html_e('Priority Queue', 'ai-seo-captain'); ?> <span style="font-weight:normal;color:#50575e;font-size:14px;">(<?php echo count($report['priority_rows']); ?>)</span></h2>
+        <h2><?php esc_html_e('Priority Queue', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Pages sorted by urgency: published pages missing AI drafts come first. Work through this list top-to-bottom for maximum impact.', 'ai-seo-captain')); ?> <span style="font-weight:normal;color:#50575e;font-size:14px;">(<?php echo count($report['priority_rows']); ?>)</span></h2>
         <p><?php esc_html_e('These rows are ordered toward published content with missing AI drafts first, then by approval state and freshness.', 'ai-seo-captain'); ?></p>
         <table class="widefat striped" id="aisc-priority-table" style="margin-top:12px;">
             <thead>
@@ -444,7 +444,7 @@ defined('ABSPATH') || exit;
         </div>
 
         <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
-            <h2 style="margin-top:0;"><?php esc_html_e('Thin Content Risks', 'ai-seo-captain'); ?></h2>
+            <h2 style="margin-top:0;"><?php esc_html_e('Thin Content Risks', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Pages with very few words. Google may consider them low-quality and rank them lower. Aim for 300+ words on important pages.', 'ai-seo-captain')); ?></h2>
             <?php if (empty($report['thin_content_rows'])) : ?>
                 <p style="margin:0;"><?php esc_html_e('No thin-content risks were flagged by the current word-count threshold.', 'ai-seo-captain'); ?></p>
             <?php else : ?>
@@ -470,7 +470,7 @@ defined('ABSPATH') || exit;
 
     <div style="display:grid;grid-template-columns:repeat(2,minmax(320px,1fr));gap:16px;max-width:1120px;margin-top:24px;">
         <div style="background:#fff;border:1px solid #dcdcde;padding:20px;">
-            <h2 style="margin-top:0;"><?php esc_html_e('Duplicate Native Titles', 'ai-seo-captain'); ?></h2>
+            <h2 style="margin-top:0;"><?php esc_html_e('Duplicate Native Titles', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Multiple pages sharing the exact same title. Search engines may struggle to decide which one to rank. Each page should have a unique title.', 'ai-seo-captain')); ?></h2>
             <?php if (empty($report['duplicate_post_titles'])) : ?>
                 <p style="margin:0;"><?php esc_html_e('No exact duplicate published page titles were detected in the indexed content.', 'ai-seo-captain'); ?></p>
             <?php else : ?>
@@ -506,7 +506,7 @@ defined('ABSPATH') || exit;
     $orphaned = $report['orphaned_content'] ?? array('orphans' => array(), 'total_orphans' => 0, 'total_pages' => 0);
     ?>
     <div style="background:#fff;border:1px solid #dcdcde;padding:20px;max-width:1120px;margin-top:24px;">
-        <h2 style="margin-top:0;"><?php esc_html_e('Orphaned Content', 'ai-seo-captain'); ?> <span style="font-weight:normal;color:#50575e;font-size:14px;">(<?php echo esc_html(sprintf(__('%d of %d pages', 'ai-seo-captain'), $orphaned['total_orphans'], $orphaned['total_pages'])); ?>)</span></h2>
+        <h2 style="margin-top:0;"><?php esc_html_e('Orphaned Content', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Pages with zero internal links pointing to them. Search engine crawlers discover pages by following links, so orphaned pages may never get indexed.', 'ai-seo-captain')); ?> <span style="font-weight:normal;color:#50575e;font-size:14px;">(<?php echo esc_html(sprintf(__('%d of %d pages', 'ai-seo-captain'), $orphaned['total_orphans'], $orphaned['total_pages'])); ?>)</span></h2>
         <p style="margin:0 0 12px;color:#50575e;"><?php esc_html_e('Pages with zero inbound internal links. These are invisible to crawlers that follow links and may never get indexed.', 'ai-seo-captain'); ?></p>
         <?php if (empty($orphaned['orphans'])) : ?>
             <p style="margin:0;color:#00a32a;"><strong><?php esc_html_e('No orphaned content detected.', 'ai-seo-captain'); ?></strong> <?php esc_html_e('Every indexed page has at least one internal link pointing to it.', 'ai-seo-captain'); ?></p>

@@ -84,21 +84,11 @@ defined('ABSPATH') || exit;
         </div>
         <div class="ai-seo-box ai-seo-box-wide" style="margin-top:0;">
             <h2><?php esc_html_e('AI discovery surfaces', 'ai-seo-captain'); ?></h2>
-            <p style="margin:0 0 8px;"><a href="<?php echo esc_url($llms_url); ?>" target="_blank" rel="noopener noreferrer">llms.txt</a></p>
-            <p style="margin:0 0 8px;"><a href="<?php echo esc_url($llms_full_url); ?>" target="_blank" rel="noopener noreferrer">llms-full.txt</a></p>
-            <p style="margin:0 0 8px;"><a href="<?php echo esc_url($sitemap_url); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Sitemap', 'ai-seo-captain'); ?></a></p>
-            <p style="margin:0;"><?php esc_html_e('Frontend output:', 'ai-seo-captain'); ?> <strong><?php echo $frontend_enabled ? esc_html__('Enabled', 'ai-seo-captain') : esc_html__('Disabled', 'ai-seo-captain'); ?></strong><?php if ($frontend_conflict) : ?>, <?php esc_html_e('conflict override', 'ai-seo-captain'); ?> <strong><?php echo $frontend_override_conflicts ? esc_html__('enabled', 'ai-seo-captain') : esc_html__('off', 'ai-seo-captain'); ?></strong><?php endif; ?></p>
+            <p style="margin:0 0 8px;"><a href="<?php echo esc_url($llms_url); ?>" target="_blank" rel="noopener noreferrer">llms.txt</a><?php echo \AI_SEO_Captain\Admin::info(__('A lightweight summary of your site for AI crawlers (ChatGPT, Perplexity, etc.). Auto-generated from your indexed content and updated on every site sync.', 'ai-seo-captain')); ?></p>
+            <p style="margin:0 0 8px;"><a href="<?php echo esc_url($llms_full_url); ?>" target="_blank" rel="noopener noreferrer">llms-full.txt</a><?php echo \AI_SEO_Captain\Admin::info(__('The full version of llms.txt — includes detailed page descriptions so AI models can deeply understand your site content.', 'ai-seo-captain')); ?></p>
+            <p style="margin:0 0 8px;"><a href="<?php echo esc_url($sitemap_url); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Sitemap', 'ai-seo-captain'); ?></a><?php echo \AI_SEO_Captain\Admin::info(__('Your XML sitemap for Google, Bing, and other search engines. Lists all published URLs with last-modified dates to guide crawling priority.', 'ai-seo-captain')); ?></p>
+            <p style="margin:0;"><?php esc_html_e('Frontend output:', 'ai-seo-captain'); ?> <strong><?php echo $frontend_enabled ? esc_html__('Enabled', 'ai-seo-captain') : esc_html__('Disabled', 'ai-seo-captain'); ?></strong><?php echo \AI_SEO_Captain\Admin::info(__('When enabled, approved AI-generated titles and descriptions are injected into your page HTML, overriding the theme defaults.', 'ai-seo-captain')); ?><?php if ($frontend_conflict) : ?>, <?php esc_html_e('conflict override', 'ai-seo-captain'); ?> <strong><?php echo $frontend_override_conflicts ? esc_html__('enabled', 'ai-seo-captain') : esc_html__('off', 'ai-seo-captain'); ?></strong><?php endif; ?></p>
         </div>
-    </div>
-
-    <div class="ai-seo-box">
-        <h2><?php esc_html_e('Site context sync', 'ai-seo-captain'); ?></h2>
-        <p><?php esc_html_e('Build the internal site index used for AI prompts, overlap checks, discovery prioritization, and whole-site audits.', 'ai-seo-captain'); ?></p>
-        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-            <?php wp_nonce_field('ai_seo_captain_sync_index'); ?>
-            <input type="hidden" name="action" value="ai_seo_captain_sync_index" />
-            <?php submit_button(__('Sync site index', 'ai-seo-captain'), 'primary', 'submit', false); ?>
-        </form>
     </div>
 
     <div class="ai-seo-box ai-seo-box-wide">

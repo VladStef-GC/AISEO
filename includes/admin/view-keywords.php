@@ -40,11 +40,11 @@ defined('ABSPATH') || exit;
         </div>
         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
             <p style="font-size:28px;margin:0;font-weight:600;color:<?php echo $without_keyphrase > 0 ? '#dba617' : '#00a32a'; ?>;"><?php echo $without_keyphrase; ?></p>
-            <p style="margin:4px 0 0;color:#50575e;"><?php esc_html_e('Without keyphrase', 'ai-seo-captain'); ?></p>
+            <p style="margin:4px 0 0;color:#50575e;"><?php esc_html_e('Without keyphrase', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Pages that don\'t have a focus keyphrase assigned. Set one in the WordPress editor to help the AI optimize your SEO title and description.', 'ai-seo-captain')); ?></p>
         </div>
         <div style="background:#fff;border:1px solid #dcdcde;padding:16px;text-align:center;">
             <p style="font-size:28px;margin:0;font-weight:600;color:<?php echo count($cannibalized) > 0 ? '#d63638' : '#00a32a'; ?>;"><?php echo count($cannibalized); ?></p>
-            <p style="margin:4px 0 0;color:#50575e;"><?php esc_html_e('Cannibalization risks', 'ai-seo-captain'); ?></p>
+            <p style="margin:4px 0 0;color:#50575e;"><?php esc_html_e('Cannibalization risks', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('When multiple pages target the same keyphrase, they compete with each other in Google. This splits your ranking power and usually hurts both pages.', 'ai-seo-captain')); ?></p>
         </div>
     </div>
 

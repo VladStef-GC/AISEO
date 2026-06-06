@@ -73,9 +73,9 @@ defined('ABSPATH') || exit;
                 <tr>
                     <th style="width:40px;text-align:center;">#</th>
                     <th class="ai-seo-sort aisc-col-title" data-col="1"><?php esc_html_e('Title', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                    <th class="ai-seo-sort aisc-col-seotitle" data-col="2"><?php esc_html_e('SEO Title', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                    <th class="ai-seo-sort aisc-col-desc" data-col="3"><?php esc_html_e('Meta Description', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
-                    <th class="aisc-col-keyphrase ai-seo-sort" data-col="4" style="display:none;"><?php esc_html_e('Keyphrase', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th class="ai-seo-sort aisc-col-seotitle" data-col="2"><?php esc_html_e('SEO Title', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('The title shown in Google search results. Keep it under 60 characters. Leave empty to use the template from Settings > Search Appearance.', 'ai-seo-captain')); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th class="ai-seo-sort aisc-col-desc" data-col="3"><?php esc_html_e('Meta Description', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('The snippet shown below your title in search results. Keep it under 160 characters to avoid truncation.', 'ai-seo-captain')); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
+                    <th class="aisc-col-keyphrase ai-seo-sort" data-col="4" style="display:none;"><?php esc_html_e('Keyphrase', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('The main search term you want this page to rank for. Used by the AI to optimize title and description suggestions.', 'ai-seo-captain')); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
                     <th class="aisc-col-keywords ai-seo-sort" data-col="5" style="display:none;"><?php esc_html_e('Keywords', 'ai-seo-captain'); ?> <span class="ai-seo-sort-icon dashicons dashicons-sort"></span></th>
                     <th style="width:50px;"></th>
                 </tr>

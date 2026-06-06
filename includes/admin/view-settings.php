@@ -176,7 +176,7 @@ $active_context_window = isset($options['context_window']) ? (int) $options['con
                             <td><input id="ai-seo-api-key" class="regular-text" type="password" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[api_key]" value="<?php echo esc_attr($options['api_key']); ?>" autocomplete="off" /></td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="ai-seo-temperature"><?php esc_html_e('Temperature', 'ai-seo-captain'); ?></label></th>
+                            <th scope="row"><label for="ai-seo-temperature"><?php esc_html_e('Temperature', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Controls AI creativity. 0.0 = very predictable, 1.0+ = more creative. For SEO metadata, 0.2–0.4 works best.', 'ai-seo-captain')); ?></label></th>
                             <td>
                                 <input
                                     id="ai-seo-temperature"
@@ -196,7 +196,7 @@ $active_context_window = isset($options['context_window']) ? (int) $options['con
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="ai-seo-context-window"><?php esc_html_e('Context window', 'ai-seo-captain'); ?></label></th>
+                            <th scope="row"><label for="ai-seo-context-window"><?php esc_html_e('Context window', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('The max tokens (text units) the AI can process per request. Must match your model\'s actual limit. Too low = truncated content, too high = wasted budget.', 'ai-seo-captain')); ?></label></th>
                             <td>
                                 <input
                                     id="ai-seo-context-window"
@@ -220,7 +220,7 @@ $active_context_window = isset($options['context_window']) ? (int) $options['con
                             </td>
                         </tr>
                         <tr class="ai-seo-captain-instructions-row" <?php echo 'local' === $active_provider ? 'style="opacity:.45;pointer-events:none;"' : ''; ?>>
-                            <th scope="row"><label for="ai-seo-system-prompt"><?php esc_html_e('AI instructions', 'ai-seo-captain'); ?></label></th>
+                            <th scope="row"><label for="ai-seo-system-prompt"><?php esc_html_e('AI instructions', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Global system prompt sent with every AI request. Use this to set tone, language, or writing style for all generated SEO content.', 'ai-seo-captain')); ?></label></th>
                             <td>
                                 <div>
                                     <textarea id="ai-seo-system-prompt" class="large-text" rows="5" maxlength="2000" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[system_prompt]" <?php echo 'local' === $active_provider ? 'disabled' : ''; ?>><?php echo esc_textarea($options['system_prompt']); ?></textarea>
@@ -230,7 +230,7 @@ $active_context_window = isset($options['context_window']) ? (int) $options['con
                             </td>
                         </tr>
                         <tr class="ai-seo-captain-instructions-row" <?php echo 'local' === $active_provider ? 'style="opacity:.45;pointer-events:none;"' : ''; ?>>
-                            <th scope="row"><label for="ai-seo-site-chat-context"><?php esc_html_e('Site context for AI', 'ai-seo-captain'); ?></label></th>
+                            <th scope="row"><label for="ai-seo-site-chat-context"><?php esc_html_e('Site context for AI', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Tell the AI about your business: what you sell, your audience, and goals. This context is included in every AI conversation so it generates relevant content.', 'ai-seo-captain')); ?></label></th>
                             <td>
                                 <div>
                                     <textarea id="ai-seo-site-chat-context" class="large-text" rows="6" maxlength="2000" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[site_chat_context]" placeholder="Example: We are a B2B software company selling RPA automation tools and professional services. Our main goal is lead generation through product demos and contact forms. Target audience: enterprise IT managers and CIOs." <?php echo 'local' === $active_provider ? 'disabled' : ''; ?>><?php echo esc_textarea($options['site_chat_context'] ?? ''); ?></textarea>
@@ -270,7 +270,7 @@ $active_context_window = isset($options['context_window']) ? (int) $options['con
                 <div class="ai-seo-accordion-body">
                     <table class="form-table" role="presentation">
                         <tr>
-                            <th scope="row">Features</th>
+                            <th scope="row">Features<?php echo \AI_SEO_Captain\Admin::info(__('Toggle individual SEO data types. When off, that data type is not rendered on the frontend even if saved. Your data is never deleted.', 'ai-seo-captain')); ?></th>
                             <td>
                                 <fieldset>
                                     <?php foreach (Settings::FEATURE_FLAGS as $feature_key => $feature_label) : ?>
@@ -285,7 +285,7 @@ $active_context_window = isset($options['context_window']) ? (int) $options['con
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="ai-seo-editor-chat">Editor chat</label></th>
+                            <th scope="row"><label for="ai-seo-editor-chat">Editor chat<?php echo \AI_SEO_Captain\Admin::info(__('Adds a per-page AI chat panel inside the WordPress editor. Ask the AI to generate or refine SEO data for the page you\'re editing.', 'ai-seo-captain')); ?></label></th>
                             <td>
                                 <label class="aisc-toggle">
                                     <input id="ai-seo-editor-chat" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[editor_chat_enabled]" value="1" <?php checked(! empty($options['editor_chat_enabled'])); ?> />
@@ -295,7 +295,7 @@ $active_context_window = isset($options['context_window']) ? (int) $options['con
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="ai-seo-frontend-output">Frontend output</label></th>
+                            <th scope="row"><label for="ai-seo-frontend-output">Frontend output<?php echo \AI_SEO_Captain\Admin::info(__('Master switch. When off, no SEO Captain data appears on your site — not AI suggestions, not manual overrides, nothing. Data stays saved.', 'ai-seo-captain')); ?></label></th>
                             <td>
                                 <label class="aisc-toggle" style="display:flex;margin-bottom:8px;">
                                     <input id="ai-seo-frontend-output" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[frontend_output_enabled]" value="1" <?php checked(! empty($options['frontend_output_enabled'])); ?> />
@@ -312,7 +312,7 @@ $active_context_window = isset($options['context_window']) ? (int) $options['con
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="ai-seo-search-appearance-auto">Search appearance</label></th>
+                            <th scope="row"><label for="ai-seo-search-appearance-auto">Search appearance<?php echo \AI_SEO_Captain\Admin::info(__('Baseline mode: auto-generates titles and descriptions from templates when no AI or manual data exists. Works independently of AI.', 'ai-seo-captain')); ?></label></th>
                             <td>
                                 <label class="aisc-toggle" style="display:flex;margin-bottom:8px;">
                                     <input id="ai-seo-search-appearance-auto" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[search_appearance_auto_enabled]" value="1" <?php checked(! empty($options['search_appearance_auto_enabled'])); ?> />
@@ -408,7 +408,7 @@ $active_context_window = isset($options['context_window']) ? (int) $options['con
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row">XML Sitemap</th>
+                            <th scope="row">XML Sitemap<?php echo \AI_SEO_Captain\Admin::info(__('Generates a sitemap_index.xml that lists all your published URLs for search engines. Replaces WordPress core sitemaps.', 'ai-seo-captain')); ?></th>
                             <td>
                                 <label class="aisc-toggle" style="display:flex;margin-bottom:8px;">
                                     <input id="ai-seo-sitemap-enabled" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[sitemap_enabled]" value="1" <?php checked(! empty($options['sitemap_enabled'])); ?> />
@@ -495,14 +495,14 @@ $active_context_window = isset($options['context_window']) ? (int) $options['con
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="ai-seo-robots-txt">Robots.txt custom rules</label></th>
+                            <th scope="row"><label for="ai-seo-robots-txt">Robots.txt custom rules<?php echo \AI_SEO_Captain\Admin::info(__('Append custom rules to your robots.txt. Use Disallow to block crawlers from specific paths, or Allow to override blocks.', 'ai-seo-captain')); ?></label></th>
                             <td>
                                 <textarea id="ai-seo-robots-txt" class="large-text code" rows="5" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[robots_txt_custom]" placeholder="Disallow: /private-folder/&#10;Allow: /public/"><?php echo esc_textarea($options['robots_txt_custom'] ?? ''); ?></textarea>
                                 <p class="description">Custom rules appended to robots.txt. Preview: <a href="<?php echo esc_url(home_url('/robots.txt')); ?>" target="_blank">robots.txt</a></p>
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="ai-seo-indexnow-enabled">IndexNow</label></th>
+                            <th scope="row"><label for="ai-seo-indexnow-enabled">IndexNow<?php echo \AI_SEO_Captain\Admin::info(__('Instantly notifies Bing, Yandex, and other engines when you publish or update content. Skipped on localhost.', 'ai-seo-captain')); ?></label></th>
                             <td>
                                 <label class="aisc-toggle" style="display:flex;margin-bottom:8px;">
                                     <input id="ai-seo-indexnow-enabled" type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[indexnow_enabled]" value="1" <?php checked($indexnow_enabled); ?> />
@@ -535,15 +535,15 @@ $active_context_window = isset($options['context_window']) ? (int) $options['con
                 <div class="ai-seo-accordion-body">
                     <table class="form-table" role="presentation">
                         <tr>
-                            <th scope="row"><label for="ai-seo-google-code">Google tracking or verification</label></th>
+                            <th scope="row"><label for="ai-seo-google-code">Google tracking or verification<?php echo \AI_SEO_Captain\Admin::info(__('Paste your Google site verification code or Analytics tracking ID. Outputs a meta tag in your site\'s head section.', 'ai-seo-captain')); ?></label></th>
                             <td><input id="ai-seo-google-code" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[google_tracking_code]" value="<?php echo esc_attr($options['google_tracking_code']); ?>" /></td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="ai-seo-bing-code">Bing tracking or verification</label></th>
+                            <th scope="row"><label for="ai-seo-bing-code">Bing tracking or verification<?php echo \AI_SEO_Captain\Admin::info(__('Paste your Bing Webmaster Tools verification code. Outputs a meta tag in your site\'s head section.', 'ai-seo-captain')); ?></label></th>
                             <td><input id="ai-seo-bing-code" class="regular-text" type="text" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[bing_tracking_code]" value="<?php echo esc_attr($options['bing_tracking_code']); ?>" /></td>
                         </tr>
                         <tr>
-                            <th scope="row">Social profiles</th>
+                            <th scope="row">Social profiles<?php echo \AI_SEO_Captain\Admin::info(__('Added to your site\'s Organization schema as sameAs links. Helps search engines connect your social accounts to your site.', 'ai-seo-captain')); ?></th>
                             <td>
                                 <p class="description" style="margin:0 0 8px;">Used in Organization schema <code>sameAs</code> and for social discovery. Enter full URLs.</p>
                                 <?php
@@ -579,7 +579,7 @@ $active_context_window = isset($options['context_window']) ? (int) $options['con
                     <p class="description">Configure your business details to output LocalBusiness structured data. Use the <code>[ai_seo_map]</code> shortcode to embed a Google Map.</p>
                     <table class="form-table">
                         <tr>
-                            <th scope="row">Enable Local SEO</th>
+                            <th scope="row">Enable Local SEO<?php echo \AI_SEO_Captain\Admin::info(__('Outputs LocalBusiness structured data (schema.org) on your homepage. Helps your business appear in Google Maps and local search results.', 'ai-seo-captain')); ?></th>
                             <td>
                                 <label class="aisc-toggle"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[local_seo_enabled]" value="1" <?php checked(! empty($options['local_seo_enabled'])); ?> /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label">Output LocalBusiness schema on the front page</span></label>
                             </td>
@@ -715,7 +715,7 @@ $active_context_window = isset($options['context_window']) ? (int) $options['con
                             <td><label class="aisc-toggle"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[rss_featured_image]" value="1" <?php checked(! empty($options['rss_featured_image'])); ?> /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label">Prepend featured image to each feed item</span></label></td>
                         </tr>
                         <tr>
-                            <th scope="row"><label for="ai-seo-rss-delay">Publication delay (minutes)</label></th>
+                            <th scope="row"><label for="ai-seo-rss-delay">Publication delay (minutes)<?php echo \AI_SEO_Captain\Admin::info(__('Delays feed updates so your content gets indexed by search engines before scrapers can copy it.', 'ai-seo-captain')); ?></label></th>
                             <td>
                                 <input id="ai-seo-rss-delay" type="number" min="0" max="1440" style="width:80px;" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[rss_publication_delay]" value="<?php echo (int) ($options['rss_publication_delay'] ?? 0); ?>" />
                                 <p class="description">Delay feed updates to prevent scrapers. 0 = no delay.</p>
@@ -735,7 +735,7 @@ $active_context_window = isset($options['context_window']) ? (int) $options['con
                     <p class="description">Remove unnecessary pages from search engine crawl to focus crawl budget on your most important content.</p>
                     <table class="form-table">
                         <tr>
-                            <th scope="row">Disable archive pages</th>
+                            <th scope="row">Disable archive pages<?php echo \AI_SEO_Captain\Admin::info(__('Redirects low-value archive pages (author, date, format) to the homepage. Saves crawl budget for your important content.', 'ai-seo-captain')); ?></th>
                             <td>
                                 <fieldset>
                                     <label class="aisc-toggle" style="display:flex;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_disable_author_archives]" value="1" <?php checked(! empty($options['crawl_disable_author_archives'])); ?> /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label">Disable author archives (redirect to homepage)</span></label>
@@ -747,7 +747,7 @@ $active_context_window = isset($options['context_window']) ? (int) $options['con
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row">Clean up &lt;head&gt;</th>
+                            <th scope="row">Clean up &lt;head&gt;<?php echo \AI_SEO_Captain\Admin::info(__('Removes unnecessary tags from your HTML head: WP version (security), shortlinks, RSD, and feed links. Reduces page size and hides WP version from attackers.', 'ai-seo-captain')); ?></th>
                             <td>
                                 <fieldset>
                                     <label class="aisc-toggle" style="display:flex;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr(Settings::OPTION_NAME); ?>[crawl_remove_wp_version]" value="1" <?php checked(! empty($options['crawl_remove_wp_version'])); ?> /><span class="aisc-toggle__track"></span><span class="aisc-toggle__label">Remove WordPress version meta tag</span></label>
