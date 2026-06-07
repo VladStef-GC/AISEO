@@ -390,7 +390,7 @@ class Settings
             ? $this->sanitize_temperature((string) $input['ai_temperature'])
             : $this->sanitize_temperature((string) ($current['ai_temperature'] ?? '0.3'));
         $output['context_window'] = isset($input['context_window'])
-            ? max(2048, (int) $input['context_window'])
+            ? max(32768, (int) $input['context_window'])
             : (int) ($current['context_window'] ?? 128000);
         $output['api_key']              = isset($input['api_key']) ? sanitize_text_field($input['api_key']) : $current['api_key'];
         $output['system_prompt']        = isset($input['system_prompt']) ? mb_substr(sanitize_textarea_field($input['system_prompt']), 0, 2000) : $current['system_prompt'];

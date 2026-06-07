@@ -325,23 +325,14 @@
             }
         });
 
-        // Determine tier.
+        // Determine tier. Minimum supported context is 32K.
         var tier, tierLabel, tierClass, recommendation;
         if (ctx >= 32000) {
             tier = 'full'; tierLabel = 'Full Feature Access'; tierClass = 'tier-full';
             recommendation = '';
-        } else if (ctx >= 16000) {
-            tier = 'standard'; tierLabel = 'Standard'; tierClass = 'tier-standard';
-            recommendation = 'For full feature access (editor chat on long pages, site chat focus mode), use a model with 32K+ context. Recommended: <strong>Qwen 2.5 32B</strong>, <strong>Llama 3.1 70B</strong>.';
-        } else if (ctx >= 8000) {
-            tier = 'basic'; tierLabel = 'Basic'; tierClass = 'tier-basic';
-            recommendation = 'This model can generate metadata and run site audits, but editor chat and site chat will be limited. For full features, use a model with <strong>32K+ context</strong>.';
-        } else if (ctx >= 4000) {
-            tier = 'minimal'; tierLabel = 'Minimal'; tierClass = 'tier-minimal';
-            recommendation = 'This model can only handle short pages and site audits. Most plugin features require 16K+ context. Consider: <strong>Qwen 2.5 7B</strong> (32K), <strong>Llama 3.1 8B</strong> (128K).';
         } else {
-            tier = 'insufficient'; tierLabel = 'Insufficient'; tierClass = 'tier-insufficient';
-            recommendation = '⛔ This model\'s context window is too small for SEO operations. The AI will miss most of your page content, producing poor-quality SEO. Minimum recommended: <strong>8K context</strong>. Consider: <strong>Qwen 2.5 7B</strong> (32K), <strong>Gemma 3 4B</strong> (32K).';
+            tier = 'insufficient'; tierLabel = 'Below Minimum (32K required)'; tierClass = 'tier-insufficient';
+            recommendation = '⛔ This model\'s context window is too small for SEO operations. AI SEO Captain requires <strong>32K+ context</strong> to properly read your pages and generate quality SEO metadata. Consider: <strong>Qwen 2.5 7B</strong> (32K), <strong>Gemma 3 4B</strong> (32K), <strong>Llama 3.1 8B</strong> (128K).';
         }
 
         // Render tier.

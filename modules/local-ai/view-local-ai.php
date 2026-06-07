@@ -36,7 +36,7 @@ if (isset($_POST['local_ai_save_nonce']) && wp_verify_nonce($_POST['local_ai_sav
     } else {
         $ctx_val = (int) $ctx_raw;
     }
-    $options['context_window'] = max(2048, $ctx_val);
+    $options['context_window'] = max(32768, $ctx_val);
 
     // Only update API key if a real value was sent.
     $api_key = $_POST['local_api_key'] ?? '';
@@ -44,9 +44,9 @@ if (isset($_POST['local_ai_save_nonce']) && wp_verify_nonce($_POST['local_ai_sav
         $options['local_api_key'] = sanitize_text_field($api_key);
     }
 
-    // Bypass the Settings::sanitize() filter which enforces a 32K minimum
+    // Bypass the Settings::sanitize() filter which also enforces a 32K minimum
     // context window and reconstructs the full options array from defaults.
-    // The Local AI handler already validates all fields above.
+    // The Local AI handler already validates all fields above (including 32K min).
     remove_all_filters('sanitize_option_ai_seo_captain_options');
     update_option('ai_seo_captain_options', $options);
 
@@ -93,11 +93,8 @@ $saved_timeout     = (int) ($options['local_timeout'] ?? 120);
 $saved_ctx         = (int) ($options['context_window'] ?? 128000);
 $has_api_key       = '' !== ($options['local_api_key'] ?? '');
 
-// Pre-defined context window options (tokens).
+// Pre-defined context window options (tokens). Minimum 32K required for SEO operations.
 $ctx_presets = array(
-    4096   => '4K',
-    8192   => '8K',
-    16384  => '16K',
     32768  => '32K',
     65536  => '64K',
     131072 => '128K',
@@ -208,7 +205,7 @@ $ctx_is_preset = isset($ctx_presets[$saved_ctx]);
                         </select>
                         <input type="number" id="local-ai-context-custom" name="context_window_custom"
                             value="<?php echo $ctx_is_preset ? '' : (int) $saved_ctx; ?>"
-                            min="2048" step="1024" class="small-text"
+                            min="32768" step="1024" class="small-text"
                             style="width:120px;<?php echo $ctx_is_preset ? 'display:none;' : ''; ?>"
                             placeholder="e.g. 49152">
                         <span id="local-ai-context-detected" class="description" style="display:none;margin-left:6px;"></span>
