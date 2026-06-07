@@ -103,7 +103,7 @@ $ctx_presets = array(
 $ctx_is_preset = isset($ctx_presets[$saved_ctx]);
 ?>
 
-<div class="wrap local-ai-wrap">
+<div class="wrap aisc-wrap local-ai-wrap">
     <h1>🖥️ Local AI — LM Studio / Ollama</h1>
     <p class="description">Connect to a local AI server for free, private SEO operations. Works with LM Studio, Ollama, or any OpenAI-compatible API.</p>
 

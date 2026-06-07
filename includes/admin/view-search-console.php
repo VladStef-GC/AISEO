@@ -29,7 +29,7 @@ defined('ABSPATH') || exit;
 
 $redirect_uri = $gsc->get_redirect_uri();
 ?>
-<div class="wrap aiseo-gsc-wrap">
+<div class="wrap aisc-wrap aiseo-gsc-wrap">
     <div class="aiseo-gsc-header">
         <img src="<?php echo esc_url(AI_SEO_CAPTAIN_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="SEO Captain" class="aiseo-gsc-logo" />
         <div>

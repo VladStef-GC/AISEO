@@ -41,7 +41,7 @@ defined('ABSPATH') || exit;
 /** @var array  $runs_with_status */
 /** @var int    $max_pages */
 ?>
-<div class="wrap aisc-wizard">
+<div class="wrap aisc-wrap aisc-wizard">
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
         <img src="<?php echo esc_url(AI_SEO_CAPTAIN_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="SEO Captain" style="width:40px;height:40px;" />
         <h1 style="margin:0;"><?php esc_html_e('SEO Captain — Setup Wizard', 'ai-seo-captain'); ?></h1>
