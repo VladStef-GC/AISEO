@@ -19,7 +19,7 @@ defined('ABSPATH') || exit;
 /** @var int   $without_keyphrase */
 /** @var string $readiness_banner */
 ?>
-<div class="wrap">
+<div class="wrap aisc-wrap">
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
         <img src="<?php echo esc_url(AI_SEO_CAPTAIN_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="SEO Captain" style="width:40px;height:40px;" />
         <h1 style="margin:0;"><?php esc_html_e('Keyword Tracking', 'ai-seo-captain'); ?></h1>

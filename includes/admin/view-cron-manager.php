@@ -17,7 +17,7 @@ defined('ABSPATH') || exit;
 
 $nonce = wp_create_nonce('ai_seo_captain_cron_manager');
 ?>
-<div class="wrap">
+<div class="wrap aisc-wrap">
     <h1>
         <img src="<?php echo esc_url(AI_SEO_CAPTAIN_URL . 'assets/img/ai-seo-captain-d.svg'); ?>" alt="" style="width:40px;height:40px;vertical-align:middle;margin-right:10px;" />
         <?php esc_html_e('Scheduled Tasks', 'ai-seo-captain'); ?><?php echo \AI_SEO_Captain\Admin::info(__('Background tasks that WordPress runs automatically on a schedule. They keep your SEO data, sitemaps, and cache warm without manual intervention.', 'ai-seo-captain')); ?>

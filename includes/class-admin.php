@@ -2138,7 +2138,7 @@ JS;
         if ($redirects_instance instanceof Redirects) {
             $redirects_instance->render_admin_page();
         } else {
-            echo '<div class="wrap"><h1>Redirects</h1><p>Redirects module not available. Please deactivate and reactivate the plugin.</p></div>';
+            echo '<div class="wrap aisc-wrap"><h1>Redirects</h1><p>Redirects module not available. Please deactivate and reactivate the plugin.</p></div>';
         }
     }
 

@@ -299,8 +299,8 @@
 .ai-seo-accordion-body .button-primary,
 .ai-seo-box .button-primary,
 .ai-seo-accordion .button-primary,
-.wrap .ai-seo-accordion~div .button-primary,
-.wrap .button-primary {
+.aisc-wrap .ai-seo-accordion~div .button-primary,
+.aisc-wrap .button-primary {
     background: #1b8341;
     border-color: #157036;
     color: #fff;
@@ -321,8 +321,8 @@
 .ai-seo-accordion-body .button-primary:hover,
 .ai-seo-box .button-primary:hover,
 .ai-seo-accordion .button-primary:hover,
-.wrap .ai-seo-accordion~div .button-primary:hover,
-.wrap .button-primary:hover {
+.aisc-wrap .ai-seo-accordion~div .button-primary:hover,
+.aisc-wrap .button-primary:hover {
     background: #219b4e;
     border-color: #1b8341;
     color: #fff;
@@ -332,8 +332,8 @@
 .ai-seo-accordion-body .button-primary:focus,
 .ai-seo-box .button-primary:focus,
 .ai-seo-accordion .button-primary:focus,
-.wrap .ai-seo-accordion~div .button-primary:focus,
-.wrap .button-primary:focus {
+.aisc-wrap .ai-seo-accordion~div .button-primary:focus,
+.aisc-wrap .button-primary:focus {
     background: #1b8341;
     border-color: #157036;
     color: #fff;
@@ -345,12 +345,12 @@
 .ai-seo-accordion-body .button-secondary,
 .ai-seo-box .button-secondary,
 .ai-seo-accordion .button-secondary,
-.wrap .ai-seo-accordion~div .button-secondary,
-.wrap .button:not(.button-primary):not(.button-outline),
+.aisc-wrap .ai-seo-accordion~div .button-secondary,
+.aisc-wrap .button:not(.button-primary):not(.button-outline),
 .ai-seo-accordion-body .button:not(.button-primary),
 .ai-seo-box .button:not(.button-primary),
 .ai-seo-accordion .button:not(.button-primary),
-.wrap .ai-seo-accordion~div .button:not(.button-primary) {
+.aisc-wrap .ai-seo-accordion~div .button:not(.button-primary) {
     color: #fff;
     border-color: #420e56;
     background: #7c2a63;
@@ -370,12 +370,12 @@
 .ai-seo-accordion-body .button-secondary:hover,
 .ai-seo-box .button-secondary:hover,
 .ai-seo-accordion .button-secondary:hover,
-.wrap .ai-seo-accordion~div .button-secondary:hover,
-.wrap .button:not(.button-primary):not(.button-outline):hover,
+.aisc-wrap .ai-seo-accordion~div .button-secondary:hover,
+.aisc-wrap .button:not(.button-primary):not(.button-outline):hover,
 .ai-seo-accordion-body .button:not(.button-primary):hover,
 .ai-seo-box .button:not(.button-primary):hover,
 .ai-seo-accordion .button:not(.button-primary):hover,
-.wrap .ai-seo-accordion~div .button:not(.button-primary):hover {
+.aisc-wrap .ai-seo-accordion~div .button:not(.button-primary):hover {
     color: #fff;
     border-color: #55145e;
     background: #93347a;
@@ -385,12 +385,12 @@
 .ai-seo-accordion-body .button-secondary:focus,
 .ai-seo-box .button-secondary:focus,
 .ai-seo-accordion .button-secondary:focus,
-.wrap .ai-seo-accordion~div .button-secondary:focus,
-.wrap .button:not(.button-primary):not(.button-outline):focus,
+.aisc-wrap .ai-seo-accordion~div .button-secondary:focus,
+.aisc-wrap .button:not(.button-primary):not(.button-outline):focus,
 .ai-seo-accordion-body .button:not(.button-primary):focus,
 .ai-seo-box .button:not(.button-primary):focus,
 .ai-seo-accordion .button:not(.button-primary):focus,
-.wrap .ai-seo-accordion~div .button:not(.button-primary):focus {
+.aisc-wrap .ai-seo-accordion~div .button:not(.button-primary):focus {
     color: #fff;
     border-color: #420e56;
     background: #7c2a63;
@@ -399,8 +399,8 @@
 }
 
 /* Submit / Save button under accordion — largest green variant */
-.wrap .ai-seo-accordion~div input[type="submit"].button-primary,
-.wrap .ai-seo-accordion~div .button-primary {
+.aisc-wrap .ai-seo-accordion~div input[type="submit"].button-primary,
+.aisc-wrap .ai-seo-accordion~div .button-primary {
     height: 42px;
     line-height: 42px;
     padding: 0 30px;
@@ -410,8 +410,9 @@
 }
 
 /* Outline variant — reusable for secondary actions across all pages */
-.wrap .button.button-outline,
-.button.button-outline {
+.aisc-wrap .button.button-outline,
+.ai-seo-accordion .button.button-outline,
+.ai-seo-box .button.button-outline {
     color: #420e56;
     border-color: #420e56;
     background: #fff;
@@ -419,16 +420,18 @@
     transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
-.wrap .button.button-outline:hover,
-.button.button-outline:hover {
+.aisc-wrap .button.button-outline:hover,
+.ai-seo-accordion .button.button-outline:hover,
+.ai-seo-box .button.button-outline:hover {
     color: #fff;
     border-color: #420e56;
     background: #7c2a63;
     box-shadow: 0 1px 3px rgba(0, 0, 0, .12);
 }
 
-.wrap .button.button-outline:focus,
-.button.button-outline:focus {
+.aisc-wrap .button.button-outline:focus,
+.ai-seo-accordion .button.button-outline:focus,
+.ai-seo-box .button.button-outline:focus {
     color: #420e56;
     border-color: #420e56;
     background: #fff;
@@ -995,7 +998,7 @@
 /* ══════════════════════════════════════════════════════════════════════
    PAGE-LEVEL DESCRIPTIONS (below page titles)
    ══════════════════════════════════════════════════════════════════════ */
-.wrap>p.description {
+.aisc-wrap>p.description {
     font-size: 13px;
     color: var(--aisc-text-secondary);
     margin: 4px 0 16px;
