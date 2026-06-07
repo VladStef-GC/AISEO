@@ -1931,14 +1931,6 @@ jQuery(function ($) {
         return div.innerHTML;
     }
 
-    // ── Help-tip tooltip positioning ──────────────────────────────────
-    $(document).on('mouseenter', '.ai-seo-captain-help-tip', function () {
-        var rect = this.getBoundingClientRect();
-        var style = document.documentElement.style;
-        style.setProperty('--tip-top', Math.max(0, rect.top - 4) + 'px');
-        style.setProperty('--tip-left', Math.min(rect.left, window.innerWidth - 320) + 'px');
-    });
-
     // ── AI Commander sub-tab switching ────────────────────────────────
     $(document).on('click', '.ai-seo-captain-commander-tab', function () {
         var $tab = $(this);
@@ -3321,7 +3313,7 @@ JS;
                 <label class="aisc-toggle">
                     <input type="checkbox" id="ai-seo-captain-deep-analysis" value="1" />
                     <span class="aisc-toggle__track"></span>
-                    <span class="aisc-toggle__label"><strong><?php esc_html_e('Deep analysis', 'ai-seo-captain'); ?></strong> &mdash; <?php esc_html_e('In addition to sibling SEO metadata, AI will also read the body content (~375 words) from each of the top 20 related pages to better detect content overlap and cannibalization. Uses more tokens.', 'ai-seo-captain'); ?></span>
+                    <span class="aisc-toggle__label"><strong><?php esc_html_e('Deep analysis', 'ai-seo-captain'); ?></strong> <?php echo self::info(__('When enabled, AI reads ~375 words of body content from each of the top 20 related pages (not just their titles/descriptions). This helps detect content overlap and cannibalization but uses significantly more tokens per generation.', 'ai-seo-captain')); ?> &mdash; <?php esc_html_e('In addition to sibling SEO metadata, AI will also read the body content (~375 words) from each of the top 20 related pages to better detect content overlap and cannibalization. Uses more tokens.', 'ai-seo-captain'); ?></span>
                 </label>
             </div>
 
@@ -3351,7 +3343,7 @@ JS;
             <div class="ai-seo-captain-tab-panels">
                 <section id="<?php echo esc_attr($seo_tab_id); ?>" class="ai-seo-captain-tab-panel ai-seo-captain-surface" role="tabpanel" hidden>
                     <div class="ai-seo-captain-search-preview" data-fallback-title="<?php echo esc_attr($preview_title); ?>" data-fallback-description="<?php echo esc_attr($preview_description); ?>" data-preview-url="<?php echo esc_attr($preview_url); ?>" data-fallback-image="<?php echo esc_attr($default_preview_image_url); ?>" data-branding-suffix="<?php echo esc_attr($branding_suffix); ?>">
-                        <strong>Search preview</strong>
+                        <strong>Search preview <?php echo self::info(__('A real-time simulation of how Google displays this page in search results. Updates live as you edit the title and description fields below.', 'ai-seo-captain')); ?></strong>
                         <p class="ai-seo-captain-panel-note">A quick preview of how the current title and description draft can look in search results, including the current preview image used by SEO Keeper.</p>
                         <div class="ai-seo-captain-preview-card">
                             <div class="ai-seo-captain-preview-copy">
@@ -3370,7 +3362,7 @@ JS;
                     <div class="ai-seo-captain-snippet-analyzer is-neutral">
                         <div class="ai-seo-captain-snippet-header">
                             <div>
-                                <strong>Live snippet health <span class="ai-seo-captain-help-tip" data-tip="Checks ONLY whether your title and description have correct length and contain the focus keyphrase. This is NOT an overall SEO score — it tracks metadata formatting only. Use the AI audit below for a full SEO analysis."></span></strong>
+                                <strong>Live snippet health <?php echo self::info(__('Checks ONLY whether your title and description have correct length and contain the focus keyphrase. This is NOT an overall SEO score — it tracks metadata formatting only. Use the AI audit below for a full SEO analysis.', 'ai-seo-captain')); ?></strong>
                                 <p class="ai-seo-captain-panel-note">Title length, description length, and focus-keyphrase coverage update instantly while you type.</p>
                             </div>
                             <div class="ai-seo-captain-snippet-score is-neutral">
@@ -3386,7 +3378,7 @@ JS;
 
                         <?php if (null !== $page_audit_score) : ?>
                             <div style="display:flex;align-items:center;gap:12px;margin:10px 0;padding:10px 14px;background:#f6f7f7;border-radius:8px;">
-                                <span style="font-size:14px;">AI SEO Score: <strong style="color:<?php echo $page_audit_score >= 70 ? '#00a32a' : ($page_audit_score >= 40 ? '#dba617' : '#d63638'); ?>; font-size:16px;"><?php echo esc_html((string) $page_audit_score); ?>/100</strong> <span class="ai-seo-captain-help-tip" data-tip="Full AI-powered SEO audit of this page. Unlike the metadata fit score above, this analyzes content quality, heading structure, word count, image alt tags, readability, and more."></span></span>
+                                <span style="font-size:14px;">AI SEO Score: <strong style="color:<?php echo $page_audit_score >= 70 ? '#00a32a' : ($page_audit_score >= 40 ? '#dba617' : '#d63638'); ?>; font-size:16px;"><?php echo esc_html((string) $page_audit_score); ?>/100</strong> <?php echo self::info(__('Full AI-powered SEO audit of this page. Unlike the metadata fit score above, this analyzes content quality, heading structure, word count, image alt tags, readability, and more.', 'ai-seo-captain')); ?></span>
                                 <button type="button" class="button button-primary ai-seo-captain-run-page-audit" style="font-size:13px;min-height:34px;padding:0 18px;border-radius:12px;" <?php disabled(! $has_api_key); ?>>↻ Re-run AI Audit</button>
                                 <span class="ai-seo-captain-audit-status" style="font-size:12px;color:#787c82;"></span>
                             </div>
@@ -3433,19 +3425,19 @@ JS;
 
                     <div class="ai-seo-captain-field-grid">
                         <label class="ai-seo-captain-field">
-                            <span class="ai-seo-captain-field-label">Focus keyphrase</span>
+                            <span class="ai-seo-captain-field-label">Focus keyphrase <?php echo self::info(__('The primary search term you want this page to rank for. AI uses it to check title/description relevance and to differentiate this page from siblings during generation.', 'ai-seo-captain')); ?></span>
                             <input id="ai-seo-captain-focus-keyphrase" type="text" name="ai_seo_captain_focus_keyphrase" value="<?php echo esc_attr($focus_keyphrase); ?>" />
                             <span class="ai-seo-captain-field-help">The main keyword or phrase this page should rank for. AI uses it to optimize your title, description, and content.</span>
                         </label>
 
                         <label class="ai-seo-captain-field">
-                            <span class="ai-seo-captain-field-label">Keywords</span>
+                            <span class="ai-seo-captain-field-label">Keywords <?php echo self::info(__('Secondary keywords (comma-separated) that support the focus keyphrase. AI reads these during generation to better understand page intent. Also shown in the Bulk Editor for quick review.', 'ai-seo-captain')); ?></span>
                             <input id="ai-seo-captain-keywords" type="text" name="ai_seo_captain_keywords" value="<?php echo esc_attr($seo_keywords); ?>" />
                             <span class="ai-seo-captain-field-help">Comma-separated keywords for this page. Used by AI for content optimization and displayed in the Bulk Editor.</span>
                         </label>
 
                         <label class="ai-seo-captain-field ai-seo-captain-field-textarea-wide">
-                            <span class="ai-seo-captain-field-label">SEO title <span class="ai-seo-captain-help-tip" data-tip="This is the page-specific part of the title. The separator and site brand from Settings are appended automatically unless you check 'Use as full title' below."></span></span>
+                            <span class="ai-seo-captain-field-label">SEO title <?php echo self::info(__('This is the page-specific part of the title. The separator and site brand from Settings are appended automatically unless you check \'Use as full title\' below.', 'ai-seo-captain')); ?></span>
                             <div style="display:flex;align-items:center;">
                                 <input id="ai-seo-captain-meta-title" type="text" name="ai_seo_captain_meta_title" value="<?php echo esc_attr($seo_title); ?>" maxlength="<?php echo esc_attr((string) self::TITLE_MAX_LENGTH); ?>" style="flex:1;" />
                                 <?php if ('' !== $branding_suffix && ! $title_branding_off) : ?>
@@ -3462,7 +3454,7 @@ JS;
                         </label>
 
                         <label class="ai-seo-captain-field ai-seo-captain-field-textarea-wide">
-                            <span class="ai-seo-captain-field-label">Meta description <span class="ai-seo-captain-help-tip" data-tip="This description appears below the title in search results. Approve it via the readiness section to make it live. AI can generate or edit it for you."></span></span>
+                            <span class="ai-seo-captain-field-label">Meta description <?php echo self::info(__('This description appears below the title in search results. Approve it via the readiness section to make it live. AI can generate or edit it for you.', 'ai-seo-captain')); ?></span>
                             <textarea id="ai-seo-captain-meta-description" rows="5" name="ai_seo_captain_meta_description" maxlength="<?php echo esc_attr((string) self::DESCRIPTION_MAX_LENGTH); ?>"><?php echo esc_textarea($seo_description); ?></textarea>
                             <?php echo $this->render_field_counter('ai-seo-captain-meta-description', $seo_description, self::DESCRIPTION_MAX_LENGTH); ?>
                             <span class="ai-seo-captain-field-help">Shown under the title in search results. Approve it below to go live. Max <?php echo esc_html((string) self::DESCRIPTION_MAX_LENGTH); ?> chars.</span>
@@ -3498,7 +3490,7 @@ JS;
 
                             if ($chat_readiness > 0) {
                                 $ai_commander_content .=
-                                    '<div class="ai-seo-captain-chat-intro">Your AI SEO copilot — ask questions, get metadata suggestions, or request page content edits. Everything happens in one conversation. <span class="ai-seo-captain-help-tip" data-tip="AI sees your full page content, SEO title, meta description, focus keyphrase, snippet scores, audit results, related pages, and the full conversation history."></span></div>' .
+                                    '<div class="ai-seo-captain-chat-intro">Your AI SEO copilot — ask questions, get metadata suggestions, or request page content edits. Everything happens in one conversation. ' . self::info(__('AI sees your full page content, SEO title, meta description, focus keyphrase, snippet scores, audit results, related pages, and the full conversation history.', 'ai-seo-captain')) . '</div>' .
 
                                     '<div class="ai-seo-captain-commander-tabs" style="display:flex;gap:0;border-bottom:2px solid #dcdcde;margin-bottom:12px;">' .
                                     '<button type="button" class="ai-seo-captain-commander-tab is-active" data-target="chat" style="padding:8px 16px;font-size:14px;font-weight:600;background:none;border:none;border-bottom:2px solid #643d87;margin-bottom:-2px;cursor:pointer;color:#1d2327;">💬 Chat</button>' .
@@ -3509,7 +3501,7 @@ JS;
                                     '<textarea class="widefat ai-seo-captain-chat-input" rows="3" placeholder="Ask about SEO, request content edits, or follow up on previous advice — AI handles it all in one conversation…"></textarea>' .
                                     '<p class="ai-seo-captain-chat-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' .
                                     '<button type="button" class="button button-primary ai-seo-captain-send-chat" ' . disabled(! $has_api_key, true, false) . '>Send</button>' .
-                                    '<span class="ai-seo-captain-help-tip" data-tip="AI reads your full page content, SEO data, audit results, and conversation history. Ask questions, request metadata changes, or ask for page content edits \u2014 AI decides what to do automatically. When edits are needed, you get BEFORE/AFTER diffs to review before anything is saved."></span>' .
+                                    self::info(__('AI reads your full page content, SEO data, audit results, and conversation history. Ask questions, request metadata changes, or ask for page content edits — AI decides what to do automatically. When edits are needed, you get BEFORE/AFTER diffs to review before anything is saved.', 'ai-seo-captain')) .
                                     '<button type="button" class="button ai-seo-captain-clear-chat" style="margin-left:auto;color:#8a2424;" ' . disabled(empty($chat_messages), true, false) . '>🗑 Clear</button>' .
                                     '</p>' .
                                     '<span class="ai-seo-captain-chat-status" aria-live="polite" style="display:block;font-size:13px;margin:4px 0 8px;"></span>' .
@@ -3524,7 +3516,7 @@ JS;
 
                             echo $this->render_accordion_section(
                                 $chat_accordion_id,
-                                'AI Commander (Chat) <span class="ai-seo-captain-help-tip" data-tip="Unified AI workspace: chat for SEO advice, edit page content, and view suggestion history — all in one place."></span>',
+                                'AI Commander (Chat) ' . self::info(__('Unified AI workspace: chat for SEO advice, edit page content, and view suggestion history — all in one place.', 'ai-seo-captain')),
                                 $ai_commander_content,
                                 false,
                                 true
@@ -3535,7 +3527,7 @@ JS;
                         <?php
                         echo $this->render_accordion_section(
                             $readiness_accordion_id,
-                            'Frontend readiness <span class="ai-seo-captain-help-tip" data-tip="Shows whether this page\'s SEO metadata is approved and ready to be served on the live site. All checks must pass for SEO Captain to output your title and description."></span>',
+                            'Frontend readiness ' . self::info(__('Shows whether this page\'s SEO metadata is approved and ready to be served on the live site. All checks must pass for SEO Captain to output your title and description.', 'ai-seo-captain')),
                             $frontend_readiness_markup,
                             true
                         );
@@ -3546,21 +3538,21 @@ JS;
                 <section id="<?php echo esc_attr($social_tab_id); ?>" class="ai-seo-captain-tab-panel ai-seo-captain-surface" role="tabpanel" hidden>
                     <div class="ai-seo-captain-field-grid">
                         <label class="ai-seo-captain-field">
-                            <span class="ai-seo-captain-field-label">Social title override</span>
+                            <span class="ai-seo-captain-field-label">Social title override <?php echo self::info(__('Custom title shown when this page is shared on Facebook, LinkedIn, or Twitter. If left empty, the approved SEO title is used instead.', 'ai-seo-captain')); ?></span>
                             <input id="ai-seo-captain-social-title" type="text" name="ai_seo_captain_social_title" value="<?php echo esc_attr($social_title); ?>" maxlength="<?php echo esc_attr((string) self::TITLE_MAX_LENGTH); ?>" />
                             <?php echo $this->render_field_counter('ai-seo-captain-social-title', $social_title, self::TITLE_MAX_LENGTH); ?>
                             <span class="ai-seo-captain-field-help">Optional. If empty, Open Graph and Twitter titles fall back to the approved SEO title. Maximum: <?php echo esc_html((string) self::TITLE_MAX_LENGTH); ?> characters.</span>
                         </label>
 
                         <label class="ai-seo-captain-field ai-seo-captain-field-textarea-wide">
-                            <span class="ai-seo-captain-field-label">Social description override</span>
+                            <span class="ai-seo-captain-field-label">Social description override <?php echo self::info(__('Custom description for social cards. If left empty, the approved meta description is used. Social descriptions can be more conversational than SEO descriptions.', 'ai-seo-captain')); ?></span>
                             <textarea id="ai-seo-captain-social-description" rows="5" name="ai_seo_captain_social_description" maxlength="<?php echo esc_attr((string) self::DESCRIPTION_MAX_LENGTH); ?>"><?php echo esc_textarea($social_description); ?></textarea>
                             <?php echo $this->render_field_counter('ai-seo-captain-social-description', $social_description, self::DESCRIPTION_MAX_LENGTH); ?>
                             <span class="ai-seo-captain-field-help">Optional. If empty, social descriptions fall back to the approved meta description. Maximum: <?php echo esc_html((string) self::DESCRIPTION_MAX_LENGTH); ?> characters.</span>
                         </label>
 
                         <label class="ai-seo-captain-field">
-                            <span class="ai-seo-captain-field-label">Social image URL</span>
+                            <span class="ai-seo-captain-field-label">Social image URL <?php echo self::info(__('The image displayed in social share cards. Recommended size: 1200×630px. If empty, SEO Captain uses the featured image or site logo as fallback.', 'ai-seo-captain')); ?></span>
                             <input id="ai-seo-captain-social-image" type="url" name="ai_seo_captain_social_image" value="<?php echo esc_attr($social_image); ?>" />
                             <span class="ai-seo-captain-media-actions">
                                 <button type="button" class="button button-secondary ai-seo-captain-open-media">Choose from Media Library</button>
@@ -3579,7 +3571,7 @@ JS;
                         </div>
 
                         <div class="ai-seo-captain-field ai-seo-captain-field-textarea-wide ai-seo-captain-social-preview-shell">
-                            <span class="ai-seo-captain-field-label">Social sharing previews</span>
+                            <span class="ai-seo-captain-field-label">Social sharing previews <?php echo self::info(__('Live simulation of how this page will appear when shared on Facebook, LinkedIn, and Twitter/X. Updates automatically as you change social fields above.', 'ai-seo-captain')); ?></span>
                             <p class="ai-seo-captain-field-help">These cards show how the current social title, description, and image are likely to look for Open Graph and Twitter output.</p>
                             <div class="ai-seo-captain-social-preview-grid">
                                 <div class="ai-seo-captain-social-preview-card is-open-graph">
@@ -3621,7 +3613,7 @@ JS;
                 <section id="<?php echo esc_attr($schema_tab_id); ?>" class="ai-seo-captain-tab-panel ai-seo-captain-surface" role="tabpanel" hidden>
                     <div class="ai-seo-captain-field-grid">
                         <label class="ai-seo-captain-field">
-                            <span class="ai-seo-captain-field-label">Schema type override</span>
+                            <span class="ai-seo-captain-field-label">Schema type override <?php echo self::info(__('Structured data tells Google what type of content this page represents (Article, Product, Service, FAQ, etc.). SEO Captain auto-detects the type, but you can force a specific one here if the detection is wrong.', 'ai-seo-captain')); ?></span>
                             <select id="ai-seo-captain-schema-type" name="ai_seo_captain_schema_type">
                                 <?php foreach ($this->get_schema_type_options() as $value => $label) : ?>
                                     <option value="<?php echo esc_attr($value); ?>" <?php selected($schema_type, $value); ?>><?php echo esc_html($label); ?></option>
@@ -3640,13 +3632,13 @@ JS;
                 <section id="<?php echo esc_attr($advanced_tab_id); ?>" class="ai-seo-captain-tab-panel ai-seo-captain-surface" role="tabpanel" hidden>
                     <div class="ai-seo-captain-field-grid">
                         <label class="ai-seo-captain-field">
-                            <span class="ai-seo-captain-field-label">Canonical URL override</span>
+                            <span class="ai-seo-captain-field-label">Canonical URL override <?php echo self::info(__('The canonical URL tells search engines which version of a page is the "original" when duplicate or similar content exists. Leave empty to use the default permalink. Set this only when you have intentional duplicates (e.g., syndicated content).', 'ai-seo-captain')); ?></span>
                             <input id="ai-seo-captain-canonical-url" type="url" name="ai_seo_captain_canonical_url" value="<?php echo esc_attr($canonical_url); ?>" />
                             <span class="ai-seo-captain-field-help">Optional absolute URL. If empty, the page permalink remains canonical.</span>
                         </label>
 
                         <label class="ai-seo-captain-field">
-                            <span class="ai-seo-captain-field-label">Robots override</span>
+                            <span class="ai-seo-captain-field-label">Robots override <?php echo self::info(__('Controls how search engine crawlers treat this page. "noindex" hides it from search results; "nofollow" tells crawlers not to follow links on the page. Most pages should use the site default (index, follow).', 'ai-seo-captain')); ?></span>
                             <select id="ai-seo-captain-robots-directives" name="ai_seo_captain_robots_directives">
                                 <?php foreach ($this->get_robots_directive_options() as $value => $label) : ?>
                                     <option value="<?php echo esc_attr($value); ?>" <?php selected($robots_directives, $value); ?>><?php echo esc_html($label); ?></option>
@@ -3656,7 +3648,7 @@ JS;
                         </label>
 
                         <div class="ai-seo-captain-field ai-seo-captain-toggle-field">
-                            <span class="ai-seo-captain-field-label">Page-level frontend gate</span>
+                            <span class="ai-seo-captain-field-label">Page-level frontend gate <?php echo self::info(__('When ON, this page\'s approved SEO metadata (title, description, schema) is output in the HTML head, overriding theme defaults. Both this toggle AND the global Frontend Output setting in Settings must be enabled for output to appear.', 'ai-seo-captain')); ?></span>
                             <label class="aisc-toggle">
                                 <input id="ai-seo-captain-frontend-enabled" type="checkbox" name="ai_seo_captain_frontend_enabled" value="1" <?php checked($frontend_post_enabled); ?> />
                                 <span class="aisc-toggle__track"></span>
@@ -3666,7 +3658,7 @@ JS;
                         </div>
 
                         <div class="ai-seo-captain-field ai-seo-captain-toggle-field">
-                            <span class="ai-seo-captain-field-label">Exclude from sitemap</span>
+                            <span class="ai-seo-captain-field-label">Exclude from sitemap <?php echo self::info(__('Removes this page from the XML sitemap submitted to search engines. The page is still accessible via its URL and can be indexed if crawled directly, but it won\'t be actively submitted for discovery.', 'ai-seo-captain')); ?></span>
                             <label class="aisc-toggle">
                                 <input id="ai-seo-captain-exclude-sitemap" type="checkbox" name="ai_seo_captain_exclude_sitemap" value="1" <?php checked(! empty(get_post_meta($post->ID, self::EXCLUDE_SITEMAP_META_KEY, true))); ?> />
                                 <span class="aisc-toggle__track"></span>
@@ -3676,7 +3668,7 @@ JS;
                         </div>
 
                         <div class="ai-seo-captain-field ai-seo-captain-toggle-field">
-                            <span class="ai-seo-captain-field-label">Cornerstone content</span>
+                            <span class="ai-seo-captain-field-label">Cornerstone content <?php echo self::info(__('Cornerstone articles are the most important, comprehensive pages on your site — the ones you want to rank highest. Marking a page as cornerstone gives it higher sitemap priority, prioritizes it in internal linking suggestions, and applies stricter audit criteria.', 'ai-seo-captain')); ?></span>
                             <label class="aisc-toggle">
                                 <input id="ai-seo-captain-cornerstone" type="checkbox" name="ai_seo_captain_cornerstone" value="1" <?php checked(! empty(get_post_meta($post->ID, '_ai_seo_captain_cornerstone', true))); ?> />
                                 <span class="aisc-toggle__track"></span>
@@ -3686,7 +3678,7 @@ JS;
                         </div>
 
                         <div class="ai-seo-captain-field">
-                            <label class="ai-seo-captain-field-label" for="ai-seo-captain-hreflang">Hreflang tags (multi-language)</label>
+                            <label class="ai-seo-captain-field-label" for="ai-seo-captain-hreflang">Hreflang tags (multi-language) <?php echo self::info(__('Tells search engines which language/region version of this page to show to users. Required for multilingual sites. Format: one entry per line as lang|URL (e.g., "en|https://example.com/page"). If using WPML or Polylang, these are auto-detected.', 'ai-seo-captain')); ?></label>
                             <textarea id="ai-seo-captain-hreflang" class="ai-seo-captain-input" rows="3" name="ai_seo_captain_hreflang" placeholder="en|https://example.com/page&#10;fr|https://example.fr/page&#10;x-default|https://example.com/page"><?php echo esc_textarea(get_post_meta($post->ID, '_ai_seo_captain_hreflang', true)); ?></textarea>
                             <span class="ai-seo-captain-field-help">One entry per line: <code>lang|URL</code>. Auto-detected from WPML/Polylang if installed. Manual entries take priority.</span>
                         </div>
@@ -3820,7 +3812,7 @@ JS;
     ?>
         <div class="ai-seo-captain-links-tab">
             <div style="margin-bottom:16px;">
-                <strong>Outbound internal links (<?php echo count($outbound); ?>)</strong>
+                <strong>Outbound internal links (<?php echo count($outbound); ?>) <?php echo self::info(__('Internal links from this page to other pages on your site. They help search engines crawl your site and distribute page authority. Aim for 3-5 relevant outbound links per page.', 'ai-seo-captain')); ?></strong>
                 <p class="ai-seo-captain-muted" style="margin:4px 0 8px;">Pages this post links to.</p>
                 <?php if (empty($outbound)) : ?>
                     <p style="color:#d63638;margin:0;">This page has no outbound internal links. Adding internal links helps search engines discover and understand your site structure.</p>
@@ -3837,7 +3829,7 @@ JS;
             </div>
 
             <div style="margin-bottom:16px;">
-                <strong>Inbound internal links (<?php echo count($inbound); ?>)</strong>
+                <strong>Inbound internal links (<?php echo count($inbound); ?>) <?php echo self::info(__('Pages on your site that link to this page. More inbound links signal to search engines that this page is important. Orphan pages (0 inbound links) may struggle to get indexed.', 'ai-seo-captain')); ?></strong>
                 <p class="ai-seo-captain-muted" style="margin:4px 0 8px;">Pages that link to this post.</p>
                 <?php if (empty($inbound)) : ?>
                     <p style="color:#d63638;margin:0;">No other pages link to this post. It may be orphaned and harder for search engines to discover.</p>
@@ -3854,7 +3846,7 @@ JS;
 
             <?php if (! empty($suggestions)) : ?>
                 <div>
-                    <strong>Suggested pages to link to</strong>
+                    <strong>Suggested pages to link to <?php echo self::info(__('Related pages on your site that you could link from this content. Adding these links improves site structure and helps distribute authority to important pages.', 'ai-seo-captain')); ?></strong>
                     <p class="ai-seo-captain-muted" style="margin:4px 0 8px;">Related pages you could link from this post to improve site structure.</p>
                     <ul style="margin:0;padding-left:20px;">
                         <?php foreach ($suggestions as $s) : ?>
@@ -4514,49 +4506,6 @@ JS;
 .ai-seo-captain-chat-meta {
     color: #5f6b7a;
     font-size: 12px;
-}
-
-.ai-seo-captain-help-tip {
-    display: inline-block;
-    cursor: help;
-    font-weight: 400;
-    font-size: 14px;
-    position: static;
-    color: #50575e;
-}
-
-.ai-seo-captain-help-tip::before {
-    content: "\1D48A";
-    margin-left: 5px;
-    font-size: 14px;
-    font-weight: 700;
-    vertical-align: baseline;
-}
-
-.ai-seo-captain-help-tip.is-light,
-.ai-seo-captain-accordion-item.is-promoted .ai-seo-captain-accordion-toggle .ai-seo-captain-help-tip {
-    color: #ffffff;
-}
-
-.ai-seo-captain-help-tip:hover::after {
-    content: attr(data-tip);
-    position: fixed;
-    top: var(--tip-top, 0);
-    left: var(--tip-left, 0);
-    transform: translateY(-100%);
-    background: #1d2327;
-    color: #fff;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 1.4;
-    max-width: 300px;
-    width: max-content;
-    z-index: 999999;
-    box-shadow: 0 4px 12px rgba(0,0,0,.25);
-    pointer-events: none;
-    white-space: normal;
 }
 
 .ai-seo-captain-readiness-grid,

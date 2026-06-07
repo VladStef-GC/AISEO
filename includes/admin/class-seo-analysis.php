@@ -359,7 +359,7 @@ class SEO_Analysis
 
         ob_start();
 ?>
-        <strong><?php esc_html_e('Basic SEO checks', 'ai-seo-captain'); ?></strong>
+        <strong><?php esc_html_e('Basic SEO checks', 'ai-seo-captain'); ?> <?php echo \AI_SEO_Captain\Admin::info(__('These are real-time, deterministic checks (not AI-based) that analyze your title, description, content structure, and focus keyphrase usage. They run instantly and update when you save the SEO draft.', 'ai-seo-captain')); ?></strong>
         <p class="ai-seo-captain-muted" style="margin:8px 0 12px;"><?php esc_html_e('Lightweight deterministic checks against the saved draft fields and the current page body.', 'ai-seo-captain'); ?></p>
         <?php if ('' === $focus_keyphrase) : ?>
             <p class="ai-seo-captain-muted" style="margin:0 0 12px;"><?php esc_html_e("Add a focus keyphrase to unlock phrase-matching checks similar to Yoast's page analysis.", 'ai-seo-captain'); ?></p>
