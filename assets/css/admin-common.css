@@ -514,6 +514,19 @@
     visibility: visible;
 }
 
+/* Flipped tooltip — shown below the icon when near the top of the viewport */
+.aisc-info-icon[data-tip-pos="below"]::after {
+    bottom: auto;
+    top: calc(100% + 6px);
+}
+
+.aisc-info-icon[data-tip-pos="below"]::before {
+    bottom: auto;
+    top: calc(100% + 2px);
+    border-top-color: transparent;
+    border-bottom-color: #1d2327;
+}
+
 /* ══════════════════════════════════════════════════════════════════════
    LOCAL SEO — Address & Contact field groups
    ══════════════════════════════════════════════════════════════════════ */

@@ -56,4 +56,12 @@
         }
     });
 
+    /* ── Info-icon tooltip auto-flip ─────────────────────────────────── */
+    /* Shows tooltip below the icon when there isn't enough space above  */
+    $(document).on('mouseenter', '.aisc-info-icon[data-tip]', function () {
+        var rect = this.getBoundingClientRect();
+        // Need ~100px above for the tooltip bubble; flip to below if too close to top
+        this.setAttribute('data-tip-pos', rect.top < 100 ? 'below' : 'above');
+    });
+
 })(jQuery);
