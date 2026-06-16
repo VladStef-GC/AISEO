@@ -131,7 +131,7 @@ $_local_available = $_local_experiment && '' !== $_local_model;
                             </div>
                         </td>
                         <td data-sort-value="<?php echo esc_attr(strtolower($alt)); ?>">
-                            <input type="text" class="large-text ai-seo-img-alt" value="<?php echo esc_attr($alt); ?>" data-original="<?php echo esc_attr($alt); ?>" placeholder="<?php esc_attr_e('Enter alt text\u2026', 'ai-seo-captain'); ?>" />
+                            <input type="text" class="large-text ai-seo-img-alt" value="<?php echo esc_attr($alt); ?>" data-original="<?php echo esc_attr($alt); ?>" placeholder="<?php esc_attr_e('Enter alt text…', 'ai-seo-captain'); ?>" />
                         </td>
                         <td data-sort-value="<?php echo esc_attr(strtolower($used_on_first_title)); ?>">
                             <?php if ($used_on_count > 0) : ?>
