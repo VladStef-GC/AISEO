@@ -4,6 +4,22 @@ if (! defined('WP_UNINSTALL_PLUGIN')) {
     exit;
 }
 
+// --- Freemius uninstall event --------------------------------------------------
+// When a plugin ships its own uninstall.php, WordPress runs it instead of any
+// registered uninstall hooks, so Freemius never gets a chance to clean up its
+// own data or report the uninstall. Boot the SDK and fire its uninstall event
+// first so licensing/account data is handled correctly before we purge ours.
+if (file_exists(dirname(__FILE__) . '/vendor/freemius/start.php')) {
+    if (! function_exists('asc_fs')) {
+        require_once dirname(__FILE__) . '/ai-seo-captain.php';
+    }
+
+    if (function_exists('asc_fs')) {
+        asc_fs()->_uninstall_plugin_event();
+    }
+}
+// --- End Freemius --------------------------------------------------------------
+
 global $wpdb;
 
 // Tables (order matters: messages before conversations for FK safety).

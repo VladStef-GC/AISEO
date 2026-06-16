@@ -9,6 +9,7 @@ use AI_SEO_Captain\ImportExport\Exporter;
 use AI_SEO_Captain\ImportExport\Matcher;
 use AI_SEO_Captain\ImportExport\Importer;
 use AI_SEO_Captain\ImportExport\Url_Rewriter;
+use AI_SEO_Captain\Licensing;
 
 /**
  * Export, Import, and Yoast migration handlers.
@@ -50,6 +51,10 @@ class Admin_Import_Export
             wp_die('Unauthorized');
         }
         check_admin_referer('ai_seo_captain_export');
+
+        if (! Licensing::is_pro()) {
+            wp_die(esc_html__('Export / Import is a Pro feature. Please upgrade to unlock it.', 'ai-seo-captain'));
+        }
 
         $sections = array();
         if (! empty($_POST['export_settings'])) {
@@ -107,6 +112,8 @@ class Admin_Import_Export
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
         }
 
+        Licensing::require_pro();
+
         if (empty($_FILES['import_file']['tmp_name']) || 0 !== (int) $_FILES['import_file']['error']) {
             wp_send_json_error(array('message' => 'No file uploaded or upload error.'));
         }
@@ -154,6 +161,8 @@ class Admin_Import_Export
         if (! current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
         }
+
+        Licensing::require_pro();
 
         $data = get_transient('aisc_import_' . get_current_user_id());
         if (! is_array($data)) {
@@ -209,6 +218,8 @@ class Admin_Import_Export
         if (! current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
         }
+
+        Licensing::require_pro();
 
         $uid  = get_current_user_id();
         $data = get_transient('aisc_import_' . $uid);
@@ -949,6 +960,8 @@ class Admin_Import_Export
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
         }
 
+        Licensing::require_pro();
+
         $all_options   = $this->settings->get();
         $cache_settings = array();
 
@@ -977,6 +990,8 @@ class Admin_Import_Export
         if (! current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
         }
+
+        Licensing::require_pro();
 
         if (empty($_FILES['cache_file']['tmp_name']) || 0 !== (int) $_FILES['cache_file']['error']) {
             wp_send_json_error(array('message' => 'No file uploaded or upload error.'));

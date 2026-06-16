@@ -3281,6 +3281,8 @@ JS;
             wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
         }
 
+        Licensing::require_pro();
+
         $days = isset($_POST['days']) ? (int) $_POST['days'] : 28;
         $days = max(1, min($days, 90));
 
@@ -3310,6 +3312,8 @@ JS;
             wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
         }
 
+        Licensing::require_pro();
+
         $start = isset($_POST['start_date']) ? sanitize_text_field(wp_unslash($_POST['start_date'])) : gmdate('Y-m-d', strtotime('-30 days'));
         $end   = isset($_POST['end_date']) ? sanitize_text_field(wp_unslash($_POST['end_date'])) : gmdate('Y-m-d', strtotime('-2 days'));
 
@@ -3336,6 +3340,8 @@ JS;
         if (! current_user_can('manage_options')) {
             wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
         }
+
+        Licensing::require_pro();
 
         if (! $this->search_console || ! $this->search_console->is_connected()) {
             wp_send_json_error(array('message' => __('Not connected to Google Search Console.', 'ai-seo-captain')));
@@ -3369,6 +3375,8 @@ JS;
         if (! current_user_can('edit_posts')) {
             wp_send_json_error(array('message' => __('Permission denied.', 'ai-seo-captain')), 403);
         }
+
+        Licensing::require_pro();
 
         $permalink = isset($_POST['permalink']) ? esc_url_raw(wp_unslash($_POST['permalink'])) : '';
 

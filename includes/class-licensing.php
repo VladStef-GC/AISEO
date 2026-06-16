@@ -82,6 +82,32 @@ final class Licensing
         return $fs->is_paying();
     }
 
+    /**
+     * Hard server-side gate for Pro-only AJAX endpoints.
+     *
+     * UI menus already hide Pro pages behind an upgrade teaser, but the
+     * underlying AJAX actions ship in every build, so they must enforce the
+     * license server-side too. Call this right after the nonce + capability
+     * checks in any Pro-only AJAX handler. On a Free site it terminates the
+     * request with a 403 JSON error; on Pro it returns and lets the handler
+     * continue.
+     */
+    public static function require_pro(): void
+    {
+        if (self::is_pro()) {
+            return;
+        }
+
+        wp_send_json_error(
+            array(
+                'message'     => __('This is a Pro feature. Please upgrade to unlock it.', 'ai-seo-captain'),
+                'upgrade_url' => self::upgrade_url(),
+                'is_pro_gate' => true,
+            ),
+            403
+        );
+    }
+
     /* ------------------------------------------------------------------ *
      *  AI-generation quota (Free plan only)
      * ------------------------------------------------------------------ */

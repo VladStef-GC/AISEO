@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.3.1-blue?style=flat-square" alt="Version 1.3.1" />
+  <img src="https://img.shields.io/badge/version-1.4.0-blue?style=flat-square" alt="Version 1.4.0" />
   <img src="https://img.shields.io/badge/WordPress-6.7%2B-21759b?style=flat-square&logo=wordpress" alt="WordPress 6.7+" />
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777BB4?style=flat-square&logo=php&logoColor=white" alt="PHP 7.4+" />
   <img src="https://img.shields.io/badge/license-proprietary-lightgrey?style=flat-square" alt="License" />
