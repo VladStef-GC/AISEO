@@ -177,6 +177,7 @@ class Admin
         // admin_bar_menu is registered in class-plugin.php (fires on both admin + frontend)
         add_action('admin_enqueue_scripts', array($this, 'enqueue_editor_assets'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_page_assets'));
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_freemius_assets'));
         add_action('add_meta_boxes', array($this, 'register_editor_metabox'), 10, 2);
         add_action('save_post', array($this, 'save_editor_meta'));
 
@@ -680,41 +681,42 @@ class Admin
             array($this, 'render_cron_manager_page')
         );
 
-        // 11. Cache System (Pro-only)
-        if (Licensing::is_pro()) {
-            add_submenu_page(
-                'ai-seo-captain',
-                'Cache System',
-                'Cache System',
-                'manage_options',
-                'ai-seo-captain-cache',
-                array($this, 'render_cache_page')
-            );
-        }
+        // --- Pro-only feature pages ---------------------------------------
+        // On Free they stay visible (with a lock badge) and render an upgrade
+        // teaser instead of the real feature, so users can discover what Pro
+        // unlocks. On Pro they render the real feature page.
+        $is_pro = Licensing::is_pro();
+        $lock   = $is_pro ? '' : ' <span class="dashicons dashicons-lock" style="font-size:13px;width:13px;height:13px;line-height:1.5;vertical-align:text-top;opacity:.55;"></span>';
 
-        // Export / Import (Pro-only)
-        if (Licensing::is_pro()) {
-            add_submenu_page(
-                'ai-seo-captain',
-                'Export / Import',
-                'Export / Import',
-                'manage_options',
-                'ai-seo-captain-export-import',
-                array($this, 'render_export_import_page')
-            );
-        }
+        // 11. Cache System (Pro)
+        add_submenu_page(
+            'ai-seo-captain',
+            'Cache System',
+            'Cache System' . $lock,
+            'manage_options',
+            'ai-seo-captain-cache',
+            $is_pro ? array($this, 'render_cache_page') : array($this, 'render_pro_teaser')
+        );
 
-        // 12. Google Search Console (Pro-only)
-        if (Licensing::is_pro()) {
-            add_submenu_page(
-                'ai-seo-captain',
-                'Search Console',
-                'Search Console',
-                'manage_options',
-                'ai-seo-captain-search-console',
-                array($this, 'render_search_console_page')
-            );
-        }
+        // Export / Import (Pro)
+        add_submenu_page(
+            'ai-seo-captain',
+            'Export / Import',
+            'Export / Import' . $lock,
+            'manage_options',
+            'ai-seo-captain-export-import',
+            $is_pro ? array($this, 'render_export_import_page') : array($this, 'render_pro_teaser')
+        );
+
+        // 12. Google Search Console (Pro)
+        add_submenu_page(
+            'ai-seo-captain',
+            'Search Console',
+            'Search Console' . $lock,
+            'manage_options',
+            'ai-seo-captain-search-console',
+            $is_pro ? array($this, 'render_search_console_page') : array($this, 'render_pro_teaser')
+        );
     }
 
     public function enqueue_editor_assets(string $hook_suffix): void
@@ -975,6 +977,52 @@ class Admin
                 'trendData' => $trend_data,
             ));
         }
+    }
+
+    /**
+     * Restyle the locally-rendered Freemius pages (Account, Add-ons and the
+     * activation/opt-in screen) to match the plugin's brand.
+     *
+     * Note: the Contact, Pricing and Checkout pages are served inside a
+     * cross-origin iframe from Freemius, so their internals cannot be styled
+     * from here — only the local pages and the opt-in screen are affected.
+     */
+    public function enqueue_freemius_assets(string $hook_suffix): void
+    {
+        $page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+        $is_fs_page = false;
+
+        // Freemius registers its pages as "{slug}-account", "{slug}-addons", etc.
+        if (0 === strpos($page, 'ai-seo-captain-')) {
+            foreach (array('-account', '-addons', '-contact', '-pricing', '-checkout', '-affiliation') as $suffix) {
+                if (substr($page, -strlen($suffix)) === $suffix) {
+                    $is_fs_page = true;
+                    break;
+                }
+            }
+        }
+
+        // Also brand the activation / opt-in (connect) screen on fresh installs.
+        if (! $is_fs_page
+            && function_exists('asc_fs')
+            && method_exists(asc_fs(), 'is_activation_mode')
+            && asc_fs()->is_activation_mode()
+            && 0 === strpos($page, 'ai-seo-captain')
+        ) {
+            $is_fs_page = true;
+        }
+
+        if (! $is_fs_page) {
+            return;
+        }
+
+        wp_enqueue_style(
+            'ai-seo-freemius-ui',
+            AI_SEO_CAPTAIN_URL . 'assets/css/freemius-ui.css',
+            array(),
+            AI_SEO_CAPTAIN_VERSION
+        );
     }
 
     private function get_editor_script(): string
@@ -2878,6 +2926,73 @@ JS;
         $wc_active        = class_exists('WooCommerce');
 
         require __DIR__ . '/admin/view-cache.php';
+    }
+
+    /**
+     * Render the "upgrade to Pro" teaser shown to Free users in place of a
+     * locked Pro feature page (Cache, Search Console, Export/Import).
+     */
+    public function render_pro_teaser(): void
+    {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
+        $page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+        $map  = self::pro_teaser_map();
+        $data = $map[$page] ?? array(
+            'title'    => __('Pro Feature', 'ai-seo-captain'),
+            'tagline'  => __('This feature is part of SEO Captain Pro.', 'ai-seo-captain'),
+            'benefits' => array(),
+        );
+
+        $feature_title   = $data['title'];
+        $feature_tagline = $data['tagline'];
+        $benefits        = $data['benefits'];
+        $upgrade_url     = Licensing::upgrade_url();
+
+        require __DIR__ . '/admin/view-pro-teaser.php';
+    }
+
+    /**
+     * Feature copy used by the Pro teaser pages, keyed by admin page slug.
+     *
+     * @return array<string,array{title:string,tagline:string,benefits:string[]}>
+     */
+    private static function pro_teaser_map(): array
+    {
+        return array(
+            'ai-seo-captain-cache' => array(
+                'title'    => __('Cache System', 'ai-seo-captain'),
+                'tagline'  => __('Make every page load lightning-fast with full-page caching built for SEO.', 'ai-seo-captain'),
+                'benefits' => array(
+                    __('Full-page HTML caching with automatic, smart purging', 'ai-seo-captain'),
+                    __('Sitemap-aware cache preloading so visitors always hit a warm cache', 'ai-seo-captain'),
+                    __('One-click purge straight from the admin bar', 'ai-seo-captain'),
+                    __('Faster Core Web Vitals — a direct Google ranking factor', 'ai-seo-captain'),
+                ),
+            ),
+            'ai-seo-captain-search-console' => array(
+                'title'    => __('Google Search Console', 'ai-seo-captain'),
+                'tagline'  => __('Connect Search Console to see how Google really sees your site.', 'ai-seo-captain'),
+                'benefits' => array(
+                    __('Real clicks, impressions & average position for every page', 'ai-seo-captain'),
+                    __('Automatic daily performance sync', 'ai-seo-captain'),
+                    __('Spot pages losing rankings before they slip further', 'ai-seo-captain'),
+                    __('AI suggestions powered by your real search-query data', 'ai-seo-captain'),
+                ),
+            ),
+            'ai-seo-captain-export-import' => array(
+                'title'    => __('Export / Import', 'ai-seo-captain'),
+                'tagline'  => __('Move your SEO data between sites and keep safe backups.', 'ai-seo-captain'),
+                'benefits' => array(
+                    __('Export all SEO metadata to a portable file', 'ai-seo-captain'),
+                    __('Import from Yoast, Rank Math & SEOPress', 'ai-seo-captain'),
+                    __('Migrate settings across staging and production', 'ai-seo-captain'),
+                    __('Keep versioned backups of your optimization work', 'ai-seo-captain'),
+                ),
+            ),
+        );
     }
 
     public function render_search_console_page(): void

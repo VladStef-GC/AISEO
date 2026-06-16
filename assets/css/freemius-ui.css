@@ -1,0 +1,178 @@
+/**
+ * SEO Captain — Freemius page restyle
+ *
+ * Rebrands the locally-rendered Freemius pages (Account, Add-ons and the
+ * activation / opt-in screen) to match the plugin's green brand. Scoped to
+ * Freemius selectors (#fs_account, #fs_connect, .fs-*) so it never bleeds
+ * into the plugin's own admin pages.
+ *
+ * Brand tokens (mirrors admin-common.css):
+ *   --aisc-primary:        #089564
+ *   --aisc-primary-hover:  #02b77c
+ *   --aisc-border:         #dcdcde
+ *
+ * NOTE: Contact / Pricing / Checkout pages render inside a cross-origin
+ * Freemius iframe and therefore cannot be styled from here.
+ */
+
+/* ──────────────────────────────────────────────────────────────────────
+   Nav tabs (Account · Add-ons · Upgrade)
+   ────────────────────────────────────────────────────────────────────── */
+#fs_account .nav-tab-wrapper,
+.fs-full-size-wrapper .nav-tab-wrapper {
+    border-bottom-color: #dcdcde;
+}
+
+#fs_account .nav-tab-active,
+#fs_account .nav-tab-active:focus,
+#fs_account .nav-tab-active:hover,
+.fs-full-size-wrapper .nav-tab-active {
+    border-bottom-color: #089564;
+    box-shadow: inset 0 -3px 0 #089564;
+    color: #089564;
+    font-weight: 600;
+}
+
+#fs_account .nav-tab:hover {
+    color: #02b77c;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Account Details card (.postbox)
+   ────────────────────────────────────────────────────────────────────── */
+#fs_account .postbox {
+    border: 1px solid #dcdcde;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
+    overflow: hidden;
+}
+
+#fs_account .postbox > .handlediv,
+#fs_account .postbox > h3.hndle,
+#fs_account .postbox > .hndle {
+    border-bottom: 1px solid #f0f0f1;
+    background: #fff;
+}
+
+/* Card header row ("Account Details" + actions) */
+#fs_account .fs-header-actions {
+    font-size: 13px;
+}
+
+#fs_account .fs-header-actions a {
+    color: #089564;
+    text-decoration: none;
+}
+
+#fs_account .fs-header-actions a:hover {
+    color: #02b77c;
+    text-decoration: underline;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Key/value details table
+   ────────────────────────────────────────────────────────────────────── */
+#fs_account_details.fs-key-value-table td {
+    border-color: #f0f0f1;
+}
+
+#fs_account_details.fs-key-value-table td.fs-field-title {
+    color: #50575e;
+    font-weight: 600;
+}
+
+/* Coloured values (User ID, keys, etc.) → brand green */
+#fs_account_details.fs-key-value-table .fs-field-value,
+#fs_account_details.fs-key-value-table code {
+    color: #089564;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Status tags / pills (.fs-tag)
+   ────────────────────────────────────────────────────────────────────── */
+#fs_account .fs-tag.fs-success,
+.fs-full-size-wrapper .fs-tag.fs-success {
+    background: #089564;
+    border-color: #077a52;
+    color: #fff;
+}
+
+/* "Premium version" / plan badges */
+#fs_account .fs-tag {
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Buttons — primary actions → brand green
+   ────────────────────────────────────────────────────────────────────── */
+#fs_account .button-primary,
+#fs_connect .button.button-primary,
+.fs-full-size-wrapper .button-primary,
+.fs-modal .button-primary {
+    background: #089564;
+    border-color: #077a52;
+    box-shadow: 0 1px 0 #077a52;
+    text-shadow: none;
+    color: #fff;
+}
+
+#fs_account .button-primary:hover,
+#fs_account .button-primary:focus,
+#fs_connect .button.button-primary:hover,
+#fs_connect .button.button-primary:focus,
+.fs-full-size-wrapper .button-primary:hover,
+.fs-modal .button-primary:hover {
+    background: #02b77c;
+    border-color: #077a52;
+    color: #fff;
+}
+
+/* Secondary buttons keep a subtle green accent on hover */
+#fs_account .button:not(.button-primary):hover,
+.fs-full-size-wrapper .button:not(.button-primary):hover {
+    border-color: #089564;
+    color: #089564;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Secure-notice bar (top green strip)
+   ────────────────────────────────────────────────────────────────────── */
+.fs-secure-notice {
+    background: rgba(8, 149, 100, .10);
+    border-bottom: 1px solid rgba(8, 149, 100, .25);
+    color: #08623f;
+}
+
+.fs-secure-notice a {
+    color: #089564;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Activation / opt-in (connect) screen
+   ────────────────────────────────────────────────────────────────────── */
+#fs_connect {
+    border-radius: 8px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, .08);
+    overflow: hidden;
+}
+
+#fs_connect .fs-content,
+#fs_connect .fs-header {
+    border: 0;
+}
+
+#fs_connect .fs-actions {
+    background: #f6f7f7;
+    border-top: 1px solid #f0f0f1;
+}
+
+#fs_connect .fs-permissions .fs-permission .fs-permission-description {
+    color: #50575e;
+}
+
+/* Brand the connect-screen icon ring if present */
+#fs_connect .fs-plugin-title {
+    color: #1d2327;
+    font-weight: 700;
+}
