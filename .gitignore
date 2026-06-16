@@ -1,6 +1,7 @@
 # AI SEO Keeper - .gitignore
 node_modules/
-vendor/
+vendor/*
+!vendor/freemius/
 composer.phar
 composer.lock
 .phpunit.result.cache
