@@ -28,10 +28,10 @@ defined('ABSPATH') || exit;
 /** @var string $form_action */
 /** @var string $nonce_field */
 
-// NOTE: Replace this with the final branded contact artwork once provided.
-// Drop the file at assets/img/contact-captain.png (or .svg) and update the
-// constant below — everything else will pick it up automatically.
-$logo_url = AI_SEO_CAPTAIN_URL . 'assets/img/ai-seo-captain.svg';
+// Branded contact artwork. Resolved from the plugin URL constant so it works
+// regardless of install location (no hardcoded paths). Swap the file at
+// assets/img/ai-seo-captain-logo.jpg to rebrand — everything else picks it up.
+$logo_url = AI_SEO_CAPTAIN_URL . 'assets/img/ai-seo-captain-logo.jpg';
 ?>
 <div class="wrap aisc-wrap aisc-contact">
 
