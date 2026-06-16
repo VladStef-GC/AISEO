@@ -104,17 +104,23 @@
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   Buttons — primary actions → brand green
+   Buttons — match the plugin's global button system
+   (green .button-primary  +  purple secondary .button), mirroring
+   admin-common.css so the Account page looks like the rest of the plugin.
    ────────────────────────────────────────────────────────────────────── */
+
+/* Primary actions → global green */
 #fs_account .button-primary,
 #fs_connect .button.button-primary,
 .fs-full-size-wrapper .button-primary,
 .fs-modal .button-primary {
-    background: #089564;
-    border-color: #077a52;
-    box-shadow: 0 1px 0 #077a52;
+    background: #1b8341;
+    border-color: #157036;
+    box-shadow: none;
     text-shadow: none;
     color: #fff;
+    border-radius: 4px;
+    font-weight: 600;
 }
 
 #fs_account .button-primary:hover,
@@ -123,16 +129,33 @@
 #fs_connect .button.button-primary:focus,
 .fs-full-size-wrapper .button-primary:hover,
 .fs-modal .button-primary:hover {
-    background: #02b77c;
-    border-color: #077a52;
+    background: #219b4e;
+    border-color: #1b8341;
     color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .12);
 }
 
-/* Secondary buttons keep a subtle green accent on hover */
+/* Secondary actions (Edit, Show, Sync License, Change License, …)
+   → global purple, filled */
+#fs_account .button:not(.button-primary),
+.fs-full-size-wrapper .button:not(.button-primary) {
+    background: #7c2a63;
+    border-color: #420e56;
+    color: #fff;
+    text-shadow: none;
+    box-shadow: none;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
 #fs_account .button:not(.button-primary):hover,
-.fs-full-size-wrapper .button:not(.button-primary):hover {
-    border-color: #089564;
-    color: #089564;
+#fs_account .button:not(.button-primary):focus,
+.fs-full-size-wrapper .button:not(.button-primary):hover,
+.fs-full-size-wrapper .button:not(.button-primary):focus {
+    background: #93347a;
+    border-color: #55145e;
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .12);
 }
 
 /* ──────────────────────────────────────────────────────────────────────
