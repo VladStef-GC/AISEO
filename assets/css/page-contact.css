@@ -1,0 +1,264 @@
+/**
+ * Contact & Feedback page — AI SEO Captain
+ * Native replacement for the Freemius contact iframe.
+ */
+
+.aisc-contact {
+    max-width: 980px;
+}
+
+/* ---- Header ---- */
+.aisc-contact-header {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    background: #2c3338;
+    border-radius: var(--aisc-radius, 6px);
+    overflow: hidden;
+    margin: 16px 0 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .12);
+}
+
+.aisc-contact-header-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 110px;
+    flex: 0 0 110px;
+    background: linear-gradient(135deg, #089564, #02b77c);
+    padding: 14px;
+}
+
+.aisc-contact-header-logo img {
+    width: 100%;
+    height: auto;
+    max-height: 78px;
+    object-fit: contain;
+}
+
+.aisc-contact-header-text {
+    padding: 18px 22px;
+    color: #fff;
+}
+
+.aisc-contact-header-text h1 {
+    margin: 0;
+    color: #fff;
+    font-size: 22px;
+    line-height: 1.25;
+    font-weight: 700;
+}
+
+.aisc-contact-header-brand {
+    margin: 4px 0 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #e9fbf3;
+}
+
+.aisc-contact-header-sub {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: #c9d1d6;
+}
+
+/* ---- Body layout ---- */
+.aisc-contact-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 24px;
+    align-items: start;
+}
+
+@media (max-width: 782px) {
+    .aisc-contact-body {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ---- Form ---- */
+.aisc-contact-form {
+    background: #fff;
+    border: 1px solid var(--aisc-border, #dcdcde);
+    border-radius: var(--aisc-radius, 6px);
+    padding: 22px;
+}
+
+.aisc-contact-field {
+    position: relative;
+    margin-bottom: 14px;
+}
+
+.aisc-contact-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8c8f94;
+    pointer-events: none;
+}
+
+.aisc-contact-field input[type="text"],
+.aisc-contact-field input[type="email"] {
+    width: 100%;
+    padding: 11px 12px 11px 38px;
+    font-size: 14px;
+    border: 1px solid #c3c4c7;
+    border-radius: var(--aisc-radius, 6px);
+    box-sizing: border-box;
+}
+
+.aisc-contact-field textarea {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    border: 1px solid #c3c4c7;
+    border-radius: var(--aisc-radius, 6px);
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+.aisc-contact-field input:focus,
+.aisc-contact-field textarea:focus {
+    border-color: var(--aisc-primary, #089564);
+    box-shadow: 0 0 0 1px var(--aisc-primary, #089564);
+    outline: none;
+}
+
+/* ---- Topics ---- */
+.aisc-contact-topics {
+    border: 1px solid #e2e4e7;
+    border-radius: var(--aisc-radius, 6px);
+    padding: 8px 14px;
+    margin: 0 0 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 18px;
+}
+
+@media (max-width: 600px) {
+    .aisc-contact-topics {
+        grid-template-columns: 1fr;
+    }
+}
+
+.aisc-contact-topic {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 2px;
+    font-size: 13px;
+    color: #50575e;
+    cursor: pointer;
+}
+
+.aisc-contact-topic input {
+    margin: 0;
+}
+
+.aisc-contact-topic:hover span {
+    color: var(--aisc-primary, #089564);
+}
+
+/* ---- Rating ---- */
+.aisc-contact-rating {
+    margin: 0 0 16px;
+}
+
+.aisc-contact-rating-label {
+    display: block;
+    font-size: 13px;
+    color: #50575e;
+    margin-bottom: 4px;
+}
+
+.aisc-contact-stars {
+    display: inline-flex;
+    gap: 2px;
+}
+
+.aisc-contact-star {
+    background: none;
+    border: 0;
+    padding: 2px;
+    cursor: pointer;
+    color: #f0c33c;
+    font-size: 22px;
+    width: 28px;
+    height: 28px;
+    line-height: 1;
+}
+
+.aisc-contact-star.dashicons {
+    font-size: 22px;
+    width: 28px;
+    height: 28px;
+}
+
+.aisc-contact-star:focus {
+    outline: 1px dotted #f0c33c;
+}
+
+/* ---- Submit ---- */
+.aisc-contact-submit {
+    display: inline-block;
+    background: linear-gradient(135deg, #089564, #02b77c);
+    color: #fff;
+    border: 0;
+    border-radius: var(--aisc-radius, 6px);
+    padding: 12px 28px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter .15s ease;
+}
+
+.aisc-contact-submit:hover {
+    filter: brightness(1.06);
+}
+
+/* ---- FAQ sidebar ---- */
+.aisc-contact-faq {
+    background: #f0f3f5;
+    border: 1px solid #e2e4e7;
+    border-radius: var(--aisc-radius, 6px);
+    padding: 18px 20px;
+}
+
+.aisc-contact-faq h2 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: #1d2327;
+}
+
+.aisc-contact-faq ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.aisc-contact-faq li {
+    position: relative;
+    padding-left: 18px;
+    margin-bottom: 12px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: #50575e;
+}
+
+.aisc-contact-faq li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 7px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--aisc-primary, #089564);
+}
+
+.aisc-contact-faq a {
+    color: var(--aisc-primary, #089564);
+}

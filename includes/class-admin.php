@@ -178,6 +178,15 @@ class Admin
         add_action('admin_enqueue_scripts', array($this, 'enqueue_editor_assets'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_page_assets'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_freemius_assets'));
+
+        // --- Native Contact & Feedback page (replaces the Freemius iframe) ---
+        // Hide Freemius' own "Contact Us" submenu and redirect its legacy URL to
+        // our on-site page so visitors never hit the cross-origin cookie banner.
+        if (function_exists('asc_fs')) {
+            asc_fs()->add_filter('is_submenu_visible', array($this, 'fs_hide_contact_submenu'), 10, 2);
+        }
+        add_action('admin_init', array($this, 'redirect_legacy_contact_page'));
+        add_action('admin_post_ai_seo_captain_contact_submit', array($this, 'handle_contact_submit'));
         add_action('add_meta_boxes', array($this, 'register_editor_metabox'), 10, 2);
         add_action('save_post', array($this, 'save_editor_meta'));
 
@@ -717,6 +726,16 @@ class Admin
             'ai-seo-captain-search-console',
             $is_pro ? array($this, 'render_search_console_page') : array($this, 'render_pro_teaser')
         );
+
+        // 13. Contact & Feedback (native — replaces the Freemius contact iframe)
+        add_submenu_page(
+            'ai-seo-captain',
+            'Contact Us',
+            'Contact Us',
+            'manage_options',
+            'ai-seo-captain-contact-us',
+            array($this, 'render_contact_page')
+        );
     }
 
     public function enqueue_editor_assets(string $hook_suffix): void
@@ -934,6 +953,7 @@ class Admin
             'ai-seo-captain-cron-manager'  => 'cron-manager',
             'ai-seo-captain-cache'         => 'cache',
             'ai-seo-captain-search-console' => 'search-console',
+            'ai-seo-captain-contact-us'    => 'contact',
         );
 
         // Determine the page slug from the hook suffix.
@@ -2993,6 +3013,154 @@ JS;
                 ),
             ),
         );
+    }
+
+    /**
+     * Destination address for Contact & Feedback submissions.
+     */
+    private const CONTACT_RECIPIENT = 'seocaptain@greencoders.net';
+
+    /**
+     * Subject options shown on the native Contact & Feedback page.
+     *
+     * @return array<string,string>
+     */
+    private function contact_topics(): array
+    {
+        return array(
+            'technical_support' => __('Technical Support', 'ai-seo-captain'),
+            'billing_issue'     => __('Billing Issue', 'ai-seo-captain'),
+            'feature_request'   => __('Feature Request', 'ai-seo-captain'),
+            'customization'     => __('Customization', 'ai-seo-captain'),
+            'pre_sale'          => __('Pre-Sale Question', 'ai-seo-captain'),
+            'feedback'          => __('Feedback', 'ai-seo-captain'),
+            'press'             => __('Press', 'ai-seo-captain'),
+            'bug'               => __('Bug', 'ai-seo-captain'),
+            'refund'            => __('Refund', 'ai-seo-captain'),
+        );
+    }
+
+    /**
+     * Render the native Contact & Feedback page (replaces the Freemius iframe).
+     */
+    public function render_contact_page(): void
+    {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
+        $user          = wp_get_current_user();
+        $support_email = self::CONTACT_RECIPIENT;
+        $topics        = $this->contact_topics();
+        $prefill_name  = $user ? $user->display_name : '';
+        $prefill_email = $user ? $user->user_email : '';
+        $sent_status   = isset($_GET['aisc_contact']) ? sanitize_key(wp_unslash($_GET['aisc_contact'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $form_action   = admin_url('admin-post.php');
+
+        ob_start();
+        wp_nonce_field('ai_seo_captain_contact', 'aisc_contact_nonce');
+        echo '<input type="hidden" name="action" value="ai_seo_captain_contact_submit" />';
+        $nonce_field = ob_get_clean();
+
+        require __DIR__ . '/admin/view-contact.php';
+    }
+
+    /**
+     * Handle the Contact & Feedback form submission and email it to support.
+     */
+    public function handle_contact_submit(): void
+    {
+        if (! current_user_can('manage_options')) {
+            wp_die(esc_html__('You are not allowed to do this.', 'ai-seo-captain'));
+        }
+
+        check_admin_referer('ai_seo_captain_contact', 'aisc_contact_nonce');
+
+        $redirect = admin_url('admin.php?page=ai-seo-captain-contact-us');
+
+        $name    = isset($_POST['aisc_name']) ? sanitize_text_field(wp_unslash($_POST['aisc_name'])) : '';
+        $email   = isset($_POST['aisc_email']) ? sanitize_email(wp_unslash($_POST['aisc_email'])) : '';
+        $topic   = isset($_POST['aisc_topic']) ? sanitize_key(wp_unslash($_POST['aisc_topic'])) : '';
+        $rating  = isset($_POST['aisc_rating']) ? max(0, min(5, (int) $_POST['aisc_rating'])) : 0;
+        $message = isset($_POST['aisc_message']) ? sanitize_textarea_field(wp_unslash($_POST['aisc_message'])) : '';
+
+        if ('' === $name || ! is_email($email) || '' === $message) {
+            wp_safe_redirect(add_query_arg('aisc_contact', 'fail', $redirect));
+            exit;
+        }
+
+        $topics      = $this->contact_topics();
+        $topic_label = $topics[$topic] ?? __('General', 'ai-seo-captain');
+        $site_name   = wp_specialchars_decode(get_bloginfo('name'), ENT_QUOTES);
+
+        $subject = sprintf(
+            /* translators: 1: topic label, 2: site name. */
+            __('[AI SEO Captain] %1$s — %2$s', 'ai-seo-captain'),
+            $topic_label,
+            $site_name
+        );
+
+        $body_lines = array(
+            __('A new message was sent from the AI SEO Captain contact page.', 'ai-seo-captain'),
+            '',
+            sprintf(__('Name: %s', 'ai-seo-captain'), $name),
+            sprintf(__('Email: %s', 'ai-seo-captain'), $email),
+            sprintf(__('Topic: %s', 'ai-seo-captain'), $topic_label),
+        );
+
+        if ($rating > 0) {
+            $body_lines[] = sprintf(__('Rating: %d/5', 'ai-seo-captain'), $rating);
+        }
+
+        $body_lines[] = sprintf(__('Site: %s', 'ai-seo-captain'), home_url());
+        $body_lines[] = '';
+        $body_lines[] = __('Message:', 'ai-seo-captain');
+        $body_lines[] = $message;
+
+        $headers = array(
+            'Content-Type: text/plain; charset=UTF-8',
+            sprintf('Reply-To: %s <%s>', $name, $email),
+        );
+
+        $sent = wp_mail(self::CONTACT_RECIPIENT, $subject, implode("\n", $body_lines), $headers);
+
+        wp_safe_redirect(add_query_arg('aisc_contact', $sent ? 'ok' : 'fail', $redirect));
+        exit;
+    }
+
+    /**
+     * Hide Freemius' own "Contact Us" submenu item — we render a native page
+     * instead so visitors never hit the cross-origin Freemius cookie banner.
+     *
+     * @param bool   $is_visible
+     * @param string $submenu_id
+     * @return bool
+     */
+    public function fs_hide_contact_submenu($is_visible, $submenu_id)
+    {
+        if ('contact' === $submenu_id) {
+            return false;
+        }
+
+        return $is_visible;
+    }
+
+    /**
+     * Redirect the legacy Freemius contact URL (?page=ai-seo-captain-contact)
+     * to our native Contact & Feedback page.
+     */
+    public function redirect_legacy_contact_page(): void
+    {
+        if (! is_admin() || wp_doing_ajax()) {
+            return;
+        }
+
+        $page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+        if ('ai-seo-captain-contact' === $page) {
+            wp_safe_redirect(admin_url('admin.php?page=ai-seo-captain-contact-us'));
+            exit;
+        }
     }
 
     public function render_search_console_page(): void
