@@ -680,35 +680,41 @@ class Admin
             array($this, 'render_cron_manager_page')
         );
 
-        // 11. Cache System
-        add_submenu_page(
-            'ai-seo-captain',
-            'Cache System',
-            'Cache System',
-            'manage_options',
-            'ai-seo-captain-cache',
-            array($this, 'render_cache_page')
-        );
+        // 11. Cache System (Pro-only)
+        if (Licensing::is_pro()) {
+            add_submenu_page(
+                'ai-seo-captain',
+                'Cache System',
+                'Cache System',
+                'manage_options',
+                'ai-seo-captain-cache',
+                array($this, 'render_cache_page')
+            );
+        }
 
-        // Export / Import (kept accessible)
-        add_submenu_page(
-            'ai-seo-captain',
-            'Export / Import',
-            'Export / Import',
-            'manage_options',
-            'ai-seo-captain-export-import',
-            array($this, 'render_export_import_page')
-        );
+        // Export / Import (Pro-only)
+        if (Licensing::is_pro()) {
+            add_submenu_page(
+                'ai-seo-captain',
+                'Export / Import',
+                'Export / Import',
+                'manage_options',
+                'ai-seo-captain-export-import',
+                array($this, 'render_export_import_page')
+            );
+        }
 
-        // 12. Google Search Console
-        add_submenu_page(
-            'ai-seo-captain',
-            'Search Console',
-            'Search Console',
-            'manage_options',
-            'ai-seo-captain-search-console',
-            array($this, 'render_search_console_page')
-        );
+        // 12. Google Search Console (Pro-only)
+        if (Licensing::is_pro()) {
+            add_submenu_page(
+                'ai-seo-captain',
+                'Search Console',
+                'Search Console',
+                'manage_options',
+                'ai-seo-captain-search-console',
+                array($this, 'render_search_console_page')
+            );
+        }
     }
 
     public function enqueue_editor_assets(string $hook_suffix): void

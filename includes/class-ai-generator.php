@@ -45,6 +45,11 @@ class AI_Generator
             throw new \RuntimeException('The requested page could not be loaded.');
         }
 
+        // Free-plan AI generation quota (manual editing stays unlimited).
+        if (! Licensing::ai_can_generate()) {
+            throw new \RuntimeException(Licensing::ai_quota_message());
+        }
+
         $options = $this->settings->get();
 
         $provider = (string) $options['provider'];
@@ -81,6 +86,9 @@ class AI_Generator
         if ('' === $seo_title || '' === $meta_description) {
             throw new \RuntimeException('The AI response did not include a usable SEO title and meta description.');
         }
+
+        // Count this page against the Free-plan AI quota (no-op for Pro).
+        Licensing::ai_record_usage(1);
 
         return array(
             'seo_title' => $seo_title,

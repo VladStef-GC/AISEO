@@ -56,19 +56,27 @@ final class Plugin
         $this->redirects       = new Redirects($this->settings);
         $this->cron_manager    = new Cron_Manager($this->settings, $this->content_indexer);
         $this->broken_link_scanner = new Broken_Link_Scanner();
-        $this->broken_link_scanner->register_hooks();
+        if (Licensing::is_pro()) {
+            $this->broken_link_scanner->register_hooks();
+        }
 
-        // Google Search Console integration.
+        // Google Search Console integration. (Pro-only)
         $this->search_console = new Search_Console($this->settings);
-        add_action('ai_seo_captain_gsc_sync', array($this->search_console, 'daily_sync'));
+        if (Licensing::is_pro()) {
+            add_action('ai_seo_captain_gsc_sync', array($this->search_console, 'daily_sync'));
+        }
 
-        // REST API — headless SEO support.
+        // REST API — headless SEO support. (Pro-only)
         $this->rest_api = new REST_API($this->settings);
-        $this->rest_api->register();
+        if (Licensing::is_pro()) {
+            $this->rest_api->register();
+        }
 
-        // Cache system — boot after sitemap so preloader can access it.
+        // Cache system — boot after sitemap so preloader can access it. (Pro-only)
         $this->cache_manager = new Cache\Cache_Manager($this->settings);
-        $this->cache_manager->boot();
+        if (Licensing::is_pro()) {
+            $this->cache_manager->boot();
+        }
 
         // Ensure cron jobs are scheduled (safety net — runs once daily via transient).
         if (false === get_transient('ai_seo_captain_cron_check')) {
@@ -84,9 +92,12 @@ final class Plugin
 
         // WooCommerce integration — boots only when WC is active AND enabled in settings.
         // Uses 'init' to guarantee WooCommerce has fully loaded (WC boots on plugins_loaded).
+        // (Pro-only feature.)
         $wc_options = $this->settings->get();
         add_action('init', static function () use ($wc_options) {
-            WooCommerce_Integration::maybe_boot($wc_options);
+            if (Licensing::is_pro()) {
+                WooCommerce_Integration::maybe_boot($wc_options);
+            }
         }, 0);
 
         if ($this->sitemap->needs_flush()) {
@@ -105,9 +116,10 @@ final class Plugin
             $this->admin           = new Admin($this->settings, $this->content_indexer, $this->ai_generator, $this->history_store, $this->indexnow, $this->search_console);
 
             // Local AI module — loads only when the experiment is enabled and the module folder exists.
+            // (Pro-only feature.)
             $local_ai_dir = AI_SEO_CAPTAIN_PATH . 'modules/local-ai/';
             $local_ai_experiment = ! empty($this->settings->get()['experiment_local_ai']);
-            if ($local_ai_experiment && is_dir($local_ai_dir)) {
+            if (Licensing::is_pro() && $local_ai_experiment && is_dir($local_ai_dir)) {
                 require_once $local_ai_dir . 'class-local-ai-provider.php';
                 require_once $local_ai_dir . 'class-local-ai-image-seo.php';
                 require_once $local_ai_dir . 'class-local-ai-content-compressor.php';
