@@ -8,6 +8,11 @@
  * Requires PHP: 7.4
  * Author: Green Coders
  * Text Domain: ai-seo-captain
+ *
+ * Premium-only files and folders excluded from the free (WordPress.org) build
+ * by the Freemius processor. These contain the paid feature engines.
+ *
+ * @fs_premium_only /includes/class-search-console.php, /includes/class-broken-link-scanner.php, /includes/class-rest-api.php, /includes/class-woocommerce-integration.php, /includes/cache/, /includes/importexport/, /modules/
  */
 
 if (! defined('ABSPATH')) {
@@ -87,8 +92,10 @@ if ( function_exists( 'asc_fs' ) ) {
         $cron     = new AI_SEO_Captain\Cron_Manager($settings, $indexer);
         $cron->unschedule_all();
 
-        // Clean up cache drop-ins and WP_CACHE constant.
-        AI_SEO_Captain\Cache\Cache_Manager::deactivate();
+        // Clean up cache drop-ins and WP_CACHE constant. (Pro-only — stripped from free.)
+        if (asc_fs()->is__premium_only()) {
+            AI_SEO_Captain\Cache\Cache_Manager::deactivate();
+        }
 
         flush_rewrite_rules();
     });

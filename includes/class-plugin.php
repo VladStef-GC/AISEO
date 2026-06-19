@@ -55,27 +55,38 @@ final class Plugin
         $this->sitemap         = new Sitemap($this->settings);
         $this->redirects       = new Redirects($this->settings);
         $this->cron_manager    = new Cron_Manager($this->settings, $this->content_indexer);
-        $this->broken_link_scanner = new Broken_Link_Scanner();
-        if (Licensing::is_pro()) {
-            $this->broken_link_scanner->register_hooks();
-        }
 
-        // Google Search Console integration. (Pro-only)
-        $this->search_console = new Search_Console($this->settings);
-        if (Licensing::is_pro()) {
-            add_action('ai_seo_captain_gsc_sync', array($this->search_console, 'daily_sync'));
-        }
+        // === Premium-only modules ===========================================
+        // Everything inside this block is automatically removed from the FREE
+        // build by the Freemius PHP processor: is__premium_only() returns
+        // is_premium(), which is false in the stripped free version, so the
+        // processor deletes the whole block (and the excluded class files never
+        // ship). The inner Licensing::is_pro() checks remain the per-license
+        // runtime gate inside the premium build.
+        if (asc_fs()->is__premium_only()) {
+            // Broken link & media scanner. (Pro-only)
+            $this->broken_link_scanner = new Broken_Link_Scanner();
+            if (Licensing::is_pro()) {
+                $this->broken_link_scanner->register_hooks();
+            }
 
-        // REST API — headless SEO support. (Pro-only)
-        $this->rest_api = new REST_API($this->settings);
-        if (Licensing::is_pro()) {
-            $this->rest_api->register();
-        }
+            // Google Search Console integration. (Pro-only)
+            $this->search_console = new Search_Console($this->settings);
+            if (Licensing::is_pro()) {
+                add_action('ai_seo_captain_gsc_sync', array($this->search_console, 'daily_sync'));
+            }
 
-        // Cache system — boot after sitemap so preloader can access it. (Pro-only)
-        $this->cache_manager = new Cache\Cache_Manager($this->settings);
-        if (Licensing::is_pro()) {
-            $this->cache_manager->boot();
+            // REST API — headless SEO support. (Pro-only)
+            $this->rest_api = new REST_API($this->settings);
+            if (Licensing::is_pro()) {
+                $this->rest_api->register();
+            }
+
+            // Cache system — boot after sitemap so preloader can access it. (Pro-only)
+            $this->cache_manager = new Cache\Cache_Manager($this->settings);
+            if (Licensing::is_pro()) {
+                $this->cache_manager->boot();
+            }
         }
 
         // Ensure cron jobs are scheduled (safety net — runs once daily via transient).
@@ -92,13 +103,15 @@ final class Plugin
 
         // WooCommerce integration — boots only when WC is active AND enabled in settings.
         // Uses 'init' to guarantee WooCommerce has fully loaded (WC boots on plugins_loaded).
-        // (Pro-only feature.)
-        $wc_options = $this->settings->get();
-        add_action('init', static function () use ($wc_options) {
-            if (Licensing::is_pro()) {
-                WooCommerce_Integration::maybe_boot($wc_options);
-            }
-        }, 0);
+        // (Pro-only feature — entire block stripped from the free build.)
+        if (asc_fs()->is__premium_only()) {
+            $wc_options = $this->settings->get();
+            add_action('init', static function () use ($wc_options) {
+                if (Licensing::is_pro()) {
+                    WooCommerce_Integration::maybe_boot($wc_options);
+                }
+            }, 0);
+        }
 
         if ($this->sitemap->needs_flush()) {
             add_action('init', 'flush_rewrite_rules', 99);
@@ -116,16 +129,18 @@ final class Plugin
             $this->admin           = new Admin($this->settings, $this->content_indexer, $this->ai_generator, $this->history_store, $this->indexnow, $this->search_console);
 
             // Local AI module — loads only when the experiment is enabled and the module folder exists.
-            // (Pro-only feature.)
-            $local_ai_dir = AI_SEO_CAPTAIN_PATH . 'modules/local-ai/';
-            $local_ai_experiment = ! empty($this->settings->get()['experiment_local_ai']);
-            if (Licensing::is_pro() && $local_ai_experiment && is_dir($local_ai_dir)) {
-                require_once $local_ai_dir . 'class-local-ai-provider.php';
-                require_once $local_ai_dir . 'class-local-ai-image-seo.php';
-                require_once $local_ai_dir . 'class-local-ai-content-compressor.php';
-                require_once $local_ai_dir . 'class-local-ai-admin.php';
-                $local_ai_admin = new \AI_SEO_Captain\Modules\LocalAI\Local_AI_Admin();
-                $local_ai_admin->register();
+            // (Pro-only feature — entire block stripped from the free build.)
+            if (asc_fs()->is__premium_only()) {
+                $local_ai_dir = AI_SEO_CAPTAIN_PATH . 'modules/local-ai/';
+                $local_ai_experiment = ! empty($this->settings->get()['experiment_local_ai']);
+                if (Licensing::is_pro() && $local_ai_experiment && is_dir($local_ai_dir)) {
+                    require_once $local_ai_dir . 'class-local-ai-provider.php';
+                    require_once $local_ai_dir . 'class-local-ai-image-seo.php';
+                    require_once $local_ai_dir . 'class-local-ai-content-compressor.php';
+                    require_once $local_ai_dir . 'class-local-ai-admin.php';
+                    $local_ai_admin = new \AI_SEO_Captain\Modules\LocalAI\Local_AI_Admin();
+                    $local_ai_admin->register();
+                }
             }
 
             return;
