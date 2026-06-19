@@ -181,6 +181,15 @@ class Cron_Manager
      */
     private function run_index_health(): string
     {
+        // The health check only repairs an index the user has already built
+        // (removing orphans, catching posts missed by real-time save_post hooks).
+        // It must never perform the INITIAL indexing of the site — that is a
+        // deliberate, user-initiated action via the Setup Wizard. If the index
+        // is still empty, skip so a fresh install is not auto-indexed.
+        if ((int) $this->indexer->get_summary()['total_items'] === 0) {
+            return 'Index empty — skipped (initial indexing is user-initiated via the Setup Wizard).';
+        }
+
         $result = $this->indexer->verify_index_integrity();
 
         return sprintf(

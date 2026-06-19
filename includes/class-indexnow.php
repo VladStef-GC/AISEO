@@ -50,6 +50,11 @@ class IndexNow
 
     public function handle_post_save(int $post_id, \WP_Post $post, bool $update): void
     {
+        // Automatic IndexNow submission is Pro-only (Free is manual submit).
+        if (! Licensing::is_pro()) {
+            return;
+        }
+
         $options = $this->settings->get();
 
         if (empty($options['indexnow_enabled']) || empty($options['indexnow_auto_submit'])) {
@@ -96,6 +101,11 @@ class IndexNow
      */
     private function maybe_submit_removed_post(int $post_id, string $reason): void
     {
+        // Automatic IndexNow submission is Pro-only (Free is manual submit).
+        if (! Licensing::is_pro()) {
+            return;
+        }
+
         $options = $this->settings->get();
 
         if (empty($options['indexnow_enabled']) || empty($options['indexnow_auto_submit'])) {

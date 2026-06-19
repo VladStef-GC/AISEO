@@ -51,8 +51,8 @@ class Frontend
         add_filter('the_content_feed', array($this, 'filter_rss_content'), 99);
         add_filter('the_excerpt_rss', array($this, 'filter_rss_content'), 99);
 
-        // Crawl Budget Optimization.
-        $opts = $settings->get();
+        // Crawl Budget Optimization. (Pro-only — Free build gets an empty option set.)
+        $opts = Licensing::is_pro() ? $settings->get() : array();
         if (! empty($opts['crawl_disable_author_archives'])) {
             add_action('template_redirect', array($this, 'redirect_author_archives'));
         }
@@ -104,6 +104,11 @@ class Frontend
 
     public function render_breadcrumbs_shortcode(array $atts = array()): string
     {
+        // Breadcrumbs shortcode is a Pro-only feature.
+        if (! Licensing::is_pro()) {
+            return '';
+        }
+
         if (! is_singular()) {
             return '';
         }
@@ -186,6 +191,11 @@ class Frontend
 
     public function output_open_graph_tags(): void
     {
+        // Open Graph output is a Pro-only feature.
+        if (! Licensing::is_pro()) {
+            return;
+        }
+
         $context = $this->get_frontend_context();
 
         if (empty($context) || empty($context['options']['feature_open_graph']) || (empty($context['has_primary_source']) && empty($context['has_social_override']))) {
@@ -213,6 +223,11 @@ class Frontend
 
     public function output_twitter_cards(): void
     {
+        // X (Twitter) Cards output is a Pro-only feature.
+        if (! Licensing::is_pro()) {
+            return;
+        }
+
         $context = $this->get_frontend_context();
 
         if (empty($context) || empty($context['options']['feature_twitter_cards']) || (empty($context['has_primary_source']) && empty($context['has_social_override']))) {
@@ -979,8 +994,13 @@ class Frontend
             $organization,
         );
 
-        // LocalBusiness schema (only on front page when enabled).
-        if (! empty($options['local_seo_enabled']) && is_front_page()) {
+        // Free plan ships only Basic schema (WebSite, Organization, Article/WebPage).
+        // Advanced types (LocalBusiness, FAQ, Collection/ItemList, Breadcrumb,
+        // Product/Service offers) are Pro-only.
+        $is_pro = Licensing::is_pro();
+
+        // LocalBusiness schema (only on front page when enabled). (Pro-only)
+        if ($is_pro && ! empty($options['local_seo_enabled']) && is_front_page()) {
             $local_schema = $this->build_local_business_schema($options);
             if (! empty($local_schema)) {
                 $graph[] = $local_schema;
@@ -988,21 +1008,28 @@ class Frontend
         }
 
         if (null !== $context['post']) {
+            // Clamp advanced page types down to a Basic type on the Free plan.
+            if (! $is_pro && ! in_array((string) $context['schema_type'], array('Article', 'BlogPosting', 'WebPage'), true)) {
+                $context['schema_type'] = 'WebPage';
+            }
+
             $graph[] = $this->build_primary_schema_entity($context);
 
-            $faq_schema = $this->build_faq_schema_entity($context);
-            if (! empty($faq_schema)) {
-                $graph[] = $faq_schema;
-            }
+            if ($is_pro) {
+                $faq_schema = $this->build_faq_schema_entity($context);
+                if (! empty($faq_schema)) {
+                    $graph[] = $faq_schema;
+                }
 
-            $collection_item_list = $this->build_collection_item_list($context);
-            if (! empty($collection_item_list)) {
-                $graph[] = $collection_item_list;
-            }
+                $collection_item_list = $this->build_collection_item_list($context);
+                if (! empty($collection_item_list)) {
+                    $graph[] = $collection_item_list;
+                }
 
-            $breadcrumb = $this->build_breadcrumb_schema($context);
-            if (! empty($breadcrumb)) {
-                $graph[] = $breadcrumb;
+                $breadcrumb = $this->build_breadcrumb_schema($context);
+                if (! empty($breadcrumb)) {
+                    $graph[] = $breadcrumb;
+                }
             }
         } else {
             $graph[] = $this->build_non_singular_schema_entity($context);

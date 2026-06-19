@@ -232,9 +232,13 @@
 
 /* Select dropdowns */
 .ai-seo-accordion-body select,
-.ai-seo-box select {
+.ai-seo-box select,
+.aisc-wrap .form-table td select {
     height: 38px;
+    min-width: 240px;
+    max-width: 100%;
     padding: 6px 32px 6px 12px;
+    line-height: 24px;
     border: 1px solid var(--aisc-border);
     border-radius: var(--aisc-radius-sm);
     font-size: 13px;
@@ -244,11 +248,14 @@
     -moz-appearance: none;
     appearance: none;
     cursor: pointer;
+    box-sizing: border-box;
+    vertical-align: middle;
     transition: border-color var(--aisc-transition), box-shadow var(--aisc-transition);
 }
 
 .ai-seo-accordion-body select:focus,
-.ai-seo-box select:focus {
+.ai-seo-box select:focus,
+.aisc-wrap .form-table td select:focus {
     border-color: var(--aisc-border-focus);
     box-shadow: var(--aisc-shadow-focus);
     outline: none;

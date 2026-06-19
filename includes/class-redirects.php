@@ -190,6 +190,11 @@ class Redirects
     {
         global $wpdb;
 
+        // Free plan: only the 50 most-hit 404s are available.
+        if (! Licensing::is_pro() && $limit > 50) {
+            $limit = 50;
+        }
+
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
         return $wpdb->get_results(
             $wpdb->prepare(
@@ -217,6 +222,21 @@ class Redirects
 
         if ('' === $source || '' === $target) {
             return false;
+        }
+
+        // Free plan: cap the redirect table at 10 manual rules.
+        if (! Licensing::is_pro()) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+            $source_exists = (int) $wpdb->get_var(
+                $wpdb->prepare("SELECT COUNT(*) FROM {$this->table} WHERE type = 'redirect' AND source_url = %s", $source)
+            );
+            if (0 === $source_exists) {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+                $redirect_total = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$this->table} WHERE type = 'redirect'");
+                if ($redirect_total >= 10) {
+                    return false;
+                }
+            }
         }
 
         // Prevent redirect loops — source must not equal target path.
@@ -656,6 +676,9 @@ class Redirects
         if ($result) {
             wp_send_json_success(array('message' => 'Redirect added.'));
         } else {
+            if (! Licensing::is_pro()) {
+                wp_send_json_error('Failed to add redirect. The free plan is limited to 10 redirects — upgrade to Pro for unlimited redirects, or check for redirect loops.');
+            }
             wp_send_json_error('Failed to add redirect. Check for redirect loops.');
         }
     }
@@ -700,6 +723,9 @@ class Redirects
             wp_send_json_error('Unauthorized');
         }
 
+        // Redirect chain detection is a Pro-only feature.
+        Licensing::require_pro();
+
         $chains = $this->detect_chains();
         wp_send_json_success(array(
             'count'  => count($chains),
@@ -717,6 +743,9 @@ class Redirects
         if (! current_user_can('manage_options')) {
             wp_send_json_error('Unauthorized');
         }
+
+        // Redirect chain flattening is a Pro-only feature.
+        Licensing::require_pro();
 
         $fixed = $this->fix_all_chains();
         wp_send_json_success(array(
@@ -1184,6 +1213,9 @@ class Redirects
         if (! current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Unauthorized.'));
         }
+
+        // Bulk URL change with auto-redirect is a Pro-only feature.
+        Licensing::require_pro();
 
         $raw = isset($_POST['changes']) ? wp_unslash($_POST['changes']) : '';
         $changes = json_decode($raw, true);

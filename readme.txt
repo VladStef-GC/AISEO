@@ -4,7 +4,7 @@ Tags: seo, ai seo, meta description, schema, sitemap
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -74,6 +74,12 @@ The Free plan includes 30 AI-generated pages. Manual SEO editing, audits, sitema
 
 == Changelog ==
 
+= 1.4.1 =
+* New: Complete Free/Pro feature gating so the free build matches the published plan matrix (Open Graph, X/Twitter Cards, Video & News sitemaps, advanced schema, breadcrumbs shortcode, custom model ID, bulk frontend rollout, redirect chain tools, and bulk URL change are now Pro-only).
+* New: Free-plan limits enforced server-side — 30-page AI SEO audit quota (separate from generation), 10 redirect rules, and the 50 most-hit 404s.
+* New: IndexNow auto-submit and scheduled-task controls (pause/resume/run-now) are now Pro-only; the free build keeps manual submit and view-only scheduling.
+* Fix: Admin menu icon size and one-time auto-indexing guard on fresh installs.
+
 = 1.4.0 =
 * New: Native Contact & Feedback page (replaces the third-party contact iframe).
 * New: Server-side Pro enforcement on all premium AJAX endpoints (Search Console, Export/Import, cache settings).
@@ -87,6 +93,9 @@ The Free plan includes 30 AI-generated pages. Manual SEO editing, audits, sitema
 * Uninstall cleanup expanded to cover all post/term meta and dynamic video keys.
 
 == Upgrade Notice ==
+
+= 1.4.1 =
+Aligns the free build with the official Free/Pro feature matrix and enforces free-plan limits. Recommended for all users.
 
 = 1.4.0 =
 Adds proper Pro license enforcement and a native contact page. Recommended for all users.

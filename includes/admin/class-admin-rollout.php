@@ -179,6 +179,11 @@ class Admin_Rollout
 
         check_admin_referer('ai_seo_captain_bulk_frontend_rollout');
 
+        // Bulk frontend rollout (approve all) is a Pro-only feature.
+        if (! \AI_SEO_Captain\Licensing::is_pro()) {
+            $this->admin->redirect_to_audit_page('error', 'Bulk frontend rollout is a Pro feature. Please upgrade to unlock it.');
+        }
+
         $post_ids = isset($_POST['post_ids']) ? array_map('intval', (array) wp_unslash($_POST['post_ids'])) : array();
         $mode     = isset($_POST['bulk_mode']) ? sanitize_key((string) wp_unslash($_POST['bulk_mode'])) : '';
 

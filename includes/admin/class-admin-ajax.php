@@ -616,8 +616,20 @@ class Admin_Ajax
             $this->enforce_ai_rate_limit();
         }
 
+        // Free plan: AI SEO audits are limited to 30 pages.
+        if (! \AI_SEO_Captain\Licensing::audit_can_run()) {
+            wp_send_json_error(array(
+                'message'     => \AI_SEO_Captain\Licensing::audit_quota_message(),
+                'upgrade_url' => \AI_SEO_Captain\Licensing::upgrade_url(),
+                'is_pro_gate' => true,
+                'post_id'     => $post_id,
+                'title'       => $post->post_title,
+            ), 403);
+            return;
+        }
+
         try {
-            $deep_analysis = ! empty($_POST['deep_analysis']) && '1' === $_POST['deep_analysis'];
+            $deep_analysis = ! empty($_POST['deep_analysis']) && '1' === $_POST['deep_analysis'] && \AI_SEO_Captain\Licensing::is_pro();
             $audit = $this->ai_generator->generate_page_audit($post_id, $deep_analysis);
         } catch (\AI_SEO_Captain\RateLimitException $rate_error) {
             wp_send_json_error(array(
@@ -648,6 +660,9 @@ class Admin_Ajax
             'deep_analysis'     => $deep_analysis,
             'audited_at'        => current_time('mysql', true),
         ));
+
+        // Count this audit against the Free plan's 30-page audit quota.
+        \AI_SEO_Captain\Licensing::audit_record_usage(1);
 
         wp_send_json_success(array(
             'post_id'           => $post_id,
@@ -1033,6 +1048,9 @@ class Admin_Ajax
             wp_send_json_error('Unauthorized');
         }
 
+        // Bulk Image Alt Text is a Pro-only feature.
+        \AI_SEO_Captain\Licensing::require_pro();
+
         $attachment_id = isset($_POST['attachment_id']) ? (int) $_POST['attachment_id'] : 0;
 
         if ($attachment_id <= 0 || 'attachment' !== get_post_type($attachment_id)) {
@@ -1057,6 +1075,9 @@ class Admin_Ajax
         if (! current_user_can('manage_options')) {
             wp_send_json_error('Unauthorized');
         }
+
+        // Bulk Video SEO is a Pro-only feature.
+        \AI_SEO_Captain\Licensing::require_pro();
 
         $video_key = isset($_POST['video_key']) ? sanitize_text_field(wp_unslash($_POST['video_key'])) : '';
         $post_id   = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
@@ -1101,6 +1122,9 @@ class Admin_Ajax
         if (! current_user_can('manage_options')) {
             wp_send_json_error('Unauthorized');
         }
+
+        // Bulk Document SEO is a Pro-only feature.
+        \AI_SEO_Captain\Licensing::require_pro();
 
         $attachment_id = isset($_POST['attachment_id']) ? (int) $_POST['attachment_id'] : 0;
 
@@ -1388,6 +1412,9 @@ class Admin_Ajax
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
         }
 
+        // Scheduled task controls are Pro-only (Free is view-only).
+        \AI_SEO_Captain\Licensing::require_pro();
+
         $hook = isset($_POST['hook']) ? sanitize_text_field(wp_unslash($_POST['hook'])) : '';
         if (empty($hook)) {
             wp_send_json_error(array('message' => __('Missing job identifier.', 'ai-seo-captain')), 400);
@@ -1409,6 +1436,9 @@ class Admin_Ajax
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
         }
 
+        // Scheduled task controls are Pro-only (Free is view-only).
+        \AI_SEO_Captain\Licensing::require_pro();
+
         $hook = isset($_POST['hook']) ? sanitize_text_field(wp_unslash($_POST['hook'])) : '';
         if (empty($hook)) {
             wp_send_json_error(array('message' => __('Missing job identifier.', 'ai-seo-captain')), 400);
@@ -1429,6 +1459,9 @@ class Admin_Ajax
         if (! current_user_can('manage_options')) {
             wp_send_json_error(array('message' => 'Unauthorized'), 403);
         }
+
+        // Scheduled task controls are Pro-only (Free is view-only).
+        \AI_SEO_Captain\Licensing::require_pro();
 
         $hook = isset($_POST['hook']) ? sanitize_text_field(wp_unslash($_POST['hook'])) : '';
         if (empty($hook)) {

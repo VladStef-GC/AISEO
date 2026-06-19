@@ -380,6 +380,11 @@ class Settings
         $output['custom_model_enabled'] = $is_cache_save ? $current['custom_model_enabled'] : (empty($input['custom_model_enabled']) ? 0 : 1);
         $output['custom_model_id'] = isset($input['custom_model_id']) ? self::sanitize_custom_model_id((string) $input['custom_model_id']) : (string) ($current['custom_model_id'] ?? '');
 
+        // Custom model ID is a Pro-only feature — never honour it on the Free plan.
+        if (! Licensing::is_pro()) {
+            $output['custom_model_enabled'] = 0;
+        }
+
         if (! empty($output['custom_model_enabled']) && '' !== $output['custom_model_id']) {
             $output['model'] = $output['custom_model_id'];
         } else {

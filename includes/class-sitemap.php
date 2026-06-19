@@ -79,9 +79,9 @@ class Sitemap
         if ('index' === $sitemap_type) {
             echo $this->build_sitemap_index($options);
         } elseif ('news' === $sitemap_type) {
-            echo $this->build_news_sitemap($options);
+            echo Licensing::is_pro() ? $this->build_news_sitemap($options) : $this->build_empty_urlset();
         } elseif ('video' === $sitemap_type) {
-            echo $this->build_video_sitemap();
+            echo Licensing::is_pro() ? $this->build_video_sitemap() : $this->build_empty_urlset();
         } else {
             echo $this->build_sitemap($sitemap_type, $options);
         }
@@ -214,19 +214,22 @@ class Sitemap
         // Allow WooCommerce and other extensions to add their own sitemap index entries.
         $entries = apply_filters('ai_seo_captain_sitemap_index_entries', $entries, $options);
 
-        // News sitemap — always present when sitemap is enabled and there are recent posts.
-        if (! empty($options['sitemap_include_posts'])) {
+        // News & Video sitemaps are Pro-only features.
+        if (Licensing::is_pro()) {
+            // News sitemap — present when sitemap is enabled and there are recent posts.
+            if (! empty($options['sitemap_include_posts'])) {
+                $entries[] = array(
+                    'loc' => home_url('/news-sitemap.xml'),
+                    'lastmod' => $this->get_latest_modified_date('post'),
+                );
+            }
+
+            // Video sitemap.
             $entries[] = array(
-                'loc' => home_url('/news-sitemap.xml'),
-                'lastmod' => $this->get_latest_modified_date('post'),
+                'loc' => home_url('/video-sitemap.xml'),
+                'lastmod' => '',
             );
         }
-
-        // Video sitemap.
-        $entries[] = array(
-            'loc' => home_url('/video-sitemap.xml'),
-            'lastmod' => '',
-        );
 
         return $entries;
     }

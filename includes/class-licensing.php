@@ -181,6 +181,77 @@ final class Licensing
         );
     }
 
+    /* ------------------------------------------------------------------ *
+     *  AI-audit quota (Free plan only)
+     * ------------------------------------------------------------------ */
+
+    /** Free-plan lifetime limit for AI SEO audits (pages). */
+    const FREE_AUDIT_PAGE_LIMIT = 30;
+
+    /** Option key storing how many pages a Free user has AI-audited. */
+    const AUDIT_QUOTA_OPTION = 'ai_seo_captain_audit_quota_used';
+
+    /**
+     * Number of AI-audited pages already consumed by a Free site.
+     */
+    public static function audit_used(): int
+    {
+        return (int) get_option(self::AUDIT_QUOTA_OPTION, 0);
+    }
+
+    /**
+     * Remaining AI-audit allowance. PHP_INT_MAX for Pro.
+     */
+    public static function audit_remaining(): int
+    {
+        if (self::is_pro()) {
+            return PHP_INT_MAX;
+        }
+
+        return max(0, self::FREE_AUDIT_PAGE_LIMIT - self::audit_used());
+    }
+
+    /**
+     * Whether the site may AI-audit $count more pages.
+     *
+     * @param int $count Number of pages about to be audited.
+     */
+    public static function audit_can_run(int $count = 1): bool
+    {
+        if (self::is_pro()) {
+            return true;
+        }
+
+        return (self::audit_used() + max(1, $count)) <= self::FREE_AUDIT_PAGE_LIMIT;
+    }
+
+    /**
+     * Record consumption of the AI-audit quota. No-op for Pro.
+     *
+     * @param int $count Number of pages audited.
+     */
+    public static function audit_record_usage(int $count = 1): void
+    {
+        if (self::is_pro()) {
+            return;
+        }
+
+        update_option(self::AUDIT_QUOTA_OPTION, self::audit_used() + max(1, $count), false);
+    }
+
+    /**
+     * Friendly, translatable message shown when a Free site hits the AI
+     * audit limit.
+     */
+    public static function audit_quota_message(): string
+    {
+        return sprintf(
+            /* translators: %d: free AI audit page limit. */
+            __('You have reached the free limit of %d AI-audited pages. Upgrade to Pro for unlimited SEO audits.', 'ai-seo-captain'),
+            self::FREE_AUDIT_PAGE_LIMIT
+        );
+    }
+
     /**
      * Upgrade URL for the plugin's Freemius pricing page.
      */
