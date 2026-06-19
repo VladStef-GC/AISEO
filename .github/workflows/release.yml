@@ -1,0 +1,93 @@
+name: Build & Release
+
+# Triggered when you push a version tag, e.g.:
+#   git tag v1.4.0 && git push origin v1.4.0
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write   # required to create a GitHub Release
+
+jobs:
+  release:
+    name: Build clean zip and publish release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'   # lowest supported version (matches "Requires PHP")
+
+      - name: Verify tag matches plugin version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          HEADER_VER="$(grep -oP 'Version:\s*\K[0-9][0-9.]*' ai-seo-captain.php | head -n1)"
+          CONST_VER="$(grep -oP "AI_SEO_CAPTAIN_VERSION',\s*'\K[0-9][0-9.]*" ai-seo-captain.php | head -n1)"
+          README_VER="$(grep -oP 'Stable tag:\s*\K[0-9][0-9.]*' readme.txt | head -n1)"
+          echo "tag=$TAG header=$HEADER_VER const=$CONST_VER readme=$README_VER"
+          if [ "$TAG" != "$HEADER_VER" ] || [ "$TAG" != "$CONST_VER" ] || [ "$TAG" != "$README_VER" ]; then
+            echo "::error::Version mismatch — tag ($TAG) must equal the plugin header, AI_SEO_CAPTAIN_VERSION, and readme.txt Stable tag."
+            exit 1
+          fi
+
+      - name: Lint all PHP files (excluding vendor)
+        run: |
+          find . -name '*.php' \
+            -not -path './vendor/*' \
+            -not -path './build/*' \
+            -not -path './dist/*' \
+            -print0 | xargs -0 -n1 -P4 php -l
+
+      - name: Build clean distribution zip
+        run: bash bin/build.sh
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-seo-captain
+          path: dist/ai-seo-captain.zip
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/ai-seo-captain.zip
+          generate_release_notes: true
+
+      # ------------------------------------------------------------------
+      #  OPTIONAL — Deploy to Freemius automatically
+      # ------------------------------------------------------------------
+      # Freemius generates the Free (stripped) and Pro zips from this single
+      # upload, so you upload the SAME zip produced above.
+      #
+      # Two ways to ship it:
+      #
+      #   A) Manual (simplest): download the zip attached to the GitHub
+      #      Release this job just created, then upload it in the Freemius
+      #      Developer Dashboard → Deployment. Freemius scans it and produces
+      #      both versions.
+      #
+      #   B) Automated: uncomment the step below and add these repository
+      #      secrets (Settings → Secrets and variables → Actions):
+      #         FREEMIUS_DEV_ID       - your Freemius developer ID
+      #         FREEMIUS_PLUGIN_ID    - 31577
+      #         FREEMIUS_PUBLIC_KEY   - pk_b7c40c5a6ac98d533226cd08039cd
+      #         FREEMIUS_SECRET_KEY   - your sk_... secret (NEVER commit this)
+      #
+      #      Note: the Freemius API uses signed requests; if you prefer a
+      #      maintained helper over hand-rolling the HMAC signature, run their
+      #      official deploy tooling here instead. Keep option (A) as a fallback.
+      #
+      # - name: Deploy to Freemius
+      #   env:
+      #     FS_DEV_ID:     ${{ secrets.FREEMIUS_DEV_ID }}
+      #     FS_PLUGIN_ID:  ${{ secrets.FREEMIUS_PLUGIN_ID }}
+      #     FS_PUBLIC_KEY: ${{ secrets.FREEMIUS_PUBLIC_KEY }}
+      #     FS_SECRET_KEY: ${{ secrets.FREEMIUS_SECRET_KEY }}
+      #   run: bash bin/deploy-freemius.sh dist/ai-seo-captain.zip
