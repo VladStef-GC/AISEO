@@ -74,6 +74,11 @@ if ( function_exists( 'asc_fs' ) ) {
     require_once AI_SEO_CAPTAIN_PATH . 'includes/autoload.php';
     require_once AI_SEO_CAPTAIN_PATH . 'includes/class-activator.php';
 
+    // Uninstall cleanup. Freemius owns the uninstall lifecycle, so instead of a
+    // standalone uninstall.php we hook our data purge onto its after_uninstall
+    // event (fired when WordPress uninstalls the plugin).
+    asc_fs()->add_action('after_uninstall', array('AI_SEO_Captain\\Uninstaller', 'cleanup'));
+
     add_action('init', static function () {
         load_plugin_textdomain('ai-seo-captain', false, dirname(plugin_basename(AI_SEO_CAPTAIN_FILE)) . '/languages');
     });
