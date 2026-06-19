@@ -16,6 +16,13 @@
  * generate_page_audit) so it's a true end-to-end test.
  */
 
+// Refuse to run over HTTP — this is a command-line-only development tool and must
+// never be web-accessible (it boots WordPress and can trigger paid AI calls).
+if (PHP_SAPI !== 'cli' && ! (defined('WP_CLI') && WP_CLI)) {
+    http_response_code(403);
+    exit('This script can only be run from the command line.');
+}
+
 // ── Bootstrap ────────────────────────────────────────────────────────
 define('ABSPATH', dirname(__DIR__, 3) . '/');
 require_once ABSPATH . 'wp-load.php';

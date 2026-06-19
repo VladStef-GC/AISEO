@@ -12,7 +12,7 @@
  * Premium-only files and folders excluded from the free (WordPress.org) build
  * by the Freemius processor. These contain the paid feature engines.
  *
- * @fs_premium_only /includes/class-search-console.php, /includes/class-broken-link-scanner.php, /includes/class-rest-api.php, /includes/class-woocommerce-integration.php, /includes/cache/, /includes/importexport/, /modules/
+ * @fs_premium_only /includes/class-search-console.php, /includes/class-broken-link-scanner.php, /includes/class-rest-api.php, /includes/class-woocommerce-integration.php, /includes/cache/, /includes/importexport/, /modules/, /advanced-cache.php
  */
 
 if (! defined('ABSPATH')) {
