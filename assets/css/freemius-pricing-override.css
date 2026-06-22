@@ -1,528 +1,160 @@
 /**
- * SEO Captain — Freemius Pricing Page Custom Styling
+ * SEO Captain - Freemius Pricing Page Custom Styling
  *
- * Reskins the Freemius pricing page to match the plugin's green brand.
- * Works via CSS overlay — does NOT break payment functionality.
- * The pricing page renders in an iframe, so only certain properties can be styled.
+ * All rules are scoped under #fs_pricing to prevent leaking into the
+ * WordPress admin UI (menus, toolbar, etc.).
+ *
+ * Brand color: #089564 (green), hover: #02b77c
  */
 
-/* ──────────────────────────────────────────────────────────────────────
-   General Container & Typography
-   ────────────────────────────────────────────────────────────────────── */
-#fs_pricing,
-.fs-pricing-wrapper,
-[class*="pricing"] {
+/* Container & Typography (scoped) */
+#fs_pricing {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
 }
 
-/* ──────────────────────────────────────────────────────────────────────
-   Header & Title
-   ────────────────────────────────────────────────────────────────────── */
-#fs_pricing h1,
-.fs-pricing-title,
-[class*="pricing"] h1 {
+#fs_pricing h1 {
     color: #1d2327 !important;
     font-weight: 700 !important;
 }
 
-/* Pricing subtitle */
-#fs_pricing h2,
-.fs-pricing-subtitle,
-[class*="pricing"] h2 {
+#fs_pricing h2 {
     color: #50575e !important;
     font-weight: 500 !important;
 }
 
-/* ──────────────────────────────────────────────────────────────────────
-   Plan Cards — Color Scheme (Blue → Green)
-   ────────────────────────────────────────────────────────────────────── */
-
-/* Card backgrounds */
-.plan-card,
-[class*="plan"],
-[class*="pricing-card"],
-.pricing-box,
-.plan-box {
-    border-color: #dcdcde !important;
-    border-radius: 8px !important;
-}
-
-/* Highlighted/Pro plan card */
-.plan-card.highlighted,
-.plan-card.popular,
-.plan-card.featured,
-.plan-card:nth-child(2),
-[class*="plan"][class*="pro"],
-[class*="pricing-card"][class*="premium"] {
-    border-color: #089564 !important;
-    box-shadow: 0 8px 24px rgba(8, 149, 100, 0.15) !important;
-}
-
-/* ──────────────────────────────────────────────────────────────────────
-   Plan Headers & Labels
-   ────────────────────────────────────────────────────────────────────── */
-
-/* Plan name */
-.plan-name,
-.plan-title,
-[class*="plan-header"] h3,
-.pricing-plan-name {
-    color: #1d2327 !important;
-    font-weight: 700 !important;
-}
-
-/* Plan badge/label (Free/Pro) */
-.plan-label,
-.plan-badge,
-.plan-tag,
-[class*="badge"] {
-    background: #089564 !important;
-    color: #fff !important;
-    border-color: #089564 !important;
-}
-
-/* ──────────────────────────────────────────────────────────────────────
-   Pricing Amount
-   ────────────────────────────────────────────────────────────────────── */
-
-.price,
-.plan-price,
-.pricing-amount,
-[class*="price"] {
+/* Links (scoped to pricing container only) */
+#fs_pricing a {
     color: #089564 !important;
 }
 
-/* Currency symbol */
-.currency,
-.price-currency {
-    color: #50575e !important;
+#fs_pricing a:hover {
+    color: #02b77c !important;
 }
 
-/* Billing period text */
-.billing-period,
-.price-period,
-[class*="period"] {
-    color: #787c82 !important;
-    font-size: 12px !important;
-}
-
-/* ──────────────────────────────────────────────────────────────────────
-   Feature List — LEFT ALIGNED (Important!)
-   ────────────────────────────────────────────────────────────────────── */
-
-/* Feature rows */
-.features,
-.feature-list,
-[class*="features"],
-.plan-features {
-    text-align: left !important;
-}
-
-/* Individual features */
-.feature,
-.feature-item,
-.plan-feature,
-[class*="feature"] li {
-    text-align: left !important;
-    margin-left: 0 !important;
-    padding-left: 24px !important;
-    text-indent: 0 !important;
-}
-
-/* Feature text */
-.feature-name,
-.feature-text,
-[class*="feature"] label {
+/* Billing Cycle Tabs */
+#fs_pricing .fs-section--billing-cycles button,
+#fs_pricing .fs-billing-cycles .fs-billing-cycle {
+    border-color: #dcdcde !important;
     color: #1d2327 !important;
-    text-align: left !important;
-    margin-left: 0 !important;
 }
 
-/* Feature description/helper text */
-.feature-description,
-.feature-help,
-[class*="feature"] small {
-    color: #787c82 !important;
-    font-size: 12px !important;
-    text-align: left !important;
-}
-
-/* ──────────────────────────────────────────────────────────────────────
-   Feature Checkmarks & Icons (Included/Not Included)
-   ────────────────────────────────────────────────────────────────────── */
-
-/* Included feature icon */
-.feature-included,
-.included,
-[class*="check"],
-[class*="included"],
-.plan-features li:before {
-    color: #1c9739 !important;
-}
-
-/* Not included / unavailable */
-.feature-excluded,
-.excluded,
-.not-included,
-[class*="unavailable"],
-.plan-features li.excluded:before {
-    color: #d63638 !important;
-}
-
-/* ──────────────────────────────────────────────────────────────────────
-   Buttons — Keep Freemius Functionality
-   ────────────────────────────────────────────────────────────────────── */
-
-/* Primary action button (Upgrade/Select Plan) */
-.btn-upgrade,
-.btn-primary,
-.upgrade-btn,
-.plan-button,
-button[class*="upgrade"],
-button[class*="select"],
-a[class*="upgrade"],
-a[class*="select"] {
+#fs_pricing .fs-section--billing-cycles button.active,
+#fs_pricing .fs-section--billing-cycles [aria-selected="true"],
+#fs_pricing .fs-billing-cycles .fs-billing-cycle.active {
     background: #089564 !important;
-    background-color: #089564 !important;
     border-color: #077a52 !important;
-    color: #fff !important;
-    border-radius: 6px !important;
-    font-weight: 600 !important;
-    transition: all 0.2s ease !important;
+    color: #ffffff !important;
 }
 
-.btn-upgrade:hover,
-.btn-primary:hover,
-.upgrade-btn:hover,
-.plan-button:hover,
-button[class*="upgrade"]:hover,
-button[class*="select"]:hover,
-a[class*="upgrade"]:hover,
-a[class*="select"]:hover {
-    background: #02b77c !important;
-    background-color: #02b77c !important;
-    border-color: #089564 !important;
-    box-shadow: 0 4px 12px rgba(8, 149, 100, 0.3) !important;
-}
-
-/* Secondary buttons */
-button:not([class*="primary"]):not([class*="upgrade"]):not([class*="select"]),
-a.button:not([class*="primary"]):not([class*="upgrade"]):not([class*="select"]) {
-    color: #089564 !important;
-    border-color: #089564 !important;
-}
-
-button:not([class*="primary"]):not([class*="upgrade"]):not([class*="select"]):hover,
-a.button:not([class*="primary"]):not([class*="upgrade"]):not([class*="select"]):hover {
-    color: #02b77c !important;
-    border-color: #02b77c !important;
-}
-
-/* ──────────────────────────────────────────────────────────────────────
-   Comparison Table (if present)
-   ────────────────────────────────────────────────────────────────────── */
-
-.pricing-table,
-.comparison-table,
-table[class*="pricing"] {
-    border-collapse: collapse;
-}
-
-.pricing-table th,
-.pricing-table td {
-    border-color: #dcdcde !important;
-}
-
-.pricing-table th {
-    background: #f6f7f7 !important;
-    color: #1d2327 !important;
-    font-weight: 600 !important;
-}
-
-/* Feature names in table — LEFT ALIGNED */
-.pricing-table td:first-child,
-.pricing-table th:first-child {
-    text-align: left !important;
-    padding-left: 20px !important;
-}
-
-/* Highlight row */
-.pricing-table tr.highlighted,
-.pricing-table tr.pro {
-    background: rgba(8, 149, 100, 0.03) !important;
-}
-
-/* ──────────────────────────────────────────────────────────────────────
-   Toggle (Monthly / Yearly / Lifetime)
-   ────────────────────────────────────────────────────────────────────── */
-
-.toggle,
-.billing-cycle,
-[class*="toggle"] {
-    border-color: #dcdcde !important;
-}
-
-.toggle-option.active,
-.billing-cycle.active,
-[class*="toggle"].active {
-    background: #089564 !important;
-    color: #fff !important;
-}
-
-.toggle-option:hover,
-.billing-cycle:hover,
-[class*="toggle"]:hover {
-    background: rgba(8, 149, 100, 0.1) !important;
-}
-
-/* Save badge */
-.save-badge,
-.discount-badge,
-[class*="save"] {
-    background: #dba617 !important;
-    color: #fff !important;
-}
-
-/* ──────────────────────────────────────────────────────────────────────
-   Links & Misc
-   ────────────────────────────────────────────────────────────────────── */
-
-a,
-.link {
+/* Annual Discount text */
+#fs_pricing .fs-section--annual-discount,
+#fs_pricing .fs-annual-discount {
     color: #089564 !important;
 }
 
-a:hover,
-.link:hover {
-    color: #02b77c !important;
-}
-
-/* FAQ section */
-.faq,
-[class*="faq"],
-details summary {
-    color: #1d2327 !important;
-}
-
-details summary:hover {
-    color: #089564 !important;
-}
-
-/* ──────────────────────────────────────────────────────────────────────
-   Money-back Guarantee & Trust Signals
-   ────────────────────────────────────────────────────────────────────── */
-
-.guarantee,
-.trust-section,
-[class*="guarantee"],
-[class*="trust"] {
-    border-color: #089564 !important;
-    background: rgba(8, 149, 100, 0.03) !important;
-}
-
-.guarantee-title,
-[class*="guarantee"] h3 {
-    color: #089564 !important;
-    font-weight: 700 !important;
-}
-
-/* ──────────────────────────────────────────────────────────────────────
-   Responsive Fixes
-   ────────────────────────────────────────────────────────────────────── */
-
-@media (max-width: 768px) {
-    .plan-card {
-        border-radius: 8px !important;
-    }
-
-    .feature-item,
-    .feature-list li {
-        padding-left: 20px !important;
-        text-align: left !important;
-    }
-
-    .btn-upgrade,
-    .plan-button {
-        width: 100% !important;
-    }
-}
-
-/* ──────────────────────────────────────────────────────────────────────
-   Freemius Iframe-specific Overrides
-   
-   Note: Direct styling of cross-origin iframes is limited by CORS.
-   These styles apply when the pricing page is rendered locally,
-   not when it's in a Freemius-hosted iframe.
-   ────────────────────────────────────────────────────────────────────── */
-
-/* Override any blue color anywhere */
-[style*="blue"],
-[style*="#0073aa"],
-[style*="rgb(0, 115, 170)"] {
-    color: #089564 !important;
-}
-
-[style*="background: blue"],
-[style*="background: #0073aa"],
-[style*="background: rgb(0, 115, 170)"] {
-    background: #089564 !important;
-}
-
-[style*="border-color: blue"],
-[style*="border-color: #0073aa"],
-[style*="border-color: rgb(0, 115, 170)"] {
-    border-color: #089564 !important;
-}
-
-/* ──────────────────────────────────────────────────────────────────────
-   Print Styles
-   ────────────────────────────────────────────────────────────────────── */
-
-@media print {
-    .plan-button,
-    .upgrade-btn,
-    button {
-        display: none;
-    }
-}
-
-/* ---------------------------------------------------------------------
-    Freemius Pricing App (SDK 2.9+ DOM) - High Specificity Overrides
-    --------------------------------------------------------------------- */
-
-#fs_pricing #fs_pricing_app,
-#fs_pricing #fs_pricing_app * {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-}
-
-/* Pricing cards wrapper */
-#fs_pricing #fs_pricing_app .fs-packages,
-#fs_pricing #fs_pricing_app .fs-packages-nav {
-    max-width: 760px;
-}
-
-/* Card shell */
-#fs_pricing #fs_pricing_app .fs-package {
+/* Plan Cards */
+#fs_pricing .fs-package {
     border: 1px solid #dcdcde !important;
     border-radius: 10px 10px 0 0 !important;
     background: #ffffff !important;
 }
 
-/* Pro card emphasis */
-#fs_pricing #fs_pricing_app .fs-package.fs-featured-plan {
+/* Pro / Featured plan card */
+#fs_pricing .fs-package.fs-featured-plan {
     border-color: #089564 !important;
     box-shadow: 0 8px 24px rgba(8, 149, 100, 0.15) !important;
 }
 
-/* Free / Pro strip header */
-#fs_pricing #fs_pricing_app .fs-package .fs-package-title {
+/* Plan Header Strip (FREE / PRO label) */
+#fs_pricing .fs-package .fs-plan-title,
+#fs_pricing .fs-package h2.fs-plan-title {
     background: #f6f7f7 !important;
     color: #1d2327 !important;
     border-bottom: 1px solid #dcdcde !important;
 }
 
-#fs_pricing #fs_pricing_app .fs-package.fs-featured-plan .fs-package-title {
+#fs_pricing .fs-package.fs-featured-plan .fs-plan-title,
+#fs_pricing .fs-package.fs-featured-plan h2.fs-plan-title {
     background: #089564 !important;
     color: #ffffff !important;
     border-bottom-color: #077a52 !important;
 }
 
-/* Plan subtitle */
-#fs_pricing #fs_pricing_app .fs-plan-description {
+/* Plan Description */
+#fs_pricing .fs-plan-description,
+#fs_pricing h3.fs-plan-description {
     color: #1d2327 !important;
     font-weight: 700 !important;
 }
 
-/* Price and cycle */
-#fs_pricing #fs_pricing_app .fs-selected-pricing-amount,
-#fs_pricing #fs_pricing_app .fs-selected-pricing-amount * {
+/* Pricing Amount */
+#fs_pricing .fs-selected-pricing-amount,
+#fs_pricing .fs-selected-pricing-amount * {
     color: #089564 !important;
 }
 
-#fs_pricing #fs_pricing_app .fs-selected-pricing-cycle,
-#fs_pricing #fs_pricing_app .fs-selected-pricing-license-quantity {
+#fs_pricing .fs-selected-pricing-cycle,
+#fs_pricing .fs-selected-pricing-license-quantity {
     color: #50575e !important;
 }
 
-/* Discount badges / old price */
-#fs_pricing #fs_pricing_app .fs-undiscounted-price,
-#fs_pricing #fs_pricing_app .fs-discount,
-#fs_pricing #fs_pricing_app .fs-annual-discount,
-#fs_pricing #fs_pricing_app .fs-save {
+/* Strikethrough old price */
+#fs_pricing .fs-undiscounted-price {
     color: #dba617 !important;
 }
 
-/* Features list must be left aligned */
-#fs_pricing #fs_pricing_app .fs-support-and-main-features,
-#fs_pricing #fs_pricing_app .fs-support-and-main-features ul,
-#fs_pricing #fs_pricing_app .fs-support-and-main-features li,
-#fs_pricing #fs_pricing_app .fs-features,
-#fs_pricing #fs_pricing_app .fs-features li {
+/* Features List - LEFT ALIGNED */
+#fs_pricing .fs-support-and-main-features,
+#fs_pricing .fs-support-and-main-features ul,
+#fs_pricing .fs-support-and-main-features li,
+#fs_pricing .fs-features,
+#fs_pricing .fs-features li {
     text-align: left !important;
 }
 
-#fs_pricing #fs_pricing_app .fs-support-and-main-features li,
-#fs_pricing #fs_pricing_app .fs-features li {
+#fs_pricing .fs-support-and-main-features li,
+#fs_pricing .fs-features li {
     padding-left: 22px !important;
 }
 
-/* Check / cross icons in features */
-#fs_pricing #fs_pricing_app .fs-yes,
-#fs_pricing #fs_pricing_app .fs-icon-yes,
-#fs_pricing #fs_pricing_app .dashicons-yes {
-    color: #1c9739 !important;
-}
-
-#fs_pricing #fs_pricing_app .fs-no,
-#fs_pricing #fs_pricing_app .fs-icon-no,
-#fs_pricing #fs_pricing_app .dashicons-no {
-    color: #d63638 !important;
-}
-
-/* Billing cycle tabs */
-#fs_pricing #fs_pricing_app .fs-billing-cycles .fs-billing-cycle,
-#fs_pricing #fs_pricing_app .fs-section--billing-cycles button {
-    border-color: #dcdcde !important;
-    color: #1d2327 !important;
-}
-
-#fs_pricing #fs_pricing_app .fs-billing-cycles .fs-billing-cycle.active,
-#fs_pricing #fs_pricing_app .fs-section--billing-cycles button.active,
-#fs_pricing #fs_pricing_app .fs-section--billing-cycles [aria-selected="true"] {
+/* CTA Buttons */
+#fs_pricing .button-primary,
+#fs_pricing .fs-purchase-button,
+#fs_pricing .fs-cta a,
+#fs_pricing .fs-cta button {
     background: #089564 !important;
     border-color: #077a52 !important;
     color: #ffffff !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
 }
 
-/* CTA buttons */
-#fs_pricing #fs_pricing_app .button-primary,
-#fs_pricing #fs_pricing_app .fs-purchase-button,
-#fs_pricing #fs_pricing_app .fs-cta a,
-#fs_pricing #fs_pricing_app .fs-cta button {
-    background: #089564 !important;
-    border-color: #077a52 !important;
-    color: #ffffff !important;
-}
-
-#fs_pricing #fs_pricing_app .button-primary:hover,
-#fs_pricing #fs_pricing_app .fs-purchase-button:hover,
-#fs_pricing #fs_pricing_app .fs-cta a:hover,
-#fs_pricing #fs_pricing_app .fs-cta button:hover {
+#fs_pricing .button-primary:hover,
+#fs_pricing .fs-purchase-button:hover,
+#fs_pricing .fs-cta a:hover,
+#fs_pricing .fs-cta button:hover {
     background: #02b77c !important;
     border-color: #089564 !important;
     color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(8, 149, 100, 0.3) !important;
 }
 
-/* Last-resort blue replacement for generated styles */
-#fs_pricing #fs_pricing_app [style*="#0073aa"],
-#fs_pricing #fs_pricing_app [style*="rgb(0, 115, 170)"] {
-    color: #089564 !important;
+/* Guarantee / Trust Section */
+#fs_pricing .fs-money-back-guarantee,
+#fs_pricing .fs-refund-policy {
     border-color: #089564 !important;
+    background: rgba(8, 149, 100, 0.03) !important;
 }
 
-#fs_pricing #fs_pricing_app [style*="background:#0073aa"],
-#fs_pricing #fs_pricing_app [style*="background: #0073aa"],
-#fs_pricing #fs_pricing_app [style*="background:rgb(0, 115, 170)"],
-#fs_pricing #fs_pricing_app [style*="background: rgb(0, 115, 170)"] {
-    background: #089564 !important;
+/* Responsive */
+@media (max-width: 768px) {
+    #fs_pricing .fs-package {
+        border-radius: 8px !important;
+    }
+
+    #fs_pricing .fs-support-and-main-features li,
+    #fs_pricing .fs-features li {
+        padding-left: 18px !important;
+        text-align: left !important;
+    }
 }
