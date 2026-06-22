@@ -1044,15 +1044,43 @@ class Admin
             AI_SEO_CAPTAIN_VERSION
         );
 
-        // Custom pricing page styling (green branding, left-aligned features)
-        if (false !== strpos($page, '-pricing')) {
-            wp_enqueue_style(
-                'ai-seo-freemius-pricing',
-                AI_SEO_CAPTAIN_URL . 'assets/css/freemius-pricing-override.css',
-                array('ai-seo-freemius-ui'),
-                AI_SEO_CAPTAIN_VERSION
-            );
+        // Inject green-branded pricing CSS directly into the Freemius iframe
+        // The pricing page is served in a cross-origin iframe, so we use Freemius hooks
+        // to inject CSS directly into the page HTML instead of external stylesheets.
+        $this->inject_freemius_pricing_css();
+    }
+
+    /**
+     * Inject custom CSS into Freemius pricing page HTML.
+     * Freemius pricing/checkout pages render in cross-origin iframes, so we
+     * inject CSS directly via Freemius hooks instead of enqueueing stylesheets.
+     */
+    private function inject_freemius_pricing_css(): void
+    {
+        if (!function_exists('asc_fs')) {
+            return;
         }
+
+        $fs = asc_fs();
+        if (!$fs) {
+            return;
+        }
+
+        // Hook into Freemius pricing page HTML to inject custom CSS
+        $fs->add_filter('pricing_page_html', function ($html) {
+            $css = file_get_contents(AI_SEO_CAPTAIN_PATH . 'assets/css/freemius-pricing-override.css');
+            if ($css) {
+                $style_tag = '<style>' . $css . '</style>';
+                // Insert before closing </head> tag, or at start if no head tag
+                if (false !== strpos($html, '</head>')) {
+                    $html = str_replace('</head>', $style_tag . '</head>', $html);
+                } else {
+                    $html = $style_tag . $html;
+                }
+            }
+            return $html;
+        });
+    }
     }
 
     private function get_editor_script(): string
