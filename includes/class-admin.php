@@ -828,7 +828,7 @@ class Admin
 
         wp_enqueue_script(
             'ai-seo-captain-gutenberg-sidebar',
-            $url . 'js/gutenberg-sidebar.js',
+            $url . 'js/gutenberg-document-panel.js',
             array(
                 'wp-plugins',
                 'wp-edit-post',
