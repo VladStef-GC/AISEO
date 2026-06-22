@@ -1043,6 +1043,16 @@ class Admin
             array(),
             AI_SEO_CAPTAIN_VERSION
         );
+
+        // Custom pricing page styling (green branding, left-aligned features)
+        if (false !== strpos($page, '-pricing')) {
+            wp_enqueue_style(
+                'ai-seo-freemius-pricing',
+                AI_SEO_CAPTAIN_URL . 'assets/css/freemius-pricing-override.css',
+                array('ai-seo-freemius-ui'),
+                AI_SEO_CAPTAIN_VERSION
+            );
+        }
     }
 
     private function get_editor_script(): string

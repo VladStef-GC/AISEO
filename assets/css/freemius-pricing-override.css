@@ -1,0 +1,387 @@
+/**
+ * SEO Captain — Freemius Pricing Page Custom Styling
+ *
+ * Reskins the Freemius pricing page to match the plugin's green brand.
+ * Works via CSS overlay — does NOT break payment functionality.
+ * The pricing page renders in an iframe, so only certain properties can be styled.
+ */
+
+/* ──────────────────────────────────────────────────────────────────────
+   General Container & Typography
+   ────────────────────────────────────────────────────────────────────── */
+#fs_pricing,
+.fs-pricing-wrapper,
+[class*="pricing"] {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Header & Title
+   ────────────────────────────────────────────────────────────────────── */
+#fs_pricing h1,
+.fs-pricing-title,
+[class*="pricing"] h1 {
+    color: #1d2327 !important;
+    font-weight: 700 !important;
+}
+
+/* Pricing subtitle */
+#fs_pricing h2,
+.fs-pricing-subtitle,
+[class*="pricing"] h2 {
+    color: #50575e !important;
+    font-weight: 500 !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Plan Cards — Color Scheme (Blue → Green)
+   ────────────────────────────────────────────────────────────────────── */
+
+/* Card backgrounds */
+.plan-card,
+[class*="plan"],
+[class*="pricing-card"],
+.pricing-box,
+.plan-box {
+    border-color: #dcdcde !important;
+    border-radius: 8px !important;
+}
+
+/* Highlighted/Pro plan card */
+.plan-card.highlighted,
+.plan-card.popular,
+.plan-card.featured,
+.plan-card:nth-child(2),
+[class*="plan"][class*="pro"],
+[class*="pricing-card"][class*="premium"] {
+    border-color: #089564 !important;
+    box-shadow: 0 8px 24px rgba(8, 149, 100, 0.15) !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Plan Headers & Labels
+   ────────────────────────────────────────────────────────────────────── */
+
+/* Plan name */
+.plan-name,
+.plan-title,
+[class*="plan-header"] h3,
+.pricing-plan-name {
+    color: #1d2327 !important;
+    font-weight: 700 !important;
+}
+
+/* Plan badge/label (Free/Pro) */
+.plan-label,
+.plan-badge,
+.plan-tag,
+[class*="badge"] {
+    background: #089564 !important;
+    color: #fff !important;
+    border-color: #089564 !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Pricing Amount
+   ────────────────────────────────────────────────────────────────────── */
+
+.price,
+.plan-price,
+.pricing-amount,
+[class*="price"] {
+    color: #089564 !important;
+}
+
+/* Currency symbol */
+.currency,
+.price-currency {
+    color: #50575e !important;
+}
+
+/* Billing period text */
+.billing-period,
+.price-period,
+[class*="period"] {
+    color: #787c82 !important;
+    font-size: 12px !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Feature List — LEFT ALIGNED (Important!)
+   ────────────────────────────────────────────────────────────────────── */
+
+/* Feature rows */
+.features,
+.feature-list,
+[class*="features"],
+.plan-features {
+    text-align: left !important;
+}
+
+/* Individual features */
+.feature,
+.feature-item,
+.plan-feature,
+[class*="feature"] li {
+    text-align: left !important;
+    margin-left: 0 !important;
+    padding-left: 24px !important;
+    text-indent: 0 !important;
+}
+
+/* Feature text */
+.feature-name,
+.feature-text,
+[class*="feature"] label {
+    color: #1d2327 !important;
+    text-align: left !important;
+    margin-left: 0 !important;
+}
+
+/* Feature description/helper text */
+.feature-description,
+.feature-help,
+[class*="feature"] small {
+    color: #787c82 !important;
+    font-size: 12px !important;
+    text-align: left !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Feature Checkmarks & Icons (Included/Not Included)
+   ────────────────────────────────────────────────────────────────────── */
+
+/* Included feature icon */
+.feature-included,
+.included,
+[class*="check"],
+[class*="included"],
+.plan-features li:before {
+    color: #1c9739 !important;
+}
+
+/* Not included / unavailable */
+.feature-excluded,
+.excluded,
+.not-included,
+[class*="unavailable"],
+.plan-features li.excluded:before {
+    color: #d63638 !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Buttons — Keep Freemius Functionality
+   ────────────────────────────────────────────────────────────────────── */
+
+/* Primary action button (Upgrade/Select Plan) */
+.btn-upgrade,
+.btn-primary,
+.upgrade-btn,
+.plan-button,
+button[class*="upgrade"],
+button[class*="select"],
+a[class*="upgrade"],
+a[class*="select"] {
+    background: #089564 !important;
+    background-color: #089564 !important;
+    border-color: #077a52 !important;
+    color: #fff !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+}
+
+.btn-upgrade:hover,
+.btn-primary:hover,
+.upgrade-btn:hover,
+.plan-button:hover,
+button[class*="upgrade"]:hover,
+button[class*="select"]:hover,
+a[class*="upgrade"]:hover,
+a[class*="select"]:hover {
+    background: #02b77c !important;
+    background-color: #02b77c !important;
+    border-color: #089564 !important;
+    box-shadow: 0 4px 12px rgba(8, 149, 100, 0.3) !important;
+}
+
+/* Secondary buttons */
+button:not([class*="primary"]):not([class*="upgrade"]):not([class*="select"]),
+a.button:not([class*="primary"]):not([class*="upgrade"]):not([class*="select"]) {
+    color: #089564 !important;
+    border-color: #089564 !important;
+}
+
+button:not([class*="primary"]):not([class*="upgrade"]):not([class*="select"]):hover,
+a.button:not([class*="primary"]):not([class*="upgrade"]):not([class*="select"]):hover {
+    color: #02b77c !important;
+    border-color: #02b77c !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Comparison Table (if present)
+   ────────────────────────────────────────────────────────────────────── */
+
+.pricing-table,
+.comparison-table,
+table[class*="pricing"] {
+    border-collapse: collapse;
+}
+
+.pricing-table th,
+.pricing-table td {
+    border-color: #dcdcde !important;
+}
+
+.pricing-table th {
+    background: #f6f7f7 !important;
+    color: #1d2327 !important;
+    font-weight: 600 !important;
+}
+
+/* Feature names in table — LEFT ALIGNED */
+.pricing-table td:first-child,
+.pricing-table th:first-child {
+    text-align: left !important;
+    padding-left: 20px !important;
+}
+
+/* Highlight row */
+.pricing-table tr.highlighted,
+.pricing-table tr.pro {
+    background: rgba(8, 149, 100, 0.03) !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Toggle (Monthly / Yearly / Lifetime)
+   ────────────────────────────────────────────────────────────────────── */
+
+.toggle,
+.billing-cycle,
+[class*="toggle"] {
+    border-color: #dcdcde !important;
+}
+
+.toggle-option.active,
+.billing-cycle.active,
+[class*="toggle"].active {
+    background: #089564 !important;
+    color: #fff !important;
+}
+
+.toggle-option:hover,
+.billing-cycle:hover,
+[class*="toggle"]:hover {
+    background: rgba(8, 149, 100, 0.1) !important;
+}
+
+/* Save badge */
+.save-badge,
+.discount-badge,
+[class*="save"] {
+    background: #dba617 !important;
+    color: #fff !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Links & Misc
+   ────────────────────────────────────────────────────────────────────── */
+
+a,
+.link {
+    color: #089564 !important;
+}
+
+a:hover,
+.link:hover {
+    color: #02b77c !important;
+}
+
+/* FAQ section */
+.faq,
+[class*="faq"],
+details summary {
+    color: #1d2327 !important;
+}
+
+details summary:hover {
+    color: #089564 !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Money-back Guarantee & Trust Signals
+   ────────────────────────────────────────────────────────────────────── */
+
+.guarantee,
+.trust-section,
+[class*="guarantee"],
+[class*="trust"] {
+    border-color: #089564 !important;
+    background: rgba(8, 149, 100, 0.03) !important;
+}
+
+.guarantee-title,
+[class*="guarantee"] h3 {
+    color: #089564 !important;
+    font-weight: 700 !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Responsive Fixes
+   ────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .plan-card {
+        border-radius: 8px !important;
+    }
+
+    .feature-item,
+    .feature-list li {
+        padding-left: 20px !important;
+        text-align: left !important;
+    }
+
+    .btn-upgrade,
+    .plan-button {
+        width: 100% !important;
+    }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Freemius Iframe-specific Overrides
+   
+   Note: Direct styling of cross-origin iframes is limited by CORS.
+   These styles apply when the pricing page is rendered locally,
+   not when it's in a Freemius-hosted iframe.
+   ────────────────────────────────────────────────────────────────────── */
+
+/* Override any blue color anywhere */
+[style*="blue"],
+[style*="#0073aa"],
+[style*="rgb(0, 115, 170)"] {
+    color: #089564 !important;
+}
+
+[style*="background: blue"],
+[style*="background: #0073aa"],
+[style*="background: rgb(0, 115, 170)"] {
+    background: #089564 !important;
+}
+
+[style*="border-color: blue"],
+[style*="border-color: #0073aa"],
+[style*="border-color: rgb(0, 115, 170)"] {
+    border-color: #089564 !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Print Styles
+   ────────────────────────────────────────────────────────────────────── */
+
+@media print {
+    .plan-button,
+    .upgrade-btn,
+    button {
+        display: none;
+    }
+}
