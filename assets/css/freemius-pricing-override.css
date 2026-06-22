@@ -385,3 +385,144 @@ details summary:hover {
         display: none;
     }
 }
+
+/* ---------------------------------------------------------------------
+    Freemius Pricing App (SDK 2.9+ DOM) - High Specificity Overrides
+    --------------------------------------------------------------------- */
+
+#fs_pricing #fs_pricing_app,
+#fs_pricing #fs_pricing_app * {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+/* Pricing cards wrapper */
+#fs_pricing #fs_pricing_app .fs-packages,
+#fs_pricing #fs_pricing_app .fs-packages-nav {
+    max-width: 760px;
+}
+
+/* Card shell */
+#fs_pricing #fs_pricing_app .fs-package {
+    border: 1px solid #dcdcde !important;
+    border-radius: 10px 10px 0 0 !important;
+    background: #ffffff !important;
+}
+
+/* Pro card emphasis */
+#fs_pricing #fs_pricing_app .fs-package.fs-featured-plan {
+    border-color: #089564 !important;
+    box-shadow: 0 8px 24px rgba(8, 149, 100, 0.15) !important;
+}
+
+/* Free / Pro strip header */
+#fs_pricing #fs_pricing_app .fs-package .fs-package-title {
+    background: #f6f7f7 !important;
+    color: #1d2327 !important;
+    border-bottom: 1px solid #dcdcde !important;
+}
+
+#fs_pricing #fs_pricing_app .fs-package.fs-featured-plan .fs-package-title {
+    background: #089564 !important;
+    color: #ffffff !important;
+    border-bottom-color: #077a52 !important;
+}
+
+/* Plan subtitle */
+#fs_pricing #fs_pricing_app .fs-plan-description {
+    color: #1d2327 !important;
+    font-weight: 700 !important;
+}
+
+/* Price and cycle */
+#fs_pricing #fs_pricing_app .fs-selected-pricing-amount,
+#fs_pricing #fs_pricing_app .fs-selected-pricing-amount * {
+    color: #089564 !important;
+}
+
+#fs_pricing #fs_pricing_app .fs-selected-pricing-cycle,
+#fs_pricing #fs_pricing_app .fs-selected-pricing-license-quantity {
+    color: #50575e !important;
+}
+
+/* Discount badges / old price */
+#fs_pricing #fs_pricing_app .fs-undiscounted-price,
+#fs_pricing #fs_pricing_app .fs-discount,
+#fs_pricing #fs_pricing_app .fs-annual-discount,
+#fs_pricing #fs_pricing_app .fs-save {
+    color: #dba617 !important;
+}
+
+/* Features list must be left aligned */
+#fs_pricing #fs_pricing_app .fs-support-and-main-features,
+#fs_pricing #fs_pricing_app .fs-support-and-main-features ul,
+#fs_pricing #fs_pricing_app .fs-support-and-main-features li,
+#fs_pricing #fs_pricing_app .fs-features,
+#fs_pricing #fs_pricing_app .fs-features li {
+    text-align: left !important;
+}
+
+#fs_pricing #fs_pricing_app .fs-support-and-main-features li,
+#fs_pricing #fs_pricing_app .fs-features li {
+    padding-left: 22px !important;
+}
+
+/* Check / cross icons in features */
+#fs_pricing #fs_pricing_app .fs-yes,
+#fs_pricing #fs_pricing_app .fs-icon-yes,
+#fs_pricing #fs_pricing_app .dashicons-yes {
+    color: #1c9739 !important;
+}
+
+#fs_pricing #fs_pricing_app .fs-no,
+#fs_pricing #fs_pricing_app .fs-icon-no,
+#fs_pricing #fs_pricing_app .dashicons-no {
+    color: #d63638 !important;
+}
+
+/* Billing cycle tabs */
+#fs_pricing #fs_pricing_app .fs-billing-cycles .fs-billing-cycle,
+#fs_pricing #fs_pricing_app .fs-section--billing-cycles button {
+    border-color: #dcdcde !important;
+    color: #1d2327 !important;
+}
+
+#fs_pricing #fs_pricing_app .fs-billing-cycles .fs-billing-cycle.active,
+#fs_pricing #fs_pricing_app .fs-section--billing-cycles button.active,
+#fs_pricing #fs_pricing_app .fs-section--billing-cycles [aria-selected="true"] {
+    background: #089564 !important;
+    border-color: #077a52 !important;
+    color: #ffffff !important;
+}
+
+/* CTA buttons */
+#fs_pricing #fs_pricing_app .button-primary,
+#fs_pricing #fs_pricing_app .fs-purchase-button,
+#fs_pricing #fs_pricing_app .fs-cta a,
+#fs_pricing #fs_pricing_app .fs-cta button {
+    background: #089564 !important;
+    border-color: #077a52 !important;
+    color: #ffffff !important;
+}
+
+#fs_pricing #fs_pricing_app .button-primary:hover,
+#fs_pricing #fs_pricing_app .fs-purchase-button:hover,
+#fs_pricing #fs_pricing_app .fs-cta a:hover,
+#fs_pricing #fs_pricing_app .fs-cta button:hover {
+    background: #02b77c !important;
+    border-color: #089564 !important;
+    color: #ffffff !important;
+}
+
+/* Last-resort blue replacement for generated styles */
+#fs_pricing #fs_pricing_app [style*="#0073aa"],
+#fs_pricing #fs_pricing_app [style*="rgb(0, 115, 170)"] {
+    color: #089564 !important;
+    border-color: #089564 !important;
+}
+
+#fs_pricing #fs_pricing_app [style*="background:#0073aa"],
+#fs_pricing #fs_pricing_app [style*="background: #0073aa"],
+#fs_pricing #fs_pricing_app [style*="background:rgb(0, 115, 170)"],
+#fs_pricing #fs_pricing_app [style*="background: rgb(0, 115, 170)"] {
+    background: #089564 !important;
+}
